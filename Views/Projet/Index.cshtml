@@ -1,0 +1,212 @@
+@model IEnumerable<GestionProjects.Domain.Models.Projet>
+
+@{
+    ViewData["Title"] = "Portefeuille de Projets";
+}
+
+<div class="fade-in">
+    @{
+        var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        var isDSI = userRole == "DSI" || userRole == "AdminIT" || userRole == "ResponsableSolutionsIT";
+    }
+    
+    @if (isDSI)
+    {
+        <div class="card-modern mb-4">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                    <i class="bi bi-funnel"></i>
+                    Filtres
+                </h3>
+            </div>
+            <div class="card-body-modern">
+                <form asp-action="Index" method="get" id="filterForm">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group-modern">
+                                <label class="form-label-modern">Direction</label>
+                                <select name="directionId" class="form-control-modern" asp-items="ViewBag.Directions">
+                                    <option value="">-- Toutes --</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group-modern">
+                                <label class="form-label-modern">Chef de Projet</label>
+                                <select name="chefProjetId" class="form-control-modern" asp-items="ViewBag.ChefsProjet">
+                                    <option value="">-- Tous --</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group-modern">
+                                <label class="form-label-modern">Phase</label>
+                                <select name="phase" class="form-control-modern" asp-items="ViewBag.Phases">
+                                    <option value="">-- Toutes --</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group-modern">
+                                <label class="form-label-modern">Statut</label>
+                                <select name="statut" class="form-control-modern" asp-items="ViewBag.Statuts">
+                                    <option value="">-- Tous --</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group-modern">
+                                <label class="form-label-modern">État</label>
+                                <select name="etat" class="form-control-modern" asp-items="ViewBag.Etats">
+                                    <option value="">-- Tous --</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <button type="submit" class="btn-modern btn-modern-primary">
+                                <i class="bi bi-search"></i>
+                                Filtrer
+                            </button>
+                            <a asp-action="Index" class="btn-modern btn-modern-secondary">
+                                <i class="bi bi-x-circle"></i>
+                                Réinitialiser
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
+    
+    <div class="card-modern">
+        <div class="card-header-modern">
+            <h2 class="card-title-modern">
+                <i class="bi bi-grid"></i>
+                Portefeuille de Projets
+            </h2>
+        </div>
+
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Titre</th>
+                            <th>Direction</th>
+                            <th>Sponsor</th>
+                            <th>Chef de Projet</th>
+                            <th>Phase</th>
+                            <th>Statut</th>
+                            <th>État</th>
+                            <th>Avancement</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var projet in Model)
+                        {
+                            var readOnlyProjets = ViewBag.ReadOnlyProjets as HashSet<Guid> ?? new HashSet<Guid>();
+                            var isReadOnly = readOnlyProjets.Contains(projet.Id);
+                            
+                            <tr style="@(isReadOnly ? "opacity: 0.85; background: var(--gray-50);" : "")">
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: var(--spacing-xs);">
+                                        <strong style="color: var(--primary-blue);">@projet.CodeProjet</strong>
+                                        @if (isReadOnly)
+                                        {
+                                            <span class="badge-modern badge-modern-secondary" style="font-size: 0.7rem; padding: 0.15rem 0.4rem;" title="Lecture seule - Projet de votre direction">
+                                                <i class="bi bi-eye"></i> Lecture seule
+                                            </span>
+                                        }
+                                    </div>
+                                </td>
+                                <td>@projet.Titre</td>
+                                <td>@(projet.Direction?.Libelle ?? "N/A")</td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: var(--spacing-xs);">
+                                        @projet.Sponsor?.Nom @projet.Sponsor?.Prenoms
+                                        @if (isReadOnly && projet.SponsorId != Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Guid.Empty.ToString()))
+                                        {
+                                            <span class="badge-modern badge-modern-info" style="font-size: 0.7rem; padding: 0.15rem 0.4rem;">
+                                                <i class="bi bi-person-badge"></i> Autre DM
+                                            </span>
+                                        }
+                                    </div>
+                                </td>
+                                <td>@(projet.ChefProjet?.Nom ?? "Non assigné") @(projet.ChefProjet?.Prenoms ?? "")</td>
+                                <td>
+                                    <span class="badge-modern badge-modern-info">@projet.PhaseActuelle</span>
+                                </td>
+                                <td>
+                                    <span class="badge-modern badge-modern-@GetStatutClass(projet.StatutProjet)">@projet.StatutProjet</span>
+                                </td>
+                                <td>
+                                    <span class="badge-modern badge-modern-@GetEtatClass(projet.EtatProjet)">@projet.EtatProjet</span>
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+                                        <div style="flex: 1; height: 8px; background: var(--gray-200); border-radius: var(--radius-lg); overflow: hidden;">
+                                            <div style="height: 100%; width: @projet.PourcentageAvancement%; background: var(--primary-blue); transition: width var(--transition-base);"></div>
+                                        </div>
+                                        <span style="font-weight: 600; color: var(--gray-700); font-size: 0.875rem; min-width: 45px;">@projet.PourcentageAvancement%</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@projet.Id" class="btn-modern btn-modern-primary" style="padding: var(--spacing-xs) var(--spacing-md); font-size: 0.875rem;">
+                                        <i class="bi bi-eye"></i>
+                                        Détails
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="card-body-modern text-center" style="padding: var(--spacing-2xl);">
+                <i class="bi bi-folder-x" style="font-size: 3rem; color: var(--gray-400); margin-bottom: var(--spacing-md);"></i>
+                <p style="color: var(--gray-500); font-size: 1.1rem;">
+                    Aucun projet trouvé.
+                </p>
+            </div>
+        }
+    </div>
+</div>
+
+@functions {
+    string GetStatutClass(GestionProjects.Domain.Enums.StatutProjet statut)
+    {
+        return statut switch
+        {
+            GestionProjects.Domain.Enums.StatutProjet.NonDemarre => "secondary",
+            GestionProjects.Domain.Enums.StatutProjet.EnCours => "info",
+            GestionProjects.Domain.Enums.StatutProjet.Suspendu => "warning",
+            GestionProjects.Domain.Enums.StatutProjet.ClotureEnCours => "info",
+            GestionProjects.Domain.Enums.StatutProjet.Cloture => "success",
+            GestionProjects.Domain.Enums.StatutProjet.Annule => "danger",
+            _ => "secondary"
+        };
+    }
+
+    string GetEtatClass(GestionProjects.Domain.Enums.EtatProjet etat)
+    {
+        return etat switch
+        {
+            GestionProjects.Domain.Enums.EtatProjet.Vert => "success",
+            GestionProjects.Domain.Enums.EtatProjet.Orange => "warning",
+            GestionProjects.Domain.Enums.EtatProjet.Rouge => "danger",
+            _ => "secondary"
+        };
+    }
+}
+
+@* Pagination *@
+@await Html.PartialAsync("_Pagination")

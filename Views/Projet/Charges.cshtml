@@ -1,0 +1,256 @@
+@model GestionProjects.Domain.Models.Projet
+
+@{
+    ViewData["Title"] = $"Charges - {Model.CodeProjet}";
+    var semaines = ViewBag.Semaines as List<DateTime> ?? new List<DateTime>();
+    var ressources = ViewBag.Ressources as List<GestionProjects.Domain.Models.Utilisateur> ?? new List<GestionProjects.Domain.Models.Utilisateur>();
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="display-6 mb-0">
+            <i class="bi bi-clock-history" style="color: var(--primary-blue);"></i>
+            Suivi des Charges - @Model.CodeProjet
+        </h2>
+        <a asp-action="Details" asp-route-id="@Model.Id" class="btn-modern btn-modern-secondary">
+            <i class="bi bi-arrow-left"></i> Retour au projet
+        </a>
+    </div>
+
+    <div class="card-modern mb-4">
+        <div class="card-header-modern">
+            <h3 class="card-title-modern">
+                <i class="bi bi-calendar-week"></i>
+                Saisie Hebdomadaire des Charges Réelles
+            </h3>
+        </div>
+        <div class="card-body-modern">
+            @if (!ressources.Any())
+            {
+                <div class="alert-modern alert-modern-info">
+                    <i class="bi bi-info-circle"></i>
+                    Aucune ressource identifiée pour ce projet. Les charges sont liées aux utilisateurs du système. 
+                    Le chef de projet et les membres identifiés par email sont automatiquement inclus.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-modern">
+                        <thead>
+                            <tr>
+                                <th>Ressource</th>
+                                <th class="text-center" style="min-width: 100px;">
+                                    <div style="font-size: 0.75rem; font-weight: 600;">Capacité</div>
+                                    <div style="font-size: 0.7rem; color: var(--gray-500);">hebdomadaire</div>
+                                </th>
+                                @foreach (var semaine in semaines)
+                                {
+                                    var estSemaineCourante = semaine <= DateTime.Now && semaine.AddDays(7) > DateTime.Now;
+                                    var classeSemaine = estSemaineCourante ? "table-warning" : "";
+                                    <th class="text-center @classeSemaine" style="min-width: 120px;">
+                                        <div style="font-size: 0.75rem; font-weight: 600;">
+                                            @semaine.ToString("dd/MM")
+                                        </div>
+                                        <div style="font-size: 0.7rem; color: var(--gray-500);">
+                                            @semaine.ToString("MMM yyyy")
+                                        </div>
+                                        @if (estSemaineCourante)
+                                        {
+                                            <div style="font-size: 0.65rem; color: var(--warning);">Semaine actuelle</div>
+                                        }
+                                    </th>
+                                }
+                                <th class="text-center">Total</th>
+                                <th class="text-center">Utilisation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var ressource in ressources)
+                            {
+                                var chargesRessource = Model.Charges
+                                    .Where(c => !c.EstSupprime && c.RessourceId == ressource.Id)
+                                    .ToList();
+                                
+                                var totalPrevisionnel = chargesRessource.Sum(c => c.ChargePrevisionnelle);
+                                var totalReel = chargesRessource.Where(c => c.ChargeReelle.HasValue).Sum(c => c.ChargeReelle!.Value);
+                                var capaciteHebdo = ressource.CapaciteHebdomadaire;
+                                var nbSemaines = semaines.Count;
+                                var capaciteTotale = capaciteHebdo * nbSemaines;
+                                var pourcentageUtilisation = capaciteTotale > 0 ? (totalReel / capaciteTotale * 100) : 0;
+                                var classeUtilisation = pourcentageUtilisation > 100 ? "text-danger" : pourcentageUtilisation > 80 ? "text-warning" : "text-success";
+                                
+                                <tr>
+                                    <td style="font-weight: 600;">
+                                        <div>@ressource.Nom @ressource.Prenoms</div>
+                                        <div style="font-size: 0.75rem; color: var(--gray-500);">@ressource.Email</div>
+                                    </td>
+                                    <td class="text-center" style="font-weight: 600;">
+                                        <div>@capaciteHebdo.ToString("F1")h</div>
+                                        <div style="font-size: 0.7rem; color: var(--gray-500);">par semaine</div>
+                                    </td>
+                                    @foreach (var semaine in semaines)
+                                    {
+                                        var charge = chargesRessource.FirstOrDefault(c => 
+                                            c.SemaineDebut.Date == semaine.Date);
+                                        
+                                        var estSemainePassee = semaine.AddDays(7) < DateTime.Now;
+                                        var estSemaineFuture = semaine > DateTime.Now.AddDays(7);
+                                        
+                                        var chargeSemaine = charge?.ChargeReelle ?? charge?.ChargePrevisionnelle ?? 0;
+                                        var pourcentageSemaine = capaciteHebdo > 0 ? (chargeSemaine / capaciteHebdo * 100) : 0;
+                                        var classeSemaineCharge = pourcentageSemaine > 100 ? "border-danger" : pourcentageSemaine > 80 ? "border-warning" : "";
+                                        
+                                        <td class="text-center @classeSemaineCharge" style="@(classeSemaineCharge != "" ? "border: 2px solid;" : "")">
+                                            @if (estSemaineFuture)
+                                            {
+                                                <input type="number" 
+                                                       class="form-control form-control-sm text-center" 
+                                                       step="0.5" 
+                                                       min="0" 
+                                                       max="@((capaciteHebdo * 1.5m).ToString("F1"))"
+                                                       placeholder="Prév."
+                                                       value="@(charge?.ChargePrevisionnelle ?? 0)"
+                                                       data-projet-id="@Model.Id"
+                                                       data-ressource-id="@ressource.Id"
+                                                       data-semaine="@semaine.ToString("yyyy-MM-dd")"
+                                                       data-type="prev"
+                                                       style="width: 80px; margin: 0 auto;"
+                                                       onchange="sauvegarderCharge(this)" />
+                                                @if (charge?.ChargePrevisionnelle > 0)
+                                                {
+                                                    <div style="font-size: 0.65rem; color: var(--gray-500);">
+                                                        @pourcentageSemaine.ToString("F0")%
+                                                    </div>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                                    <input type="number" 
+                                                           class="form-control form-control-sm text-center" 
+                                                           step="0.5" 
+                                                           min="0" 
+                                                           max="@((capaciteHebdo * 1.5m).ToString("F1"))"
+                                                           placeholder="Réel"
+                                                           value="@(charge?.ChargeReelle?.ToString("F1") ?? "")"
+                                                           data-projet-id="@Model.Id"
+                                                           data-ressource-id="@ressource.Id"
+                                                           data-semaine="@semaine.ToString("yyyy-MM-dd")"
+                                                           data-type="reel"
+                                                           style="width: 80px; margin: 0 auto;"
+                                                           onchange="sauvegarderCharge(this)" />
+                                                    @if (charge?.ChargePrevisionnelle > 0)
+                                                    {
+                                                        <div style="font-size: 0.7rem; color: var(--gray-500);">
+                                                            Prév: @charge.ChargePrevisionnelle.ToString("F1")h
+                                                        </div>
+                                                    }
+                                                    @if (charge?.ChargeReelle.HasValue == true && charge.ChargeReelle.Value > 0)
+                                                    {
+                                                        <div style="font-size: 0.65rem; @(pourcentageSemaine > 100 ? "color: var(--danger); font-weight: 600;" : pourcentageSemaine > 80 ? "color: var(--warning);" : "color: var(--success);")">
+                                                            @pourcentageSemaine.ToString("F0")% capacité
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                        </td>
+                                    }
+                                    <td class="text-center" style="font-weight: 600;">
+                                        <div>Réel: @totalReel.ToString("F1")h</div>
+                                        @if (totalPrevisionnel > 0)
+                                        {
+                                            <div style="font-size: 0.75rem; color: var(--gray-500);">
+                                                Prév: @totalPrevisionnel.ToString("F1")h
+                                            </div>
+                                        }
+                                    </td>
+                                    <td class="text-center @classeUtilisation" style="font-weight: 600;">
+                                        <div>@pourcentageUtilisation.ToString("F1")%</div>
+                                        <div style="font-size: 0.7rem; color: var(--gray-500);">
+                                            @totalReel.ToString("F1")h / @capaciteTotale.ToString("F1")h
+                                        </div>
+                                        @if (pourcentageUtilisation > 100)
+                                        {
+                                            <div style="font-size: 0.65rem; color: var(--danger);">
+                                                <i class="bi bi-exclamation-triangle"></i> Surcharge
+                                            </div>
+                                        }
+                                        else if (pourcentageUtilisation > 80)
+                                        {
+                                            <div style="font-size: 0.65rem; color: var(--warning);">
+                                                <i class="bi bi-exclamation-circle"></i> Attention
+                                            </div>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: var(--gray-50); font-weight: 600;">
+                                <td>Total Équipe</td>
+                                @foreach (var semaine in semaines)
+                                {
+                                    var totalSemaine = Model.Charges
+                                        .Where(c => !c.EstSupprime && 
+                                                   c.SemaineDebut.Date == semaine.Date)
+                                        .Sum(c => c.ChargeReelle ?? 0);
+                                    <td class="text-center">@totalSemaine.ToString("F1")h</td>
+                                }
+                                <td class="text-center">
+                                    @{
+                                        var totalGeneral = Model.Charges
+                                            .Where(c => !c.EstSupprime && c.ChargeReelle.HasValue)
+                                            .Sum(c => c.ChargeReelle!.Value);
+                                    }
+                                    @totalGeneral.ToString("F1")h
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+function sauvegarderCharge(input) {
+    const projetId = input.dataset.projetId;
+    const ressourceId = input.dataset.ressourceId;
+    const semaine = input.dataset.semaine;
+    const type = input.dataset.type;
+    const valeur = parseFloat(input.value) || 0;
+
+    // Pour l'instant, on sauvegarde uniquement les charges réelles
+    if (type === 'reel') {
+        fetch('@Url.Action("SaisirCharge", "Projet")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+            },
+            body: new URLSearchParams({
+                projetId: projetId,
+                ressourceId: ressourceId,
+                semaineDebut: semaine,
+                chargeReelle: valeur,
+                commentaire: ''
+            })
+        })
+        .then(response => {
+            if (response.ok) {
+                // Optionnel : afficher un message de succès
+                console.log('Charge sauvegardée');
+            } else {
+                alert('Erreur lors de la sauvegarde');
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Erreur lors de la sauvegarde');
+        });
+    }
+}
+</script>
+

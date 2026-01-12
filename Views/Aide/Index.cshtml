@@ -1,0 +1,1278 @@
+@{
+    ViewData["Title"] = "Guide Complet de l'Application";
+    var roles = ViewBag.UserRoles as List<GestionProjects.Domain.Enums.RoleUtilisateur> ?? new List<GestionProjects.Domain.Enums.RoleUtilisateur>();
+    var userName = ViewBag.UserName as string ?? "Utilisateur";
+    var userDirection = ViewBag.UserDirection as string ?? "Non assigné";
+}
+
+<div class="container-fluid py-4">
+    <!-- En-tête -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm bg-primary text-white">
+                <div class="card-body p-4">
+                    <h1 class="h2 mb-3">
+                        <i class="bi bi-book-fill me-2"></i>
+                        Guide Complet de l'Application de Gestion des Projets IT
+                    </h1>
+                    <p class="lead mb-2">Bienvenue <strong>@userName</strong> (@userDirection)</p>
+                    <p class="mb-0">Ce guide vous accompagne dans l'utilisation complète de l'application. Toutes les fonctionnalités, vues et workflows sont détaillés ci-dessous.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Navigation latérale -->
+        <div class="col-lg-3 mb-4">
+            <div class="sticky-top" style="top: 20px;">
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-person-badge me-2"></i>Vos Rôles</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (roles.Any())
+                        {
+                            <ul class="list-unstyled mb-0">
+                                @foreach (var role in roles)
+                                {
+                                    <li class="mb-2">
+                                        <span class="badge bg-primary-subtle text-primary fs-6">
+                                            @role.ToString()
+                                        </span>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <p class="text-muted mb-0">Aucun rôle assigné</p>
+                        }
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Navigation Rapide</h5>
+                    </div>
+                    <div class="card-body p-2">
+                        <nav class="nav flex-column">
+                            <a class="nav-link text-decoration-none py-2" href="#presentation">
+                                <i class="bi bi-info-circle me-1"></i>Présentation
+                            </a>
+                            <a class="nav-link text-decoration-none py-2" href="#fonctionnalites">
+                                <i class="bi bi-grid me-1"></i>Fonctionnalités
+                            </a>
+                            <a class="nav-link text-decoration-none py-2" href="#vues">
+                                <i class="bi bi-window me-1"></i>Les Vues
+                            </a>
+                            <a class="nav-link text-decoration-none py-2" href="#workflows">
+                                <i class="bi bi-diagram-3 me-1"></i>Workflows
+                            </a>
+                            <a class="nav-link text-decoration-none py-2" href="#demandeur">
+                                <i class="bi bi-person-plus me-1"></i>Guide Demandeur
+                            </a>
+                            <a class="nav-link text-decoration-none py-2" href="#directeur-metier">
+                                <i class="bi bi-shield-check me-1"></i>Guide Directeur Métier
+                            </a>
+                            <a class="nav-link text-decoration-none py-2" href="#chef-projet">
+                                <i class="bi bi-person-workspace me-1"></i>Guide Chef de Projet
+                            </a>
+                            <a class="nav-link text-decoration-none py-2" href="#dsi">
+                                <i class="bi bi-shield-fill-check me-1"></i>Guide DSI
+                            </a>
+                            <a class="nav-link text-decoration-none py-2" href="#admin">
+                                <i class="bi bi-gear me-1"></i>Guide Admin IT
+                            </a>
+                            <a class="nav-link text-decoration-none py-2" href="#contraintes">
+                                <i class="bi bi-exclamation-triangle me-1"></i>Contraintes
+                            </a>
+                            <a class="nav-link text-decoration-none py-2" href="#faq">
+                                <i class="bi bi-question-circle me-1"></i>FAQ
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenu principal -->
+        <div class="col-lg-9">
+            <!-- ============================================ -->
+            <!-- PRÉSENTATION DE L'APPLICATION -->
+            <!-- ============================================ -->
+            <div class="card border-0 shadow-sm mb-4" id="presentation">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        Présentation de l'Application
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <h4 class="text-primary mb-3">Qu'est-ce que cette application ?</h4>
+                    <p class="lead">
+                        L'<strong>Application de Gestion des Projets IT</strong> est une plateforme web centralisée développée pour la 
+                        <strong>Direction des Systèmes d'Information (DSI)</strong> de <strong>Côte d'Ivoire Terminal (CIT)</strong>.
+                    </p>
+
+                    <h5 class="mt-4 mb-3">Objectifs principaux :</h5>
+                    <ul>
+                        <li><strong>Centraliser</strong> toutes les demandes de projets IT dans un outil unique</li>
+                        <li><strong>Structurer</strong> le cycle de vie des projets selon une procédure formalisée en 6 phases</li>
+                        <li><strong>Sécuriser</strong> la gestion des projets avec traçabilité complète</li>
+                        <li><strong>Automatiser</strong> les workflows de validation (Directeur Métier → DSI)</li>
+                        <li><strong>Suivre</strong> en temps réel le portefeuille de projets IT</li>
+                        <li><strong>Piloter</strong> les projets avec des indicateurs RAG (Red/Amber/Green)</li>
+                        <li><strong>Gérer</strong> les budgets, charges et capacités des ressources</li>
+                        <li><strong>Générer</strong> des rapports pour le management (PDF/Excel)</li>
+                    </ul>
+
+                    <h5 class="mt-4 mb-3">À qui s'adresse cette application ?</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul>
+                                <li><strong>Demandeurs</strong> : Créer et suivre leurs demandes de projets</li>
+                                <li><strong>Directeurs Métier</strong> : Valider les demandes et projets de leur direction</li>
+                                <li><strong>Chefs de Projet</strong> : Piloter les projets au quotidien</li>
+                                <li><strong>DSI</strong> : Valider les demandes et piloter le portefeuille</li>
+                                <li><strong>Responsables Solutions IT</strong> : Valider en délégation</li>
+                                <li><strong>Admin IT</strong> : Administrer l'application</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info mt-4">
+                        <i class="bi bi-lightbulb-fill me-2"></i>
+                        <strong>Note importante :</strong> Cette application remplace les processus manuels (emails, fichiers Excel, documents Word) 
+                        pour garantir la traçabilité et l'application systématique de la procédure DSI.
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- FONCTIONNALITÉS PRINCIPALES -->
+            <!-- ============================================ -->
+            <div class="card border-0 shadow-sm mb-4" id="fonctionnalites">
+                <div class="card-header bg-success text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-grid-3x3-gap-fill me-2"></i>
+                        Fonctionnalités Principales
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-primary">
+                                <div class="card-body">
+                                    <h5 class="card-title text-primary">
+                                        <i class="bi bi-file-earmark-plus me-2"></i>
+                                        Gestion des Demandes
+                                    </h5>
+                                    <ul class="card-text">
+                                        <li>Création de demandes de projets</li>
+                                        <li>Upload de cahiers des charges</li>
+                                        <li>Workflow de validation à 2 niveaux</li>
+                                        <li>Suivi de l'état des demandes</li>
+                                        <li>Historique complet des validations</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-info">
+                                <div class="card-body">
+                                    <h5 class="card-title text-info">
+                                        <i class="bi bi-folder-fill me-2"></i>
+                                        Gestion du Portefeuille
+                                    </h5>
+                                    <ul class="card-text">
+                                        <li>Vue d'ensemble de tous les projets</li>
+                                        <li>Indicateur RAG par projet</li>
+                                        <li>Filtres avancés (direction, phase, statut)</li>
+                                        <li>Export PDF/Excel pour le management</li>
+                                        <li>Tableaux de bord personnalisés</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-warning">
+                                <div class="card-body">
+                                    <h5 class="card-title text-warning">
+                                        <i class="bi bi-diagram-3-fill me-2"></i>
+                                        Cycle de Vie des Projets
+                                    </h5>
+                                    <ul class="card-text">
+                                        <li>6 phases structurées</li>
+                                        <li>Gestion des livrables obligatoires</li>
+                                        <li>Validation par phase</li>
+                                        <li>Décisions Go/No-Go</li>
+                                        <li>Historique complet des phases</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-danger">
+                                <div class="card-body">
+                                    <h5 class="card-title text-danger">
+                                        <i class="bi bi-cash-stack me-2"></i>
+                                        Suivi Budgétaire
+                                    </h5>
+                                    <ul class="card-text">
+                                        <li>Budget prévisionnel vs réel</li>
+                                        <li>Calcul automatique des écarts</li>
+                                        <li>Justification obligatoire des écarts</li>
+                                        <li>Saisie des charges hebdomadaires</li>
+                                        <li>Suivi de la capacité des ressources</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-secondary">
+                                <div class="card-body">
+                                    <h5 class="card-title text-secondary">
+                                        <i class="bi bi-file-earmark-pdf me-2"></i>
+                                        Documents & Livrables
+                                    </h5>
+                                    <ul class="card-text">
+                                        <li>Génération automatique de la Charte Projet</li>
+                                        <li>Upload de livrables par phase</li>
+                                        <li>Validation des livrables obligatoires</li>
+                                        <li>Génération de PV de recette</li>
+                                        <li>Archivage sécurisé</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-dark">
+                                <div class="card-body">
+                                    <h5 class="card-title text-dark">
+                                        <i class="bi bi-graph-up me-2"></i>
+                                        Reporting & Tableaux de Bord
+                                    </h5>
+                                    <ul class="card-text">
+                                        <li>Tableaux de bord par rôle</li>
+                                        <li>Rapports PDF pour DSI/DG</li>
+                                        <li>Rapports Excel détaillés</li>
+                                        <li>Statistiques en temps réel</li>
+                                        <li>Graphiques d'évolution</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- LES VUES DE L'APPLICATION -->
+            <!-- ============================================ -->
+            <div class="card border-0 shadow-sm mb-4" id="vues">
+                <div class="card-header bg-info text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-window-stack me-2"></i>
+                        Les Vues de l'Application
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="lead">L'application est organisée en plusieurs vues principales, chacune ayant un rôle spécifique :</p>
+
+                    <div class="accordion" id="vuesAccordion">
+                        <!-- Tableau de bord -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#vue-dashboard">
+                                    <i class="bi bi-speedometer2 me-2"></i><strong>Tableau de Bord (Home/Index)</strong>
+                                </button>
+                            </h2>
+                            <div id="vue-dashboard" class="accordion-collapse collapse show" data-bs-parent="#vuesAccordion">
+                                <div class="accordion-body">
+                                    <h6>Rôle :</h6>
+                                    <p>Vue d'accueil personnalisée selon le rôle de l'utilisateur avec statistiques et indicateurs clés.</p>
+                                    
+                                    <h6 class="mt-3">Contenu selon le rôle :</h6>
+                                    <ul>
+                                        <li><strong>DSI/AdminIT :</strong> Statistiques globales (tous projets, demandes, utilisateurs, risques, anomalies)</li>
+                                        <li><strong>Directeur Métier :</strong> Statistiques de sa direction (projets, demandes à valider)</li>
+                                        <li><strong>Chef de Projet :</strong> Statistiques de ses projets (en cours, risques, livrables)</li>
+                                        <li><strong>Demandeur :</strong> Statistiques de ses demandes (en attente, validées, rejetées)</li>
+                                    </ul>
+
+                                    <h6 class="mt-3">Accès :</h6>
+                                    <p>Menu <code>Accueil</code> ou après connexion automatique</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mes Demandes -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#vue-demandes">
+                                    <i class="bi bi-file-earmark-text me-2"></i><strong>Mes Demandes (DemandeProjet/Index)</strong>
+                                </button>
+                            </h2>
+                            <div id="vue-demandes" class="accordion-collapse collapse" data-bs-parent="#vuesAccordion">
+                                <div class="accordion-body">
+                                    <h6>Rôle :</h6>
+                                    <p>Liste des demandes de projets avec filtres et pagination.</p>
+                                    
+                                    <h6 class="mt-3">Fonctionnalités :</h6>
+                                    <ul>
+                                        <li>Voir toutes ses demandes (Demandeur) ou toutes les demandes (DSI/AdminIT)</li>
+                                        <li>Filtrer par direction, demandeur, directeur métier</li>
+                                        <li>Voir le statut de chaque demande</li>
+                                        <li>Accéder aux détails d'une demande</li>
+                                        <li>Créer une nouvelle demande</li>
+                                        <li>Modifier une demande en brouillon ou en correction</li>
+                                    </ul>
+
+                                    <h6 class="mt-3">Actions possibles :</h6>
+                                    <ul>
+                                        <li><code>Nouvelle Demande</code> : Créer une demande</li>
+                                        <li><code>Détails</code> : Voir les détails complets</li>
+                                        <li><code>Modifier</code> : Modifier une demande (si autorisé)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Créer/Modifier Demande -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#vue-create-demande">
+                                    <i class="bi bi-plus-circle me-2"></i><strong>Créer/Modifier une Demande (DemandeProjet/Create, Edit)</strong>
+                                </button>
+                            </h2>
+                            <div id="vue-create-demande" class="accordion-collapse collapse" data-bs-parent="#vuesAccordion">
+                                <div class="accordion-body">
+                                    <h6>Rôle :</h6>
+                                    <p>Formulaire de création ou modification d'une demande de projet.</p>
+                                    
+                                    <h6 class="mt-3">Champs obligatoires :</h6>
+                                    <ul>
+                                        <li><strong>Titre du projet</strong> : Nom du projet</li>
+                                        <li><strong>Description du besoin</strong> : Description détaillée</li>
+                                        <li><strong>Objectifs</strong> : Objectifs du projet</li>
+                                        <li><strong>Cahier des charges</strong> : Fichier PDF, Word ou Excel (obligatoire)</li>
+                                        <li><strong>Directeur Métier</strong> : Sélection automatique pour Demandeur</li>
+                                    </ul>
+
+                                    <h6 class="mt-3">Champs optionnels :</h6>
+                                    <ul>
+                                        <li>Contexte / Problème</li>
+                                        <li>Urgence (Basse/Moyenne/Haute)</li>
+                                        <li>Criticité</li>
+                                        <li>Date souhaitée</li>
+                                        <li>Documents complémentaires</li>
+                                    </ul>
+
+                                    <h6 class="mt-3">Contraintes :</h6>
+                                    <ul>
+                                        <li>Le Demandeur ne peut modifier que ses propres demandes</li>
+                                        <li>Une demande validée ne peut plus être modifiée</li>
+                                        <li>Le cahier des charges est obligatoire</li>
+                                        <li>Taille max fichier : 10 MB</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Détails Demande -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#vue-details-demande">
+                                    <i class="bi bi-eye me-2"></i><strong>Détails d'une Demande (DemandeProjet/Details)</strong>
+                                </button>
+                            </h2>
+                            <div id="vue-details-demande" class="accordion-collapse collapse" data-bs-parent="#vuesAccordion">
+                                <div class="accordion-body">
+                                    <h6>Rôle :</h6>
+                                    <p>Vue détaillée d'une demande avec toutes les informations et actions possibles.</p>
+                                    
+                                    <h6 class="mt-3">Informations affichées :</h6>
+                                    <ul>
+                                        <li>Toutes les informations de la demande</li>
+                                        <li>Statut actuel et historique</li>
+                                        <li>Documents joints (cahier des charges, annexes)</li>
+                                        <li>Commentaires de validation</li>
+                                        <li>Historique des validations</li>
+                                        <li>Projet créé (si validée)</li>
+                                    </ul>
+
+                                    <h6 class="mt-3">Actions selon le rôle :</h6>
+                                    <ul>
+                                        <li><strong>Demandeur :</strong> Modifier (si brouillon/correction), Ajouter documents</li>
+                                        <li><strong>Directeur Métier :</strong> Valider, Rejeter, Demander correction</li>
+                                        <li><strong>DSI :</strong> Valider (crée le projet), Rejeter, Renvoyer</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Validations DM -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#vue-validation-dm">
+                                    <i class="bi bi-check-square me-2"></i><strong>Validations Directeur Métier (DemandeProjet/ListeValidationDM)</strong>
+                                </button>
+                            </h2>
+                            <div id="vue-validation-dm" class="accordion-collapse collapse" data-bs-parent="#vuesAccordion">
+                                <div class="accordion-body">
+                                    <h6>Rôle :</h6>
+                                    <p>Liste des demandes en attente de validation par le Directeur Métier.</p>
+                                    
+                                    <h6 class="mt-3">Filtrage automatique :</h6>
+                                    <ul>
+                                        <li>Le Directeur Métier voit uniquement les demandes de sa direction</li>
+                                        <li>DSI/AdminIT voient toutes les demandes</li>
+                                    </ul>
+
+                                    <h6 class="mt-3">Statuts affichés :</h6>
+                                    <ul>
+                                        <li>En attente de validation DM</li>
+                                        <li>Correction demandée par DM</li>
+                                        <li>Retournée au DM par DSI</li>
+                                    </ul>
+
+                                    <h6 class="mt-3">Actions possibles :</h6>
+                                    <ul>
+                                        <li><code>Valider</code> : Passe à la validation DSI</li>
+                                        <li><code>Rejeter</code> : Rejette la demande avec commentaire</li>
+                                        <li><code>Demander correction</code> : Renvoie au demandeur</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Validations DSI -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#vue-validation-dsi">
+                                    <i class="bi bi-shield-check me-2"></i><strong>Validations DSI (DemandeProjet/ListeValidationDSI)</strong>
+                                </button>
+                            </h2>
+                            <div id="vue-validation-dsi" class="accordion-collapse collapse" data-bs-parent="#vuesAccordion">
+                                <div class="accordion-body">
+                                    <h6>Rôle :</h6>
+                                    <p>Liste des demandes validées par le DM et en attente de validation DSI.</p>
+                                    
+                                    <h6 class="mt-3">Accès :</h6>
+                                    <ul>
+                                        <li>DSI, AdminIT, Responsable Solutions IT (en délégation)</li>
+                                    </ul>
+
+                                    <h6 class="mt-3">Actions possibles :</h6>
+                                    <ul>
+                                        <li><code>Valider</code> : Crée automatiquement le projet et assigne un chef de projet</li>
+                                        <li><code>Rejeter</code> : Rejette la demande avec commentaire</li>
+                                        <li><code>Renvoyer au demandeur</code> : Pour demander des précisions</li>
+                                        <li><code>Renvoyer au DM</code> : Pour révision métier</li>
+                                    </ul>
+
+                                    <h6 class="mt-3">Important :</h6>
+                                    <p>Lors de la validation, vous devez sélectionner un <strong>Chef de Projet</strong> qui sera assigné au projet créé.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Portefeuille -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#vue-portefeuille">
+                                    <i class="bi bi-folder-fill me-2"></i><strong>Portefeuille de Projets (Projet/Portefeuille)</strong>
+                                </button>
+                            </h2>
+                            <div id="vue-portefeuille" class="accordion-collapse collapse" data-bs-parent="#vuesAccordion">
+                                <div class="accordion-body">
+                                    <h6>Rôle :</h6>
+                                    <p>Vue d'ensemble de tous les projets avec indicateur RAG et filtres avancés.</p>
+                                    
+                                    <h6 class="mt-3">Informations affichées :</h6>
+                                    <ul>
+                                        <li>Numéro et titre du projet</li>
+                                        <li>Direction métier</li>
+                                        <li>Chef de Projet</li>
+                                        <li>Statut global</li>
+                                        <li>Phase en cours</li>
+                                        <li>Avancement (%)</li>
+                                        <li><strong>Indicateur RAG</strong> (Vert/Orange/Rouge)</li>
+                                    </ul>
+
+                                    <h6 class="mt-3">Filtres disponibles :</h6>
+                                    <ul>
+                                        <li>Par direction</li>
+                                        <li>Par statut (En cours, Suspendu, Clôturé)</li>
+                                        <li>Par phase</li>
+                                        <li>Par chef de projet</li>
+                                        <li>Par indicateur RAG</li>
+                                    </ul>
+
+                                    <h6 class="mt-3">Actions :</h6>
+                                    <ul>
+                                        <li><code>Exporter Excel</code> : Génère un rapport complet</li>
+                                        <li><code>Détails</code> : Accède aux détails d'un projet</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Liste Projets -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#vue-projets">
+                                    <i class="bi bi-list-ul me-2"></i><strong>Liste des Projets (Projet/Index)</strong>
+                                </button>
+                            </h2>
+                            <div id="vue-projets" class="accordion-collapse collapse" data-bs-parent="#vuesAccordion">
+                                <div class="accordion-body">
+                                    <h6>Rôle :</h6>
+                                    <p>Liste des projets avec filtres selon le rôle de l'utilisateur.</p>
+                                    
+                                    <h6 class="mt-3">Filtrage automatique :</h6>
+                                    <ul>
+                                        <li><strong>DSI/AdminIT/Responsable Solutions IT :</strong> Tous les projets</li>
+                                        <li><strong>Chef de Projet :</strong> Projets où il est chef</li>
+                                        <li><strong>Directeur Métier :</strong> Projets de sa direction</li>
+                                    </ul>
+
+                                    <h6 class="mt-3">Filtres disponibles :</h6>
+                                    <ul>
+                                        <li>Direction</li>
+                                        <li>Chef de Projet</li>
+                                        <li>Phase</li>
+                                        <li>Statut</li>
+                                        <li>État (Vert/Orange/Rouge)</li>
+                                    </ul>
+
+                                    <h6 class="mt-3">Pagination :</h6>
+                                    <p>20 projets par page par défaut (configurable de 10 à 100)</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Détails Projet -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#vue-details-projet">
+                                    <i class="bi bi-file-earmark-text-fill me-2"></i><strong>Détails d'un Projet (Projet/Details)</strong>
+                                </button>
+                            </h2>
+                            <div id="vue-details-projet" class="accordion-collapse collapse" data-bs-parent="#vuesAccordion">
+                                <div class="accordion-body">
+                                    <h6>Rôle :</h6>
+                                    <p>Vue complète d'un projet avec onglets par phase et toutes les informations.</p>
+                                    
+                                    <h6 class="mt-3">Onglets disponibles :</h6>
+                                    <ul>
+                                        <li><strong>Synthèse</strong> : Vue d'ensemble, équipe, budget</li>
+                                        <li><strong>Analyse & Clarification</strong> : Équipe, risques, charte projet</li>
+                                        <li><strong>Planification</strong> : Planning, budget, livrables</li>
+                                        <li><strong>Exécution & Suivi</strong> : Avancement, comptes-rendus, risques, décisions Go/No-Go</li>
+                                        <li><strong>UAT & MEP</strong> : Tests, anomalies, PV de recette</li>
+                                        <li><strong>Clôture</strong> : Bilan, leçons apprises</li>
+                                        <li><strong>Historique</strong> : Historique complet des phases</li>
+                                        <li><strong>Charges</strong> : Saisie des charges hebdomadaires</li>
+                                    </ul>
+
+                                    <h6 class="mt-3">Actions selon le rôle :</h6>
+                                    <ul>
+                                        <li><strong>Chef de Projet :</strong> Toutes les actions de pilotage</li>
+                                        <li><strong>Directeur Métier :</strong> Valider charte, planning, clôture</li>
+                                        <li><strong>DSI :</strong> Valider charte, planning, clôture, changer chef de projet</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fiche Projet -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#vue-fiche-projet">
+                                    <i class="bi bi-file-earmark-spreadsheet me-2"></i><strong>Fiche Projet (Projet/FicheProjet)</strong>
+                                </button>
+                            </h2>
+                            <div id="vue-fiche-projet" class="accordion-collapse collapse" data-bs-parent="#vuesAccordion">
+                                <div class="accordion-body">
+                                    <h6>Rôle :</h6>
+                                    <p>Formulaire de gestion de la fiche projet (budget, planning, équipe).</p>
+                                    
+                                    <h6 class="mt-3">Sections :</h6>
+                                    <ul>
+                                        <li><strong>Budget :</strong> Prévisionnel, consommé, écart, justification</li>
+                                        <li><strong>Planning :</strong> Dates, jalons</li>
+                                        <li><strong>Équipe :</strong> Membres, rôles, capacités</li>
+                                    </ul>
+
+                                    <h6 class="mt-3">Contraintes :</h6>
+                                    <ul>
+                                        <li>Justification obligatoire si écart budget > 5%</li>
+                                        <li>Modification par Chef de Projet ou DSI uniquement</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Charges -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#vue-charges">
+                                    <i class="bi bi-clock-history me-2"></i><strong>Charges (Projet/Charges)</strong>
+                                </button>
+                            </h2>
+                            <div id="vue-charges" class="accordion-collapse collapse" data-bs-parent="#vuesAccordion">
+                                <div class="accordion-body">
+                                    <h6>Rôle :</h6>
+                                    <p>Saisie des charges réelles hebdomadaires par ressource.</p>
+                                    
+                                    <h6 class="mt-3">Fonctionnalités :</h6>
+                                    <ul>
+                                        <li>Tableau avec ressources en lignes et semaines en colonnes</li>
+                                        <li>Affichage de la capacité hebdomadaire par ressource</li>
+                                        <li>Saisie des charges prévisionnelles et réelles</li>
+                                        <li>Calcul automatique du pourcentage d'utilisation</li>
+                                        <li>Alertes visuelles (rouge/orange/vert) selon l'utilisation</li>
+                                    </ul>
+
+                                    <h6 class="mt-3">Contraintes :</h6>
+                                    <ul>
+                                        <li>Charge réelle max = 1.5 × capacité hebdomadaire</li>
+                                        <li>Modification par Chef de Projet uniquement</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Administration -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#vue-admin">
+                                    <i class="bi bi-gear-fill me-2"></i><strong>Administration (Admin/*)</strong>
+                                </button>
+                            </h2>
+                            <div id="vue-admin" class="accordion-collapse collapse" data-bs-parent="#vuesAccordion">
+                                <div class="accordion-body">
+                                    <h6>Rôle :</h6>
+                                    <p>Gestion administrative de l'application (AdminIT uniquement).</p>
+                                    
+                                    <h6 class="mt-3">Vues disponibles :</h6>
+                                    <ul>
+                                        <li><strong>Utilisateurs</strong> : Créer, modifier, importer, gérer les rôles</li>
+                                        <li><strong>Directions</strong> : Gérer les directions</li>
+                                        <li><strong>Services</strong> : Gérer les services</li>
+                                        <li><strong>Délégations</strong> : Gérer les délégations DSI et Chef de Projet</li>
+                                        <li><strong>Paramètres</strong> : Configuration système</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- WORKFLOWS DÉTAILLÉS -->
+            <!-- ============================================ -->
+            <div class="card border-0 shadow-sm mb-4" id="workflows">
+                <div class="card-header bg-warning text-dark">
+                    <h3 class="mb-0">
+                        <i class="bi bi-diagram-3-fill me-2"></i>
+                        Workflows Détaillés
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <h4 class="text-warning mb-4">Workflow de Création et Validation d'une Demande</h4>
+                    <div class="timeline">
+                        <div class="timeline-item mb-4">
+                            <div class="card border-primary">
+                                <div class="card-header bg-primary text-white">
+                                    <strong>Étape 1 : Création de la Demande</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Acteur :</strong> Demandeur</p>
+                                    <p><strong>Action :</strong></p>
+                                    <ol>
+                                        <li>Menu <code>Mes Demandes</code> → <code>Nouvelle Demande</code></li>
+                                        <li>Remplir le formulaire (titre, description, objectifs, etc.)</li>
+                                        <li>Uploader le cahier des charges (obligatoire)</li>
+                                        <li>Ajouter des documents complémentaires (optionnel)</li>
+                                        <li>Cliquer sur <code>Soumettre</code></li>
+                                    </ol>
+                                    <p><strong>Résultat :</strong> La demande passe au statut "En attente de validation Directeur Métier"</p>
+                                    <p><strong>Notification :</strong> Le Directeur Métier reçoit une notification</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="timeline-item mb-4">
+                            <div class="card border-warning">
+                                <div class="card-header bg-warning text-dark">
+                                    <strong>Étape 2 : Validation Directeur Métier</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Acteur :</strong> Directeur Métier</p>
+                                    <p><strong>Action :</strong></p>
+                                    <ol>
+                                        <li>Menu <code>Validations</code> → <code>Validations DM</code></li>
+                                        <li>Consulter la demande (cliquer sur le titre)</li>
+                                        <li>Analyser le besoin et l'alignement métier</li>
+                                        <li>Choisir une action :
+                                            <ul>
+                                                <li><code>Valider</code> : Passe à la validation DSI</li>
+                                                <li><code>Rejeter</code> : Rejette avec commentaire</li>
+                                                <li><code>Demander correction</code> : Renvoie au demandeur</li>
+                                            </ul>
+                                        </li>
+                                    </ol>
+                                    <p><strong>Résultat selon l'action :</strong></p>
+                                    <ul>
+                                        <li>Validation → Statut "En attente de validation DSI"</li>
+                                        <li>Rejet → Statut "Rejetée par Directeur Métier"</li>
+                                        <li>Correction → Statut "Correction demandée par Directeur Métier"</li>
+                                    </ul>
+                                    <p><strong>Notification :</strong> Le demandeur reçoit une notification</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="timeline-item mb-4">
+                            <div class="card border-danger">
+                                <div class="card-header bg-danger text-white">
+                                    <strong>Étape 3 : Validation DSI</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Acteur :</strong> DSI (ou Responsable Solutions IT en délégation)</p>
+                                    <p><strong>Action :</strong></p>
+                                    <ol>
+                                        <li>Menu <code>Validations</code> → <code>Validations DSI</code></li>
+                                        <li>Consulter la demande</li>
+                                        <li>Analyser l'alignement stratégique et la faisabilité</li>
+                                        <li>Choisir une action :
+                                            <ul>
+                                                <li><code>Valider</code> : Crée le projet et assigne un chef de projet</li>
+                                                <li><code>Rejeter</code> : Rejette avec commentaire</li>
+                                                <li><code>Renvoyer au demandeur</code> : Pour précisions</li>
+                                                <li><code>Renvoyer au DM</code> : Pour révision métier</li>
+                                            </ul>
+                                        </li>
+                                        <li>Si validation : Sélectionner un Chef de Projet</li>
+                                    </ol>
+                                    <p><strong>Résultat :</strong> Si validée, un projet est créé automatiquement avec le Chef de Projet assigné</p>
+                                    <p><strong>Notification :</strong> Le demandeur, le DM et le Chef de Projet reçoivent des notifications</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h4 class="text-warning mb-4 mt-5">Workflow du Cycle de Vie d'un Projet</h4>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-info h-100">
+                                <div class="card-header bg-info text-white">
+                                    <strong>Phase 1 : Analyse & Clarification</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Acteur principal :</strong> Chef de Projet</p>
+                                    <p><strong>Actions :</strong></p>
+                                    <ul>
+                                        <li>Constituer l'équipe projet</li>
+                                        <li>Identifier les risques initiaux</li>
+                                        <li>Générer la Charte Projet (PDF)</li>
+                                        <li>Valider la charte (DM + DSI)</li>
+                                    </ul>
+                                    <p><strong>Livrables obligatoires :</strong></p>
+                                    <ul>
+                                        <li>Charte Projet signée</li>
+                                        <li>Analyse des risques</li>
+                                    </ul>
+                                    <p><strong>Passage phase suivante :</strong> Validation DM + DSI + livrables obligatoires</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-success h-100">
+                                <div class="card-header bg-success text-white">
+                                    <strong>Phase 2 : Planification & Validation</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Acteur principal :</strong> Chef de Projet</p>
+                                    <p><strong>Actions :</strong></p>
+                                    <ul>
+                                        <li>Définir le planning détaillé</li>
+                                        <li>Estimer le budget prévisionnel</li>
+                                        <li>Lister les livrables obligatoires</li>
+                                        <li>Valider (DM + DSI)</li>
+                                    </ul>
+                                    <p><strong>Livrables obligatoires :</strong></p>
+                                    <ul>
+                                        <li>Planning détaillé</li>
+                                        <li>Budget prévisionnel</li>
+                                    </ul>
+                                    <p><strong>Passage phase suivante :</strong> Validation DM + DSI + livrables obligatoires</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-primary h-100">
+                                <div class="card-header bg-primary text-white">
+                                    <strong>Phase 3 : Exécution & Suivi</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Acteur principal :</strong> Chef de Projet</p>
+                                    <p><strong>Actions :</strong></p>
+                                    <ul>
+                                        <li>Mettre à jour l'avancement régulièrement</li>
+                                        <li>Rédiger les comptes-rendus</li>
+                                        <li>Suivre les risques et anomalies</li>
+                                        <li>Prendre décision Go/No-Go UAT</li>
+                                        <li>Saisir les charges hebdomadaires</li>
+                                    </ul>
+                                    <p><strong>Livrables obligatoires :</strong></p>
+                                    <ul>
+                                        <li>Comptes-rendus de réunions</li>
+                                        <li>Suivi des risques</li>
+                                    </ul>
+                                    <p><strong>Passage phase suivante :</strong> Décision Go UAT</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-warning h-100">
+                                <div class="card-header bg-warning text-dark">
+                                    <strong>Phase 4 : UAT & Mise en Production</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Acteur principal :</strong> Chef de Projet</p>
+                                    <p><strong>Actions :</strong></p>
+                                    <ul>
+                                        <li>Gérer les cahiers de tests</li>
+                                        <li>Suivre les anomalies</li>
+                                        <li>Générer PV de recette</li>
+                                        <li>Générer PV de mise en production</li>
+                                        <li>Gérer l'hypercare</li>
+                                    </ul>
+                                    <p><strong>Livrables obligatoires :</strong></p>
+                                    <ul>
+                                        <li>PV de recette</li>
+                                        <li>PV de mise en production</li>
+                                    </ul>
+                                    <p><strong>Passage phase suivante :</strong> Recette validée</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-secondary h-100">
+                                <div class="card-header bg-secondary text-white">
+                                    <strong>Phase 5 : Clôture & Leçons Apprises</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Acteur principal :</strong> Chef de Projet</p>
+                                    <p><strong>Actions :</strong></p>
+                                    <ul>
+                                        <li>Rédiger le bilan projet</li>
+                                        <li>Capitaliser les leçons apprises</li>
+                                        <li>Comparer prévisionnel vs réel</li>
+                                        <li>Initier la demande de clôture</li>
+                                    </ul>
+                                    <p><strong>Livrables obligatoires :</strong></p>
+                                    <ul>
+                                        <li>Bilan projet</li>
+                                        <li>Leçons apprises</li>
+                                    </ul>
+                                    <p><strong>Clôture :</strong> Validation DM + DSI</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- GUIDE PAR RÔLE -->
+            <!-- ============================================ -->
+            @if (roles.Contains(GestionProjects.Domain.Enums.RoleUtilisateur.Demandeur))
+            {
+                @await Html.PartialAsync("_GuideDemandeur")
+            }
+
+            @if (roles.Contains(GestionProjects.Domain.Enums.RoleUtilisateur.DirecteurMetier))
+            {
+                @await Html.PartialAsync("_GuideDirecteurMetier")
+            }
+
+            @if (roles.Contains(GestionProjects.Domain.Enums.RoleUtilisateur.ChefDeProjet))
+            {
+                @await Html.PartialAsync("_GuideChefProjet")
+            }
+
+            @if (roles.Contains(GestionProjects.Domain.Enums.RoleUtilisateur.DSI))
+            {
+                @await Html.PartialAsync("_GuideDSI")
+            }
+
+            @if (roles.Contains(GestionProjects.Domain.Enums.RoleUtilisateur.AdminIT))
+            {
+                @await Html.PartialAsync("_GuideAdminIT")
+            }
+
+            @if (roles.Contains(GestionProjects.Domain.Enums.RoleUtilisateur.ResponsableSolutionsIT))
+            {
+                @await Html.PartialAsync("_GuideResponsableSolutionsIT")
+            }
+
+            <!-- ============================================ -->
+            <!-- CONTRAINTES ET RÈGLES -->
+            <!-- ============================================ -->
+            <div class="card border-0 shadow-sm mb-4" id="contraintes">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Contraintes et Règles Importantes
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <h4 class="text-danger mb-3">Contraintes de Sécurité</h4>
+                    <div class="alert alert-danger">
+                        <ul class="mb-0">
+                            <li><strong>Authentification obligatoire :</strong> Toutes les pages nécessitent une connexion</li>
+                            <li><strong>Droits d'accès :</strong> Chaque utilisateur voit uniquement les projets autorisés selon son rôle</li>
+                            <li><strong>Audit trail :</strong> Toutes les actions critiques sont enregistrées</li>
+                            <li><strong>Session :</strong> Déconnexion automatique après 30 minutes d'inactivité</li>
+                        </ul>
+                    </div>
+
+                    <h4 class="text-danger mb-3 mt-4">Contraintes Fonctionnelles</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Demandes</h5>
+                            <ul>
+                                <li>Le cahier des charges est <strong>obligatoire</strong></li>
+                                <li>Taille max fichier : <strong>10 MB</strong></li>
+                                <li>Formats autorisés : PDF, Word, Excel</li>
+                                <li>Une demande validée ne peut plus être modifiée</li>
+                                <li>Le Demandeur ne peut modifier que ses propres demandes</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Projets</h5>
+                            <ul>
+                                <li>Passage de phase bloqué si <strong>livrables obligatoires manquants</strong></li>
+                                <li>Justification obligatoire si écart budget > <strong>5%</strong></li>
+                                <li>Charge réelle max = <strong>1.5 × capacité hebdomadaire</strong></li>
+                                <li>Le Chef de Projet ne peut modifier que ses projets</li>
+                                <li>Le Directeur Métier ne voit que les projets de sa direction</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <h4 class="text-danger mb-3 mt-4">Règles de Validation</h4>
+                    <ul>
+                        <li><strong>Validation séquentielle :</strong> DM puis DSI (pas de validation simultanée)</li>
+                        <li><strong>Validation DSI :</strong> Crée automatiquement le projet</li>
+                        <li><strong>Rejet :</strong> La demande est définitivement rejetée (pas de réouverture)</li>
+                        <li><strong>Correction :</strong> La demande retourne au demandeur pour modification</li>
+                    </ul>
+
+                    <h4 class="text-danger mb-3 mt-4">Règles de Calcul RAG</h4>
+                    <p>L'indicateur RAG (Red/Amber/Green) est calculé automatiquement selon :</p>
+                    <ul>
+                        <li><strong>Budget :</strong> Écart > 10% = Rouge, 5-10% = Orange, < 5% = Vert</li>
+                        <li><strong>Planning :</strong> Retard > 20% = Rouge, 10-20% = Orange, < 10% = Vert</li>
+                        <li><strong>Risques :</strong> Risque critique = Rouge, Risque élevé = Orange, Sinon = Vert</li>
+                        <li><strong>Livrables :</strong> Livrable obligatoire manquant = Rouge</li>
+                    </ul>
+                    <p class="text-muted">Le RAG final est le plus défavorable des critères.</p>
+                </div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- FAQ ENRICHIE -->
+            <!-- ============================================ -->
+            <div class="card border-0 shadow-sm mb-4" id="faq">
+                <div class="card-header bg-light">
+                    <h3 class="mb-0">
+                        <i class="bi bi-question-circle-fill me-2"></i>
+                        Questions Fréquentes (FAQ)
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="faqAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                    Comment changer mon mot de passe ?
+                                </button>
+                            </h2>
+                            <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    <ol>
+                                        <li>Cliquez sur votre nom en haut à droite</li>
+                                        <li>Sélectionnez <code>Mon Profil</code></li>
+                                        <li>Dans la section <code>Changer le mot de passe</code>, saisissez :
+                                            <ul>
+                                                <li>Votre mot de passe actuel</li>
+                                                <li>Votre nouveau mot de passe</li>
+                                                <li>La confirmation du nouveau mot de passe</li>
+                                            </ul>
+                                        </li>
+                                        <li>Cliquez sur <code>Enregistrer</code></li>
+                                    </ol>
+                                    <p class="text-muted mb-0"><strong>Note :</strong> Le mot de passe doit contenir au moins 6 caractères.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                    Que signifie l'indicateur RAG ?
+                                </button>
+                            </h2>
+                            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    <p><strong>RAG</strong> signifie <strong>Red / Amber / Green</strong> (Rouge / Orange / Vert) :</p>
+                                    <ul>
+                                        <li><span class="badge bg-danger">🔴 Rouge</span> : Projet en difficulté (budget, planning, risques critiques, livrables manquants)</li>
+                                        <li><span class="badge bg-warning">🟠 Orange</span> : Projet à surveiller (écarts modérés, risques élevés)</li>
+                                        <li><span class="badge bg-success">🟢 Vert</span> : Projet dans les clous (budget, planning, risques sous contrôle)</li>
+                                    </ul>
+                                    <p>L'indicateur est calculé automatiquement en fonction du budget, planning, risques et livrables. 
+                                    Il est mis à jour en temps réel et visible dans le portefeuille et les détails du projet.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                    Pourquoi je ne peux pas changer de phase ?
+                                </button>
+                            </h2>
+                            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    <p>Le système bloque automatiquement le passage à la phase suivante si :</p>
+                                    <ul>
+                                        <li>Des <strong>livrables obligatoires</strong> sont manquants pour la phase actuelle</li>
+                                        <li>Les <strong>validations requises</strong> n'ont pas été effectuées (DM et/ou DSI)</li>
+                                    </ul>
+                                    <p><strong>Solution :</strong></p>
+                                    <ol>
+                                        <li>Consultez la liste des livrables obligatoires dans les détails du projet</li>
+                                        <li>Uploadez tous les livrables manquants</li>
+                                        <li>Assurez-vous que les validations sont effectuées</li>
+                                        <li>Le passage à la phase suivante sera alors débloqué</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                                    Comment recevoir des notifications ?
+                                </button>
+                            </h2>
+                            <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    <p>Les notifications sont <strong>automatiques</strong>. Vous recevez une notification pour :</p>
+                                    <ul>
+                                        <li>Chaque changement de statut de vos demandes</li>
+                                        <li>Chaque validation requise (DM, DSI)</li>
+                                        <li>Chaque changement de phase de projet</li>
+                                        <li>Chaque nouvelle anomalie ou risque critique</li>
+                                        <li>Chaque demande de correction</li>
+                                        <li>Chaque assignation comme Chef de Projet</li>
+                                    </ul>
+                                    <p>Consultez vos notifications via l'icône <i class="bi bi-bell"></i> en haut à droite. 
+                                    Les notifications non lues sont marquées en rouge.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">
+                                    Comment générer la Charte Projet ?
+                                </button>
+                            </h2>
+                            <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    <ol>
+                                        <li>Accédez aux détails du projet</li>
+                                        <li>Onglet <code>Analyse & Clarification</code></li>
+                                        <li>Remplissez toutes les informations (équipe, jalons, parties prenantes)</li>
+                                        <li>Cliquez sur <code>Générer la Charte Projet (PDF)</code></li>
+                                        <li>La charte est générée automatiquement et téléchargeable</li>
+                                        <li>Imprimez-la pour signature (Sponsor et Chef de Projet)</li>
+                                        <li>Une fois signée, uploadez-la dans les livrables</li>
+                                    </ol>
+                                    <p class="text-muted mb-0"><strong>Note :</strong> La charte doit être validée par le DM et la DSI avant de passer à la phase suivante.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq6">
+                                    Comment exporter un rapport ?
+                                </button>
+                            </h2>
+                            <div id="faq6" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    <p><strong>Rapport Portefeuille (Excel) :</strong></p>
+                                    <ol>
+                                        <li>Menu <code>Projets</code> → <code>Portefeuille</code></li>
+                                        <li>Appliquez les filtres souhaités (direction, phase, statut, etc.)</li>
+                                        <li>Cliquez sur <code>Exporter Excel</code></li>
+                                        <li>Le fichier Excel est généré avec tous les projets, budgets, charges, risques</li>
+                                    </ol>
+                                    <p><strong>Rapport DSI/DG (PDF) :</strong></p>
+                                    <ol>
+                                        <li>Menu <code>Projets</code> → <code>Portefeuille</code></li>
+                                        <li>Cliquez sur <code>Générer Rapport PDF</code></li>
+                                        <li>Le rapport PDF est généré avec synthèse et détails</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq7">
+                                    Que faire si j'ai oublié mon mot de passe ?
+                                </button>
+                            </h2>
+                            <div id="faq7" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    <p>Contactez l'<strong>Admin IT</strong> qui pourra réinitialiser votre mot de passe.</p>
+                                    <p>L'Admin IT peut :</p>
+                                    <ul>
+                                        <li>Réinitialiser votre mot de passe depuis la gestion des utilisateurs</li>
+                                        <li>Vous fournir un nouveau mot de passe temporaire</li>
+                                        <li>Vous devrez changer ce mot de passe au prochain login</li>
+                                    </ul>
+                                    <p class="text-muted mb-0"><strong>Contact :</strong> support.it@cit.ci</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq8">
+                                    Comment gérer les délégations ?
+                                </button>
+                            </h2>
+                            <div id="faq8" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    <p><strong>Pour la DSI :</strong></p>
+                                    <ol>
+                                        <li>Menu <code>Administration</code> → <code>Délégations</code></li>
+                                        <li>Onglet <code>Délégations DSI</code></li>
+                                        <li>Cliquez sur <code>Nouvelle Délégation</code></li>
+                                        <li>Sélectionnez un Responsable Solutions IT</li>
+                                        <li>Définissez la période (date début, date fin)</li>
+                                        <li>Validez</li>
+                                    </ol>
+                                    <p>Pendant la période de délégation, le Responsable Solutions IT peut valider les demandes à la place de la DSI.</p>
+                                    <p><strong>Pour le Chef de Projet :</strong></p>
+                                    <p>Même processus, mais la délégation est pour un projet spécifique et jusqu'à la clôture du projet.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- CONTACT -->
+            <!-- ============================================ -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-envelope-fill me-2"></i>
+                        Besoin d'aide supplémentaire ?
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="lead">Pour toute question, problème technique ou demande d'assistance :</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card border-primary mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title text-primary">
+                                        <i class="bi bi-headset me-2"></i>Support IT
+                                    </h5>
+                                    <p class="card-text">
+                                        <strong>Email :</strong> support.it@cit.ci<br>
+                                        <strong>Pour :</strong> Problèmes techniques, bugs, assistance utilisateur
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-danger mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title text-danger">
+                                        <i class="bi bi-shield-fill-check me-2"></i>DSI
+                                    </h5>
+                                    <p class="card-text">
+                                        <strong>Email :</strong> dsi@cit.ci<br>
+                                        <strong>Pour :</strong> Questions fonctionnelles, demandes d'évolution
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info mt-3 mb-0">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <strong>Note :</strong> Ce guide est mis à jour régulièrement. N'hésitez pas à le consulter pour les dernières informations.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .timeline-item {
+        position: relative;
+        padding-left: 30px;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: 10px;
+        top: 0;
+        bottom: -20px;
+        width: 2px;
+        background: #dee2e6;
+    }
+    
+    .timeline-item:last-child::before {
+        display: none;
+    }
+    
+    .timeline-item::after {
+        content: '';
+        position: absolute;
+        left: 5px;
+        top: 20px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #0d6efd;
+        border: 2px solid #fff;
+    }
+</style>

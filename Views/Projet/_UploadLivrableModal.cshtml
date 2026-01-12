@@ -1,0 +1,72 @@
+@{
+    var projetId = ViewBag.ProjetId ?? Model?.Id;
+    var phase = ViewBag.Phase ?? Model?.PhaseActuelle;
+}
+
+<div class="modal fade" id="uploadLivrableModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
+            <form asp-action="UploadLivrable" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="projetId" value="@projetId" />
+                <input type="hidden" name="phase" value="@phase" />
+                <div class="modal-header" style="border-bottom: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <h5 class="modal-title" style="font-weight: 600; color: var(--gray-800); display: flex; align-items: center; gap: var(--spacing-sm);">
+                        <i class="bi bi-upload" style="color: var(--primary-blue);"></i>
+                        Upload Livrable
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: var(--spacing-lg);">
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Type de livrable *</label>
+                        <select name="typeLivrable" class="form-control-modern" asp-items="Html.GetEnumSelectList<GestionProjects.Domain.Enums.TypeLivrable>()" required></select>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Fichier *</label>
+                        <input type="file" name="fichier" class="form-control-modern" required accept=".pdf,.doc,.docx,.xls,.xlsx,.pptx,.zip" />
+                        <small style="color: var(--gray-500); font-size: 0.875rem;">Formats acceptés: PDF, DOC, DOCX, XLS, XLSX, PPTX, ZIP</small>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Version (optionnel)</label>
+                        <input type="text" name="version" class="form-control-modern" placeholder="Ex: 1.0, 2.1, etc." />
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Commentaire (optionnel)</label>
+                        <textarea name="commentaire" class="form-control-modern" rows="3" placeholder="Ajoutez un commentaire..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-upload"></i>
+                        Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('uploadLivrableModal');
+        if (modal) {
+            modal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const phase = button.getAttribute('data-phase');
+                if (phase) {
+                    const phaseInput = modal.querySelector('input[name="phase"]');
+                    if (phaseInput) {
+                        phaseInput.value = phase;
+                    }
+                }
+            });
+        }
+    });
+</script>
+
+

@@ -1,0 +1,306 @@
+@model IEnumerable<GestionProjects.Domain.Models.DemandeProjet>
+
+@{
+    ViewData["Title"] = "Mes Demandes";
+}
+
+<div class="fade-in">
+    @if (User.IsInRole("DSI") || User.IsInRole("AdminIT"))
+    {
+        <div class="card-modern mb-4">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                    <i class="bi bi-funnel"></i>
+                    Filtres de recherche
+                </h3>
+            </div>
+            <div class="card-body-modern">
+                <form method="get" asp-action="Index" id="filterForm">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label-modern">Direction</label>
+                            <select name="directionId" class="form-control-modern" id="directionSelect">
+                                <option value="">-- Toutes les directions --</option>
+                                @foreach (var direction in ViewBag.Directions as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>())
+                                {
+                                    <option value="@direction.Value" selected="@direction.Selected">@direction.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-modern">Demandeur</label>
+                            <select name="demandeurId" class="form-control-modern" id="demandeurSelect">
+                                <option value="">-- Tous les demandeurs --</option>
+                                @foreach (var demandeur in ViewBag.Demandeurs as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>())
+                                {
+                                    <option value="@demandeur.Value" selected="@demandeur.Selected">@demandeur.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-modern">Directeur Métier</label>
+                            <select name="directeurMetierId" class="form-control-modern" id="directeurMetierSelect">
+                                <option value="">-- Tous les directeurs métier --</option>
+                                @foreach (var dm in ViewBag.DirecteursMetier as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>())
+                                {
+                                    <option value="@dm.Value" selected="@dm.Selected">@dm.Text</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button type="submit" class="btn-modern btn-modern-primary">
+                            <i class="bi bi-search"></i>
+                            Filtrer
+                        </button>
+                        <a asp-action="Index" class="btn-modern btn-modern-secondary">
+                            <i class="bi bi-x-circle"></i>
+                            Réinitialiser
+                        </a>
+                    </div>
+                </form>
+                <script>
+                    // Soumission automatique du formulaire lors du changement de filtre
+                    (function() {
+                        // Utiliser une fonction auto-exécutée pour éviter les conflits
+                        var filterInitialized = false;
+                        
+                        function initAutoSubmit() {
+                            if (filterInitialized) return;
+                            
+                            const directionSelect = document.getElementById('directionSelect');
+                            const demandeurSelect = document.getElementById('demandeurSelect');
+                            const directeurMetierSelect = document.getElementById('directeurMetierSelect');
+                            const filterForm = document.getElementById('filterForm');
+                            
+                            if (!filterForm) return;
+                            
+                            // Attacher les événements directement aux selects
+                            if (directionSelect) {
+                                directionSelect.addEventListener('change', function() {
+                                    filterForm.submit();
+                                });
+                            }
+                            
+                            if (demandeurSelect) {
+                                demandeurSelect.addEventListener('change', function() {
+                                    filterForm.submit();
+                                });
+                            }
+                            
+                            if (directeurMetierSelect) {
+                                directeurMetierSelect.addEventListener('change', function() {
+                                    filterForm.submit();
+                                });
+                            }
+                            
+                            filterInitialized = true;
+                        }
+                        
+                        // Initialiser après le chargement du DOM
+                        if (document.readyState === 'loading') {
+                            document.addEventListener('DOMContentLoaded', initAutoSubmit);
+                        } else {
+                            initAutoSubmit();
+                        }
+                    })();
+                </script>
+            </div>
+        </div>
+    }
+    
+    <div class="card-modern">
+        <div class="card-header-modern">
+            <h2 class="card-title-modern">
+                <i class="bi bi-file-earmark-text"></i>
+                @if (User.IsInRole("DSI") || User.IsInRole("AdminIT"))
+                {
+                    <text>Demandes de Projets</text>
+                }
+                else
+                {
+                    <text>Mes Demandes de Projets</text>
+                }
+            </h2>
+            <a asp-action="Create" class="btn-modern btn-modern-primary">
+                <i class="bi bi-plus-circle"></i>
+                Nouvelle Demande
+            </a>
+        </div>
+
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th>Titre</th>
+                            @if (User.IsInRole("DSI") || User.IsInRole("AdminIT"))
+                            {
+                                <th>Demandeur</th>
+                            }
+                            <th>Direction</th>
+                            @if (User.IsInRole("DSI") || User.IsInRole("AdminIT"))
+                            {
+                                <th>Directeur Métier</th>
+                            }
+                            <th>Statut</th>
+                            <th>Date Soumission</th>
+                            <th>Urgence</th>
+                            <th>Criticité</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var demande in Model)
+                        {
+                            <tr>
+                                <td><strong>@demande.Titre</strong></td>
+                                @if (User.IsInRole("DSI") || User.IsInRole("AdminIT"))
+                                {
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: var(--spacing-xs);">
+                                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0" 
+                                                 style="width: 32px; height: 32px; font-size: 0.75rem; font-weight: 600;">
+                                                @(demande.Demandeur?.Nom?.Substring(0, 1) ?? "?")@(demande.Demandeur?.Prenoms?.Substring(0, 1) ?? "")
+                                            </div>
+                                            <div>
+                                                <div style="font-weight: 600; color: var(--gray-700); font-size: 0.875rem;">
+                                                    @(demande.Demandeur != null ? $"{demande.Demandeur.Nom} {demande.Demandeur.Prenoms}" : "N/A")
+                                                </div>
+                                                <small style="color: var(--gray-500); font-size: 0.75rem;">
+                                                    @(demande.Demandeur?.Email ?? "")
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                }
+                                <td>@(demande.Direction?.Libelle ?? "N/A")</td>
+                                @if (User.IsInRole("DSI") || User.IsInRole("AdminIT"))
+                                {
+                                    <td>
+                                        @if (demande.DirecteurMetier != null)
+                                        {
+                                            <div style="display: flex; align-items: center; gap: var(--spacing-xs);">
+                                                <div class="rounded-circle bg-warning text-white d-flex align-items-center justify-content-center flex-shrink-0" 
+                                                     style="width: 32px; height: 32px; font-size: 0.75rem; font-weight: 600;">
+                                                    @(demande.DirecteurMetier.Nom?.Substring(0, 1) ?? "?")@(demande.DirecteurMetier.Prenoms?.Substring(0, 1) ?? "")
+                                                </div>
+                                                <div>
+                                                    <div style="font-weight: 600; color: var(--gray-700); font-size: 0.875rem;">
+                                                        @demande.DirecteurMetier.Nom @demande.DirecteurMetier.Prenoms
+                                                    </div>
+                                                    <small style="color: var(--gray-500); font-size: 0.75rem;">
+                                                        @demande.DirecteurMetier.Email
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted fst-italic" style="font-size: 0.85rem;">Non assigné</span>
+                                        }
+                                    </td>
+                                }
+                                <td>
+                                    <span class="badge-modern badge-modern-@GetBadgeClass(demande.StatutDemande)">
+                                        @demande.StatutDemande
+                                    </span>
+                                </td>
+                                <td>@demande.DateSoumission.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    <span class="badge-modern badge-modern-@GetUrgenceClass(demande.Urgence)">
+                                        @demande.Urgence
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge-modern badge-modern-@GetCriticiteClass(demande.Criticite)">
+                                        @demande.Criticite
+                                    </span>
+                                </td>
+                                <td>
+                                    <div style="display: flex; gap: var(--spacing-sm);">
+                                        <a asp-action="Details" asp-route-id="@demande.Id" class="btn-modern btn-modern-secondary" style="padding: var(--spacing-xs) var(--spacing-md); font-size: 0.875rem;">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        @if (demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.Brouillon ||
+                                             demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier ||
+                                             demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDemandeurParDSI)
+                                        {
+                                            <a asp-action="Edit" asp-route-id="@demande.Id" class="btn-modern btn-modern-gold" style="padding: var(--spacing-xs) var(--spacing-md); font-size: 0.875rem;">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        }
+                                        @if (demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.Brouillon)
+                                        {
+                                            <form asp-action="Soumettre" asp-route-id="@demande.Id" method="post" style="display: inline;">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn-modern btn-modern-success" style="padding: var(--spacing-xs) var(--spacing-md); font-size: 0.875rem;" onclick="return confirm('Êtes-vous sûr de vouloir soumettre cette demande ?');">
+                                                    <i class="bi bi-send"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="card-body-modern text-center" style="padding: var(--spacing-2xl);">
+                <i class="bi bi-inbox" style="font-size: 3rem; color: var(--gray-400); margin-bottom: var(--spacing-md);"></i>
+                <p style="color: var(--gray-500); font-size: 1.1rem; margin-bottom: var(--spacing-lg);">
+                    Aucune demande trouvée.
+                </p>
+                <a asp-action="Create" class="btn-modern btn-modern-primary">
+                    <i class="bi bi-plus-circle"></i>
+                    Créer une nouvelle demande
+                </a>
+            </div>
+        }
+    </div>
+    
+    @* Pagination *@
+    @await Html.PartialAsync("_Pagination")
+</div>
+
+@functions {
+    string GetBadgeClass(GestionProjects.Domain.Enums.StatutDemande statut)
+    {
+        return statut switch
+        {
+            GestionProjects.Domain.Enums.StatutDemande.Brouillon => "secondary",
+            GestionProjects.Domain.Enums.StatutDemande.EnAttenteValidationDirecteurMetier => "warning",
+            GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier => "info",
+            GestionProjects.Domain.Enums.StatutDemande.RejeteeParDirecteurMetier => "danger",
+            GestionProjects.Domain.Enums.StatutDemande.EnAttenteValidationDSI => "info",
+            GestionProjects.Domain.Enums.StatutDemande.ValideeParDSI => "success",
+            _ => "secondary"
+        };
+    }
+
+    string GetUrgenceClass(GestionProjects.Domain.Enums.UrgenceProjet urgence)
+    {
+        return urgence switch
+        {
+            GestionProjects.Domain.Enums.UrgenceProjet.Basse => "secondary",
+            GestionProjects.Domain.Enums.UrgenceProjet.Moyenne => "warning",
+            GestionProjects.Domain.Enums.UrgenceProjet.Haute => "danger",
+            _ => "secondary"
+        };
+    }
+
+    string GetCriticiteClass(GestionProjects.Domain.Enums.CriticiteProjet criticite)
+    {
+        return criticite switch
+        {
+            GestionProjects.Domain.Enums.CriticiteProjet.Faible => "secondary",
+            GestionProjects.Domain.Enums.CriticiteProjet.Moyenne => "warning",
+            GestionProjects.Domain.Enums.CriticiteProjet.Elevee => "danger",
+            _ => "secondary"
+        };
+    }
+}

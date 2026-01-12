@@ -1,0 +1,95 @@
+@model IEnumerable<GestionProjects.Domain.Models.DemandeProjet>
+
+@{
+    ViewData["Title"] = "Demandes à valider (DM)";
+}
+
+<div class="fade-in">
+    <div class="card-modern">
+        <div class="card-header-modern">
+            <h2 class="card-title-modern">
+                <i class="bi bi-check-circle"></i>
+                Demandes à valider - Directeur Métier
+            </h2>
+        </div>
+
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th>Titre</th>
+                            <th>Demandeur</th>
+                            <th>Direction</th>
+                            <th>Date Soumission</th>
+                            <th>Urgence</th>
+                            <th>Criticité</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var demande in Model)
+                        {
+                            <tr>
+                                <td><strong>@demande.Titre</strong></td>
+                                <td>@demande.Demandeur?.Nom @demande.Demandeur?.Prenoms</td>
+                                <td>@(demande.Direction?.Libelle ?? "N/A")</td>
+                                <td>@demande.DateSoumission.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    <span class="badge-modern badge-modern-@GetUrgenceClass(demande.Urgence)">
+                                        @demande.Urgence
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge-modern badge-modern-@GetCriticiteClass(demande.Criticite)">
+                                        @demande.Criticite
+                                    </span>
+                                </td>
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@demande.Id" class="btn-modern btn-modern-primary" style="padding: var(--spacing-xs) var(--spacing-md); font-size: 0.875rem;">
+                                        <i class="bi bi-eye"></i>
+                                        Détails
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="card-body-modern text-center" style="padding: var(--spacing-2xl);">
+                <i class="bi bi-inbox" style="font-size: 3rem; color: var(--gray-400); margin-bottom: var(--spacing-md);"></i>
+                <p style="color: var(--gray-500); font-size: 1.1rem;">
+                    Aucune demande en attente de validation.
+                </p>
+            </div>
+        }
+    </div>
+</div>
+
+@functions {
+    string GetUrgenceClass(GestionProjects.Domain.Enums.UrgenceProjet urgence)
+    {
+        return urgence switch
+        {
+            GestionProjects.Domain.Enums.UrgenceProjet.Basse => "secondary",
+            GestionProjects.Domain.Enums.UrgenceProjet.Moyenne => "warning",
+            GestionProjects.Domain.Enums.UrgenceProjet.Haute => "danger",
+            _ => "secondary"
+        };
+    }
+
+    string GetCriticiteClass(GestionProjects.Domain.Enums.CriticiteProjet criticite)
+    {
+        return criticite switch
+        {
+            GestionProjects.Domain.Enums.CriticiteProjet.Faible => "secondary",
+            GestionProjects.Domain.Enums.CriticiteProjet.Moyenne => "warning",
+            GestionProjects.Domain.Enums.CriticiteProjet.Elevee => "danger",
+            _ => "secondary"
+        };
+    }
+}

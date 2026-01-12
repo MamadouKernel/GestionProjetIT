@@ -1,0 +1,252 @@
+@model GestionProjects.Application.ViewModels.LoginViewModel
+
+@{
+    ViewData["Title"] = "Connexion";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Gestion Projets IT</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #3481c0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            padding: 3rem 2.5rem;
+            max-width: 450px;
+            width: 100%;
+            animation: fadeInUp 0.6s ease-out;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        @@keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 2rem;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-container img {
+            max-height: 100px;
+            max-width: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+        }
+
+        h2 {
+            color: #2d3748;
+            font-weight: 600;
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        .form-label {
+            color: #4a5568;
+            font-weight: 500;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            background-color: #f7fafc;
+        }
+
+        .form-control:focus {
+            border-color: #3481c0;
+            background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(52, 129, 192, 0.1);
+            outline: none;
+        }
+
+        .btn-primary {
+            background: #3481c0;
+            border: none;
+            border-radius: 12px;
+            padding: 0.875rem;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(52, 129, 192, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 129, 192, 0.5);
+            background: #2a6ba0;
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .alert {
+            border-radius: 12px;
+            border: none;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .alert-danger {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+            padding: 1rem 1.25rem;
+        }
+        
+        .alert-danger strong {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .text-danger {
+            color: #e53e3e;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .validation-summary-errors {
+            list-style: none;
+            padding: 0;
+        }
+
+        .validation-summary-errors li {
+            padding: 0.5rem 0;
+        }
+
+
+        /* Responsive */
+        @@media (max-width: 480px) {
+            .login-card {
+                padding: 2rem 1.5rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Animation pour les inputs */
+        .form-control::placeholder {
+            color: #a0aec0;
+            transition: opacity 0.3s ease;
+        }
+
+        .form-control:focus::placeholder {
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="logo-container">
+            <img src="~/images/LOGO_COTE_D_IVOIRE_TERMINAL.png" alt="Logo" class="img-fluid" onerror="this.style.display='none';" />
+        </div>
+        <h2 class="text-center mb-2">Connexion</h2>
+        <p class="text-center mb-4" style="color: #718096; font-size: 0.9rem; margin-bottom: 2rem !important;">Gestion Projets IT</p>
+        
+        <form asp-action="Login" method="post">
+            @Html.AntiForgeryToken()
+            @if (!string.IsNullOrEmpty(Model?.ReturnUrl))
+            {
+                <input type="hidden" asp-for="ReturnUrl" />
+            }
+
+            <div class="mb-4">
+                <label asp-for="Matricule" class="form-label">Matricule</label>
+                <input asp-for="Matricule" class="form-control" autocomplete="username" placeholder="Entrez votre matricule" />
+                <span asp-validation-for="Matricule" class="text-danger"></span>
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="MotDePasse" class="form-label">Mot de passe</label>
+                <input asp-for="MotDePasse" type="password" class="form-control" autocomplete="current-password" placeholder="Entrez votre mot de passe" />
+                <span asp-validation-for="MotDePasse" class="text-danger"></span>
+            </div>
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert" style="border-radius: 12px;">
+                    <strong style="display: block; margin-bottom: 0.5rem;">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Erreur de connexion
+                    </strong>
+                    <ul class="mb-0 mt-2" style="list-style: none; padding-left: 0;">
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            if (!string.IsNullOrWhiteSpace(error.ErrorMessage))
+                            {
+                                <li style="padding: 0.25rem 0;">• @error.ErrorMessage</li>
+                            }
+                        }
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="opacity: 0.7;"></button>
+                </div>
+            }
+            
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert" style="border-radius: 12px;">
+                    <strong style="display: block; margin-bottom: 0.5rem;">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Erreur
+                    </strong>
+                    <p class="mb-0">@TempData["ErrorMessage"]</p>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="opacity: 0.7;"></button>
+                </div>
+            }
+
+            <button type="submit" class="btn btn-primary w-100" style="margin-top: 1rem;">
+                <span style="font-weight: 600;">Se connecter</span>
+            </button>
+        </form>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+</body>
+</html>
+

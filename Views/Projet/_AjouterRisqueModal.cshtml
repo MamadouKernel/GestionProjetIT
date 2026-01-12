@@ -1,0 +1,59 @@
+@model GestionProjects.Domain.Models.Projet
+
+<div class="modal fade" id="ajouterRisqueModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
+            <form asp-action="AjouterRisque" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="projetId" value="@Model.Id" />
+                <div class="modal-header" style="border-bottom: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <h5 class="modal-title" style="font-weight: 600; color: var(--gray-800); display: flex; align-items: center; gap: var(--spacing-sm);">
+                        <i class="bi bi-exclamation-triangle" style="color: var(--warning);"></i>
+                        Ajouter un Risque
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: var(--spacing-lg);">
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Description *</label>
+                        <textarea name="description" class="form-control-modern" rows="4" required placeholder="Décrivez le risque en détail..."></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group-modern">
+                                <label class="form-label-modern">Probabilité *</label>
+                                <select name="probabilite" class="form-control-modern" asp-items="Html.GetEnumSelectList<GestionProjects.Domain.Enums.ProbabiliteRisque>()" required></select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group-modern">
+                                <label class="form-label-modern">Impact *</label>
+                                <select name="impact" class="form-control-modern" asp-items="Html.GetEnumSelectList<GestionProjects.Domain.Enums.ImpactRisque>()" required></select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Plan de mitigation</label>
+                        <textarea name="planMitigation" class="form-control-modern" rows="3" placeholder="Décrivez les actions prévues pour mitiger ce risque..."></textarea>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Responsable</label>
+                        <input type="text" name="responsable" class="form-control-modern" placeholder="Nom de la personne responsable du suivi" />
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-warning">
+                        <i class="bi bi-plus-circle"></i>
+                        Ajouter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+

@@ -1,0 +1,273 @@
+@model GestionProjects.Domain.Models.DemandeProjet
+
+@{
+    ViewData["Title"] = "Nouvelle Demande de Projet";
+}
+
+<div class="fade-in">
+    <div class="card-modern mb-4">
+        <div class="card-header-modern">
+            <h2 class="card-title-modern">
+                <i class="bi bi-plus-circle"></i>
+                Nouvelle Demande de Projet
+            </h2>
+        </div>
+    </div>
+
+    <form asp-action="Create" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        
+        @await Html.PartialAsync("_ValidationSummary")
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card-modern mb-4">
+                    <div class="card-header-modern">
+                        <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                            <i class="bi bi-info-circle"></i>
+                            Informations générales
+                        </h3>
+                    </div>
+                    <div class="card-body-modern">
+                        <div class="form-group-modern">
+                            <label asp-for="Titre" class="form-label-modern">Titre du projet *</label>
+                            <input asp-for="Titre" class="form-control-modern" required placeholder="Ex: Mise en place d'un système de gestion..." />
+                            <span asp-validation-for="Titre" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="Description" class="form-label-modern">Description *</label>
+                            <textarea asp-for="Description" class="form-control-modern" rows="4" required placeholder="Décrivez le projet en détail..."></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="Contexte" class="form-label-modern">Contexte *</label>
+                            <textarea asp-for="Contexte" class="form-control-modern" rows="4" required placeholder="Expliquez le contexte et les besoins..."></textarea>
+                            <span asp-validation-for="Contexte" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="Objectifs" class="form-label-modern">Objectifs *</label>
+                            <textarea asp-for="Objectifs" class="form-control-modern" rows="4" required placeholder="Listez les objectifs du projet..."></textarea>
+                            <span asp-validation-for="Objectifs" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="AvantagesAttendus" class="form-label-modern">Avantages attendus</label>
+                            <textarea asp-for="AvantagesAttendus" class="form-control-modern" rows="3" placeholder="Décrivez les avantages attendus..."></textarea>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="Perimetre" class="form-label-modern">Périmètre</label>
+                            <textarea asp-for="Perimetre" class="form-control-modern" rows="4" placeholder="Processus impactés, population concernée, budget estimé..."></textarea>
+                            <small class="text-muted" style="font-size: 0.75rem; color: var(--gray-500);">Décrivez le périmètre du projet (processus impactés, population concernée, budget estimé si disponible)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card-modern mb-4">
+                    <div class="card-header-modern">
+                        <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                            <i class="bi bi-gear"></i>
+                            Paramètres
+                        </h3>
+                    </div>
+                    <div class="card-body-modern">
+                        @{
+                            var isReadOnly = ViewBag.IsReadOnly as bool? ?? false;
+                            var preSelectedDirectionId = ViewBag.PreSelectedDirectionId as Guid?;
+                            var preSelectedDirecteurMetierId = ViewBag.PreSelectedDirecteurMetierId as Guid?;
+                        }
+                        
+                        @if (isReadOnly)
+                        {
+                            <div class="form-group-modern">
+                                <label class="form-label-modern">Direction</label>
+                                <div class="alert-modern alert-modern-info" style="margin-bottom: var(--spacing-md);">
+                                    <i class="bi bi-info-circle-fill"></i>
+                                    <div>
+                                        <strong>Direction :</strong> 
+                                        @{
+                                            var directionsList = ViewBag.Directions as System.Collections.Generic.IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>;
+                                            var selectedDirection = directionsList?.FirstOrDefault(d => d.Value == preSelectedDirectionId?.ToString());
+                                        }
+                                        <text>@(selectedDirection?.Text ?? "Non définie")</text>
+                                    </div>
+                                </div>
+                                <input type="hidden" asp-for="DirectionId" id="DirectionId" value="@preSelectedDirectionId" />
+                            </div>
+
+                            <div class="form-group-modern">
+                                <label class="form-label-modern">Directeur Métier</label>
+                                <div class="alert-modern alert-modern-info" style="margin-bottom: var(--spacing-md);">
+                                    <i class="bi bi-info-circle-fill"></i>
+                                    <div>
+                                        <strong>Directeur Métier :</strong> 
+                                        @{
+                                            var directeursMetierList = ViewBag.DirecteursMetier as System.Collections.Generic.IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>;
+                                            var selectedDirecteurMetier = directeursMetierList?.FirstOrDefault(d => d.Value == preSelectedDirecteurMetierId?.ToString());
+                                        }
+                                        <text>@(selectedDirecteurMetier?.Text ?? "Non défini")</text>
+                                    </div>
+                                </div>
+                                <input type="hidden" asp-for="DirecteurMetierId" id="DirecteurMetierId" value="@preSelectedDirecteurMetierId" />
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="form-group-modern">
+                                <label asp-for="DirectionId" class="form-label-modern">Direction *</label>
+                                <select asp-for="DirectionId" id="DirectionId" class="form-control-modern" asp-items="ViewBag.Directions" required>
+                                    <option value="">-- Sélectionner --</option>
+                                </select>
+                                <span asp-validation-for="DirectionId" class="text-danger"></span>
+                            </div>
+
+                            <div class="form-group-modern">
+                                <label asp-for="DirecteurMetierId" class="form-label-modern">Directeur Métier *</label>
+                                <select asp-for="DirecteurMetierId" id="DirecteurMetierId" class="form-control-modern" required>
+                                    <option value="">-- Sélectionner d'abord une Direction --</option>
+                                </select>
+                                <span asp-validation-for="DirecteurMetierId" class="text-danger"></span>
+                                <small class="text-muted" id="directeurMetierHelp" style="font-size: 0.75rem; color: var(--gray-500); display: none;">
+                                    <i class="bi bi-info-circle"></i> Sélectionnez une direction pour voir les directeurs métier disponibles
+                                </small>
+                            </div>
+                        }
+
+                        <div class="form-group-modern">
+                            <label asp-for="Urgence" class="form-label-modern">Urgence *</label>
+                            <select asp-for="Urgence" class="form-control-modern" asp-items="Html.GetEnumSelectList<GestionProjects.Domain.Enums.UrgenceProjet>()" required></select>
+                            <span asp-validation-for="Urgence" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="Criticite" class="form-label-modern">Criticité *</label>
+                            <select asp-for="Criticite" class="form-control-modern" asp-items="Html.GetEnumSelectList<GestionProjects.Domain.Enums.CriticiteProjet>()" required></select>
+                            <span asp-validation-for="Criticite" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="DateMiseEnOeuvreSouhaitee" class="form-label-modern">Date mise en œuvre souhaitée</label>
+                            <input asp-for="DateMiseEnOeuvreSouhaitee" type="date" class="form-control-modern" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-modern">
+                    <div class="card-header-modern">
+                        <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                            <i class="bi bi-file-earmark"></i>
+                            Documents
+                        </h3>
+                    </div>
+                    <div class="card-body-modern">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Cahier des charges</label>
+                            <input type="file" name="cahierCharges" class="form-control-modern" accept=".pdf,.doc,.docx" />
+                            <small class="text-muted" style="font-size: 0.75rem; color: var(--gray-500);">Formats acceptés: PDF, DOC, DOCX</small>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Annexes</label>
+                            <input type="file" name="annexes" class="form-control-modern" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png" />
+                            <small class="text-muted" style="font-size: 0.75rem; color: var(--gray-500);">Vous pouvez sélectionner plusieurs fichiers</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-3 mt-4">
+            <button type="submit" class="btn-modern btn-modern-primary">
+                <i class="bi bi-save"></i>
+                Enregistrer comme brouillon
+            </button>
+            <a asp-action="Index" class="btn-modern btn-modern-secondary">
+                <i class="bi bi-x-circle"></i>
+                Annuler
+            </a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+           <script type="text/javascript">
+               (function() {
+                   const directionSelect = document.getElementById('DirectionId');
+                   const directeurMetierSelect = document.getElementById('DirecteurMetierId');
+                   const directeurMetierHelp = document.getElementById('directeurMetierHelp');
+                   
+                   // Si les champs sont en read-only (Demandeur), ne pas initialiser le script
+                   @if (ViewBag.IsReadOnly as bool? == true)
+                   {
+                       <text>
+                       return; // Les champs sont en read-only, pas besoin de script
+                       </text>
+                   }
+                   
+                   if (!directionSelect || !directeurMetierSelect) return;
+                   
+                   directionSelect.addEventListener('change', function() {
+                const directionId = this.value;
+                
+                // Réinitialiser le select des directeurs métier
+                directeurMetierSelect.innerHTML = '<option value="">-- Chargement... --</option>';
+                directeurMetierSelect.disabled = true;
+                
+                if (!directionId) {
+                    directeurMetierSelect.innerHTML = '<option value="">-- Sélectionner d\'abord une Direction --</option>';
+                    directeurMetierSelect.disabled = true;
+                    directeurMetierHelp.style.display = 'block';
+                    return;
+                }
+                
+                directeurMetierHelp.style.display = 'none';
+                
+                // Appel AJAX pour récupérer les directeurs métier de la direction
+                fetch(`/DemandeProjet/GetDirecteursMetierByDirection?directionId=${directionId}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Erreur lors du chargement des directeurs métier');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        directeurMetierSelect.innerHTML = '<option value="">-- Sélectionner --</option>';
+                        
+                        if (data && data.length > 0) {
+                            data.forEach(function(dm) {
+                                const option = document.createElement('option');
+                                option.value = dm.id;
+                                option.textContent = dm.text;
+                                directeurMetierSelect.appendChild(option);
+                            });
+                            directeurMetierSelect.disabled = false;
+                        } else {
+                            directeurMetierSelect.innerHTML = '<option value="">-- Aucun directeur métier trouvé pour cette direction --</option>';
+                            directeurMetierSelect.disabled = true;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erreur:', error);
+                        directeurMetierSelect.innerHTML = '<option value="">-- Erreur lors du chargement --</option>';
+                        directeurMetierSelect.disabled = true;
+                    });
+            });
+            
+            // Si une direction est déjà sélectionnée au chargement (préremplissage ou erreur de validation)
+            var preSelectedDirectionId = @(ViewBag.PreSelectedDirectionId != null ? $"'{ViewBag.PreSelectedDirectionId}'" : "null");
+            if (preSelectedDirectionId && directionSelect) {
+                directionSelect.value = preSelectedDirectionId;
+                directionSelect.dispatchEvent(new Event('change'));
+            } else if (directionSelect && directionSelect.value) {
+                directionSelect.dispatchEvent(new Event('change'));
+            }
+        })();
+    </script>
+}

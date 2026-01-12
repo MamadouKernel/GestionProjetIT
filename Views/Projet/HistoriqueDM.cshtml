@@ -1,0 +1,574 @@
+@model IEnumerable<GestionProjects.Domain.Models.Projet>
+@{
+    ViewData["Title"] = "Historique de mes Projets";
+    var projetsAvecHistorique = ViewBag.ProjetsAvecHistorique as List<dynamic> ?? new List<dynamic>();
+}
+
+<div class="fade-in">
+    <div class="card-modern mb-4">
+        <div class="card-header-modern">
+            <h2 class="card-title-modern">
+                <i class="bi bi-clock-history"></i>
+                Historique et Traçabilité de mes Projets
+            </h2>
+            <p style="color: var(--gray-600); margin: 0; font-size: 0.9rem;">
+                Suivi complet de tous les projets de votre direction (projets où vous êtes sponsor + projets de votre direction en lecture seule)
+            </p>
+        </div>
+    </div>
+
+    @if (Model.Any())
+    {
+        @foreach (var item in projetsAvecHistorique)
+        {
+            var projet = item.Projet as GestionProjects.Domain.Models.Projet;
+            var auditLogs = item.AuditLogs as IEnumerable<GestionProjects.Domain.Models.AuditLog>;
+            var totalLivrables = (int)item.TotalLivrables;
+            var totalAnomalies = (int)item.TotalAnomalies;
+            var anomaliesOuvertes = (int)item.AnomaliesOuvertes;
+            var totalRisques = (int)item.TotalRisques;
+            var risquesCritiques = (int)item.RisquesCritiques;
+
+            <div class="card-modern mb-4" style="border-left: 4px solid var(--primary-blue);">
+                <div class="card-header-modern" style="background: var(--gray-50);">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                        <div style="flex: 1; min-width: 300px;">
+                            <h3 class="card-title-modern mb-2" style="font-size: 1.25rem;">
+                                <i class="bi bi-folder"></i>
+                                @projet.CodeProjet - @projet.Titre
+                            </h3>
+                            <div class="d-flex gap-2 flex-wrap mb-2">
+                                <span class="badge-modern badge-modern-@GetPhaseClass(projet.PhaseActuelle)">
+                                    <i class="bi bi-diagram-3"></i> @FormatPhase(projet.PhaseActuelle)
+                                </span>
+                                <span class="badge-modern badge-modern-@GetStatutClass(projet.StatutProjet)">
+                                    <i class="bi bi-info-circle"></i> @projet.StatutProjet
+                                </span>
+                                <span class="badge-modern badge-modern-@GetEtatClass(projet.EtatProjet)">
+                                    <i class="bi bi-signal"></i> @projet.EtatProjet
+                                </span>
+                            </div>
+                            
+                            <!-- Indicateur de progression des phases -->
+                            <div class="mb-3" style="background: var(--gray-50); padding: var(--spacing-md); border-radius: var(--radius-md);">
+                                <div style="font-size: 0.875rem; color: var(--gray-600); margin-bottom: var(--spacing-sm); font-weight: 600;">
+                                    <i class="bi bi-speedometer2"></i> Niveau d'avancement dans le cycle de vie
+                                </div>
+                                <div class="phase-progress-container" style="position: relative;">
+                                    <div class="phase-progress-bar" style="display: flex; justify-content: space-between; position: relative; padding: var(--spacing-sm) 0;">
+                                        <!-- Ligne de progression -->
+                                        <div style="position: absolute; top: 20px; left: 0; right: 0; height: 3px; background: var(--gray-200); z-index: 0; border-radius: 2px;"></div>
+                                        <div style="position: absolute; top: 20px; left: 0; height: 3px; background: var(--primary-blue); z-index: 1; border-radius: 2px; width: @GetPhaseProgress(projet.PhaseActuelle)%; transition: width 0.3s ease;"></div>
+                                        
+                                        @{
+                                            var phases = new[] {
+                                                (GestionProjects.Domain.Enums.PhaseProjet.Demande, "Demande", 0),
+                                                (GestionProjects.Domain.Enums.PhaseProjet.AnalyseClarification, "Analyse", 20),
+                                                (GestionProjects.Domain.Enums.PhaseProjet.PlanificationValidation, "Planification", 40),
+                                                (GestionProjects.Domain.Enums.PhaseProjet.ExecutionSuivi, "Exécution", 60),
+                                                (GestionProjects.Domain.Enums.PhaseProjet.UatMep, "UAT & MEP", 80),
+                                                (GestionProjects.Domain.Enums.PhaseProjet.ClotureLeconsApprises, "Clôture", 100)
+                                            };
+                                        }
+                                        
+                                        @foreach (var (phase, label, progress) in phases)
+                                        {
+                                            var isActive = projet.PhaseActuelle == phase;
+                                            var isCompleted = GetPhaseOrder(projet.PhaseActuelle) > GetPhaseOrder(phase);
+                                            var phaseColor = isActive ? "var(--primary-blue)" : (isCompleted ? "var(--success)" : "var(--gray-300)");
+                                            var icon = isActive ? "bi-circle-fill" : (isCompleted ? "bi-check-circle-fill" : "bi-circle");
+                                            
+                                            <div style="position: relative; z-index: 2; text-align: center; flex: 1;">
+                                                <div style="width: 24px; height: 24px; border-radius: 50%; background: @phaseColor; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto var(--spacing-xs); box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                                    <i class="bi @icon" style="font-size: 0.75rem;"></i>
+                                                </div>
+                                                <div style="font-size: 0.75rem; color: @(isActive ? "var(--primary-blue)" : "var(--gray-500)"); font-weight: @(isActive ? "600" : "400");">
+                                                    @label
+                                                </div>
+                                                @if (isActive)
+                                                {
+                                                    <div style="font-size: 0.7rem; color: var(--primary-blue); margin-top: 2px; font-weight: 600;">
+                                                        En cours
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="mt-3" style="display: flex; justify-content: space-between; align-items: center; padding-top: var(--spacing-sm); border-top: 1px solid var(--gray-200);">
+                                    <div>
+                                        <small style="color: var(--gray-500);">Phase actuelle:</small>
+                                        <div style="font-weight: 600; color: var(--primary-blue);">
+                                            @FormatPhase(projet.PhaseActuelle)
+                                        </div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <small style="color: var(--gray-500);">Avancement global:</small>
+                                        <div style="font-weight: 600; color: var(--primary-blue); font-size: 1.1rem;">
+                                            @projet.PourcentageAvancement%
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-3" style="flex-wrap: wrap;">
+                                <div>
+                                    <small style="color: var(--gray-500);">Chef de Projet:</small>
+                                    <div style="font-weight: 600; color: var(--gray-700);">
+                                        @(projet.ChefProjet != null ? $"{projet.ChefProjet.Nom} {projet.ChefProjet.Prenoms}" : "Non assigné")
+                                    </div>
+                                </div>
+                                <div>
+                                    <small style="color: var(--gray-500);">Direction:</small>
+                                    <div style="font-weight: 600; color: var(--gray-700);">
+                                        @(projet.Direction != null ? projet.Direction.Libelle : "N/A")
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 0.875rem; color: var(--gray-500); margin-bottom: 0.5rem;">Avancement</div>
+                            <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+                                <div style="width: 80px; height: 80px; position: relative;">
+                                    <svg width="80" height="80" style="transform: rotate(-90deg);">
+                                        <circle cx="40" cy="40" r="32" fill="none" stroke="var(--gray-200)" stroke-width="6"/>
+                                        <circle cx="40" cy="40" r="32" fill="none" stroke="var(--primary-blue)" stroke-width="6"
+                                                stroke-dasharray="@(2 * Math.PI * 32)" 
+                                                stroke-dashoffset="@(2 * Math.PI * 32 * (1 - projet.PourcentageAvancement / 100.0))"
+                                                stroke-linecap="round"/>
+                                    </svg>
+                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 700; color: var(--primary-blue); font-size: 1rem;">
+                                        @projet.PourcentageAvancement%
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body-modern">
+                    <!-- Statistiques du projet -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <div class="card-modern" style="border-left: 3px solid var(--primary-blue); padding: var(--spacing-md);">
+                                <div style="font-size: 0.875rem; color: var(--gray-500); margin-bottom: 0.25rem;">Livrables</div>
+                                <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-blue);">
+                                    @totalLivrables
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card-modern" style="border-left: 3px solid var(--danger); padding: var(--spacing-md);">
+                                <div style="font-size: 0.875rem; color: var(--gray-500); margin-bottom: 0.25rem;">Anomalies</div>
+                                <div style="font-size: 1.5rem; font-weight: 700; color: var(--danger);">
+                                    @totalAnomalies <small style="font-size: 0.875rem; color: var(--warning);">(@anomaliesOuvertes ouvertes)</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card-modern" style="border-left: 3px solid var(--warning); padding: var(--spacing-md);">
+                                <div style="font-size: 0.875rem; color: var(--gray-500); margin-bottom: 0.25rem;">Risques</div>
+                                <div style="font-size: 1.5rem; font-weight: 700; color: var(--warning);">
+                                    @totalRisques <small style="font-size: 0.875rem; color: var(--danger);">(@risquesCritiques critiques)</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card-modern" style="border-left: 3px solid var(--success); padding: var(--spacing-md);">
+                                <div style="font-size: 0.875rem; color: var(--gray-500); margin-bottom: 0.25rem;">Date Création</div>
+                                <div style="font-size: 0.9rem; font-weight: 600; color: var(--gray-700);">
+                                    @projet.DateCreation.ToString("dd/MM/yyyy")
+                                </div>
+                                <div style="font-size: 0.8rem; color: var(--gray-500);">
+                                    @projet.DateCreation.ToString("HH:mm")
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline de l'historique -->
+                    <div class="timeline-container" style="position: relative; padding-left: var(--spacing-xl); margin-top: var(--spacing-lg);">
+                        @{
+                            var allEvents = new List<dynamic>();
+                            
+                            // Ajouter les phases historiques
+                            foreach (var phase in projet.HistoriquePhases?.OrderByDescending(h => h.DateDebut) ?? Enumerable.Empty<GestionProjects.Domain.Models.HistoriquePhaseProjet>())
+                            {
+                                allEvents.Add(new {
+                                    Type = "Phase",
+                                    Date = phase.DateDebut,
+                                    Titre = $"Phase: {phase.Phase}",
+                                    Description = $"Statut: {phase.StatutProjet}",
+                                    Auteur = phase.ModifieParUtilisateur != null ? $"{phase.ModifieParUtilisateur.Nom} {phase.ModifieParUtilisateur.Prenoms}" : phase.CreePar,
+                                    Commentaire = phase.Commentaire ?? "",
+                                    Icon = "bi-diagram-3",
+                                    Color = "var(--primary-blue)"
+                                });
+                                
+                                if (phase.DateFin.HasValue)
+                                {
+                                    allEvents.Add(new {
+                                        Type = "Phase",
+                                        Date = phase.DateFin.Value,
+                                        Titre = $"Fin de phase: {phase.Phase}",
+                                        Description = $"Phase terminée",
+                                        Auteur = phase.ModifieParUtilisateur != null ? $"{phase.ModifieParUtilisateur.Nom} {phase.ModifieParUtilisateur.Prenoms}" : phase.CreePar,
+                                        Commentaire = phase.Commentaire ?? "",
+                                        Icon = "bi-check-circle",
+                                        Color = "var(--success)"
+                                    });
+                                }
+                            }
+                            
+                            // Ajouter les logs d'audit
+                            foreach (var log in auditLogs ?? Enumerable.Empty<GestionProjects.Domain.Models.AuditLog>())
+                            {
+                                var icon = "bi-info-circle";
+                                var color = "var(--info)";
+                                var titre = log.TypeAction;
+                                
+                                switch (log.TypeAction.ToUpper())
+                                {
+                                    case "CREATION_PROJET":
+                                        icon = "bi-plus-circle-fill";
+                                        color = "var(--success)";
+                                        titre = "Création du projet";
+                                        break;
+                                    case "VALIDATION_DM":
+                                    case "VALIDATION_DSI":
+                                        icon = "bi-check-circle-fill";
+                                        color = "var(--success)";
+                                        titre = log.TypeAction.Contains("DM") ? "Validation Directeur Métier" : "Validation DSI";
+                                        break;
+                                    case "UPLOAD_LIVRABLE":
+                                        icon = "bi-file-earmark-arrow-up";
+                                        color = "var(--primary-blue)";
+                                        titre = "Livrable déposé";
+                                        break;
+                                    case "AJOUT_ANOMALIE":
+                                        icon = "bi-bug-fill";
+                                        color = "var(--danger)";
+                                        titre = "Anomalie ajoutée";
+                                        break;
+                                    case "AJOUT_RISQUE":
+                                        icon = "bi-exclamation-triangle-fill";
+                                        color = "var(--warning)";
+                                        titre = "Risque ajouté";
+                                        break;
+                                    case "MODIFICATION_PROJET":
+                                        icon = "bi-pencil-square";
+                                        color = "var(--info)";
+                                        titre = "Modification du projet";
+                                        break;
+                                    case "CHANGEMENT_PHASE":
+                                        icon = "bi-arrow-right-circle";
+                                        color = "var(--primary-blue)";
+                                        titre = "Changement de phase";
+                                        break;
+                                    case "VALIDATION_PLANIF_DM":
+                                        icon = "bi-calendar-check";
+                                        color = "var(--success)";
+                                        titre = "Planning validé par DM";
+                                        break;
+                                    case "VALIDATION_RECETTE":
+                                        icon = "bi-check2-square";
+                                        color = "var(--success)";
+                                        titre = "Recette validée";
+                                        break;
+                                }
+                                
+                                allEvents.Add(new {
+                                    Type = "Audit",
+                                    Date = log.DateAction,
+                                    Titre = titre,
+                                    Description = log.TypeAction,
+                                    Auteur = log.Utilisateur != null ? $"{log.Utilisateur.Nom} {log.Utilisateur.Prenoms}" : "Système",
+                                    Commentaire = log.Commentaire ?? "",
+                                    Icon = icon,
+                                    Color = color
+                                });
+                            }
+                            
+                            // Ajouter les événements importants du projet
+                            if (projet.DateCreation != default)
+                            {
+                                allEvents.Add(new {
+                                    Type = "Projet",
+                                    Date = projet.DateCreation,
+                                    Titre = "Projet créé",
+                                    Description = $"Projet {projet.CodeProjet} créé",
+                                    Auteur = projet.CreePar,
+                                    Commentaire = "",
+                                    Icon = "bi-folder-plus",
+                                    Color = "var(--success)"
+                                });
+                            }
+                            
+                            if (projet.CharteValidee && projet.DateCharteValidee.HasValue)
+                            {
+                                allEvents.Add(new {
+                                    Type = "Projet",
+                                    Date = projet.DateCharteValidee.Value,
+                                    Titre = "Charte validée",
+                                    Description = "Charte de projet validée",
+                                    Auteur = "Chef de Projet",
+                                    Commentaire = "",
+                                    Icon = "bi-file-check",
+                                    Color = "var(--success)"
+                                });
+                            }
+                            
+                            if (projet.PlanningValideParDM && projet.DatePlanningValideParDM.HasValue)
+                            {
+                                allEvents.Add(new {
+                                    Type = "Projet",
+                                    Date = projet.DatePlanningValideParDM.Value,
+                                    Titre = "Planning validé par Directeur Métier",
+                                    Description = "Planning validé",
+                                    Auteur = projet.Sponsor != null ? $"{projet.Sponsor.Nom} {projet.Sponsor.Prenoms}" : "Directeur Métier",
+                                    Commentaire = "",
+                                    Icon = "bi-calendar-check",
+                                    Color = "var(--success)"
+                                });
+                            }
+                            
+                            if (projet.PlanningValideParDSI && projet.DatePlanningValideParDSI.HasValue)
+                            {
+                                allEvents.Add(new {
+                                    Type = "Projet",
+                                    Date = projet.DatePlanningValideParDSI.Value,
+                                    Titre = "Planning validé par DSI",
+                                    Description = "Planning validé",
+                                    Auteur = "DSI",
+                                    Commentaire = "",
+                                    Icon = "bi-shield-check",
+                                    Color = "var(--success)"
+                                });
+                            }
+                            
+                            if (projet.RecetteValidee && projet.DateRecetteValidee.HasValue)
+                            {
+                                allEvents.Add(new {
+                                    Type = "Projet",
+                                    Date = projet.DateRecetteValidee.Value,
+                                    Titre = "Recette validée",
+                                    Description = "Recette UAT validée",
+                                    Auteur = projet.RecetteValideePar != null ? $"{projet.RecetteValideePar.Nom} {projet.RecetteValideePar.Prenoms}" : "Directeur Métier",
+                                    Commentaire = "",
+                                    Icon = "bi-check2-square",
+                                    Color = "var(--success)"
+                                });
+                            }
+                            
+                            if (projet.MepEffectuee && projet.DateMep.HasValue)
+                            {
+                                allEvents.Add(new {
+                                    Type = "Projet",
+                                    Date = projet.DateMep.Value,
+                                    Titre = "Mise en production effectuée",
+                                    Description = "MEP réalisée",
+                                    Auteur = "Chef de Projet",
+                                    Commentaire = "",
+                                    Icon = "bi-rocket-takeoff",
+                                    Color = "var(--primary-gold)"
+                                });
+                            }
+                            
+                            var sortedEvents = allEvents.OrderByDescending(e => e.Date).ToList();
+                        }
+                        
+                        @if (sortedEvents.Any())
+                        {
+                            <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(to bottom, var(--primary-blue), var(--gray-200)); border-radius: 2px;"></div>
+                            
+                            @foreach (var evt in sortedEvents)
+                            {
+                                <div class="timeline-item" style="position: relative; margin-bottom: var(--spacing-lg); padding-left: var(--spacing-md);">
+                                    <div style="position: absolute; left: -8px; top: 8px; width: 16px; height: 16px; border-radius: 50%; background: @evt.Color; border: 3px solid var(--primary-white); box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 1;"></div>
+                                    
+                                    <div class="card-modern" style="border-left: 4px solid @evt.Color; box-shadow: var(--shadow-sm);">
+                                        <div class="card-body-modern" style="padding: var(--spacing-md);">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div class="d-flex align-items-center gap-2" style="flex: 1;">
+                                                    <i class="bi @evt.Icon" style="color: @evt.Color; font-size: 1.25rem;"></i>
+                                                    <div>
+                                                        <h5 class="mb-0" style="font-size: 1rem; font-weight: 600; color: var(--gray-800);">
+                                                            @evt.Titre
+                                                        </h5>
+                                                        <small style="color: var(--gray-500); font-size: 0.875rem;">
+                                                            @evt.Date.ToString("dd/MM/yyyy à HH:mm")
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                                <span class="badge-modern" style="background: @evt.Color; color: white; font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                                                    @evt.Type
+                                                </span>
+                                            </div>
+                                            
+                                            @if (!string.IsNullOrEmpty(evt.Description))
+                                            {
+                                                <p class="mb-2" style="color: var(--gray-600); font-size: 0.9rem;">
+                                                    @evt.Description
+                                                </p>
+                                            }
+                                            
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+                                                    <i class="bi bi-person" style="color: var(--gray-400); font-size: 0.875rem;"></i>
+                                                    <span style="color: var(--gray-600); font-size: 0.875rem; font-weight: 500;">
+                                                        @evt.Auteur
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            
+                                            @if (!string.IsNullOrEmpty(evt.Commentaire))
+                                            {
+                                                <div class="mt-2 p-2" style="background: var(--gray-50); border-radius: var(--radius-md); border-left: 3px solid @evt.Color;">
+                                                    <p class="mb-0" style="color: var(--gray-700); font-size: 0.875rem; white-space: pre-wrap;">
+                                                        @evt.Commentaire
+                                                    </p>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center" style="padding: var(--spacing-xl);">
+                                <i class="bi bi-inbox" style="font-size: 2rem; color: var(--gray-400); margin-bottom: var(--spacing-md);"></i>
+                                <p style="color: var(--gray-500); font-size: 0.9rem;">
+                                    Aucun historique disponible pour ce projet.
+                                </p>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Bouton pour voir les détails -->
+                    <div class="mt-4 text-end">
+                        <a asp-action="Details" asp-route-id="@projet.Id" class="btn-modern btn-modern-primary">
+                            <i class="bi bi-eye"></i>
+                            Voir les détails complets
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="card-modern">
+            <div class="card-body-modern text-center" style="padding: var(--spacing-2xl);">
+                <i class="bi bi-inbox" style="font-size: 4rem; color: var(--gray-400); margin-bottom: var(--spacing-md);"></i>
+                <p style="color: var(--gray-500); font-size: 1.1rem;">
+                    Aucun projet trouvé.
+                </p>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .timeline-container {
+        position: relative;
+    }
+    
+    .timeline-item {
+        animation: fadeInUp 0.5s ease-out;
+    }
+    
+    @@keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+@functions {
+    string GetPhaseClass(GestionProjects.Domain.Enums.PhaseProjet phase)
+    {
+        return phase switch
+        {
+            GestionProjects.Domain.Enums.PhaseProjet.Demande => "secondary",
+            GestionProjects.Domain.Enums.PhaseProjet.AnalyseClarification => "info",
+            GestionProjects.Domain.Enums.PhaseProjet.PlanificationValidation => "warning",
+            GestionProjects.Domain.Enums.PhaseProjet.ExecutionSuivi => "primary",
+            GestionProjects.Domain.Enums.PhaseProjet.UatMep => "success",
+            GestionProjects.Domain.Enums.PhaseProjet.ClotureLeconsApprises => "dark",
+            _ => "secondary"
+        };
+    }
+
+    string FormatPhase(GestionProjects.Domain.Enums.PhaseProjet phase)
+    {
+        return phase switch
+        {
+            GestionProjects.Domain.Enums.PhaseProjet.Demande => "Demande",
+            GestionProjects.Domain.Enums.PhaseProjet.AnalyseClarification => "Analyse & Clarification",
+            GestionProjects.Domain.Enums.PhaseProjet.PlanificationValidation => "Planification",
+            GestionProjects.Domain.Enums.PhaseProjet.ExecutionSuivi => "Exécution",
+            GestionProjects.Domain.Enums.PhaseProjet.UatMep => "UAT & MEP",
+            GestionProjects.Domain.Enums.PhaseProjet.ClotureLeconsApprises => "Clôture",
+            _ => phase.ToString()
+        };
+    }
+
+    int GetPhaseOrder(GestionProjects.Domain.Enums.PhaseProjet phase)
+    {
+        return phase switch
+        {
+            GestionProjects.Domain.Enums.PhaseProjet.Demande => 0,
+            GestionProjects.Domain.Enums.PhaseProjet.AnalyseClarification => 1,
+            GestionProjects.Domain.Enums.PhaseProjet.PlanificationValidation => 2,
+            GestionProjects.Domain.Enums.PhaseProjet.ExecutionSuivi => 3,
+            GestionProjects.Domain.Enums.PhaseProjet.UatMep => 4,
+            GestionProjects.Domain.Enums.PhaseProjet.ClotureLeconsApprises => 5,
+            _ => 0
+        };
+    }
+
+    int GetPhaseProgress(GestionProjects.Domain.Enums.PhaseProjet phase)
+    {
+        return phase switch
+        {
+            GestionProjects.Domain.Enums.PhaseProjet.Demande => 0,
+            GestionProjects.Domain.Enums.PhaseProjet.AnalyseClarification => 20,
+            GestionProjects.Domain.Enums.PhaseProjet.PlanificationValidation => 40,
+            GestionProjects.Domain.Enums.PhaseProjet.ExecutionSuivi => 60,
+            GestionProjects.Domain.Enums.PhaseProjet.UatMep => 80,
+            GestionProjects.Domain.Enums.PhaseProjet.ClotureLeconsApprises => 100,
+            _ => 0
+        };
+    }
+
+    string GetStatutClass(GestionProjects.Domain.Enums.StatutProjet statut)
+    {
+        return statut switch
+        {
+            GestionProjects.Domain.Enums.StatutProjet.NonDemarre => "secondary",
+            GestionProjects.Domain.Enums.StatutProjet.EnCours => "success",
+            GestionProjects.Domain.Enums.StatutProjet.Suspendu => "warning",
+            GestionProjects.Domain.Enums.StatutProjet.ClotureEnCours => "info",
+            GestionProjects.Domain.Enums.StatutProjet.Cloture => "dark",
+            GestionProjects.Domain.Enums.StatutProjet.Annule => "danger",
+            _ => "secondary"
+        };
+    }
+
+    string GetEtatClass(GestionProjects.Domain.Enums.EtatProjet etat)
+    {
+        return etat switch
+        {
+            GestionProjects.Domain.Enums.EtatProjet.Vert => "success",
+            GestionProjects.Domain.Enums.EtatProjet.Orange => "warning",
+            GestionProjects.Domain.Enums.EtatProjet.Rouge => "danger",
+            _ => "secondary"
+        };
+    }
+}
+

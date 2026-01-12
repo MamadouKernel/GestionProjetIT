@@ -1,0 +1,245 @@
+@{
+    ViewData["Title"] = "Importer des Utilisateurs";
+    var resultats = ViewBag.Resultats as List<GestionProjects.Controllers.ImportResultat> ?? new List<GestionProjects.Controllers.ImportResultat>();
+    var erreurs = ViewBag.Erreurs as List<string> ?? new List<string>();
+    var directions = ViewBag.Directions as List<GestionProjects.Domain.Models.Direction> ?? new List<GestionProjects.Domain.Models.Direction>();
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="display-6 mb-0">
+            <i class="bi bi-file-earmark-excel" style="color: var(--primary-blue);"></i>
+            Importer des Utilisateurs depuis Excel
+        </h2>
+        <a asp-action="Users" class="btn-modern btn-modern-secondary">
+            <i class="bi bi-arrow-left"></i> Retour à la liste
+        </a>
+    </div>
+
+    @await Html.PartialAsync("_ValidationSummary")
+
+    <!-- Instructions -->
+    <div class="card-modern mb-4">
+        <div class="card-header-modern" style="background: linear-gradient(135deg, var(--info) 0%, #0ea5e9 100%); color: white; border: none;">
+            <h3 class="card-title-modern mb-0" style="color: white;">
+                <i class="bi bi-info-circle"></i>
+                Instructions
+            </h3>
+        </div>
+        <div class="card-body-modern">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 style="color: var(--primary-blue); margin-bottom: var(--spacing-md);">
+                        <i class="bi bi-file-earmark-spreadsheet"></i> Format du fichier Excel
+                    </h5>
+                    <p>Le fichier Excel doit contenir les colonnes suivantes (dans l'ordre) :</p>
+                    <ol style="line-height: 2;">
+                        <li><strong>Matricule</strong> (obligatoire) - Identifiant unique de l'utilisateur</li>
+                        <li><strong>Nom</strong> (obligatoire)</li>
+                        <li><strong>Prénoms</strong> (obligatoire)</li>
+                        <li><strong>Email</strong> (obligatoire) - Format email valide</li>
+                        <li><strong>Code Direction</strong> (optionnel) - Code de la direction</li>
+                        <li><strong>Libellé Direction</strong> (optionnel) - Libellé de la direction</li>
+                        <li><strong>Rôles</strong> (optionnel) - Liste de rôles séparés par virgule (Demandeur, ChefDeProjet, DSI, etc.)</li>
+                        <li><strong>Peut Créer Demande</strong> (optionnel) - Oui/Non (par défaut: Oui)</li>
+                    </ol>
+                </div>
+                <div class="col-md-6">
+                    <h5 style="color: var(--success); margin-bottom: var(--spacing-md);">
+                        <i class="bi bi-check-circle"></i> Rôles disponibles
+                    </h5>
+                    <ul style="line-height: 2;">
+                        <li><code>Demandeur</code> - Par défaut si non spécifié</li>
+                        <li><code>ChefDeProjet</code></li>
+                        <li><code>DirecteurMetier</code></li>
+                        <li><code>DSI</code></li>
+                        <li><code>AdminIT</code></li>
+                        <li><code>ResponsableSolutionsIT</code></li>
+                    </ul>
+                    <div class="alert alert-info mt-3" style="background: #e0f2fe; border-left: 4px solid var(--info);">
+                        <strong>Note :</strong> Si plusieurs rôles sont spécifiés, séparez-les par une virgule (ex: <code>Demandeur,ChefDeProjet</code>)
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4">
+                <h5 style="color: var(--warning); margin-bottom: var(--spacing-md);">
+                    <i class="bi bi-exclamation-triangle"></i> Exemple de fichier
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-bordered" style="font-size: 0.9rem;">
+                        <thead style="background: var(--gray-100);">
+                            <tr>
+                                <th>Matricule</th>
+                                <th>Nom</th>
+                                <th>Prénoms</th>
+                                <th>Email</th>
+                                <th>Code Direction</th>
+                                <th>Libellé Direction</th>
+                                <th>Rôles</th>
+                                <th>Peut Créer Demande</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>EMP001</td>
+                                <td>DUPONT</td>
+                                <td>Jean</td>
+                                <td>jean.dupont@cit.ci</td>
+                                <td>DSI</td>
+                                <td>Système d'Information</td>
+                                <td>Demandeur</td>
+                                <td>Oui</td>
+                            </tr>
+                            <tr>
+                                <td>EMP002</td>
+                                <td>MARTIN</td>
+                                <td>Marie</td>
+                                <td>marie.martin@cit.ci</td>
+                                <td>DSI</td>
+                                <td>Système d'Information</td>
+                                <td>ChefDeProjet,DSI</td>
+                                <td>Oui</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulaire d'importation -->
+    <div class="card-modern">
+        <div class="card-header-modern">
+            <h3 class="card-title-modern mb-0">
+                <i class="bi bi-upload"></i>
+                Importer le fichier
+            </h3>
+        </div>
+        <div class="card-body-modern">
+            <div class="alert alert-info mb-3" style="background: #e0f2fe; border-left: 4px solid var(--info);">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Téléchargez le modèle Excel</strong> pour voir le format exact attendu avec des exemples de données.
+                    </div>
+                    <a asp-action="DownloadModeleImportUsers" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-download"></i> Télécharger le modèle
+                    </a>
+                </div>
+            </div>
+
+            <form asp-action="ImportUsers" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                
+                <div class="form-group-modern mb-3">
+                    <label class="form-label-modern">
+                        <i class="bi bi-file-earmark-excel"></i>
+                        Fichier Excel (.xlsx) *
+                    </label>
+                    <input type="file" name="fichierExcel" class="form-control-modern" accept=".xlsx,.xls" required />
+                    <small class="text-muted">Format accepté : .xlsx ou .xls</small>
+                </div>
+
+                <div class="form-group-modern mb-3">
+                    <label class="form-label-modern">
+                        <i class="bi bi-key"></i>
+                        Mot de passe par défaut *
+                    </label>
+                    <input type="password" name="motDePasseParDefaut" class="form-control-modern" required minlength="6" />
+                    <small class="text-muted">Ce mot de passe sera assigné à tous les utilisateurs importés (minimum 6 caractères)</small>
+                </div>
+
+                <div class="form-group-modern mb-3">
+                    <div class="form-check">
+                        <input type="checkbox" name="ignorerDoublons" value="true" class="form-check-input" checked id="ignorerDoublons" />
+                        <label class="form-check-label" for="ignorerDoublons">
+                            Ignorer les doublons (matricule ou email existant)
+                        </label>
+                    </div>
+                    <small class="text-muted">Si coché, les utilisateurs avec un matricule ou email existant seront ignorés sans erreur</small>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-upload"></i> Importer
+                    </button>
+                    <a asp-action="Users" class="btn-modern btn-modern-secondary">
+                        <i class="bi bi-x-circle"></i> Annuler
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Résultats de l'importation -->
+    @if (resultats.Any() || erreurs.Any())
+    {
+        <div class="card-modern mt-4">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern mb-0">
+                    <i class="bi bi-list-check"></i>
+                    Résultats de l'importation
+                </h3>
+            </div>
+            <div class="card-body-modern p-0">
+                @if (resultats.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table-modern">
+                            <thead>
+                                <tr>
+                                    <th style="width: 80px;">Ligne</th>
+                                    <th>Matricule</th>
+                                    <th>Nom</th>
+                                    <th>Statut</th>
+                                    <th>Message</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var resultat in resultats)
+                                {
+                                    <tr>
+                                        <td>@resultat.Ligne</td>
+                                        <td>@resultat.Matricule</td>
+                                        <td>@resultat.Nom</td>
+                                        <td>
+                                            @if (resultat.Statut == "Créé")
+                                            {
+                                                <span class="badge-modern badge-modern-success">@resultat.Statut</span>
+                                            }
+                                            else if (resultat.Statut == "Ignoré")
+                                            {
+                                                <span class="badge-modern badge-modern-warning">@resultat.Statut</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge-modern badge-modern-danger">@resultat.Statut</span>
+                                            }
+                                        </td>
+                                        <td>@resultat.Message</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+
+                @if (erreurs.Any())
+                {
+                    <div class="p-3" style="background: #fee2e2; border-top: 2px solid var(--danger);">
+                        <h5 style="color: var(--danger); margin-bottom: var(--spacing-sm);">
+                            <i class="bi bi-exclamation-triangle-fill"></i> Erreurs détaillées
+                        </h5>
+                        <ul style="margin: 0; padding-left: 20px;">
+                            @foreach (var erreur in erreurs)
+                            {
+                                <li style="color: var(--gray-700); margin-bottom: var(--spacing-xs);">@erreur</li>
+                            }
+                        </ul>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+

@@ -1,0 +1,294 @@
+@model GestionProjects.Domain.Models.Projet
+@{
+    var auditLogs = ViewBag.AuditLogs as IEnumerable<GestionProjects.Domain.Models.AuditLog> ?? Enumerable.Empty<GestionProjects.Domain.Models.AuditLog>();
+    var historiquePhases = Model.HistoriquePhases?.OrderByDescending(h => h.DateDebut).ToList() ?? new List<GestionProjects.Domain.Models.HistoriquePhaseProjet>();
+    
+    var allEvents = new List<dynamic>();
+                
+                // Ajouter les phases historiques
+                foreach (var phase in historiquePhases)
+                {
+                    allEvents.Add(new {
+                        Type = "Phase",
+                        Date = phase.DateDebut,
+                        Titre = $"Phase: {phase.Phase}",
+                        Description = $"Statut: {phase.StatutProjet}",
+                        Auteur = phase.ModifieParUtilisateur != null ? $"{phase.ModifieParUtilisateur.Nom} {phase.ModifieParUtilisateur.Prenoms}" : phase.CreePar,
+                        Commentaire = phase.Commentaire,
+                        Icon = "bi-diagram-3",
+                        Color = "var(--primary-blue)"
+                    });
+                    
+                    if (phase.DateFin.HasValue)
+                    {
+                        allEvents.Add(new {
+                            Type = "Phase",
+                            Date = phase.DateFin.Value,
+                            Titre = $"Fin de phase: {phase.Phase}",
+                            Description = $"Phase terminée",
+                            Auteur = phase.ModifieParUtilisateur != null ? $"{phase.ModifieParUtilisateur.Nom} {phase.ModifieParUtilisateur.Prenoms}" : phase.CreePar,
+                            Commentaire = phase.Commentaire,
+                            Icon = "bi-check-circle",
+                            Color = "var(--success)"
+                        });
+                    }
+                }
+                
+                // Ajouter les logs d'audit
+                foreach (var log in auditLogs)
+                {
+                    var icon = "bi-info-circle";
+                    var color = "var(--info)";
+                    var titre = log.TypeAction;
+                    
+                    // Déterminer l'icône et la couleur selon le type d'action
+                    switch (log.TypeAction.ToUpper())
+                    {
+                        case "CREATION_PROJET":
+                            icon = "bi-plus-circle-fill";
+                            color = "var(--success)";
+                            titre = "Création du projet";
+                            break;
+                        case "VALIDATION_DM":
+                        case "VALIDATION_DSI":
+                            icon = "bi-check-circle-fill";
+                            color = "var(--success)";
+                            titre = log.TypeAction.Contains("DM") ? "Validation Directeur Métier" : "Validation DSI";
+                            break;
+                        case "UPLOAD_LIVRABLE":
+                            icon = "bi-file-earmark-arrow-up";
+                            color = "var(--primary-blue)";
+                            titre = "Livrable déposé";
+                            break;
+                        case "AJOUT_ANOMALIE":
+                            icon = "bi-bug-fill";
+                            color = "var(--danger)";
+                            titre = "Anomalie ajoutée";
+                            break;
+                        case "AJOUT_RISQUE":
+                            icon = "bi-exclamation-triangle-fill";
+                            color = "var(--warning)";
+                            titre = "Risque ajouté";
+                            break;
+                        case "MODIFICATION_PROJET":
+                            icon = "bi-pencil-square";
+                            color = "var(--info)";
+                            titre = "Modification du projet";
+                            break;
+                        case "CHANGEMENT_PHASE":
+                            icon = "bi-arrow-right-circle";
+                            color = "var(--primary-blue)";
+                            titre = "Changement de phase";
+                            break;
+                    }
+                    
+                    allEvents.Add(new {
+                        Type = "Audit",
+                        Date = log.DateAction,
+                        Titre = titre,
+                        Description = log.TypeAction,
+                        Auteur = log.Utilisateur != null ? $"{log.Utilisateur.Nom} {log.Utilisateur.Prenoms}" : "Système",
+                        Commentaire = log.Commentaire,
+                        Icon = icon,
+                        Color = color
+                    });
+                }
+                
+                // Ajouter les événements importants du projet
+                if (Model.DateCreation != default)
+                {
+                    allEvents.Add(new {
+                        Type = "Projet",
+                        Date = Model.DateCreation,
+                        Titre = "Projet créé",
+                        Description = $"Projet {Model.CodeProjet} créé",
+                        Auteur = Model.CreePar,
+                        Commentaire = "",
+                        Icon = "bi-folder-plus",
+                        Color = "var(--success)"
+                    });
+                }
+                
+                if (Model.CharteValidee && Model.DateCharteValidee.HasValue)
+                {
+                    allEvents.Add(new {
+                        Type = "Projet",
+                        Date = Model.DateCharteValidee.Value,
+                        Titre = "Charte validée",
+                        Description = "Charte de projet validée",
+                        Auteur = "Chef de Projet",
+                        Commentaire = "",
+                        Icon = "bi-file-check",
+                        Color = "var(--success)"
+                    });
+                }
+                
+                if (Model.PlanningValideParDM && Model.DatePlanningValideParDM.HasValue)
+                {
+                    allEvents.Add(new {
+                        Type = "Projet",
+                        Date = Model.DatePlanningValideParDM.Value,
+                        Titre = "Planning validé par Directeur Métier",
+                        Description = "Planning validé",
+                        Auteur = Model.Sponsor != null ? $"{Model.Sponsor.Nom} {Model.Sponsor.Prenoms}" : "Directeur Métier",
+                        Commentaire = "",
+                        Icon = "bi-calendar-check",
+                        Color = "var(--success)"
+                    });
+                }
+                
+                if (Model.PlanningValideParDSI && Model.DatePlanningValideParDSI.HasValue)
+                {
+                    allEvents.Add(new {
+                        Type = "Projet",
+                        Date = Model.DatePlanningValideParDSI.Value,
+                        Titre = "Planning validé par DSI",
+                        Description = "Planning validé",
+                        Auteur = "DSI",
+                        Commentaire = "",
+                        Icon = "bi-shield-check",
+                        Color = "var(--success)"
+                    });
+                }
+                
+                if (Model.RecetteValidee && Model.DateRecetteValidee.HasValue)
+                {
+                    allEvents.Add(new {
+                        Type = "Projet",
+                        Date = Model.DateRecetteValidee.Value,
+                        Titre = "Recette validée",
+                        Description = "Recette UAT validée",
+                        Auteur = Model.RecetteValideePar != null ? $"{Model.RecetteValideePar.Nom} {Model.RecetteValideePar.Prenoms}" : "Directeur Métier",
+                        Commentaire = "",
+                        Icon = "bi-check2-square",
+                        Color = "var(--success)"
+                    });
+                }
+                
+                if (Model.MepEffectuee && Model.DateMep.HasValue)
+                {
+                    allEvents.Add(new {
+                        Type = "Projet",
+                        Date = Model.DateMep.Value,
+                        Titre = "Mise en production effectuée",
+                        Description = "MEP réalisée",
+                        Auteur = "Chef de Projet",
+                        Commentaire = "",
+                        Icon = "bi-rocket-takeoff",
+                        Color = "var(--primary-gold)"
+                    });
+                }
+                
+                // Trier tous les événements par date (plus récent en premier)
+                var sortedEvents = allEvents.OrderByDescending(e => e.Date).ToList();
+}
+
+<div class="card-modern">
+    <div class="card-header-modern">
+        <h3 class="card-title-modern">
+            <i class="bi bi-clock-history"></i>
+            Historique Complet du Projet
+        </h3>
+    </div>
+    <div class="card-body-modern">
+        <!-- Timeline de l'historique -->
+        <div class="timeline-container" style="position: relative; padding-left: var(--spacing-xl);">
+            @if (allEvents.Any())
+            {
+                <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(to bottom, var(--primary-blue), var(--gray-200)); border-radius: 2px;"></div>
+                
+                @foreach (var evt in sortedEvents)
+                {
+                    <div class="timeline-item" style="position: relative; margin-bottom: var(--spacing-xl); padding-left: var(--spacing-lg);">
+                        <div style="position: absolute; left: -8px; top: 8px; width: 16px; height: 16px; border-radius: 50%; background: @evt.Color; border: 3px solid var(--primary-white); box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 1;"></div>
+                        
+                        <div class="card-modern" style="border-left: 4px solid @evt.Color; box-shadow: var(--shadow-sm);">
+                            <div class="card-body-modern" style="padding: var(--spacing-md);">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="d-flex align-items-center gap-2" style="flex: 1;">
+                                        <i class="bi @evt.Icon" style="color: @evt.Color; font-size: 1.25rem;"></i>
+                                        <div>
+                                            <h5 class="mb-0" style="font-size: 1rem; font-weight: 600; color: var(--gray-800);">
+                                                @evt.Titre
+                                            </h5>
+                                            <small style="color: var(--gray-500); font-size: 0.875rem;">
+                                                @evt.Date.ToString("dd/MM/yyyy à HH:mm")
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <span class="badge-modern" style="background: @evt.Color; color: white; font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                                        @evt.Type
+                                    </span>
+                                </div>
+                                
+                                @if (!string.IsNullOrEmpty(evt.Description))
+                                {
+                                    <p class="mb-2" style="color: var(--gray-600); font-size: 0.9rem;">
+                                        @evt.Description
+                                    </p>
+                                }
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+                                        <i class="bi bi-person" style="color: var(--gray-400); font-size: 0.875rem;"></i>
+                                        <span style="color: var(--gray-600); font-size: 0.875rem; font-weight: 500;">
+                                            @evt.Auteur
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                @if (!string.IsNullOrEmpty(evt.Commentaire))
+                                {
+                                    <div class="mt-2 p-2" style="background: var(--gray-50); border-radius: var(--radius-md); border-left: 3px solid @evt.Color;">
+                                        <p class="mb-0" style="color: var(--gray-700); font-size: 0.875rem; white-space: pre-wrap;">
+                                            @evt.Commentaire
+                                        </p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center" style="padding: var(--spacing-2xl);">
+                    <i class="bi bi-inbox" style="font-size: 3rem; color: var(--gray-400); margin-bottom: var(--spacing-md);"></i>
+                    <p style="color: var(--gray-500); font-size: 1.1rem;">
+                        Aucun historique disponible pour ce projet.
+                    </p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .timeline-container {
+        position: relative;
+    }
+    
+    .timeline-item {
+        animation: fadeInUp 0.5s ease-out;
+    }
+    
+    @@keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .timeline-item:nth-child(even) {
+        animation-delay: 0.1s;
+    }
+    
+    .timeline-item:nth-child(odd) {
+        animation-delay: 0.2s;
+    }
+</style>
+

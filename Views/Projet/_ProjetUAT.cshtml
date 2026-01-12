@@ -1,0 +1,271 @@
+@model GestionProjects.Domain.Models.Projet
+
+@{
+    var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Guid.Empty.ToString());
+    var isChefProjet = User.IsInRole("ChefDeProjet") && Model.ChefProjetId == userId;
+    var isDirecteurMetier = User.IsInRole("DirecteurMetier") && Model.SponsorId == userId;
+    var isReadOnly = ViewBag.IsReadOnly as bool? ?? false;
+    var livrablesUAT = Model.Livrables?.Where(l => l.Phase == GestionProjects.Domain.Enums.PhaseProjet.UatMep).ToList() ?? new List<GestionProjects.Domain.Models.LivrableProjet>();
+    var canValiderRecette = isDirecteurMetier && !isReadOnly && Model.PhaseActuelle == GestionProjects.Domain.Enums.PhaseProjet.UatMep && !Model.RecetteValidee;
+}
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card-modern">
+            <div class="card-header-modern">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                        <i class="bi bi-check2-square"></i>
+                        Recette
+                    </h3>
+                    @if (Model.RecetteValidee)
+                    {
+                        <span class="badge-modern badge-modern-success">
+                            <i class="bi bi-check-circle"></i>
+                            Validée
+                        </span>
+                    }
+                </div>
+            </div>
+            <div class="card-body-modern">
+                @if (Model.RecetteValidee)
+                {
+                    <div style="padding: var(--spacing-lg); background: #d1fae5; border-radius: var(--radius-lg);">
+                        <div style="font-weight: 600; color: #065f46; margin-bottom: var(--spacing-sm);">
+                            <i class="bi bi-check-circle-fill"></i>
+                            Recette validée
+                        </div>
+                        <div style="color: #065f46; font-size: 0.875rem;">
+                            Validée le @Model.DateRecetteValidee?.ToString("dd/MM/yyyy") par @Model.RecetteValideePar?.Nom @Model.RecetteValideePar?.Prenoms
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div style="padding: var(--spacing-lg); background: #fef3c7; border-radius: var(--radius-lg);">
+                        <div style="font-weight: 600; color: #92400e; margin-bottom: var(--spacing-sm);">
+                            <i class="bi bi-clock"></i>
+                            En attente de validation
+                        </div>
+                        <div style="color: #92400e; font-size: 0.875rem; margin-bottom: var(--spacing-md);">
+                            La recette doit être validée par le Directeur Métier (Sponsor).
+                        </div>
+                        @if (canValiderRecette)
+                        {
+                            <form asp-action="ValiderRecette" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <button type="submit" class="btn-modern btn-modern-success">
+                                    <i class="bi bi-check-circle"></i>
+                                    Valider Recette
+                                </button>
+                            </form>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card-modern">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                    <i class="bi bi-rocket"></i>
+                    MEP (Mise en Production)
+                </h3>
+            </div>
+            <div class="card-body-modern">
+                @if (Model.MepEffectuee)
+                {
+                    <div style="padding: var(--spacing-lg); background: #d1fae5; border-radius: var(--radius-lg);">
+                        <div style="font-weight: 600; color: #065f46; margin-bottom: var(--spacing-sm);">
+                            <i class="bi bi-check-circle-fill"></i>
+                            MEP effectuée
+                        </div>
+                        <div style="color: #065f46; font-size: 0.875rem;">
+                            Effectuée le @Model.DateMep?.ToString("dd/MM/yyyy")
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div style="padding: var(--spacing-lg); background: #dbeafe; border-radius: var(--radius-lg);">
+                        <div style="font-weight: 600; color: #1e40af; margin-bottom: var(--spacing-sm);">
+                            <i class="bi bi-info-circle"></i>
+                            MEP en attente
+                        </div>
+                        <div style="color: #1e40af; font-size: 0.875rem;">
+                            La MEP sera effectuée après validation de la recette.
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card-modern mb-4">
+    <div class="card-header-modern">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                <i class="bi bi-file-earmark"></i>
+                Livrables UAT & MEP
+            </h3>
+            @if (isChefProjet && Model.PhaseActuelle == GestionProjects.Domain.Enums.PhaseProjet.UatMep)
+            {
+                <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#uploadLivrableModal" data-phase="UatMep">
+                    <i class="bi bi-upload"></i>
+                    Upload Livrable
+                </button>
+            }
+        </div>
+    </div>
+    <div class="card-body-modern">
+        @if (livrablesUAT.Any())
+        {
+            <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
+                @foreach (var livrable in livrablesUAT)
+                {
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--spacing-md); background: var(--gray-50); border-radius: var(--radius-lg);">
+                        <div style="display: flex; align-items: center; gap: var(--spacing-md);">
+                            <i class="bi bi-file-earmark" style="font-size: 1.5rem; color: var(--primary-blue);"></i>
+                            <div>
+                                <a href="~/@livrable.CheminRelatif" target="_blank" style="color: var(--primary-blue); text-decoration: none; font-weight: 500;">
+                                    @livrable.NomDocument
+                                </a>
+                                <div style="font-size: 0.875rem; color: var(--gray-500);">
+                                    Type: @livrable.TypeLivrable | Déposé le @livrable.DateDepot.ToString("dd/MM/yyyy")
+                                </div>
+                            </div>
+                        </div>
+                        <a href="~/@livrable.CheminRelatif" target="_blank" class="btn-modern btn-modern-secondary" style="padding: var(--spacing-xs) var(--spacing-md);">
+                            <i class="bi bi-download"></i>
+                        </a>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div style="text-align: center; padding: var(--spacing-xl); color: var(--gray-500);">
+                <i class="bi bi-inbox" style="font-size: 2rem; margin-bottom: var(--spacing-sm);"></i>
+                <p>Aucun livrable UAT & MEP pour le moment.</p>
+            </div>
+        }
+    </div>
+</div>
+
+@if (isChefProjet && Model.PhaseActuelle == GestionProjects.Domain.Enums.PhaseProjet.UatMep && Model.RecetteValidee)
+{
+    <div class="card-modern mb-4" style="background: linear-gradient(135deg, var(--primary-blue) 0%, #2a6ba0 100%); border: none;">
+        <div class="card-body-modern" style="text-align: center; padding: var(--spacing-xl); color: white;">
+            <i class="bi bi-check-circle-fill" style="font-size: 3rem; margin-bottom: var(--spacing-md);"></i>
+            <h4 style="color: white; margin-bottom: var(--spacing-md);">UAT terminée ?</h4>
+            <p style="color: rgba(255,255,255,0.9); margin-bottom: var(--spacing-lg);">
+                Si la recette est validée et tous les livrables UAT sont fournis, vous pouvez passer le projet en phase Clôture.
+            </p>
+            <form asp-action="FinUAT" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" class="btn-modern" style="background: white; color: var(--primary-blue); padding: var(--spacing-md) var(--spacing-xl); font-weight: 600;" onclick="return confirm('Le projet est prêt pour la clôture ? Cette action passera le projet en phase Clôture & Leçons apprises.');">
+                    <i class="bi bi-flag-checkered"></i>
+                    Fin UAT - Prêt pour Clôture
+                </button>
+            </form>
+        </div>
+    </div>
+}
+
+<!-- Anomalies UAT -->
+@if (Model.Anomalies != null && Model.Anomalies.Any())
+{
+    <div class="card-modern">
+        <div class="card-header-modern">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                    <i class="bi bi-bug"></i>
+                    Anomalies UAT (@Model.Anomalies.Count)
+                </h3>
+                @if (isChefProjet && Model.PhaseActuelle == GestionProjects.Domain.Enums.PhaseProjet.UatMep)
+                {
+                    <button type="button" class="btn-modern btn-modern-warning" data-bs-toggle="modal" data-bs-target="#ajouterAnomalieModal">
+                        <i class="bi bi-plus-circle"></i>
+                        Ajouter
+                    </button>
+                }
+            </div>
+        </div>
+        <div class="card-body-modern">
+            <div class="table-modern">
+                <table style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Référence</th>
+                            <th>Description</th>
+                            <th>Priorité</th>
+                            <th>Statut</th>
+                            <th>Environnement</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var anomalie in Model.Anomalies)
+                        {
+                            <tr>
+                                <td><strong>@anomalie.Reference</strong></td>
+                                <td>@anomalie.Description</td>
+                                <td>
+                                    <span class="badge-modern badge-modern-@GetPrioriteClass(anomalie.Priorite)">
+                                        @anomalie.Priorite
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge-modern badge-modern-@GetStatutAnomalieClass(anomalie.Statut)">
+                                        @anomalie.Statut
+                                    </span>
+                                </td>
+                                <td>@anomalie.Environnement</td>
+                                <td>
+                                    <button class="btn-modern btn-modern-secondary" style="padding: var(--spacing-xs) var(--spacing-md); font-size: 0.875rem;">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@functions {
+    string GetPrioriteClass(GestionProjects.Domain.Enums.PrioriteAnomalie priorite)
+    {
+        return priorite switch
+        {
+            GestionProjects.Domain.Enums.PrioriteAnomalie.Critique => "danger",
+            GestionProjects.Domain.Enums.PrioriteAnomalie.Haute => "warning",
+            GestionProjects.Domain.Enums.PrioriteAnomalie.Moyenne => "info",
+            GestionProjects.Domain.Enums.PrioriteAnomalie.Basse => "secondary",
+            _ => "secondary"
+        };
+    }
+
+    string GetStatutAnomalieClass(GestionProjects.Domain.Enums.StatutAnomalie statut)
+    {
+        return statut switch
+        {
+            GestionProjects.Domain.Enums.StatutAnomalie.Ouverte => "warning",
+            GestionProjects.Domain.Enums.StatutAnomalie.EnCours => "info",
+            GestionProjects.Domain.Enums.StatutAnomalie.Corrigee => "success",
+            GestionProjects.Domain.Enums.StatutAnomalie.AValider => "info",
+            GestionProjects.Domain.Enums.StatutAnomalie.Fermee => "success",
+            GestionProjects.Domain.Enums.StatutAnomalie.Rejetee => "danger",
+            _ => "secondary"
+        };
+    }
+}
+
+

@@ -1,0 +1,689 @@
+@model IEnumerable<GestionProjects.Domain.Models.Utilisateur>
+
+@{
+    ViewData["Title"] = "Gestion des Utilisateurs";
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="display-6 mb-0">
+            <i class="bi bi-people-fill" style="color: var(--primary-blue);"></i>
+            Gestion des Utilisateurs
+        </h2>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#createUserModal" onclick="resetForm()">
+                <i class="bi bi-person-plus"></i> Nouvel Utilisateur
+            </button>
+            <a asp-action="ImportUsers" class="btn-modern btn-modern-success">
+                <i class="bi bi-file-earmark-excel"></i> Importer depuis Excel
+            </a>
+        </div>
+    </div>
+
+    @await Html.PartialAsync("_ValidationSummary")
+
+    <div class="card-modern">
+        <div class="card-header-modern">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="card-title-modern mb-0">
+                    <i class="bi bi-list-ul"></i> Liste des Utilisateurs
+                </h3>
+                <span class="badge-modern badge-modern-info">@Model.Count() utilisateur(s)</span>
+            </div>
+        </div>
+        <div class="card-body-modern p-0">
+            <div class="table-responsive">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th><i class="bi bi-person"></i> Utilisateur</th>
+                            <th><i class="bi bi-envelope"></i> Contact</th>
+                            <th><i class="bi bi-building"></i> Direction</th>
+                            <th><i class="bi bi-shield-check"></i> Rôle</th>
+                            <th><i class="bi bi-clock-history"></i> Dernière connexion</th>
+                            <th class="text-center"><i class="bi bi-gear"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Any())
+                        {
+                            @foreach (var user in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0" 
+                                                 style="width: 36px; height: 36px; font-size: 0.8rem; font-weight: 600;">
+                                                @(user.Nom?.Substring(0, 1) ?? "?")@(user.Prenoms?.Substring(0, 1) ?? "")
+                                            </div>
+                                            <div>
+                                                <div class="fw-semibold text-primary mb-1" style="font-size: 0.875rem;">
+                                                    @user.Nom @user.Prenoms
+                                                </div>
+                                                <div class="text-muted" style="font-size: 0.75rem;">
+                                                    <i class="bi bi-person-badge"></i> @user.Matricule
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a href="mailto:@user.Email" class="text-decoration-none text-primary" style="font-size: 0.875rem;">
+                                           @user.Email
+                                        </a>
+                                    </td>
+                                    <td>
+                                        @if (user.Direction != null)
+                                        {
+                                            <span class="badge-modern badge-modern-secondary">
+                                                @user.Direction.Libelle
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted fst-italic">Non assigné</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @{
+                                            var rolesActifs = user.GetRolesActifs().ToList();
+                                        }
+                                        @if (rolesActifs.Any())
+                                        {
+                                            @foreach (var role in rolesActifs)
+                                            {
+                                                string badgeClass = "badge-modern-primary";
+                                                string icon = "bi-person";
+                                                
+                                                switch (role.ToString())
+                                                {
+                                                    case "DSI":
+                                                        badgeClass = "badge-modern-danger";
+                                                        icon = "bi-shield-fill";
+                                                        break;
+                                                    case "DirecteurMetier":
+                                                        badgeClass = "badge-modern-warning";
+                                                        icon = "bi-person-badge";
+                                                        break;
+                                                    case "ChefDeProjet":
+                                                        badgeClass = "badge-modern-info";
+                                                        icon = "bi-briefcase";
+                                                        break;
+                                                    case "AdminIT":
+                                                        badgeClass = "badge-modern-dark";
+                                                        icon = "bi-gear-fill";
+                                                        break;
+                                                    case "ResponsableSolutionsIT":
+                                                        badgeClass = "badge-modern-secondary";
+                                                        icon = "bi-person-workspace";
+                                                        break;
+                                                    case "Demandeur":
+                                                        badgeClass = "badge-modern-primary";
+                                                        icon = "bi-person";
+                                                        break;
+                                                }
+                                                <span class="badge-modern @badgeClass" style="margin-right: 4px;">
+                                                    <i class="bi @icon"></i> @role
+                                                </span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="badge-modern badge-modern-secondary">
+                                                <i class="bi bi-dash-circle"></i> Aucun rôle
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (user.DateDerniereConnexion.HasValue)
+                                        {
+                                            <div style="font-size: 0.875rem;">
+                                                <div class="d-flex align-items-center gap-1 mb-1">
+                                                    <span>@user.DateDerniereConnexion.Value.ToString("dd/MM/yyyy")</span>
+                                                </div>
+                                                <small class="text-muted" style="font-size: 0.75rem; margin-left: 1.25rem;">
+                                                    @user.DateDerniereConnexion.Value.ToString("HH:mm")
+                                                </small>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted fst-italic">
+                                                <i class="bi bi-dash-circle"></i> Jamais
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-2 justify-content-center">
+                                            <button type="button" 
+                                                    class="btn-modern btn-modern-warning btn-sm" 
+                                                    onclick="editUser('@user.Id')"
+                                                    title="Modifier">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                            <a asp-action="GererRoles" asp-route-id="@user.Id" 
+                                               class="btn-modern btn-modern-primary btn-sm" 
+                                               title="Gérer les rôles">
+                                                <i class="bi bi-shield-check"></i>
+                                            </a>
+                                            <form asp-action="DeleteUser" asp-route-id="@user.Id" method="post" class="d-inline" 
+                                                  onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn-modern btn-modern-danger btn-sm" title="Supprimer">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                            <button type="button" class="btn-modern btn-modern-secondary btn-sm" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#resetPasswordModal"
+                                                    data-user-id="@user.Id"
+                                                    data-user-name="@user.Nom @user.Prenoms"
+                                                    title="Réinitialiser le mot de passe">
+                                                <i class="bi bi-key"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-5">
+                                    <i class="bi bi-inbox" style="font-size: 3rem; color: var(--gray-400);"></i>
+                                    <p class="text-muted mt-3">Aucun utilisateur trouvé</p>
+                                    <button type="button" class="btn-modern btn-modern-primary mt-2" data-bs-toggle="modal" data-bs-target="#createUserModal" onclick="resetForm()">
+                                        <i class="bi bi-plus-circle"></i> Créer le premier utilisateur
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Create/Edit User -->
+<div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.1); overflow: hidden;">
+            <form id="userForm" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="userId" value="" />
+                
+                <div class="modal-header" style="background: linear-gradient(135deg, #3481c0 0%, #2a6ba5 100%); border: none; padding: 24px 32px;">
+                    <h5 class="modal-title" id="createUserModalLabel" style="font-weight: 600; color: white; display: flex; align-items: center; gap: 12px; font-size: 1.5rem;">
+                        <i class="bi bi-person-plus" style="font-size: 1.75rem;"></i>
+                        <span id="modalTitle">Nouvel Utilisateur</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.9;"></button>
+                </div>
+                
+                <div class="modal-body" style="padding: 32px; background: #f8f9fa; max-height: 70vh; overflow-y: auto;">
+                    <div class="row g-4">
+                        <!-- Section Informations Personnelles -->
+                        <div class="col-12">
+                            <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-bottom: 24px;">
+                                <h6 style="color: #3481c0; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; font-size: 1.1rem; border-bottom: 2px solid #f0f0f0; padding-bottom: 12px;">
+                                    <i class="bi bi-person-badge" style="font-size: 1.3rem;"></i> Informations Personnelles
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern" for="matricule" style="font-weight: 500; margin-bottom: 8px; color: #495057;">
+                                                <i class="bi bi-upc-scan" style="color: #3481c0; margin-right: 6px;"></i> Matricule *
+                                            </label>
+                                            <input type="text" name="Matricule" id="matricule" class="form-control-modern" required maxlength="50" placeholder="Ex: MAT001" style="padding: 12px 16px; border: 1.5px solid #e0e0e0; border-radius: 8px; transition: all 0.3s; font-size: 0.95rem;" onfocus="this.style.borderColor='#dbb438'; this.style.boxShadow='0 0 0 3px rgba(219,180,56,0.1)'" onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'" />
+                                            <span class="text-danger field-validation-valid" data-valmsg-for="Matricule" data-valmsg-replace="true"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern" for="email" style="font-weight: 500; margin-bottom: 8px; color: #495057;">
+                                                <i class="bi bi-envelope" style="color: #3481c0; margin-right: 6px;"></i> Email *
+                                            </label>
+                                            <input type="email" name="Email" id="email" class="form-control-modern" required maxlength="200" placeholder="Ex: m.konate@cotedivoireterminal.ci" style="padding: 12px 16px; border: 1.5px solid #e0e0e0; border-radius: 8px; transition: all 0.3s; font-size: 0.95rem;" onfocus="this.style.borderColor='#dbb438'; this.style.boxShadow='0 0 0 3px rgba(219,180,56,0.1)'" onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'" />
+                                            <span class="text-danger field-validation-valid" data-valmsg-for="Email" data-valmsg-replace="true"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern" for="nom" style="font-weight: 500; margin-bottom: 8px; color: #495057;">
+                                                <i class="bi bi-person" style="color: #3481c0; margin-right: 6px;"></i> Nom *
+                                            </label>
+                                            <input type="text" name="Nom" id="nom" class="form-control-modern" required maxlength="100" placeholder="Ex: KONATE" style="padding: 12px 16px; border: 1.5px solid #e0e0e0; border-radius: 8px; transition: all 0.3s; font-size: 0.95rem;" onfocus="this.style.borderColor='#dbb438'; this.style.boxShadow='0 0 0 3px rgba(219,180,56,0.1)'" onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'" />
+                                            <span class="text-danger field-validation-valid" data-valmsg-for="Nom" data-valmsg-replace="true"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern" for="prenoms" style="font-weight: 500; margin-bottom: 8px; color: #495057;">
+                                                <i class="bi bi-person-vcard" style="color: #3481c0; margin-right: 6px;"></i> Prénoms *
+                                            </label>
+                                            <input type="text" name="Prenoms" id="prenoms" class="form-control-modern" required maxlength="100" placeholder="Ex: Mamadou" style="padding: 12px 16px; border: 1.5px solid #e0e0e0; border-radius: 8px; transition: all 0.3s; font-size: 0.95rem;" onfocus="this.style.borderColor='#dbb438'; this.style.boxShadow='0 0 0 3px rgba(219,180,56,0.1)'" onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'" />
+                                            <span class="text-danger field-validation-valid" data-valmsg-for="Prenoms" data-valmsg-replace="true"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern" for="directionId" style="font-weight: 500; margin-bottom: 8px; color: #495057;">
+                                                <i class="bi bi-building" style="color: #3481c0; margin-right: 6px;"></i> Direction
+                                            </label>
+                                            <select name="DirectionId" id="directionId" class="form-control-modern" style="padding: 12px 16px; border: 1.5px solid #e0e0e0; border-radius: 8px; transition: all 0.3s; font-size: 0.95rem; background-color: white;" onfocus="this.style.borderColor='#dbb438'; this.style.boxShadow='0 0 0 3px rgba(219,180,56,0.1)'" onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+                                                <option value="">-- Sélectionner une direction --</option>
+                                                @if (ViewBag.Directions != null)
+                                                {
+                                                    @foreach (var dir in (IEnumerable<GestionProjects.Domain.Models.Direction>)ViewBag.Directions)
+                                                    {
+                                                        <option value="@dir.Id">@dir.Libelle</option>
+                                                    }
+                                                }
+                                            </select>
+                                            <span class="text-danger field-validation-valid" data-valmsg-for="DirectionId" data-valmsg-replace="true"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Note: Les rôles seront assignés après la création via la gestion des rôles -->
+                        <div class="col-12">
+                            <div style="background: #fffbf0; padding: 16px; border-radius: 10px; border: 1px solid #dbb438; margin-bottom: 24px;">
+                                <small style="display: flex; align-items: center; gap: 8px; color: #856404; font-size: 0.9rem;">
+                                    <i class="bi bi-info-circle" style="color: #dbb438; font-size: 1.1rem;"></i> 
+                                    <strong>Note :</strong> Le rôle <strong>"Demandeur"</strong> sera assigné automatiquement à la création. Vous pourrez gérer les rôles après la création de l'utilisateur.
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Section Sécurité -->
+                        <div class="col-12">
+                            <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-bottom: 24px;">
+                                <h6 style="color: #3481c0; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; font-size: 1.1rem; border-bottom: 2px solid #f0f0f0; padding-bottom: 12px;">
+                                    <i class="bi bi-shield-lock" style="font-size: 1.3rem;"></i> Sécurité
+                                </h6>
+                                <div class="row g-3" id="passwordFieldsContainer">
+                                    <div class="col-md-6" id="passwordField">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern" for="motDePasse" style="font-weight: 500; margin-bottom: 8px; color: #495057;">
+                                                <i class="bi bi-key" style="color: #3481c0; margin-right: 6px;"></i> Mot de passe *
+                                            </label>
+                                            <div class="input-group">
+                                                <input type="password" name="motDePasse" id="motDePasse" class="form-control-modern" required minlength="6" placeholder="Minimum 6 caractères" style="padding: 12px 16px; border: 1.5px solid #e0e0e0; border-radius: 8px 0 0 8px; transition: all 0.3s; font-size: 0.95rem; border-right: none;" onfocus="this.style.borderColor='#dbb438'; this.style.boxShadow='0 0 0 3px rgba(219,180,56,0.1)'" onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'" />
+                                                <button type="button" class="btn" id="generatePasswordBtn" style="background: #dbb438; color: white; border: 1.5px solid #dbb438; border-left: none; border-radius: 0 8px 8px 0; padding: 12px 16px; font-weight: 500; transition: all 0.3s;" onmouseover="this.style.background='#c9a030'" onmouseout="this.style.background='#dbb438'" title="Générer un mot de passe aléatoire">
+                                                    <i class="bi bi-shuffle"></i>
+                                                </button>
+                                            </div>
+                                            <small class="text-muted" style="display: flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 0.85rem; color: #6c757d;">
+                                                <i class="bi bi-info-circle"></i> Minimum 6 caractères requis
+                                            </small>
+                                            <span class="text-danger field-validation-valid" data-valmsg-for="motDePasse" data-valmsg-replace="true"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6" id="confirmPasswordField">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern" for="confirmMotDePasse" style="font-weight: 500; margin-bottom: 8px; color: #495057;">
+                                                <i class="bi bi-key-fill" style="color: #3481c0; margin-right: 6px;"></i> Confirmer le mot de passe *
+                                            </label>
+                                            <input type="password" name="confirmMotDePasse" id="confirmMotDePasse" class="form-control-modern" required minlength="6" placeholder="Répétez le mot de passe" style="padding: 12px 16px; border: 1.5px solid #e0e0e0; border-radius: 8px; transition: all 0.3s; font-size: 0.95rem;" onfocus="this.style.borderColor='#dbb438'; this.style.boxShadow='0 0 0 3px rgba(219,180,56,0.1)'" onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'" />
+                                            <small class="text-muted" style="display: flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 0.85rem; color: #6c757d;">
+                                                <i class="bi bi-info-circle"></i> Les mots de passe doivent correspondre
+                                            </small>
+                                            <span class="text-danger field-validation-valid" data-valmsg-for="confirmMotDePasse" data-valmsg-replace="true"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section Permissions -->
+                        <div class="col-12">
+                            <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                                <h6 style="color: #3481c0; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; font-size: 1.1rem; border-bottom: 2px solid #f0f0f0; padding-bottom: 12px;">
+                                    <i class="bi bi-sliders" style="font-size: 1.3rem;"></i> Permissions
+                                </h6>
+                                <div style="display: flex; align-items: center; gap: 12px; padding: 16px; background: #f8f9fa; border-radius: 10px; border: 2px solid #e8e8e8; transition: all 0.3s;" onmouseover="this.style.borderColor='#dbb438'; this.style.backgroundColor='#fffbf0'" onmouseout="this.style.borderColor='#e8e8e8'; this.style.backgroundColor='#f8f9fa'">
+                                    <input type="checkbox" name="PeutCreerDemandeProjet" id="peutCreerDemandeProjet" value="true" class="form-check-input" style="width: 22px; height: 22px; cursor: pointer; accent-color: #dbb438;" checked />
+                                    <input type="hidden" name="PeutCreerDemandeProjet" value="false" />
+                                    <label class="form-check-label" for="peutCreerDemandeProjet" style="cursor: pointer; font-weight: 500; color: #333; margin: 0; font-size: 0.95rem; flex: 1;">
+                                        <i class="bi bi-file-earmark-plus" style="color: #3481c0; margin-right: 6px;"></i> Peut créer des demandes de projet
+                                    </label>
+                                </div>
+                                <small class="text-muted" style="display: flex; align-items: center; gap: 6px; margin-top: 10px; padding-left: 4px; font-size: 0.9rem;">
+                                    <i class="bi bi-info-circle" style="color: #3481c0;"></i> Si cette option est activée, l'utilisateur pourra créer de nouvelles demandes de projet
+                                </small>
+                                <span class="text-danger field-validation-valid" data-valmsg-for="PeutCreerDemandeProjet" data-valmsg-replace="true"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid #e0e0e0; padding: 20px 32px; background: white; display: flex; justify-content: flex-end; gap: 12px;">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal" style="padding: 10px 24px; border-radius: 8px; font-weight: 500; transition: all 0.3s; border: 1.5px solid #e0e0e0; background: white; color: #495057;" onmouseover="this.style.borderColor='#adb5bd'; this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.borderColor='#e0e0e0'; this.style.backgroundColor='white'">
+                        <i class="bi bi-x-circle"></i> Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-primary" style="padding: 10px 24px; border-radius: 8px; font-weight: 500; background: #3481c0; border: none; color: white; transition: all 0.3s;" onmouseover="this.style.background='#2a6ba5'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(52,129,192,0.3)'" onmouseout="this.style.background='#3481c0'; this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                        <i class="bi bi-check-circle"></i> <span id="submitBtnText">Enregistrer</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Réinitialiser Mot de Passe -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
+            <form asp-action="ResetPassword" method="post" id="resetPasswordForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="resetPasswordUserId" value="" />
+                <div class="modal-header" style="border-bottom: 1px solid var(--gray-200); padding: var(--spacing-lg); background: #fef3c7;">
+                    <h5 class="modal-title" style="font-weight: 600; color: #92400e; display: flex; align-items: center; gap: var(--spacing-sm);">
+                        <i class="bi bi-key-fill" style="color: var(--warning);"></i>
+                        Réinitialiser le mot de passe
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: var(--spacing-lg);">
+                    <p style="color: var(--gray-600); margin-bottom: var(--spacing-lg);">
+                        Réinitialisation du mot de passe pour : <strong id="resetPasswordUserName"></strong>
+                    </p>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Nouveau mot de passe *</label>
+                        <input type="password" name="nouveauMotDePasse" id="nouveauMotDePasse" class="form-control-modern" required minlength="6" />
+                        <small class="text-muted" style="font-size: 0.75rem; color: var(--gray-500);">
+                            <i class="bi bi-info-circle"></i> Minimum 6 caractères
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-warning">
+                        <i class="bi bi-key"></i>
+                        Réinitialiser
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Fonction pour mettre à jour le champ hidden des rôles (si la section existe)
+        function updateRolesHidden() {
+            const hiddenField = document.getElementById('rolesHidden');
+            if (hiddenField) {
+                const checkedRoles = Array.from(document.querySelectorAll('.role-checkbox:checked'))
+                    .map(cb => cb.value)
+                    .filter(v => v) // Filtrer les valeurs vides
+                    .join(',');
+                hiddenField.value = checkedRoles;
+                console.log('Rôles sélectionnés:', checkedRoles); // Debug
+            }
+        }
+
+        // Fonction de validation de correspondance des mots de passe
+        // Fonction pour générer un mot de passe aléatoire
+        function generateRandomPassword() {
+            const length = 12;
+            const specialChars = String.fromCharCode(33, 64, 35, 36, 37, 94, 38, 42);
+            const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' + specialChars;
+            let password = "";
+            
+            // S'assurer qu'il y a au moins une majuscule, une minuscule, un chiffre et un caractère spécial
+            password += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[Math.floor(Math.random() * 26)];
+            password += "abcdefghijklmnopqrstuvwxyz"[Math.floor(Math.random() * 26)];
+            password += "0123456789"[Math.floor(Math.random() * 10)];
+            password += specialChars[Math.floor(Math.random() * specialChars.length)];
+            
+            // Remplir le reste avec des caractères aléatoires
+            for (let i = password.length; i < length; i++) {
+                password += charset[Math.floor(Math.random() * charset.length)];
+            }
+            
+            // Mélanger les caractères
+            password = password.split('').sort(() => Math.random() - 0.5).join('');
+            
+            return password;
+        }
+
+        // Gestionnaire d'événement pour le bouton de génération de mot de passe
+        document.addEventListener('DOMContentLoaded', function() {
+            const generateBtn = document.getElementById('generatePasswordBtn');
+            if (generateBtn) {
+                generateBtn.addEventListener('click', function() {
+                    const passwordField = document.getElementById('motDePasse');
+                    const confirmPasswordField = document.getElementById('confirmMotDePasse');
+                    
+                    if (passwordField) {
+                        const newPassword = generateRandomPassword();
+                        passwordField.value = newPassword;
+                        passwordField.type = 'text'; // Afficher temporairement le mot de passe
+                        
+                        // Remettre en type password après 3 secondes
+                        setTimeout(() => {
+                            passwordField.type = 'password';
+                        }, 3000);
+                        
+                        // Mettre à jour le champ de confirmation
+                        if (confirmPasswordField) {
+                            confirmPasswordField.value = newPassword;
+                            confirmPasswordField.type = 'text';
+                            setTimeout(() => {
+                                confirmPasswordField.type = 'password';
+                            }, 3000);
+                        }
+                        
+                        // Déclencher la validation
+                        if (confirmPasswordField) {
+                            validatePasswordMatch();
+                        }
+                    }
+                });
+            }
+        });
+
+        function validatePasswordMatch() {
+            const passwordField = document.getElementById('motDePasse') || document.getElementById('nouveauMotDePasse');
+            const confirmField = document.getElementById('confirmMotDePasse') || document.getElementById('confirmNouveauMotDePasse');
+            
+            if (!passwordField || !confirmField) return;
+            
+            const password = passwordField.value;
+            const confirm = confirmField.value;
+            
+            if (confirm.length > 0 && password !== confirm) {
+                confirmField.setCustomValidity('Les mots de passe ne correspondent pas');
+                confirmField.classList.add('is-invalid');
+            } else {
+                confirmField.setCustomValidity('');
+                confirmField.classList.remove('is-invalid');
+            }
+        }
+
+        // Initialiser le modal de réinitialisation de mot de passe et les checkboxes de rôles
+        document.addEventListener('DOMContentLoaded', function() {
+            // Gérer les checkboxes de rôles
+            document.querySelectorAll('.role-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', updateRolesHidden);
+            });
+            // Initialiser le champ caché avec les rôles cochés par défaut
+            setTimeout(() => {
+                updateRolesHidden();
+                // Si aucun rôle n'est sélectionné, forcer Demandeur (id=1)
+                const rolesHidden = document.getElementById('rolesHidden');
+                if (!rolesHidden?.value || rolesHidden.value.trim() === '') {
+                    rolesHidden.value = '1'; // Demandeur par défaut
+                }
+                console.log('Rôles initialisés:', rolesHidden?.value);
+            }, 100);
+            
+            // Ajouter la validation des mots de passe si les champs existent
+            const passwordField = document.getElementById('motDePasse');
+            const confirmField = document.getElementById('confirmMotDePasse');
+            if (passwordField && confirmField) {
+                passwordField.addEventListener('input', validatePasswordMatch);
+                confirmField.addEventListener('input', validatePasswordMatch);
+            }
+
+            const resetPasswordModal = document.getElementById('resetPasswordModal');
+            if (resetPasswordModal) {
+                resetPasswordModal.addEventListener('show.bs.modal', function(event) {
+                    const button = event.relatedTarget;
+                    const userId = button.getAttribute('data-user-id');
+                    const userName = button.getAttribute('data-user-name');
+                    
+                    document.getElementById('resetPasswordUserId').value = userId;
+                    document.getElementById('resetPasswordUserName').textContent = userName;
+                    document.getElementById('nouveauMotDePasse').value = '';
+                });
+            }
+        });
+
+        // Fonction pour réinitialiser le formulaire
+        function resetForm() {
+            document.getElementById('userForm').reset();
+            document.getElementById('userId').value = '';
+            document.getElementById('userForm').action = '@Url.Action("CreateUser")';
+            document.getElementById('modalTitle').textContent = 'Nouvel Utilisateur';
+            document.getElementById('submitBtnText').textContent = 'Enregistrer';
+            
+            // Note: Les rôles ne sont plus gérés dans ce formulaire (section retirée)
+            
+            // Réinitialiser les champs mot de passe
+            const passwordField = document.getElementById('passwordField');
+            passwordField.innerHTML = `
+                <div class="form-group-modern">
+                    <label class="form-label-modern" for="motDePasse" style="font-weight: 500; margin-bottom: 8px; color: #495057;">
+                        <i class="bi bi-key" style="color: #3481c0; margin-right: 6px;"></i> Mot de passe *
+                    </label>
+                    <input type="password" name="motDePasse" id="motDePasse" class="form-control-modern" required minlength="6" placeholder="Minimum 6 caractères" style="padding: 12px 16px; border: 1.5px solid #e0e0e0; border-radius: 8px; transition: all 0.3s; font-size: 0.95rem;" onfocus="this.style.borderColor='#dbb438'; this.style.boxShadow='0 0 0 3px rgba(219,180,56,0.1)'" onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'" />
+                    <small class="text-muted" style="display: flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 0.85rem; color: #6c757d;">
+                        <i class="bi bi-info-circle"></i> Minimum 6 caractères requis
+                    </small>
+                    <span class="text-danger field-validation-valid" data-valmsg-for="motDePasse" data-valmsg-replace="true"></span>
+                </div>
+            `;
+            
+            const confirmPasswordField = document.getElementById('confirmPasswordField');
+            confirmPasswordField.innerHTML = `
+                <div class="form-group-modern">
+                    <label class="form-label-modern" for="confirmMotDePasse" style="font-weight: 500; margin-bottom: 8px; color: #495057;">
+                        <i class="bi bi-key-fill" style="color: #3481c0; margin-right: 6px;"></i> Confirmer le mot de passe *
+                    </label>
+                    <input type="password" name="confirmMotDePasse" id="confirmMotDePasse" class="form-control-modern" required minlength="6" placeholder="Répétez le mot de passe" style="padding: 12px 16px; border: 1.5px solid #e0e0e0; border-radius: 8px; transition: all 0.3s; font-size: 0.95rem;" onfocus="this.style.borderColor='#dbb438'; this.style.boxShadow='0 0 0 3px rgba(219,180,56,0.1)'" onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'" />
+                    <small class="text-muted" style="display: flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 0.85rem; color: #6c757d;">
+                        <i class="bi bi-info-circle"></i> Les mots de passe doivent correspondre
+                    </small>
+                    <span class="text-danger field-validation-valid" data-valmsg-for="confirmMotDePasse" data-valmsg-replace="true"></span>
+                </div>
+            `;
+            
+            // Ajouter la validation en temps réel
+            setTimeout(() => {
+                document.getElementById('confirmMotDePasse')?.addEventListener('input', validatePasswordMatch);
+                document.getElementById('motDePasse')?.addEventListener('input', validatePasswordMatch);
+            }, 100);
+        }
+
+        // Fonction pour charger et éditer un utilisateur
+        async function editUser(userId) {
+            try {
+                // Afficher un loader
+                const modal = new bootstrap.Modal(document.getElementById('createUserModal'));
+                modal.show();
+                
+                document.getElementById('modalTitle').textContent = 'Modifier l\'Utilisateur';
+                document.getElementById('submitBtnText').textContent = 'Mettre à jour';
+                document.getElementById('userId').value = userId;
+                document.getElementById('userForm').action = '@Url.Action("UpdateUser")';
+
+                // Charger les données de l'utilisateur via AJAX
+                const response = await fetch('@Url.Action("GetUser")?id=' + userId);
+                
+                if (!response.ok) {
+                    throw new Error('Erreur lors du chargement des données');
+                }
+
+                const user = await response.json();
+
+                // Remplir le formulaire
+                document.getElementById('matricule').value = user.matricule || '';
+                document.getElementById('nom').value = user.nom || '';
+                document.getElementById('prenoms').value = user.prenoms || '';
+                document.getElementById('email').value = user.email || '';
+                document.getElementById('directionId').value = user.directionId || '';
+                document.getElementById('peutCreerDemandeProjet').checked = user.peutCreerDemandeProjet !== undefined ? user.peutCreerDemandeProjet : true;
+
+                // Note: La gestion des rôles se fait maintenant via la vue dédiée "GererRoles"
+                // On ne gère plus les rôles dans le formulaire de modification
+
+                // Modifier les champs mot de passe pour l'édition
+                const passwordField = document.getElementById('passwordField');
+                passwordField.innerHTML = `
+                    <div class="form-group-modern">
+                        <label class="form-label-modern" for="nouveauMotDePasse" style="font-weight: 500; margin-bottom: 8px; color: #495057;">
+                            <i class="bi bi-key" style="color: #3481c0; margin-right: 6px;"></i> Nouveau mot de passe
+                        </label>
+                        <input type="password" name="nouveauMotDePasse" id="nouveauMotDePasse" class="form-control-modern" minlength="6" placeholder="Laisser vide pour ne pas modifier" style="padding: 12px 16px; border: 1.5px solid #e0e0e0; border-radius: 8px; transition: all 0.3s; font-size: 0.95rem;" onfocus="this.style.borderColor='#dbb438'; this.style.boxShadow='0 0 0 3px rgba(219,180,56,0.1)'" onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'" />
+                        <small class="text-muted" style="display: flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 0.85rem; color: #6c757d;">
+                            <i class="bi bi-info-circle"></i> Minimum 6 caractères si modifié
+                        </small>
+                        <span class="text-danger field-validation-valid" data-valmsg-for="nouveauMotDePasse" data-valmsg-replace="true"></span>
+                    </div>
+                `;
+                
+                const confirmPasswordField = document.getElementById('confirmPasswordField');
+                confirmPasswordField.innerHTML = `
+                    <div class="form-group-modern">
+                        <label class="form-label-modern" for="confirmNouveauMotDePasse" style="font-weight: 500; margin-bottom: 8px; color: #495057;">
+                            <i class="bi bi-key-fill" style="color: #3481c0; margin-right: 6px;"></i> Confirmer le nouveau mot de passe
+                        </label>
+                        <input type="password" name="confirmNouveauMotDePasse" id="confirmNouveauMotDePasse" class="form-control-modern" minlength="6" placeholder="Répétez le nouveau mot de passe" style="padding: 12px 16px; border: 1.5px solid #e0e0e0; border-radius: 8px; transition: all 0.3s; font-size: 0.95rem;" onfocus="this.style.borderColor='#dbb438'; this.style.boxShadow='0 0 0 3px rgba(219,180,56,0.1)'" onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'" />
+                        <small class="text-muted" style="display: flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 0.85rem; color: #6c757d;">
+                            <i class="bi bi-info-circle"></i> Répétez le nouveau mot de passe
+                        </small>
+                        <span class="text-danger field-validation-valid" data-valmsg-for="confirmNouveauMotDePasse" data-valmsg-replace="true"></span>
+                    </div>
+                `;
+                
+                // Ajouter la validation en temps réel
+                setTimeout(() => {
+                    document.getElementById('confirmNouveauMotDePasse')?.addEventListener('input', validatePasswordMatch);
+                    document.getElementById('nouveauMotDePasse')?.addEventListener('input', validatePasswordMatch);
+                }, 100);
+
+                // Retirer le required du champ matricule en mode édition (déjà existant)
+                document.getElementById('matricule').removeAttribute('required');
+                
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors du chargement des données de l\'utilisateur');
+            }
+        }
+
+        // Réinitialiser le formulaire quand le modal est fermé
+        document.getElementById('createUserModal').addEventListener('hidden.bs.modal', function () {
+            resetForm();
+        });
+
+        // Gestion de la soumission du formulaire
+        document.getElementById('userForm').addEventListener('submit', function(e) {
+            // Note: Les rôles ne sont plus gérés dans ce formulaire
+            // Pour CreateUser: Demandeur est assigné automatiquement
+            // Pour UpdateUser: Les rôles se gèrent via la vue dédiée GererRoles
+            
+            if (!this.action.includes('UpdateUser')) {
+                this.action = '@Url.Action("CreateUser")';
+            }
+        });
+    </script>
+    
+    @* Pagination *@
+    @await Html.PartialAsync("_Pagination")
+}

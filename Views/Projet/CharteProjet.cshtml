@@ -1,0 +1,509 @@
+@model GestionProjects.Domain.Models.CharteProjet
+
+@{
+    ViewData["Title"] = "Charte de Projet";
+    var projet = ViewBag.Projet as GestionProjects.Domain.Models.Projet;
+    var utilisateurs = ViewBag.Utilisateurs as List<GestionProjects.Domain.Models.Utilisateur> ?? new List<GestionProjects.Domain.Models.Utilisateur>();
+    var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Guid.Empty.ToString());
+    var isChefProjet = User.IsInRole("ChefDeProjet") && projet?.ChefProjetId == userId;
+    var isDSI = User.IsInRole("DSI") || User.IsInRole("AdminIT");
+    var canEdit = isChefProjet || isDSI;
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="display-6 mb-0">
+            <i class="bi bi-file-earmark-text" style="color: var(--primary-blue);"></i>
+            Charte de Projet - @projet?.CodeProjet
+        </h2>
+        <div>
+            <a asp-action="Details" asp-route-id="@projet?.Id" asp-fragment="analyse" class="btn-modern btn-modern-secondary">
+                <i class="bi bi-arrow-left"></i> Retour
+            </a>
+            <form asp-action="GenererCharteCompletWord" method="post" style="display: inline;">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@projet?.Id" />
+                <button type="submit" class="btn-modern btn-modern-primary">
+                    <i class="bi bi-file-earmark-word"></i> Télécharger Word
+                </button>
+            </form>
+            @if (canEdit)
+            {
+                <button type="button" class="btn-modern btn-modern-primary" onclick="toggleEditMode()">
+                    <i class="bi bi-pencil"></i> <span id="editModeText">Éditer</span>
+                </button>
+            }
+        </div>
+    </div>
+
+    <form asp-action="SauvegarderCharteProjet" method="post" id="charteForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@projet?.Id" />
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="ProjetId" />
+
+        <!-- En-tête du document -->
+        <div class="card-modern mb-4">
+            <div class="card-header-modern" style="background: linear-gradient(135deg, var(--primary-blue) 0%, #2a6ba0 100%); color: white;">
+                <h3 class="card-title-modern mb-0" style="color: white;">
+                    <i class="bi bi-info-circle"></i>
+                    Informations du Document
+                </h3>
+            </div>
+            <div class="card-body-modern">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Département</label>
+                            <input asp-for="Departement" class="form-control-modern" readonly />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Type de Document</label>
+                            <input asp-for="TypeDocument" class="form-control-modern" readonly />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Code du Document</label>
+                            <input asp-for="CodeDocument" class="form-control-modern" />
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">N° de Révision</label>
+                            <input asp-for="NumeroRevision" type="number" class="form-control-modern" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Date de Révision</label>
+                            <input asp-for="DateRevision" type="date" class="form-control-modern" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Description</label>
+                            <input asp-for="DescriptionRevision" class="form-control-modern" />
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Rédigé par</label>
+                            <input asp-for="RedigePar" class="form-control-modern" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Vérifié par</label>
+                            <input asp-for="VerifiePar" class="form-control-modern" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Approuvé par</label>
+                            <input asp-for="ApprouvePar" class="form-control-modern" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Identification du projet -->
+        <div class="card-modern mb-4">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern">
+                    <i class="bi bi-fingerprint"></i>
+                    Identification du Projet
+                </h3>
+            </div>
+            <div class="card-body-modern">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Nom du Projet *</label>
+                            <input asp-for="NomProjet" class="form-control-modern" required />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Numéro du Projet</label>
+                            <input asp-for="NumeroProjet" class="form-control-modern" />
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group-modern">
+                    <label class="form-label-modern">Objectif du Projet *</label>
+                    <textarea asp-for="ObjectifProjet" class="form-control-modern" rows="5" required placeholder="Un objectif par ligne, commencer par •"></textarea>
+                    <small class="text-muted">Un objectif par ligne, commencer chaque ligne par •</small>
+                </div>
+                <div class="form-group-modern">
+                    <label class="form-label-modern">Assurance de la Qualité</label>
+                    <textarea asp-for="AssuranceQualite" class="form-control-modern" rows="3" placeholder="Tests approfondis, conformité aux normes..."></textarea>
+                </div>
+                <div class="form-group-modern">
+                    <label class="form-label-modern">Périmètre</label>
+                    <textarea asp-for="Perimetre" class="form-control-modern" rows="3" placeholder="Mise en œuvre, intégration, formation..."></textarea>
+                </div>
+                <div class="form-group-modern">
+                    <label class="form-label-modern">Contraintes Initiales</label>
+                    <textarea asp-for="ContraintesInitiales" class="form-control-modern" rows="3" placeholder="Budget, Ressources Humaines, Calendrier..."></textarea>
+                </div>
+                <div class="form-group-modern">
+                    <label class="form-label-modern">Risques Initiaux</label>
+                    <textarea asp-for="RisquesInitiaux" class="form-control-modern" rows="3" placeholder="Retards possibles, risques de sécurité..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acteurs du projet -->
+        <div class="card-modern mb-4">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern">
+                    <i class="bi bi-people"></i>
+                    Acteurs du Projet
+                </h3>
+            </div>
+            <div class="card-body-modern">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Demandeur *</label>
+                            <select asp-for="DemandeurId" class="form-control-modern" required>
+                                <option value="">-- Sélectionner --</option>
+                                @foreach (var user in utilisateurs)
+                                {
+                                    <option value="@user.Id">@user.Nom @user.Prenoms</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Sponsors *</label>
+                            <textarea asp-for="Sponsors" class="form-control-modern" rows="2" required placeholder="Un sponsor par ligne"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Chef de Projet *</label>
+                            <select asp-for="ChefProjetId" class="form-control-modern" required>
+                                <option value="">-- Sélectionner --</option>
+                                @foreach (var user in utilisateurs)
+                                {
+                                    <option value="@user.Id">@user.Nom @user.Prenoms</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Email Chef de Projet</label>
+                            <input asp-for="EmailChefProjet" type="email" class="form-control-modern" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Jalons de planification -->
+        <div class="card-modern mb-4">
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
+                <h3 class="card-title-modern mb-0">
+                    <i class="bi bi-calendar-check"></i>
+                    Éléments de Planification Prévisionnelle
+                </h3>
+                @if (canEdit)
+                {
+                    <button type="button" class="btn-modern btn-modern-sm btn-modern-primary" onclick="ajouterJalon()">
+                        <i class="bi bi-plus-circle"></i> Ajouter Jalon
+                    </button>
+                }
+            </div>
+            <div class="card-body-modern">
+                <div id="jalonsContainer">
+                    @for (int i = 0; i < Model.Jalons.Count; i++)
+                    {
+                        var jalon = Model.Jalons.ElementAt(i);
+                        <div class="card-modern mb-3 jalon-item" data-jalon-id="@jalon.Id">
+                            <div class="card-body-modern">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <h5 style="margin: 0;">Jalon @(i + 1)</h5>
+                                    @if (canEdit)
+                                    {
+                                        <button type="button" class="btn-modern btn-modern-sm btn-modern-danger" onclick="supprimerJalon(this)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    }
+                                </div>
+                                <input type="hidden" name="Jalons[@i].Id" value="@jalon.Id" />
+                                <input type="hidden" name="Jalons[@i].CharteProjetId" value="@Model.Id" />
+                                <input type="hidden" name="Jalons[@i].Ordre" value="@(i + 1)" />
+                                <div class="form-group-modern mb-2">
+                                    <label class="form-label-modern">Nom du Jalon</label>
+                                    <input name="Jalons[@i].Nom" value="@jalon.Nom" class="form-control-modern" />
+                                </div>
+                                <div class="form-group-modern mb-2">
+                                    <label class="form-label-modern">Description</label>
+                                    <textarea name="Jalons[@i].Description" class="form-control-modern" rows="2">@jalon.Description</textarea>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group-modern mb-2">
+                                            <label class="form-label-modern">Critères d'Approbation</label>
+                                            <textarea name="Jalons[@i].CriteresApprobation" class="form-control-modern" rows="2">@jalon.CriteresApprobation</textarea>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group-modern mb-2">
+                                            <label class="form-label-modern">Date Prévisionnelle</label>
+                                            <input name="Jalons[@i].DatePrevisionnelle" type="date" value="@(jalon.DatePrevisionnelle?.ToString("yyyy-MM-dd"))" class="form-control-modern" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Parties prenantes -->
+        <div class="card-modern mb-4">
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
+                <h3 class="card-title-modern mb-0">
+                    <i class="bi bi-person-badge"></i>
+                    Parties Prenantes
+                </h3>
+                @if (canEdit)
+                {
+                    <button type="button" class="btn-modern btn-modern-sm btn-modern-primary" onclick="ajouterPartiePrenante()">
+                        <i class="bi bi-plus-circle"></i> Ajouter
+                    </button>
+                }
+            </div>
+            <div class="card-body-modern">
+                <div class="table-responsive">
+                    <table class="table-modern" id="partiesPrenantesTable">
+                        <thead>
+                            <tr>
+                                <th>Partie Prenante</th>
+                                <th>Rôle</th>
+                                @if (canEdit)
+                                {
+                                    <th style="width: 100px;">Actions</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.PartiesPrenantes.Count; i++)
+                            {
+                                var partie = Model.PartiesPrenantes.ElementAt(i);
+                                <tr data-partie-id="@partie.Id">
+                                    <input type="hidden" name="PartiesPrenantes[@i].Id" value="@partie.Id" />
+                                    <input type="hidden" name="PartiesPrenantes[@i].CharteProjetId" value="@Model.Id" />
+                                    <td>
+                                        <input name="PartiesPrenantes[@i].Nom" value="@partie.Nom" class="form-control-modern" />
+                                    </td>
+                                    <td>
+                                        <input name="PartiesPrenantes[@i].Role" value="@partie.Role" class="form-control-modern" />
+                                    </td>
+                                    @if (canEdit)
+                                    {
+                                        <td>
+                                            <button type="button" class="btn-modern btn-modern-sm btn-modern-danger" onclick="supprimerPartiePrenante(this)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Autorisation officielle -->
+        <div class="card-modern mb-4">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern">
+                    <i class="bi bi-pen"></i>
+                    Autorisation Officielle
+                </h3>
+            </div>
+            <div class="card-body-modern">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div style="border: 2px dashed var(--gray-300); padding: var(--spacing-xl); text-align: center; border-radius: var(--radius-lg); min-height: 200px;">
+                            <div style="margin-bottom: var(--spacing-lg);">
+                                <strong>Signature Sponsor</strong>
+                            </div>
+                            @if (Model.SignatureSponsor)
+                            {
+                                <div class="text-success">
+                                    <i class="bi bi-check-circle-fill" style="font-size: 2rem;"></i>
+                                    <div>Signé le @Model.DateSignatureSponsor?.ToString("dd/MM/yyyy")</div>
+                                    <div>@Model.SignatureSponsorUtilisateur?.Nom @Model.SignatureSponsorUtilisateur?.Prenoms</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-muted">
+                                    <i class="bi bi-pen" style="font-size: 2rem;"></i>
+                                    <div>En attente de signature</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div style="border: 2px dashed var(--gray-300); padding: var(--spacing-xl); text-align: center; border-radius: var(--radius-lg); min-height: 200px;">
+                            <div style="margin-bottom: var(--spacing-lg);">
+                                <strong>Signature Chef de Projet</strong>
+                            </div>
+                            @if (Model.SignatureChefProjet)
+                            {
+                                <div class="text-success">
+                                    <i class="bi bi-check-circle-fill" style="font-size: 2rem;"></i>
+                                    <div>Signé le @Model.DateSignatureChefProjet?.ToString("dd/MM/yyyy")</div>
+                                    <div>@Model.SignatureChefProjetUtilisateur?.Nom @Model.SignatureChefProjetUtilisateur?.Prenoms</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-muted">
+                                    <i class="bi bi-pen" style="font-size: 2rem;"></i>
+                                    <div>En attente de signature</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (canEdit)
+        {
+            <div class="d-flex justify-content-end gap-2 mb-4">
+                <a asp-action="Details" asp-route-id="@projet?.Id" asp-fragment="analyse" class="btn-modern btn-modern-secondary">
+                    <i class="bi bi-x-circle"></i> Annuler
+                </a>
+                <button type="submit" class="btn-modern btn-modern-primary">
+                    <i class="bi bi-check-circle"></i> Enregistrer
+                </button>
+            </div>
+        }
+    </form>
+</div>
+
+<script>
+    let jalonIndex = @Model.Jalons.Count;
+    let partiePrenanteIndex = @Model.PartiesPrenantes.Count;
+    let editMode = false;
+
+    function toggleEditMode() {
+        editMode = !editMode;
+        const inputs = document.querySelectorAll('#charteForm input, #charteForm textarea, #charteForm select');
+        inputs.forEach(input => {
+            if (input.type !== 'hidden') {
+                input.disabled = !editMode;
+            }
+        });
+        document.getElementById('editModeText').textContent = editMode ? 'Annuler' : 'Éditer';
+    }
+
+    function ajouterJalon() {
+        const container = document.getElementById('jalonsContainer');
+        const jalonHtml = `
+            <div class="card-modern mb-3 jalon-item">
+                <div class="card-body-modern">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 style="margin: 0;">Jalon ${jalonIndex + 1}</h5>
+                        <button type="button" class="btn-modern btn-modern-sm btn-modern-danger" onclick="supprimerJalon(this)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                    <input type="hidden" name="Jalons[${jalonIndex}].Id" value="00000000-0000-0000-0000-000000000000" />
+                    <input type="hidden" name="Jalons[${jalonIndex}].CharteProjetId" value="@Model.Id" />
+                    <input type="hidden" name="Jalons[${jalonIndex}].Ordre" value="${jalonIndex + 1}" />
+                    <div class="form-group-modern mb-2">
+                        <label class="form-label-modern">Nom du Jalon</label>
+                        <input name="Jalons[${jalonIndex}].Nom" class="form-control-modern" />
+                    </div>
+                    <div class="form-group-modern mb-2">
+                        <label class="form-label-modern">Description</label>
+                        <textarea name="Jalons[${jalonIndex}].Description" class="form-control-modern" rows="2"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group-modern mb-2">
+                                <label class="form-label-modern">Critères d'Approbation</label>
+                                <textarea name="Jalons[${jalonIndex}].CriteresApprobation" class="form-control-modern" rows="2"></textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group-modern mb-2">
+                                <label class="form-label-modern">Date Prévisionnelle</label>
+                                <input name="Jalons[${jalonIndex}].DatePrevisionnelle" type="date" class="form-control-modern" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', jalonHtml);
+        jalonIndex++;
+    }
+
+    function supprimerJalon(button) {
+        if (confirm('Supprimer ce jalon ?')) {
+            button.closest('.jalon-item').remove();
+        }
+    }
+
+    function ajouterPartiePrenante() {
+        const tbody = document.querySelector('#partiesPrenantesTable tbody');
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <input type="hidden" name="PartiesPrenantes[${partiePrenanteIndex}].Id" value="00000000-0000-0000-0000-000000000000" />
+            <input type="hidden" name="PartiesPrenantes[${partiePrenanteIndex}].CharteProjetId" value="@Model.Id" />
+            <td>
+                <input name="PartiesPrenantes[${partiePrenanteIndex}].Nom" class="form-control-modern" />
+            </td>
+            <td>
+                <input name="PartiesPrenantes[${partiePrenanteIndex}].Role" class="form-control-modern" />
+            </td>
+            <td>
+                <button type="button" class="btn-modern btn-modern-sm btn-modern-danger" onclick="supprimerPartiePrenante(this)">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+        partiePrenanteIndex++;
+    }
+
+    function supprimerPartiePrenante(button) {
+        if (confirm('Supprimer cette partie prenante ?')) {
+            button.closest('tr').remove();
+        }
+    }
+
+    // Désactiver les champs au chargement si pas en mode édition
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputs = document.querySelectorAll('#charteForm input, #charteForm textarea, #charteForm select');
+        inputs.forEach(input => {
+            if (input.type !== 'hidden' && !@canEdit.ToString().ToLower()) {
+                input.disabled = true;
+            }
+        });
+    });
+</script>
+

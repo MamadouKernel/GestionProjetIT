@@ -1,0 +1,362 @@
+@model GestionProjects.Domain.Models.Projet
+
+@{
+    var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Guid.Empty.ToString());
+    var isChefProjet = User.IsInRole("ChefDeProjet") && Model.ChefProjetId == userId;
+    var isDirecteurMetier = User.IsInRole("DirecteurMetier") && Model.SponsorId == userId;
+    var isDSI = User.IsInRole("DSI") || User.IsInRole("AdminIT");
+    var isResponsableSolutionsIT = User.IsInRole("ResponsableSolutionsIT");
+    var isDSIOrResponsable = isDSI || isResponsableSolutionsIT;
+}
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card-modern mb-4">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                    <i class="bi bi-info-circle"></i>
+                    Informations générales
+                </h3>
+            </div>
+            <div class="card-body-modern">
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: var(--spacing-md); margin-bottom: var(--spacing-md);">
+                    <div style="font-size: 0.875rem; color: var(--gray-500); font-weight: 600;">Code Projet</div>
+                    <div style="color: var(--gray-800); font-weight: 600; color: var(--primary-blue);">@Model.CodeProjet</div>
+                    
+                    <div style="font-size: 0.875rem; color: var(--gray-500); font-weight: 600;">Direction</div>
+                    <div style="color: var(--gray-800);">@(Model.Direction?.Libelle ?? "N/A")</div>
+                    
+                    <div style="font-size: 0.875rem; color: var(--gray-500); font-weight: 600;">Sponsor</div>
+                    <div style="color: var(--gray-800);">@Model.Sponsor?.Nom @Model.Sponsor?.Prenoms</div>
+                    
+                    <div style="font-size: 0.875rem; color: var(--gray-500); font-weight: 600;">ResponsableSolutionsIT</div>
+                    <div style="color: var(--gray-800); display: flex; align-items: center; gap: var(--spacing-sm);">
+                        <span>@(Model.ChefProjet != null ? $"{Model.ChefProjet.Nom} {Model.ChefProjet.Prenoms}" : "Non assigné")</span>
+                        @if ((isDSI || isResponsableSolutionsIT) && Model.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
+                        {
+                            <button type="button" class="btn-modern btn-modern-secondary" style="padding: var(--spacing-xs) var(--spacing-sm); font-size: 0.75rem;" data-bs-toggle="modal" data-bs-target="#updateChefProjetModal">
+                                <i class="bi bi-pencil"></i>
+                                Modifier
+                            </button>
+                        }
+                    </div>
+                    
+                    <div style="font-size: 0.875rem; color: var(--gray-500); font-weight: 600;">Phase actuelle</div>
+                    <div style="color: var(--gray-800); display: flex; align-items: center; gap: var(--spacing-sm);">
+                        <span class="badge-modern badge-modern-info">@Model.PhaseActuelle</span>
+                        @if ((isDSI || isChefProjet) && Model.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
+                        {
+                            <button type="button" class="btn-modern btn-modern-secondary" style="padding: var(--spacing-xs) var(--spacing-sm); font-size: 0.75rem;" data-bs-toggle="modal" data-bs-target="#changerPhaseModal">
+                                <i class="bi bi-arrow-repeat"></i>
+                                Changer
+                            </button>
+                        }
+                    </div>
+                    
+                    <div style="font-size: 0.875rem; color: var(--gray-500); font-weight: 600;">Statut</div>
+                    <div style="color: var(--gray-800); display: flex; align-items: center; gap: var(--spacing-sm);">
+                        <span class="badge-modern badge-modern-@GetStatutClass(Model.StatutProjet)">@Model.StatutProjet</span>
+                        @if (isDSI && Model.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
+                        {
+                            <button type="button" class="btn-modern btn-modern-warning" style="padding: var(--spacing-xs) var(--spacing-sm); font-size: 0.75rem;" data-bs-toggle="modal" data-bs-target="#forcerStatutModal">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                Forcer
+                            </button>
+                        }
+                    </div>
+                    
+                    <div style="font-size: 0.875rem; color: var(--gray-500); font-weight: 600;">Date de début</div>
+                    <div style="color: var(--gray-800);">@(Model.DateDebut?.ToString("dd/MM/yyyy") ?? "Non définie")</div>
+                    
+                    <div style="font-size: 0.875rem; color: var(--gray-500); font-weight: 600;">Date fin prévue</div>
+                    <div style="color: var(--gray-800);">@(Model.DateFinPrevue?.ToString("dd/MM/yyyy") ?? "Non définie")</div>
+                    
+                    <div style="font-size: 0.875rem; color: var(--gray-500); font-weight: 600;">Date fin réelle</div>
+                    <div style="color: var(--gray-800);">@(Model.DateFinReelle?.ToString("dd/MM/yyyy") ?? "En cours")</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        @if (isChefProjet)
+        {
+            <div class="card-modern mb-4">
+                <div class="card-header-modern">
+                    <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                        <i class="bi bi-speedometer"></i>
+                        Mise à jour avancement
+                    </h3>
+                </div>
+                <div class="card-body-modern">
+                    <form asp-action="UpdateAvancement" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Pourcentage d'avancement</label>
+                            <input type="number" name="pourcentageAvancement" class="form-control-modern" 
+                                   value="@Model.PourcentageAvancement" min="0" max="100" required />
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">État du projet</label>
+                            <select name="etatProjet" class="form-control-modern" asp-items="Html.GetEnumSelectList<GestionProjects.Domain.Enums.EtatProjet>()" asp-for="EtatProjet"></select>
+                        </div>
+                        <button type="submit" class="btn-modern btn-modern-primary w-100 mt-3">
+                            <i class="bi bi-save"></i>
+                            Mettre à jour
+                        </button>
+                    </form>
+                </div>
+            </div>
+        }
+
+        <div class="card-modern">
+            <div class="card-header-modern">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Risques (@(Model.Risques?.Count ?? 0))
+                    </h3>
+                    @if (isChefProjet)
+                    {
+                        <button type="button" class="btn-modern btn-modern-warning" data-bs-toggle="modal" data-bs-target="#ajouterRisqueModal">
+                            <i class="bi bi-plus-circle"></i>
+                            Ajouter
+                        </button>
+                    }
+                </div>
+            </div>
+            <div class="card-body-modern">
+                @if (Model.Risques != null && Model.Risques.Any())
+                {
+                    <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
+                        @foreach (var risque in Model.Risques.Take(5))
+                        {
+                            <div style="padding: var(--spacing-md); background: var(--gray-50); border-radius: var(--radius-lg); border-left: 4px solid @GetRisqueColor(risque.Statut);">
+                                <div style="font-weight: 600; color: var(--gray-800); margin-bottom: var(--spacing-xs);">@risque.Description</div>
+                                <div style="font-size: 0.875rem; color: var(--gray-600);">
+                                    Probabilité: @risque.Probabilite | Impact: @risque.Impact | Statut: @risque.Statut
+                                </div>
+                                @if (!string.IsNullOrEmpty(risque.PlanMitigation))
+                                {
+                                    <div style="font-size: 0.875rem; color: var(--gray-600); margin-top: var(--spacing-xs);">
+                                        <strong>Plan de mitigation:</strong> @risque.PlanMitigation
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                    @if (Model.Risques.Count > 5)
+                    {
+                        <div style="text-align: center; margin-top: var(--spacing-md);">
+                            <small style="color: var(--gray-500);">... et @(Model.Risques.Count - 5) autre(s) risque(s)</small>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div style="text-align: center; padding: var(--spacing-xl); color: var(--gray-500);">
+                        <i class="bi bi-shield-check" style="font-size: 2rem; margin-bottom: var(--spacing-sm);"></i>
+                        <p>Aucun risque identifié pour le moment.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@if ((isDSI || isResponsableSolutionsIT) && Model.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
+{
+    <!-- Modal pour modifier le ResponsableSolutionsIT -->
+    <div class="modal fade" id="updateChefProjetModal" tabindex="-1" aria-labelledby="updateChefProjetModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
+                <div class="modal-header" style="border-bottom: 2px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <h5 class="modal-title" id="updateChefProjetModalLabel" style="font-weight: 600; color: var(--gray-800);">
+                        <i class="bi bi-person-badge"></i>
+                        Modifier le ResponsableSolutionsIT
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: var(--spacing-lg);">
+                    <form asp-action="UpdateChefProjet" method="post" id="updateChefProjetForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">ResponsableSolutionsIT</label>
+                            <select name="chefProjetId" class="form-control-modern">
+                                <option value="">-- Aucun --</option>
+                                @if (ViewBag.ChefsProjet != null)
+                                {
+                                    @foreach (var chef in ViewBag.ChefsProjet as List<GestionProjects.Domain.Models.Utilisateur> ?? new List<GestionProjects.Domain.Models.Utilisateur>())
+                                    {
+                                        <option value="@chef.Id" selected="@(Model.ChefProjetId == chef.Id)">
+                                            @chef.Nom @chef.Prenoms
+                                        </option>
+                                    }
+                                }
+                            </select>
+                            <small style="color: var(--gray-500); font-size: 0.75rem; margin-top: var(--spacing-xs); display: block;">
+                                Sélectionnez un ResponsableSolutionsIT pour ce projet ou laissez vide pour retirer l'assignation.
+                            </small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer" style="border-top: 2px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" form="updateChefProjetForm" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-check-circle"></i>
+                        Enregistrer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal Changer Phase -->
+@if ((isDSI || isChefProjet) && Model.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
+{
+    <div class="modal fade" id="changerPhaseModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
+                <form asp-action="ChangerPhase" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="modal-header" style="border-bottom: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                        <h5 class="modal-title" style="font-weight: 600; color: var(--gray-800); display: flex; align-items: center; gap: var(--spacing-sm);">
+                            <i class="bi bi-arrow-repeat" style="color: var(--primary-blue);"></i>
+                            Changer la phase du projet
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" style="padding: var(--spacing-lg);">
+                        <div class="alert-modern alert-modern-info" style="margin-bottom: var(--spacing-lg);">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <div>
+                                <strong>Phase actuelle :</strong> @Model.PhaseActuelle
+                            </div>
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Nouvelle phase *</label>
+                            <select name="nouvellePhase" class="form-control-modern" asp-items="Html.GetEnumSelectList<GestionProjects.Domain.Enums.PhaseProjet>()" required>
+                                <option value="">-- Sélectionner --</option>
+                            </select>
+                        </div>
+                        <div class="form-group-modern mt-3">
+                            <label class="form-label-modern">Commentaire (optionnel)</label>
+                            <textarea name="commentaire" class="form-control-modern" rows="3" placeholder="Ajoutez un commentaire si nécessaire..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="border-top: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                        <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i>
+                            Annuler
+                        </button>
+                        <button type="submit" class="btn-modern btn-modern-primary">
+                            <i class="bi bi-arrow-repeat"></i>
+                            Changer la phase
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal Forcer Statut Projet -->
+@if (isDSI && Model.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
+{
+    <div class="modal fade" id="forcerStatutModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
+                <form asp-action="ForcerStatutProjet" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="modal-header" style="border-bottom: 1px solid var(--gray-200); padding: var(--spacing-lg); background: #fef3c7;">
+                        <h5 class="modal-title" style="font-weight: 600; color: #92400e; display: flex; align-items: center; gap: var(--spacing-sm);">
+                            <i class="bi bi-exclamation-triangle-fill" style="color: var(--warning);"></i>
+                            Forcer le statut du projet
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" style="padding: var(--spacing-lg);">
+                        <div class="alert-modern alert-modern-warning" style="margin-bottom: var(--spacing-lg);">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            <div>
+                                <strong>Attention :</strong> Cette action permet de forcer manuellement le statut du projet (ex: en cas d'incident). Le statut actuel est : <strong>@Model.StatutProjet</strong>
+                            </div>
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Action *</label>
+                            <select name="actionType" class="form-control-modern" required onchange="toggleCommentaire(this.value)">
+                                <option value="">-- Sélectionner --</option>
+                                <option value="Cloture">Clôturer le projet (projet terminé avec succès)</option>
+                                <option value="Abandon">Abandonner le projet (travaux arrêtés ou changement d'avis)</option>
+                            </select>
+                        </div>
+                        <div class="form-group-modern mt-3" id="commentaireGroup">
+                            <label class="form-label-modern">Commentaire *</label>
+                            <textarea name="commentaire" id="commentaireField" class="form-control-modern" rows="3" required placeholder="Expliquez la raison de cette action..."></textarea>
+                        </div>
+                        <script>
+                            function toggleCommentaire(value) {
+                                const commentaireGroup = document.getElementById('commentaireGroup');
+                                const commentaireField = document.getElementById('commentaireField');
+                                if (value) {
+                                    commentaireGroup.style.display = 'block';
+                                    commentaireField.required = true;
+                                } else {
+                                    commentaireGroup.style.display = 'none';
+                                    commentaireField.required = false;
+                                }
+                            }
+                        </script>
+                    </div>
+                    <div class="modal-footer" style="border-top: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                        <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i>
+                            Annuler
+                        </button>
+                        <button type="submit" class="btn-modern btn-modern-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            Forcer le statut
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@functions {
+    string GetStatutClass(GestionProjects.Domain.Enums.StatutProjet statut)
+    {
+        return statut switch
+        {
+            GestionProjects.Domain.Enums.StatutProjet.NonDemarre => "secondary",
+            GestionProjects.Domain.Enums.StatutProjet.EnCours => "info",
+            GestionProjects.Domain.Enums.StatutProjet.Suspendu => "warning",
+            GestionProjects.Domain.Enums.StatutProjet.ClotureEnCours => "info",
+            GestionProjects.Domain.Enums.StatutProjet.Cloture => "success",
+            GestionProjects.Domain.Enums.StatutProjet.Annule => "danger",
+            _ => "secondary"
+        };
+    }
+
+    string GetRisqueColor(GestionProjects.Domain.Enums.StatutRisque statut)
+    {
+        return statut switch
+        {
+            GestionProjects.Domain.Enums.StatutRisque.Identifie => "var(--info)",
+            GestionProjects.Domain.Enums.StatutRisque.EnCoursTraitement => "var(--warning)",
+            GestionProjects.Domain.Enums.StatutRisque.Maitrise => "var(--success)",
+            GestionProjects.Domain.Enums.StatutRisque.Clos => "var(--gray-400)",
+            _ => "var(--gray-400)"
+        };
+    }
+}
+

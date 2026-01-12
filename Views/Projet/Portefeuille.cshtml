@@ -1,0 +1,600 @@
+@model IEnumerable<GestionProjects.Domain.Models.Projet>
+
+@{
+    ViewData["Title"] = "Portefeuille de Projet DSI";
+    var portefeuille = ViewBag.Portefeuille as GestionProjects.Domain.Models.PortefeuilleProjet;
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="display-6 mb-0">
+            <i class="bi bi-briefcase" style="color: var(--primary-blue);"></i>
+            @portefeuille?.Nom
+        </h2>
+        <div>
+            <form asp-action="GenererPortefeuilleExcel" method="post" style="display: inline;">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-modern btn-modern-primary">
+                    <i class="bi bi-file-earmark-excel"></i> Télécharger Excel
+                </button>
+            </form>
+            @if (User.IsInRole("DSI") || User.IsInRole("AdminIT"))
+            {
+                <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#editPortefeuilleModal">
+                    <i class="bi bi-pencil"></i> Modifier le Portefeuille
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- Objectif Stratégique Global -->
+    <div class="card-modern mb-4" style="background: linear-gradient(135deg, var(--primary-blue) 0%, #2a6ba0 100%); border: none; color: white;">
+        <div class="card-header-modern" style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+            <h3 class="card-title-modern mb-0" style="color: white; font-size: 1.2rem;">
+                <i class="bi bi-bullseye"></i>
+                Objectif Stratégique Global
+            </h3>
+        </div>
+        <div class="card-body-modern" style="padding: var(--spacing-xl);">
+            <p style="font-size: 1.1rem; line-height: 1.8; margin: 0; color: rgba(255,255,255,0.95);">
+                @portefeuille?.ObjectifStrategiqueGlobal
+            </p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <!-- Avantages Attendus du Portefeuille -->
+        <div class="col-md-6">
+            <div class="card-modern h-100">
+                <div class="card-header-modern" style="background: linear-gradient(135deg, var(--success) 0%, #059669 100%); color: white; border: none;">
+                    <h3 class="card-title-modern mb-0" style="color: white; font-size: 1.1rem;">
+                        <i class="bi bi-check-circle"></i>
+                        Avantages Attendus du Portefeuille
+                    </h3>
+                </div>
+                <div class="card-body-modern" style="max-height: 500px; overflow-y: auto;">
+                    <ul style="list-style: none; padding: 0; margin: 0;">
+                        @if (!string.IsNullOrEmpty(portefeuille?.AvantagesAttendus))
+                        {
+                            @foreach (var avantage in portefeuille.AvantagesAttendus.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                            {
+                                var avantageNettoye = avantage.Trim();
+                                if (!string.IsNullOrWhiteSpace(avantageNettoye) && avantageNettoye.StartsWith("•"))
+                                {
+                                    <li style="padding: var(--spacing-sm) 0; border-bottom: 1px solid var(--gray-200); display: flex; align-items: flex-start; gap: var(--spacing-sm);">
+                                        <i class="bi bi-check-circle-fill" style="color: var(--success); margin-top: 0.2rem; flex-shrink: 0;"></i>
+                                        <span style="color: var(--gray-700); line-height: 1.6;">@avantageNettoye.Substring(1).Trim()</span>
+                                    </li>
+                                }
+                            }
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risques et Mitigations Globaux -->
+        <div class="col-md-6">
+            <div class="card-modern h-100">
+                <div class="card-header-modern" style="background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%); color: white; border: none;">
+                    <h3 class="card-title-modern mb-0" style="color: white; font-size: 1.1rem;">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Risques et Mitigations Globaux
+                    </h3>
+                </div>
+                <div class="card-body-modern" style="max-height: 500px; overflow-y: auto;">
+                    <div style="display: flex; flex-direction: column; gap: var(--spacing-md);">
+                        @if (!string.IsNullOrEmpty(portefeuille?.RisquesEtMitigations))
+                        {
+                            @foreach (var ligne in portefeuille.RisquesEtMitigations.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                            {
+                                var ligneNettoyee = ligne.Trim();
+                                if (!string.IsNullOrWhiteSpace(ligneNettoyee))
+                                {
+                                    var parts = ligneNettoyee.Split(':', 2);
+                                    if (parts.Length == 2)
+                                    {
+                                        <div style="padding: var(--spacing-md); background: #fef3c7; border-left: 4px solid var(--warning); border-radius: var(--radius-md);">
+                                            <div style="font-weight: 600; color: var(--gray-800); margin-bottom: var(--spacing-xs);">
+                                                <i class="bi bi-exclamation-triangle-fill" style="color: var(--warning);"></i>
+                                                @parts[0].Trim()
+                                            </div>
+                                            <div style="color: var(--gray-700); font-size: 0.9rem; line-height: 1.6;">
+                                                <strong>Mitigation:</strong> @parts[1].Trim()
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div style="padding: var(--spacing-sm); color: var(--gray-700); line-height: 1.6;">
+                                            @ligneNettoyee
+                                        </div>
+                                    }
+                                }
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+           </div>
+       </div>
+
+       <!-- Demandes en Cours (pas encore validées) -->
+       @{
+           var demandesEnCours = ViewBag.DemandesEnCours as IEnumerable<GestionProjects.Domain.Models.DemandeProjet>;
+       }
+       @if (demandesEnCours != null && demandesEnCours.Any())
+       {
+           <div class="card-modern mb-4">
+               <div class="card-header-modern" style="background: linear-gradient(135deg, var(--info) 0%, #0284c7 100%); color: white; border: none;">
+                   <div class="d-flex justify-content-between align-items-center">
+                       <h3 class="card-title-modern mb-0" style="color: white; font-size: 1.2rem;">
+                           <i class="bi bi-hourglass-split"></i>
+                           Demandes en Cours (@demandesEnCours.Count())
+                       </h3>
+                       <span class="badge-modern" style="background: rgba(255,255,255,0.3); color: white;">En attente de validation</span>
+                   </div>
+               </div>
+               <div class="card-body-modern p-0">
+                   <div class="table-responsive">
+                       <table class="table-modern">
+                           <thead>
+                               <tr>
+                                   <th style="width: 50px;">#</th>
+                                   <th>Titre de la Demande</th>
+                                   <th>Demandeur</th>
+                                   <th>Direction</th>
+                                   <th>Directeur Métier</th>
+                                   <th>Statut</th>
+                                   <th>Date Soumission</th>
+                                   <th>Urgence</th>
+                                   <th>Criticité</th>
+                                   <th class="text-center">Actions</th>
+                               </tr>
+                           </thead>
+                           <tbody>
+                               @{
+                                   int indexDemande = 1;
+                               }
+                               @foreach (var demande in demandesEnCours)
+                               {
+                                   <tr>
+                                       <td style="font-weight: 600; color: var(--gray-500);">@indexDemande</td>
+                                       <td>
+                                           <div>
+                                               <strong style="color: var(--info);">@demande.Titre</strong>
+                                               @if (!string.IsNullOrWhiteSpace(demande.Description) && demande.Description.Length > 100)
+                                               {
+                                                   <div style="font-size: 0.85rem; color: var(--gray-600); margin-top: 0.2rem;">
+                                                       @demande.Description.Substring(0, 100)...
+                                                   </div>
+                                               }
+                                               else if (!string.IsNullOrWhiteSpace(demande.Description))
+                                               {
+                                                   <div style="font-size: 0.85rem; color: var(--gray-600); margin-top: 0.2rem;">
+                                                       @demande.Description
+                                                   </div>
+                                               }
+                                           </div>
+                                       </td>
+                                       <td>
+                                           @if (demande.Demandeur != null)
+                                           {
+                                               <div>
+                                                   <i class="bi bi-person" style="color: var(--info);"></i>
+                                                   @demande.Demandeur.Nom @demande.Demandeur.Prenoms
+                                               </div>
+                                           }
+                                           else
+                                           {
+                                               <span class="text-muted">N/A</span>
+                                           }
+                                       </td>
+                                       <td>
+                                           @if (demande.Direction != null)
+                                           {
+                                               <div>
+                                                   <i class="bi bi-building" style="color: var(--gray-600);"></i>
+                                                   @demande.Direction.Libelle
+                                               </div>
+                                           }
+                                           else
+                                           {
+                                               <span class="text-muted">N/A</span>
+                                           }
+                                       </td>
+                                       <td>
+                                           @if (demande.DirecteurMetier != null)
+                                           {
+                                               <div>
+                                                   <i class="bi bi-person-badge" style="color: var(--primary-blue);"></i>
+                                                   @demande.DirecteurMetier.Nom @demande.DirecteurMetier.Prenoms
+                                               </div>
+                                           }
+                                           else
+                                           {
+                                               <span class="text-muted">N/A</span>
+                                           }
+                                       </td>
+                                       <td>
+                                           <span class="badge-modern badge-modern-@GetStatutDemandeClass(demande.StatutDemande)">
+                                               @GetStatutDemandeLibelle(demande.StatutDemande)
+                                           </span>
+                                       </td>
+                                       <td>
+                                           @if (demande.DateSoumission != default(DateTime))
+                                           {
+                                               <div style="font-size: 0.875rem;">
+                                                   @demande.DateSoumission.ToString("dd/MM/yyyy")
+                                                   <br />
+                                                   <small class="text-muted">@demande.DateSoumission.ToString("HH:mm")</small>
+                                               </div>
+                                           }
+                                           else
+                                           {
+                                               <span class="text-muted">Non soumise</span>
+                                           }
+                                       </td>
+                                       <td>
+                                           <span class="badge-modern badge-modern-@GetUrgenceClass(demande.Urgence)">
+                                               @GetUrgenceLibelle(demande.Urgence)
+                                           </span>
+                                       </td>
+                                       <td>
+                                           <span class="badge-modern badge-modern-@GetCriticiteClass(demande.Criticite)">
+                                               @GetCriticiteLibelle(demande.Criticite)
+                                           </span>
+                                       </td>
+                                       <td class="text-center">
+                                           <a asp-controller="DemandeProjet" asp-action="Details" asp-route-id="@demande.Id" 
+                                              class="btn-modern btn-modern-primary" 
+                                              style="padding: var(--spacing-xs) var(--spacing-md); font-size: 0.875rem;">
+                                               <i class="bi bi-eye"></i>
+                                               Voir
+                                           </a>
+                                       </td>
+                                   </tr>
+                                   indexDemande++;
+                               }
+                           </tbody>
+                       </table>
+                   </div>
+               </div>
+           </div>
+       }
+
+       <!-- Projets Inclus dans le Portefeuille -->
+       <div class="card-modern">
+        <div class="card-header-modern">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="card-title-modern mb-0" style="font-size: 1.2rem;">
+                    <i class="bi bi-list-ul"></i>
+                    Projets Inclus dans le Portefeuille
+                </h3>
+                <span class="badge-modern badge-modern-info">@Model.Count() projet(s)</span>
+            </div>
+        </div>
+        <div class="card-body-modern p-0">
+            <div class="table-responsive">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">#</th>
+                            <th>Nom du Projet</th>
+                            <th>Objectif</th>
+                            <th>Parties Prenantes Clés</th>
+                            <th>Statut Actuel</th>
+                            <th>Phase</th>
+                            <th class="text-center">RAG</th>
+                            <th>Avancement</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int index = 1;
+                        }
+                        @foreach (var projet in Model)
+                        {
+                            <tr>
+                                <td style="font-weight: 600; color: var(--gray-500);">@index</td>
+                                <td>
+                                    <div>
+                                        <strong style="color: var(--primary-blue);">@projet.CodeProjet</strong>
+                                        <div style="font-size: 0.9rem; color: var(--gray-600); margin-top: 0.2rem;">@projet.Titre</div>
+                                    </div>
+                                </td>
+                                <td style="max-width: 300px;">
+                                    @if (!string.IsNullOrWhiteSpace(projet.Objectif))
+                                    {
+                                        <div style="font-size: 0.9rem; color: var(--gray-700); line-height: 1.5;">
+                                            @projet.Objectif
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted" style="font-size: 0.85rem;">Non défini</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div style="display: flex; flex-direction: column; gap: var(--spacing-xs); font-size: 0.875rem;">
+                                        @if (projet.Sponsor != null)
+                                        {
+                                            <div>
+                                                <i class="bi bi-person-badge" style="color: var(--info);"></i>
+                                                <strong>Sponsor:</strong> @projet.Sponsor.Nom @projet.Sponsor.Prenoms
+                                            </div>
+                                        }
+                                        @if (projet.ChefProjet != null)
+                                        {
+                                            <div>
+                                                <i class="bi bi-person-gear" style="color: var(--primary-blue);"></i>
+                                                <strong>Chef Projet:</strong> @projet.ChefProjet.Nom @projet.ChefProjet.Prenoms
+                                            </div>
+                                        }
+                                        @if (projet.Direction != null)
+                                        {
+                                            <div>
+                                                <i class="bi bi-building" style="color: var(--gray-600);"></i>
+                                                <strong>Direction:</strong> @projet.Direction.Libelle
+                                            </div>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge-modern badge-modern-@GetStatutClass(projet.StatutProjet)">
+                                        @GetStatutLibelle(projet.StatutProjet)
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge-modern badge-modern-info">@projet.PhaseActuelle</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge-modern badge-modern-@GetRAGClass(projet.IndicateurRAG)" title="Indicateur RAG calculé automatiquement">
+                                        @GetRAGLabel(projet.IndicateurRAG)
+                                    </span>
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: var(--spacing-sm); min-width: 150px;">
+                                        <div style="flex: 1; height: 8px; background: var(--gray-200); border-radius: var(--radius-lg); overflow: hidden;">
+                                            <div style="height: 100%; width: @projet.PourcentageAvancement%; background: var(--primary-blue); transition: width var(--transition-base);"></div>
+                                        </div>
+                                        <span style="font-weight: 600; color: var(--gray-700); font-size: 0.875rem; min-width: 45px;">@projet.PourcentageAvancement%</span>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <a asp-action="Details" asp-route-id="@projet.Id" class="btn-modern btn-modern-primary" style="padding: var(--spacing-xs) var(--spacing-md); font-size: 0.875rem;">
+                                        <i class="bi bi-eye"></i>
+                                        Détails
+                                    </a>
+                                </td>
+                            </tr>
+                            index++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour modifier le portefeuille -->
+@if (User.IsInRole("DSI") || User.IsInRole("AdminIT"))
+{
+    <div class="modal fade" id="editPortefeuilleModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
+                <form asp-action="UpdatePortefeuille" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@portefeuille?.Id" />
+                    <div class="modal-header" style="border-bottom: 2px solid var(--gray-200); padding: var(--spacing-lg);">
+                        <h5 class="modal-title" style="font-weight: 600; color: var(--gray-800);">
+                            <i class="bi bi-pencil" style="color: var(--primary-blue);"></i>
+                            Modifier le Portefeuille
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" style="padding: var(--spacing-lg); max-height: 70vh; overflow-y: auto;">
+                        <div class="form-group-modern mb-3">
+                            <label class="form-label-modern">Objectif Stratégique Global *</label>
+                            <textarea name="ObjectifStrategiqueGlobal" class="form-control-modern" rows="3" required>@portefeuille?.ObjectifStrategiqueGlobal</textarea>
+                        </div>
+                        <div class="form-group-modern mb-3">
+                            <label class="form-label-modern">Avantages Attendus du Portefeuille *</label>
+                            <textarea name="AvantagesAttendus" class="form-control-modern" rows="10" required placeholder="Un avantage par ligne, commencer par •">@portefeuille?.AvantagesAttendus</textarea>
+                            <small class="text-muted">Un avantage par ligne, commencer chaque ligne par •</small>
+                        </div>
+                        <div class="form-group-modern mb-3">
+                            <label class="form-label-modern">Risques et Mitigations Globaux *</label>
+                            <textarea name="RisquesEtMitigations" class="form-control-modern" rows="10" required placeholder="Format: Risque: Mitigation">@portefeuille?.RisquesEtMitigations</textarea>
+                            <small class="text-muted">Format: Risque: Mitigation (un par ligne)</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="border-top: 2px solid var(--gray-200); padding: var(--spacing-lg);">
+                        <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i> Annuler
+                        </button>
+                        <button type="submit" class="btn-modern btn-modern-primary">
+                            <i class="bi bi-check-circle"></i> Enregistrer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@functions {
+    // Fonctions pour les demandes
+    string GetStatutDemandeClass(GestionProjects.Domain.Enums.StatutDemande statut)
+    {
+        return statut switch
+        {
+            GestionProjects.Domain.Enums.StatutDemande.Brouillon => "secondary",
+            GestionProjects.Domain.Enums.StatutDemande.EnAttenteValidationDirecteurMetier => "warning",
+            GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier => "info",
+            GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDemandeurParDSI => "warning",
+            GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDirecteurMetierParDSI => "warning",
+            GestionProjects.Domain.Enums.StatutDemande.EnAttenteValidationDSI => "info",
+            _ => "secondary"
+        };
+    }
+
+    string GetStatutDemandeLibelle(GestionProjects.Domain.Enums.StatutDemande statut)
+    {
+        return statut switch
+        {
+            GestionProjects.Domain.Enums.StatutDemande.Brouillon => "Brouillon",
+            GestionProjects.Domain.Enums.StatutDemande.EnAttenteValidationDirecteurMetier => "En attente validation DM",
+            GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier => "Correction demandée",
+            GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDemandeurParDSI => "Retournée au demandeur",
+            GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDirecteurMetierParDSI => "Retournée au DM",
+            GestionProjects.Domain.Enums.StatutDemande.EnAttenteValidationDSI => "En attente validation DSI",
+            _ => statut.ToString()
+        };
+    }
+
+    string GetUrgenceClass(GestionProjects.Domain.Enums.UrgenceProjet urgence)
+    {
+        return urgence switch
+        {
+            GestionProjects.Domain.Enums.UrgenceProjet.Basse => "secondary",
+            GestionProjects.Domain.Enums.UrgenceProjet.Moyenne => "warning",
+            GestionProjects.Domain.Enums.UrgenceProjet.Haute => "danger",
+            _ => "secondary"
+        };
+    }
+
+    string GetUrgenceLibelle(GestionProjects.Domain.Enums.UrgenceProjet urgence)
+    {
+        return urgence switch
+        {
+            GestionProjects.Domain.Enums.UrgenceProjet.Basse => "Basse",
+            GestionProjects.Domain.Enums.UrgenceProjet.Moyenne => "Moyenne",
+            GestionProjects.Domain.Enums.UrgenceProjet.Haute => "Haute",
+            _ => urgence.ToString()
+        };
+    }
+
+    string GetCriticiteClass(GestionProjects.Domain.Enums.CriticiteProjet criticite)
+    {
+        return criticite switch
+        {
+            GestionProjects.Domain.Enums.CriticiteProjet.Faible => "secondary",
+            GestionProjects.Domain.Enums.CriticiteProjet.Moyenne => "warning",
+            GestionProjects.Domain.Enums.CriticiteProjet.Elevee => "danger",
+            _ => "secondary"
+        };
+    }
+
+    string GetCriticiteLibelle(GestionProjects.Domain.Enums.CriticiteProjet criticite)
+    {
+        return criticite switch
+        {
+            GestionProjects.Domain.Enums.CriticiteProjet.Faible => "Faible",
+            GestionProjects.Domain.Enums.CriticiteProjet.Moyenne => "Moyenne",
+            GestionProjects.Domain.Enums.CriticiteProjet.Elevee => "Élevée",
+            _ => criticite.ToString()
+        };
+    }
+
+    // Fonctions pour les projets
+    string GetStatutClass(GestionProjects.Domain.Enums.StatutProjet statut)
+    {
+        return statut switch
+        {
+            GestionProjects.Domain.Enums.StatutProjet.NonDemarre => "secondary",
+            GestionProjects.Domain.Enums.StatutProjet.EnCours => "info",
+            GestionProjects.Domain.Enums.StatutProjet.Suspendu => "warning",
+            GestionProjects.Domain.Enums.StatutProjet.ClotureEnCours => "info",
+            GestionProjects.Domain.Enums.StatutProjet.Cloture => "success",
+            GestionProjects.Domain.Enums.StatutProjet.Annule => "danger",
+            _ => "secondary"
+        };
+    }
+
+    string GetStatutLibelle(GestionProjects.Domain.Enums.StatutProjet statut)
+    {
+        return statut switch
+        {
+            GestionProjects.Domain.Enums.StatutProjet.NonDemarre => "À venir",
+            GestionProjects.Domain.Enums.StatutProjet.EnCours => "En cours",
+            GestionProjects.Domain.Enums.StatutProjet.Suspendu => "Suspendu",
+            GestionProjects.Domain.Enums.StatutProjet.ClotureEnCours => "Clôture en cours",
+            GestionProjects.Domain.Enums.StatutProjet.Cloture => "Terminé",
+            GestionProjects.Domain.Enums.StatutProjet.Annule => "Annulé",
+            _ => statut.ToString()
+        };
+    }
+
+    string GetStatutLibellePortefeuille(GestionProjects.Domain.Models.Projet projet)
+    {
+        // Selon le document : Terminé, En cours, À venir, En phase de planification
+        if (projet.StatutProjet == GestionProjects.Domain.Enums.StatutProjet.Cloture)
+            return "Terminé";
+        
+        if (projet.StatutProjet == GestionProjects.Domain.Enums.StatutProjet.EnCours)
+            return "En cours";
+        
+        if (projet.StatutProjet == GestionProjects.Domain.Enums.StatutProjet.NonDemarre)
+        {
+            if (projet.PhaseActuelle == GestionProjects.Domain.Enums.PhaseProjet.PlanificationValidation)
+                return "En phase de planification";
+            return "À venir";
+        }
+        
+        if (projet.StatutProjet == GestionProjects.Domain.Enums.StatutProjet.Suspendu)
+            return "Suspendu";
+        
+        if (projet.StatutProjet == GestionProjects.Domain.Enums.StatutProjet.ClotureEnCours)
+            return "Clôture en cours";
+        
+        if (projet.StatutProjet == GestionProjects.Domain.Enums.StatutProjet.Annule)
+            return "Annulé";
+        
+        return "En cours";
+    }
+
+    string GetStatutClassPortefeuille(GestionProjects.Domain.Models.Projet projet)
+    {
+        if (projet.StatutProjet == GestionProjects.Domain.Enums.StatutProjet.Cloture)
+            return "success";
+        
+        if (projet.StatutProjet == GestionProjects.Domain.Enums.StatutProjet.EnCours)
+            return "info";
+        
+        if (projet.StatutProjet == GestionProjects.Domain.Enums.StatutProjet.NonDemarre)
+            return "secondary";
+        
+        if (projet.StatutProjet == GestionProjects.Domain.Enums.StatutProjet.Suspendu)
+            return "warning";
+        
+        if (projet.StatutProjet == GestionProjects.Domain.Enums.StatutProjet.Annule)
+            return "danger";
+        
+        return "info";
+    }
+
+    string GetRAGClass(GestionProjects.Domain.Enums.IndicateurRAG rag)
+    {
+        return rag switch
+        {
+            GestionProjects.Domain.Enums.IndicateurRAG.Vert => "success",
+            GestionProjects.Domain.Enums.IndicateurRAG.Amber => "warning",
+            GestionProjects.Domain.Enums.IndicateurRAG.Rouge => "danger",
+            _ => "secondary"
+        };
+    }
+
+    string GetRAGLabel(GestionProjects.Domain.Enums.IndicateurRAG rag)
+    {
+        return rag switch
+        {
+            GestionProjects.Domain.Enums.IndicateurRAG.Vert => "🟢 Vert",
+            GestionProjects.Domain.Enums.IndicateurRAG.Amber => "🟡 Amber",
+            GestionProjects.Domain.Enums.IndicateurRAG.Rouge => "🔴 Rouge",
+            _ => "N/A"
+        };
+    }
+}
+

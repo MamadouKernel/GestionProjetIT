@@ -1,0 +1,495 @@
+@model GestionProjects.Domain.Models.Projet
+
+@{
+    var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Guid.Empty.ToString());
+    var isChefProjet = (User.IsInRole("ChefDeProjet") && Model.ChefProjetId == userId) || User.IsInRole("ResponsableSolutionsIT");
+    var isDirecteurMetier = User.IsInRole("DirecteurMetier") && Model.SponsorId == userId;
+    var isDSI = User.IsInRole("DSI") || User.IsInRole("AdminIT");
+    var isResponsableSolutionsIT = User.IsInRole("ResponsableSolutionsIT");
+    var isReadOnly = ViewBag.IsReadOnly as bool? ?? false;
+    var livrablesCloture = Model.Livrables?.Where(l => l.Phase == GestionProjects.Domain.Enums.PhaseProjet.ClotureLeconsApprises).ToList() ?? new List<GestionProjects.Domain.Models.LivrableProjet>();
+    var demandeClotureActive = Model.DemandesCloture?.FirstOrDefault(d => !d.EstTerminee);
+    
+    // Vérifier les conditions pour pouvoir demander une clôture
+    var hasRightRole = isChefProjet || isResponsableSolutionsIT || isDSI;
+    var isInRightPhase = Model.PhaseActuelle == GestionProjects.Domain.Enums.PhaseProjet.UatMep;
+    var recetteValidee = Model.RecetteValidee;
+    var noActiveDemand = demandeClotureActive == null;
+    
+    var canDemanderCloture = hasRightRole && isInRightPhase && recetteValidee && noActiveDemand;
+    
+    // Messages explicatifs
+    var canSeeDemandSection = hasRightRole && (isInRightPhase || demandeClotureActive == null);
+}
+
+@if (canDemanderCloture)
+{
+    <div class="card-modern mb-4" style="background: linear-gradient(135deg, var(--primary-blue) 0%, #2a6ba0 100%); border: none;">
+        <div class="card-body-modern" style="text-align: center; padding: var(--spacing-xl); color: white;">
+            <i class="bi bi-flag-fill" style="font-size: 3rem; margin-bottom: var(--spacing-md);"></i>
+            <h4 style="color: white; margin-bottom: var(--spacing-md);">Prêt pour la clôture ?</h4>
+            <p style="color: rgba(255,255,255,0.9); margin-bottom: var(--spacing-lg);">
+                Si tous les livrables sont fournis et le bilan est complété, vous pouvez lancer la demande de clôture.
+            </p>
+            <button type="button" class="btn-modern" style="background: white; color: var(--primary-blue); padding: var(--spacing-md) var(--spacing-xl); font-weight: 600;" data-bs-toggle="modal" data-bs-target="#demanderClotureModal">
+                <i class="bi bi-flag"></i>
+                Lancer Demande Clôture
+            </button>
+        </div>
+    </div>
+}
+else if (canSeeDemandSection && demandeClotureActive == null && hasRightRole)
+{
+    // Afficher un message explicatif si l'utilisateur a le droit mais les conditions ne sont pas remplies
+    <div class="card-modern mb-4" style="background: #fff3cd; border-left: 4px solid #ffc107;">
+        <div class="card-body-modern">
+            <div style="display: flex; align-items: start; gap: var(--spacing-md);">
+                <i class="bi bi-info-circle-fill" style="font-size: 1.5rem; color: #856404; flex-shrink: 0;"></i>
+                <div style="flex: 1;">
+                    <h5 style="color: #856404; font-weight: 600; margin-bottom: var(--spacing-sm);">Demande de clôture non disponible</h5>
+                    <div style="color: #856404; font-size: 0.875rem;">
+                        <p style="margin-bottom: var(--spacing-xs);">Pour pouvoir lancer une demande de clôture, veuillez vérifier que :</p>
+                        <ul style="margin: 0; padding-left: var(--spacing-lg);">
+                            @if (!isInRightPhase)
+                            {
+                                <li>Le projet est en phase <strong>UAT & MEP</strong> (phase actuelle : <strong>@Model.PhaseActuelle</strong>)</li>
+                            }
+                            @if (!recetteValidee)
+                            {
+                                <li>La <strong>recette est validée</strong></li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (demandeClotureActive != null)
+{
+    <div class="card-modern mb-4">
+        <div class="card-header-modern">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h3 class="card-title-modern" style="font-size: 1.1rem; margin: 0;">
+                    <i class="bi bi-flag"></i>
+                    Demande de Clôture - Suivi des Validations
+                </h3>
+                <div style="font-size: 0.875rem; color: var(--gray-600);">
+                    Demandée le @demandeClotureActive.DateDemande.ToString("dd/MM/yyyy")
+                </div>
+            </div>
+        </div>
+        <div class="card-body-modern">
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div style="padding: var(--spacing-lg); background: @GetValidationBg(demandeClotureActive.StatutValidationDemandeur); border-radius: var(--radius-lg); border-left: 4px solid @GetValidationColor(demandeClotureActive.StatutValidationDemandeur);">
+                        <div style="font-weight: 600; color: var(--gray-800); margin-bottom: var(--spacing-sm);">
+                            Validation Demandeur
+                        </div>
+                        <div style="font-size: 0.875rem; color: var(--gray-600); margin-bottom: var(--spacing-sm);">
+                            @GetValidationStatus(demandeClotureActive.StatutValidationDemandeur)
+                        </div>
+                        @if (demandeClotureActive.DateValidationDemandeur.HasValue)
+                        {
+                            <div style="font-size: 0.75rem; color: var(--gray-500);">
+                                Le @demandeClotureActive.DateValidationDemandeur.Value.ToString("dd/MM/yyyy")
+                            </div>
+                        }
+                        @{
+                            var isDemandeurProjet = User.IsInRole("Demandeur") && Model.DemandeProjet != null && Model.DemandeProjet.DemandeurId == userId;
+                        }
+                        @if (isDemandeurProjet && demandeClotureActive.StatutValidationDemandeur == GestionProjects.Domain.Enums.StatutValidationCloture.EnAttente)
+                        {
+                            <div style="margin-top: var(--spacing-md); display: flex; gap: var(--spacing-sm);">
+                                <form asp-action="ValiderClotureDemandeur" method="post" style="flex: 1;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="demandeClotureId" value="@demandeClotureActive.Id" />
+                                    <button type="submit" class="btn-modern btn-modern-success w-100">
+                                        <i class="bi bi-check-circle"></i>
+                                        Valider
+                                    </button>
+                                </form>
+                                <button type="button" class="btn-modern btn-modern-danger" style="flex: 1;" data-bs-toggle="modal" data-bs-target="#rejeterClotureDemandeurModal" data-demande-id="@demandeClotureActive.Id">
+                                    <i class="bi bi-x-circle"></i>
+                                    Rejeter
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div style="padding: var(--spacing-lg); background: @GetValidationBg(demandeClotureActive.StatutValidationDirecteurMetier); border-radius: var(--radius-lg); border-left: 4px solid @GetValidationColor(demandeClotureActive.StatutValidationDirecteurMetier);">
+                        <div style="font-weight: 600; color: var(--gray-800); margin-bottom: var(--spacing-sm);">
+                            Validation Directeur Métier
+                        </div>
+                        <div style="font-size: 0.875rem; color: var(--gray-600); margin-bottom: var(--spacing-sm);">
+                            @GetValidationStatus(demandeClotureActive.StatutValidationDirecteurMetier)
+                        </div>
+                        @if (demandeClotureActive.DateValidationDirecteurMetier.HasValue)
+                        {
+                            <div style="font-size: 0.75rem; color: var(--gray-500);">
+                                Le @demandeClotureActive.DateValidationDirecteurMetier.Value.ToString("dd/MM/yyyy")
+                            </div>
+                        }
+                        @if (isDirecteurMetier && !isReadOnly && demandeClotureActive.StatutValidationDirecteurMetier == GestionProjects.Domain.Enums.StatutValidationCloture.EnAttente)
+                        {
+                            <div style="margin-top: var(--spacing-md); display: flex; gap: var(--spacing-sm);">
+                                <form asp-action="ValiderClotureDM" method="post" style="flex: 1;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="demandeClotureId" value="@demandeClotureActive.Id" />
+                                    <button type="submit" class="btn-modern btn-modern-success w-100">
+                                        <i class="bi bi-check-circle"></i>
+                                        Valider
+                                    </button>
+                                </form>
+                                <button type="button" class="btn-modern btn-modern-danger" style="flex: 1;" data-bs-toggle="modal" data-bs-target="#rejeterClotureDMModal" data-demande-id="@demandeClotureActive.Id">
+                                    <i class="bi bi-x-circle"></i>
+                                    Rejeter
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div style="padding: var(--spacing-lg); background: @GetValidationBg(demandeClotureActive.StatutValidationDSI); border-radius: var(--radius-lg); border-left: 4px solid @GetValidationColor(demandeClotureActive.StatutValidationDSI);">
+                        <div style="font-weight: 600; color: var(--gray-800); margin-bottom: var(--spacing-sm);">
+                            Validation DSI
+                        </div>
+                        <div style="font-size: 0.875rem; color: var(--gray-600); margin-bottom: var(--spacing-sm);">
+                            @GetValidationStatus(demandeClotureActive.StatutValidationDSI)
+                        </div>
+                        @if (demandeClotureActive.DateValidationDSI.HasValue)
+                        {
+                            <div style="font-size: 0.75rem; color: var(--gray-500);">
+                                Le @demandeClotureActive.DateValidationDSI.Value.ToString("dd/MM/yyyy")
+                            </div>
+                        }
+                        @if (isDSI && demandeClotureActive.StatutValidationDSI == GestionProjects.Domain.Enums.StatutValidationCloture.EnAttente)
+                        {
+                            <div style="margin-top: var(--spacing-md); display: flex; gap: var(--spacing-sm);">
+                                <form asp-action="ValiderClotureDSI" method="post" style="flex: 1;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="demandeClotureId" value="@demandeClotureActive.Id" />
+                                    <button type="submit" class="btn-modern btn-modern-success w-100">
+                                        <i class="bi bi-check-circle"></i>
+                                        Valider
+                                    </button>
+                                </form>
+                                <button type="button" class="btn-modern btn-modern-danger" style="flex: 1;" data-bs-toggle="modal" data-bs-target="#rejeterClotureDSIModal" data-demande-id="@demandeClotureActive.Id">
+                                    <i class="bi bi-x-circle"></i>
+                                    Rejeter
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            @if (demandeClotureActive.EstTerminee)
+            {
+                <div style="padding: var(--spacing-lg); background: #d1fae5; border-radius: var(--radius-lg); text-align: center;">
+                    <i class="bi bi-check-circle-fill" style="font-size: 2rem; color: var(--success); margin-bottom: var(--spacing-sm);"></i>
+                    <div style="font-weight: 600; color: #065f46; font-size: 1.1rem;">
+                        Projet clôturé avec succès
+                    </div>
+                    <div style="color: #065f46; font-size: 0.875rem; margin-top: var(--spacing-xs);">
+                        Date de clôture : @demandeClotureActive.DateClotureFinale?.ToString("dd/MM/yyyy")
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<div class="card-modern mb-4">
+    <div class="card-header-modern">
+        <h3 class="card-title-modern" style="font-size: 1.1rem;">
+            <i class="bi bi-file-text"></i>
+            Bilan & Leçons apprises
+        </h3>
+    </div>
+    <div class="card-body-modern">
+        @if (isChefProjet && (Model.PhaseActuelle == GestionProjects.Domain.Enums.PhaseProjet.UatMep || Model.PhaseActuelle == GestionProjects.Domain.Enums.PhaseProjet.ClotureLeconsApprises))
+        {
+            <form asp-action="UpdateBilan" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <div class="form-group-modern">
+                    <label class="form-label-modern">Bilan de clôture</label>
+                    <textarea name="bilanCloture" class="form-control-modern" rows="6" placeholder="Résumez les résultats du projet, les objectifs atteints...">@Model.BilanCloture</textarea>
+                </div>
+                <div class="form-group-modern">
+                    <label class="form-label-modern">Leçons apprises</label>
+                    <textarea name="leconsApprises" class="form-control-modern" rows="6" placeholder="Identifiez les points forts, les difficultés rencontrées, les améliorations possibles...">@Model.LeconsApprises</textarea>
+                </div>
+                <button type="submit" class="btn-modern btn-modern-primary">
+                    <i class="bi bi-save"></i>
+                    Enregistrer
+                </button>
+            </form>
+        }
+        else
+        {
+            <div style="margin-bottom: var(--spacing-lg);">
+                <h6 style="color: var(--gray-700); font-weight: 600; margin-bottom: var(--spacing-sm);">Bilan de clôture</h6>
+                <p style="color: var(--gray-600); white-space: pre-wrap;">@(string.IsNullOrEmpty(Model.BilanCloture) ? "Non renseigné" : Model.BilanCloture)</p>
+            </div>
+            <div>
+                <h6 style="color: var(--gray-700); font-weight: 600; margin-bottom: var(--spacing-sm);">Leçons apprises</h6>
+                <p style="color: var(--gray-600); white-space: pre-wrap;">@(string.IsNullOrEmpty(Model.LeconsApprises) ? "Non renseigné" : Model.LeconsApprises)</p>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="card-modern">
+    <div class="card-header-modern">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                <i class="bi bi-file-earmark"></i>
+                Livrables de clôture
+            </h3>
+            @if (isChefProjet && (Model.PhaseActuelle == GestionProjects.Domain.Enums.PhaseProjet.UatMep || Model.PhaseActuelle == GestionProjects.Domain.Enums.PhaseProjet.ClotureLeconsApprises))
+            {
+                <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#uploadLivrableModal" data-phase="ClotureLeconsApprises">
+                    <i class="bi bi-upload"></i>
+                    Upload Livrable
+                </button>
+            }
+        </div>
+    </div>
+    <div class="card-body-modern">
+        @if (livrablesCloture.Any())
+        {
+            <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
+                @foreach (var livrable in livrablesCloture)
+                {
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--spacing-md); background: var(--gray-50); border-radius: var(--radius-lg);">
+                        <div style="display: flex; align-items: center; gap: var(--spacing-md);">
+                            <i class="bi bi-file-earmark" style="font-size: 1.5rem; color: var(--primary-blue);"></i>
+                            <div>
+                                <a href="~/@livrable.CheminRelatif" target="_blank" style="color: var(--primary-blue); text-decoration: none; font-weight: 500;">
+                                    @livrable.NomDocument
+                                </a>
+                                <div style="font-size: 0.875rem; color: var(--gray-500);">
+                                    Type: @livrable.TypeLivrable | Déposé le @livrable.DateDepot.ToString("dd/MM/yyyy")
+                                </div>
+                            </div>
+                        </div>
+                        <a href="~/@livrable.CheminRelatif" target="_blank" class="btn-modern btn-modern-secondary" style="padding: var(--spacing-xs) var(--spacing-md);">
+                            <i class="bi bi-download"></i>
+                        </a>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div style="text-align: center; padding: var(--spacing-xl); color: var(--gray-500);">
+                <i class="bi bi-inbox" style="font-size: 2rem; margin-bottom: var(--spacing-sm);"></i>
+                <p>Aucun livrable de clôture pour le moment.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal pour demander clôture -->
+@if (canDemanderCloture)
+{
+    <div class="modal fade" id="demanderClotureModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
+                <form asp-action="DemanderCloture" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="modal-header" style="border-bottom: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                        <h5 class="modal-title" style="font-weight: 600; color: var(--gray-800); display: flex; align-items: center; gap: var(--spacing-sm);">
+                            <i class="bi bi-flag-fill" style="color: var(--primary-blue);"></i>
+                            Lancer Demande Clôture
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" style="padding: var(--spacing-lg);">
+                        <p style="color: var(--gray-600); margin-bottom: var(--spacing-lg);">
+                            La demande de clôture sera envoyée pour validation au Demandeur, au Directeur Métier et à la DSI.
+                        </p>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Commentaire (optionnel)</label>
+                            <textarea name="commentaire" class="form-control-modern" rows="4" placeholder="Ajoutez un commentaire si nécessaire..."></textarea>
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Date souhaitée de clôture (optionnel)</label>
+                            <input type="date" name="dateSouhaiteeCloture" class="form-control-modern" />
+                            <small class="text-muted" style="font-size: 0.75rem; color: var(--gray-500);">Indiquez la date souhaitée pour la clôture du projet</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="border-top: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                        <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i>
+                            Annuler
+                        </button>
+                        <button type="submit" class="btn-modern btn-modern-primary">
+                            <i class="bi bi-flag"></i>
+                            Lancer la demande
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal Rejeter Clôture DM -->
+@if (isDirecteurMetier && !isReadOnly)
+{
+    <div class="modal fade" id="rejeterClotureDMModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
+                <form asp-action="RejeterClotureDM" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="demandeClotureId" id="rejeterClotureDMId" value="" />
+                    <div class="modal-header" style="border-bottom: 1px solid var(--gray-200); padding: var(--spacing-lg); background: #fee2e2;">
+                        <h5 class="modal-title" style="font-weight: 600; color: #991b1b; display: flex; align-items: center; gap: var(--spacing-sm);">
+                            <i class="bi bi-x-circle-fill" style="color: var(--danger);"></i>
+                            Rejeter la clôture
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" style="padding: var(--spacing-lg);">
+                        <div class="alert-modern alert-modern-danger" style="margin-bottom: var(--spacing-lg);">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            <div>
+                                <strong>Attention :</strong> Cette action rejettera la demande de clôture. Le projet restera ouvert.
+                            </div>
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Commentaire *</label>
+                            <textarea name="commentaire" class="form-control-modern" rows="4" required placeholder="Expliquez les raisons du rejet..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="border-top: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                        <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i>
+                            Annuler
+                        </button>
+                        <button type="submit" class="btn-modern btn-modern-danger">
+                            <i class="bi bi-x-circle"></i>
+                            Rejeter
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('rejeterClotureDMModal');
+            if (modal) {
+                modal.addEventListener('show.bs.modal', function(event) {
+                    const button = event.relatedTarget;
+                    const demandeId = button.getAttribute('data-demande-id');
+                    const input = document.getElementById('rejeterClotureDMId');
+                    if (input) {
+                        input.value = demandeId;
+                    }
+                });
+            }
+        });
+    </script>
+}
+
+<!-- Modal Rejeter Clôture DSI -->
+@if (isDSI)
+{
+    <div class="modal fade" id="rejeterClotureDSIModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
+                <form asp-action="RejeterClotureDSI" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="demandeClotureId" id="rejeterClotureDSIId" value="" />
+                    <div class="modal-header" style="border-bottom: 1px solid var(--gray-200); padding: var(--spacing-lg); background: #fee2e2;">
+                        <h5 class="modal-title" style="font-weight: 600; color: #991b1b; display: flex; align-items: center; gap: var(--spacing-sm);">
+                            <i class="bi bi-x-circle-fill" style="color: var(--danger);"></i>
+                            Rejeter la clôture
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" style="padding: var(--spacing-lg);">
+                        <div class="alert-modern alert-modern-danger" style="margin-bottom: var(--spacing-lg);">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            <div>
+                                <strong>Attention :</strong> Cette action rejettera la demande de clôture. Le projet restera ouvert.
+                            </div>
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Commentaire *</label>
+                            <textarea name="commentaire" class="form-control-modern" rows="4" required placeholder="Expliquez les raisons du rejet..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="border-top: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                        <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i>
+                            Annuler
+                        </button>
+                        <button type="submit" class="btn-modern btn-modern-danger">
+                            <i class="bi bi-x-circle"></i>
+                            Rejeter
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('rejeterClotureDSIModal');
+            if (modal) {
+                modal.addEventListener('show.bs.modal', function(event) {
+                    const button = event.relatedTarget;
+                    const demandeId = button.getAttribute('data-demande-id');
+                    const input = document.getElementById('rejeterClotureDSIId');
+                    if (input) {
+                        input.value = demandeId;
+                    }
+                });
+            }
+        });
+    </script>
+}
+
+@functions {
+    string GetValidationBg(GestionProjects.Domain.Enums.StatutValidationCloture statut)
+    {
+        return statut switch
+        {
+            GestionProjects.Domain.Enums.StatutValidationCloture.Validee => "#d1fae5",
+            GestionProjects.Domain.Enums.StatutValidationCloture.Rejetee => "#fee2e2",
+            _ => "#fef3c7"
+        };
+    }
+
+    string GetValidationColor(GestionProjects.Domain.Enums.StatutValidationCloture statut)
+    {
+        return statut switch
+        {
+            GestionProjects.Domain.Enums.StatutValidationCloture.Validee => "var(--success)",
+            GestionProjects.Domain.Enums.StatutValidationCloture.Rejetee => "var(--danger)",
+            _ => "var(--warning)"
+        };
+    }
+
+    string GetValidationStatus(GestionProjects.Domain.Enums.StatutValidationCloture statut)
+    {
+        return statut switch
+        {
+            GestionProjects.Domain.Enums.StatutValidationCloture.Validee => "✅ Validée",
+            GestionProjects.Domain.Enums.StatutValidationCloture.Rejetee => "❌ Rejetée",
+            _ => "⏳ En attente"
+        };
+    }
+}
+
+

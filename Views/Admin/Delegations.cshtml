@@ -1,0 +1,413 @@
+@model GestionProjects.Controllers.DelegationsViewModel
+
+@{
+    ViewData["Title"] = "Gestion des Délégations";
+    var activeTab = ViewBag.ActiveTab as string ?? "dsi";
+    var currentUserId = (Guid)ViewBag.CurrentUserId;
+    var currentUserRole = (string)ViewBag.CurrentUserRole;
+    var canCreateForOthers = currentUserRole == "AdminIT";
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="display-6 mb-0">
+            <i class="bi bi-person-badge" style="color: var(--primary-blue);"></i>
+            Gestion des Délégations
+        </h2>
+    </div>
+
+    @await Html.PartialAsync("_ValidationSummary")
+
+    <!-- Onglets -->
+    <ul class="nav nav-tabs mb-4" id="delegationsTabs" role="tablist" style="border-bottom: 2px solid var(--gray-200);">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(activeTab == "dsi" ? "active" : "")" id="dsi-tab" data-bs-toggle="tab" data-bs-target="#dsi-pane" type="button" role="tab" aria-controls="dsi-pane" aria-selected="@(activeTab == "dsi" ? "true" : "false")">
+                <i class="bi bi-shield-check"></i> Délégations Validation DSI
+                <span class="badge-modern badge-modern-info ms-2">@Model.DelegationsDSI.Count()</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(activeTab == "chefprojet" ? "active" : "")" id="chefprojet-tab" data-bs-toggle="tab" data-bs-target="#chefprojet-pane" type="button" role="tab" aria-controls="chefprojet-pane" aria-selected="@(activeTab == "chefprojet" ? "true" : "false")">
+                <i class="bi bi-person-workspace"></i> Délégations ChefProjet
+                <span class="badge-modern badge-modern-info ms-2">@Model.DelegationsChefProjet.Count()</span>
+            </button>
+        </li>
+    </ul>
+
+    <!-- Contenu des onglets -->
+    <div class="tab-content" id="delegationsTabContent">
+        <!-- Onglet Délégations DSI -->
+        <div class="tab-pane fade @(activeTab == "dsi" ? "show active" : "")" id="dsi-pane" role="tabpanel" aria-labelledby="dsi-tab">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="h5 mb-0" style="color: var(--gray-700);">
+                    <i class="bi bi-shield-check"></i> Délégations Validation DSI
+                </h3>
+                <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#createDelegationDSIModal" onclick="resetDSIForm()">
+                    <i class="bi bi-plus-circle"></i> Nouvelle Délégation DSI
+                </button>
+            </div>
+
+            <div class="card-modern">
+                <div class="card-body-modern p-0">
+                    <div class="table-responsive">
+                        <table class="table table-modern mb-0">
+                            <thead>
+                                <tr>
+                                    <th><i class="bi bi-person-badge"></i> DSI</th>
+                                    <th><i class="bi bi-person-check"></i> Délégué</th>
+                                    <th><i class="bi bi-calendar-event"></i> Date Début</th>
+                                    <th><i class="bi bi-calendar-x"></i> Date Fin</th>
+                                    <th><i class="bi bi-info-circle"></i> Statut</th>
+                                    <th class="text-center"><i class="bi bi-gear"></i> Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.DelegationsDSI.Any())
+                                {
+                                    @foreach (var delegation in Model.DelegationsDSI)
+                                    {
+                                        var isActive = delegation.EstActive && delegation.DateFin >= DateTime.Now;
+                                        var isExpired = delegation.DateFin < DateTime.Now;
+                                        var isUpcoming = delegation.DateDebut > DateTime.Now;
+                                        
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-size: 0.75rem; font-weight: 600;">
+                                                        @(delegation.DSI?.Nom?.Substring(0, 1) ?? "?")@(delegation.DSI?.Prenoms?.Substring(0, 1) ?? "")
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-semibold">@(delegation.DSI?.Nom ?? "N/A") @(delegation.DSI?.Prenoms ?? "")</div>
+                                                        <small class="text-muted">@(delegation.DSI?.Email ?? "")</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-size: 0.75rem; font-weight: 600;">
+                                                        @(delegation.Delegue?.Nom?.Substring(0, 1) ?? "?")@(delegation.Delegue?.Prenoms?.Substring(0, 1) ?? "")
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-semibold">@(delegation.Delegue?.Nom ?? "N/A") @(delegation.Delegue?.Prenoms ?? "")</div>
+                                                        <small class="text-muted">@(delegation.Delegue?.Email ?? "")</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <i class="bi bi-calendar3 text-primary"></i>
+                                                    <span>@delegation.DateDebut.ToString("dd/MM/yyyy")</span>
+                                                </div>
+                                                <small class="text-muted">@delegation.DateDebut.ToString("HH:mm")</small>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <i class="bi bi-calendar-x @(isExpired ? "text-danger" : "text-primary")"></i>
+                                                    <span class="@(isExpired ? "text-danger fw-semibold" : "")">@delegation.DateFin.ToString("dd/MM/yyyy")</span>
+                                                </div>
+                                                <small class="text-muted">@delegation.DateFin.ToString("HH:mm")</small>
+                                            </td>
+                                            <td>
+                                                @if (isActive)
+                                                {
+                                                    <span class="badge-modern badge-modern-success">
+                                                        <i class="bi bi-check-circle-fill"></i> Active
+                                                    </span>
+                                                }
+                                                else if (isExpired)
+                                                {
+                                                    <span class="badge-modern badge-modern-danger">
+                                                        <i class="bi bi-x-circle-fill"></i> Expirée
+                                                    </span>
+                                                }
+                                                else if (isUpcoming)
+                                                {
+                                                    <span class="badge-modern badge-modern-info">
+                                                        <i class="bi bi-clock"></i> À venir
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge-modern badge-modern-secondary">
+                                                        <i class="bi bi-pause-circle"></i> Inactive
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <div class="d-flex gap-2 justify-content-center">
+                                                    <button type="button" 
+                                                            class="btn-modern btn-modern-warning btn-sm" 
+                                                            onclick="editDSIDelegation('@delegation.Id')"
+                                                            title="Modifier">
+                                                        <i class="bi bi-pencil-square"></i>
+                                                    </button>
+                                                    <form asp-action="DeleteDelegation" asp-route-id="@delegation.Id" method="post" class="d-inline" 
+                                                          onsubmit="return confirm('Êtes-vous sûr de vouloir clôturer cette délégation ?');">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="btn-modern btn-modern-danger btn-sm" title="Clôturer">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="6" class="text-center py-5">
+                                            <i class="bi bi-inbox" style="font-size: 3rem; color: var(--gray-400);"></i>
+                                            <p class="text-muted mt-3">Aucune délégation DSI configurée</p>
+                                            <button type="button" class="btn-modern btn-modern-primary mt-2" data-bs-toggle="modal" data-bs-target="#createDelegationDSIModal" onclick="resetDSIForm()">
+                                                <i class="bi bi-plus-circle"></i> Créer la première délégation DSI
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Onglet Délégations ChefProjet -->
+        <div class="tab-pane fade @(activeTab == "chefprojet" ? "show active" : "")" id="chefprojet-pane" role="tabpanel" aria-labelledby="chefprojet-tab">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="h5 mb-0" style="color: var(--gray-700);">
+                    <i class="bi bi-person-workspace"></i> Délégations ChefProjet
+                </h3>
+                <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#createDelegationChefProjetModal" onclick="resetChefProjetForm()">
+                    <i class="bi bi-plus-circle"></i> Nouvelle Délégation ChefProjet
+                </button>
+            </div>
+
+            <div class="card-modern">
+                <div class="card-body-modern p-0">
+                    <div class="table-responsive">
+                        <table class="table table-modern mb-0">
+                            <thead>
+                                <tr>
+                                    <th><i class="bi bi-folder"></i> Projet</th>
+                                    <th><i class="bi bi-person-badge"></i> Délégant</th>
+                                    <th><i class="bi bi-person-check"></i> Délégué</th>
+                                    <th><i class="bi bi-calendar-event"></i> Date Début</th>
+                                    <th><i class="bi bi-calendar-x"></i> Date Fin</th>
+                                    <th><i class="bi bi-info-circle"></i> Statut</th>
+                                    <th class="text-center"><i class="bi bi-gear"></i> Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.DelegationsChefProjet.Any())
+                                {
+                                    @foreach (var delegation in Model.DelegationsChefProjet)
+                                    {
+                                        var isActive = delegation.EstActive && (delegation.DateFin == null || delegation.DateFin >= DateTime.Now);
+                                        var isExpired = delegation.DateFin.HasValue && delegation.DateFin < DateTime.Now;
+                                        
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <i class="bi bi-folder text-primary"></i>
+                                                    <div>
+                                                        <div class="fw-semibold">@(delegation.Projet?.CodeProjet ?? "N/A")</div>
+                                                        <small class="text-muted">@(delegation.Projet?.Titre ?? "")</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="rounded-circle bg-warning text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-size: 0.75rem; font-weight: 600;">
+                                                        @(delegation.Delegant?.Nom?.Substring(0, 1) ?? "?")@(delegation.Delegant?.Prenoms?.Substring(0, 1) ?? "")
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-semibold">@(delegation.Delegant?.Nom ?? "N/A") @(delegation.Delegant?.Prenoms ?? "")</div>
+                                                        <small class="text-muted">@(delegation.Delegant?.Email ?? "")</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-size: 0.75rem; font-weight: 600;">
+                                                        @(delegation.Delegue?.Nom?.Substring(0, 1) ?? "?")@(delegation.Delegue?.Prenoms?.Substring(0, 1) ?? "")
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-semibold">@(delegation.Delegue?.Nom ?? "N/A") @(delegation.Delegue?.Prenoms ?? "")</div>
+                                                        <small class="text-muted">@(delegation.Delegue?.Email ?? "")</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <i class="bi bi-calendar3 text-primary"></i>
+                                                    <span>@delegation.DateDebut.ToString("dd/MM/yyyy")</span>
+                                                </div>
+                                                <small class="text-muted">@delegation.DateDebut.ToString("HH:mm")</small>
+                                            </td>
+                                            <td>
+                                                @if (delegation.DateFin.HasValue)
+                                                {
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <i class="bi bi-calendar-x @(isExpired ? "text-danger" : "text-primary")"></i>
+                                                        <span class="@(isExpired ? "text-danger fw-semibold" : "")">@delegation.DateFin.Value.ToString("dd/MM/yyyy")</span>
+                                                    </div>
+                                                    <small class="text-muted">@delegation.DateFin.Value.ToString("HH:mm")</small>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted fst-italic">En cours</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (isActive)
+                                                {
+                                                    <span class="badge-modern badge-modern-success">
+                                                        <i class="bi bi-check-circle-fill"></i> Active
+                                                    </span>
+                                                }
+                                                else if (isExpired)
+                                                {
+                                                    <span class="badge-modern badge-modern-danger">
+                                                        <i class="bi bi-x-circle-fill"></i> Expirée
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge-modern badge-modern-secondary">
+                                                        <i class="bi bi-pause-circle"></i> Inactive
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <div class="d-flex gap-2 justify-content-center">
+                                                    <button type="button" 
+                                                            class="btn-modern btn-modern-warning btn-sm" 
+                                                            onclick="editChefProjetDelegation('@delegation.Id')"
+                                                            title="Modifier">
+                                                        <i class="bi bi-pencil-square"></i>
+                                                    </button>
+                                                    <form asp-action="DeleteDelegationChefProjet" asp-route-id="@delegation.Id" method="post" class="d-inline" 
+                                                          onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette délégation ?');">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="btn-modern btn-modern-danger btn-sm" title="Supprimer">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="7" class="text-center py-5">
+                                            <i class="bi bi-inbox" style="font-size: 3rem; color: var(--gray-400);"></i>
+                                            <p class="text-muted mt-3">Aucune délégation ChefProjet configurée</p>
+                                            <button type="button" class="btn-modern btn-modern-primary mt-2" data-bs-toggle="modal" data-bs-target="#createDelegationChefProjetModal" onclick="resetChefProjetForm()">
+                                                <i class="bi bi-plus-circle"></i> Créer la première délégation ChefProjet
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Délégation DSI -->
+@await Html.PartialAsync("_ModalDelegationDSI")
+
+<!-- Modal Délégation ChefProjet -->
+@await Html.PartialAsync("_ModalDelegationChefProjet")
+
+@section Scripts {
+    <script>
+        // Initialiser l'onglet actif au chargement
+        document.addEventListener('DOMContentLoaded', function() {
+            const activeTab = '@activeTab';
+            if (activeTab === 'chefprojet') {
+                const tab = new bootstrap.Tab(document.getElementById('chefprojet-tab'));
+                tab.show();
+            }
+        });
+
+        // Fonctions pour les délégations DSI
+        function resetDSIForm() {
+            document.getElementById('delegationDSIForm').reset();
+            document.getElementById('delegationDSIId').value = '';
+            document.getElementById('delegationDSIForm').action = '@Url.Action("CreateDelegation")';
+            document.getElementById('modalDSITitle').textContent = 'Nouvelle Délégation DSI';
+            document.getElementById('estActiveDSI').checked = true;
+        }
+
+        async function editDSIDelegation(delegationId) {
+            try {
+                const modal = new bootstrap.Modal(document.getElementById('createDelegationDSIModal'));
+                modal.show();
+                
+                document.getElementById('modalDSITitle').textContent = 'Modifier la Délégation DSI';
+                document.getElementById('delegationDSIId').value = delegationId;
+                document.getElementById('delegationDSIForm').action = '@Url.Action("UpdateDelegation")';
+
+                const response = await fetch('@Url.Action("GetDelegation")?id=' + delegationId);
+                if (!response.ok) throw new Error('Erreur lors du chargement des données');
+
+                const delegation = await response.json();
+                document.getElementById('dsiId').value = delegation.dsiId || '';
+                document.getElementById('delegueDSIId').value = delegation.delegueId || '';
+                
+                const dateDebut = new Date(delegation.dateDebut);
+                const dateFin = new Date(delegation.dateFin);
+                document.getElementById('dateDebutDSI').value = dateDebut.toISOString().split('T')[0];
+                document.getElementById('dateFinDSI').value = dateFin.toISOString().split('T')[0];
+                
+                document.getElementById('estActiveDSI').checked = delegation.estActive || false;
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors du chargement des données de la délégation');
+            }
+        }
+
+        // Fonctions pour les délégations ChefProjet
+        function resetChefProjetForm() {
+            document.getElementById('delegationChefProjetForm').reset();
+            document.getElementById('delegationChefProjetId').value = '';
+            document.getElementById('delegationChefProjetForm').action = '@Url.Action("CreateDelegationChefProjet")';
+            document.getElementById('modalChefProjetTitle').textContent = 'Nouvelle Délégation ChefProjet';
+            document.getElementById('estActiveChefProjet').checked = true;
+        }
+
+        async function editChefProjetDelegation(delegationId) {
+            try {
+                const modal = new bootstrap.Modal(document.getElementById('createDelegationChefProjetModal'));
+                modal.show();
+                
+                document.getElementById('modalChefProjetTitle').textContent = 'Modifier la Délégation ChefProjet';
+                document.getElementById('delegationChefProjetId').value = delegationId;
+                document.getElementById('delegationChefProjetForm').action = '@Url.Action("UpdateDelegationChefProjet")';
+
+                const response = await fetch('@Url.Action("GetDelegationChefProjet")?id=' + delegationId);
+                if (!response.ok) throw new Error('Erreur lors du chargement des données');
+
+                const delegation = await response.json();
+                document.getElementById('projetId').value = delegation.projetId || '';
+                document.getElementById('delegantId').value = delegation.delegantId || '';
+                document.getElementById('delegueChefProjetId').value = delegation.delegueId || '';
+                
+                const dateDebut = new Date(delegation.dateDebut);
+                document.getElementById('dateDebutChefProjet').value = dateDebut.toISOString().split('T')[0];
+                
+                document.getElementById('estActiveChefProjet').checked = delegation.estActive || false;
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors du chargement des données de la délégation');
+            }
+        }
+    </script>
+}

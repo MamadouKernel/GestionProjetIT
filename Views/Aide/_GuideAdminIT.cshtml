@@ -1,0 +1,270 @@
+<div class="card border-0 shadow-sm mb-4" id="admin">
+    <div class="card-header bg-dark text-white">
+        <h4 class="mb-0">
+            <i class="bi bi-gear-fill me-2"></i>
+            Guide Complet de l'Admin IT
+        </h4>
+    </div>
+    <div class="card-body">
+        <p class="lead">En tant que <strong>Admin IT</strong>, vous administrez l'application, gérez les utilisateurs et configurez le système.</p>
+
+        <h5 class="text-dark mb-3 mt-4">
+            <i class="bi bi-people me-2"></i>
+            Gérer les Utilisateurs
+        </h5>
+        <div class="alert alert-light border">
+            <h6 class="mb-3">Accès :</h6>
+            <p>Menu <code>Administration</code> → <code>Utilisateurs</code></p>
+
+            <h6 class="mt-3 mb-2">Créer un Utilisateur :</h6>
+            <ol>
+                <li>Cliquez sur <code>Nouvel Utilisateur</code></li>
+                <li>Remplissez les informations :
+                    <ul>
+                        <li><strong>Matricule :</strong> Identifiant unique (obligatoire)</li>
+                        <li><strong>Nom :</strong> Nom de famille (obligatoire)</li>
+                        <li><strong>Prénoms :</strong> Prénoms (obligatoire)</li>
+                        <li><strong>Email :</strong> Adresse email valide (obligatoire)</li>
+                        <li><strong>Direction :</strong> Sélectionnez la direction (optionnel)</li>
+                        <li><strong>Mot de passe initial :</strong> Minimum 6 caractères</li>
+                    </ul>
+                </li>
+                <li>Assignez les rôles :
+                    <ul>
+                        <li>Cochez les rôles appropriés</li>
+                        <li>Un utilisateur peut avoir plusieurs rôles</li>
+                        <li>Définissez les dates de début/fin pour chaque rôle (optionnel)</li>
+                    </ul>
+                </li>
+                <li>Cliquez sur <code>Enregistrer</code></li>
+            </ol>
+
+            <h6 class="mt-3 mb-2">Modifier un Utilisateur :</h6>
+            <ol>
+                <li>Cliquez sur <code>Modifier</code> dans la liste</li>
+                <li>Modifiez les informations souhaitées</li>
+                <li>Pour changer le mot de passe :
+                    <ul>
+                        <li>Saisissez le nouveau mot de passe</li>
+                        <li>Confirmez-le</li>
+                        <li>L'utilisateur devra changer ce mot de passe au prochain login</li>
+                    </ul>
+                </li>
+                <li>Modifiez les rôles si nécessaire</li>
+                <li>Cliquez sur <code>Enregistrer</code></li>
+            </ol>
+
+            <h6 class="mt-3 mb-2">Réinitialiser un Mot de Passe :</h6>
+            <ol>
+                <li>Dans la liste des utilisateurs</li>
+                <li>Cliquez sur <code>Réinitialiser mot de passe</code></li>
+                <li>Un nouveau mot de passe est généré automatiquement</li>
+                <li>Communiquez ce mot de passe à l'utilisateur de manière sécurisée</li>
+                <li>L'utilisateur devra changer ce mot de passe au prochain login</li>
+            </ol>
+
+            <h6 class="mt-3 mb-2">Supprimer un Utilisateur :</h6>
+            <ol>
+                <li>Cliquez sur <code>Supprimer</code></li>
+                <li>Confirmez la suppression</li>
+                <li><strong>Note :</strong> La suppression est logique (soft delete), l'utilisateur n'apparaît plus mais les données sont conservées</li>
+            </ol>
+        </div>
+
+        <h5 class="text-dark mb-3 mt-4">
+            <i class="bi bi-file-earmark-spreadsheet me-2"></i>
+            Importer des Utilisateurs en Masse
+        </h5>
+        <div class="alert alert-light border">
+            <h6 class="mb-3">Procédure :</h6>
+            <ol>
+                <li>Menu <code>Administration</code> → <code>Importer Utilisateurs</code></li>
+                <li>Téléchargez le modèle Excel :
+                    <ul>
+                        <li>Cliquez sur <code>Télécharger Modèle</code></li>
+                        <li>Le fichier Excel contient les colonnes nécessaires</li>
+                    </ul>
+                </li>
+                <li>Remplissez le fichier Excel :
+                    <ul>
+                        <li><strong>Matricule :</strong> Identifiant unique</li>
+                        <li><strong>Nom :</strong> Nom de famille</li>
+                        <li><strong>Prénoms :</strong> Prénoms</li>
+                        <li><strong>Email :</strong> Adresse email valide</li>
+                        <li><strong>Code Direction :</strong> Code de la direction (optionnel)</li>
+                        <li><strong>Libellé Direction :</strong> Nom de la direction (optionnel)</li>
+                        <li><strong>Rôles :</strong> Liste des rôles séparés par virgule (ex: "Demandeur,ChefDeProjet")</li>
+                        <li><strong>Peut Créer Demande :</strong> "Oui" ou "Non"</li>
+                    </ul>
+                </li>
+                <li>Définissez un mot de passe par défaut (minimum 6 caractères)</li>
+                <li>Choisissez l'option :
+                    <ul>
+                        <li><strong>Ignorer les doublons :</strong> Si coché, les utilisateurs existants sont ignorés</li>
+                        <li><strong>Sinon :</strong> Une erreur est affichée pour les doublons</li>
+                    </ul>
+                </li>
+                <li>Uploadez le fichier Excel</li>
+                <li>Cliquez sur <code>Importer</code></li>
+                <li>Consultez les résultats :
+                    <ul>
+                        <li>Utilisateurs créés avec succès</li>
+                        <li>Utilisateurs ignorés (doublons)</li>
+                        <li>Erreurs de validation</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <h5 class="text-dark mb-3 mt-4">
+            <i class="bi bi-building me-2"></i>
+            Gérer les Directions et Services
+        </h5>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card border-primary mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <strong>Directions</strong>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Accès :</strong> Menu <code>Administration</code> → <code>Directions</code></p>
+                        <p><strong>Actions :</strong></p>
+                        <ul>
+                            <li>Créer une nouvelle direction</li>
+                            <li>Modifier une direction existante</li>
+                            <li>Activer/Désactiver une direction</li>
+                            <li>Supprimer une direction (soft delete)</li>
+                        </ul>
+                        <p class="mb-0"><strong>Champs :</strong> Code, Libellé, Description</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-info mb-3">
+                    <div class="card-header bg-info text-white">
+                        <strong>Services</strong>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Accès :</strong> Menu <code>Administration</code> → <code>Services</code></p>
+                        <p><strong>Actions :</strong></p>
+                        <ul>
+                            <li>Créer un nouveau service</li>
+                            <li>Modifier un service existant</li>
+                            <li>Associer un service à une direction</li>
+                            <li>Supprimer un service</li>
+                        </ul>
+                        <p class="mb-0"><strong>Champs :</strong> Code, Libellé, Direction</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h5 class="text-dark mb-3 mt-4">
+            <i class="bi bi-person-check me-2"></i>
+            Gérer les Délégations
+        </h5>
+        <div class="alert alert-light border">
+            <h6 class="mb-3">Accès :</h6>
+            <p>Menu <code>Administration</code> → <code>Délégations</code></p>
+
+            <h6 class="mt-3 mb-2">Délégations DSI :</h6>
+            <p>Permet à la DSI de déléguer temporairement ses validations à un Responsable Solutions IT.</p>
+            <ul>
+                <li>Créer une nouvelle délégation</li>
+                <li>Définir la période (date début, date fin)</li>
+                <li>Annuler une délégation active</li>
+                <li>Consulter l'historique des délégations</li>
+            </ul>
+
+            <h6 class="mt-3 mb-2">Délégations Chef de Projet :</h6>
+            <p>Permet de déléguer temporairement la gestion d'un projet à un autre Chef de Projet.</p>
+            <ul>
+                <li>Créer une délégation pour un projet spécifique</li>
+                <li>La délégation est active jusqu'à la clôture du projet</li>
+                <li>Annuler une délégation active</li>
+            </ul>
+        </div>
+
+        <h5 class="text-dark mb-3 mt-4">
+            <i class="bi bi-sliders me-2"></i>
+            Paramètres Système
+        </h5>
+        <div class="alert alert-light border">
+            <h6 class="mb-3">Accès :</h6>
+            <p>Menu <code>Administration</code> → <code>Paramètres</code></p>
+
+            <p><strong>Paramètres configurables :</strong></p>
+            <ul>
+                <li>Paramètres généraux de l'application</li>
+                <li>Configuration des notifications</li>
+                <li>Paramètres de sécurité</li>
+                <li>Configuration des exports</li>
+            </ul>
+        </div>
+
+        <h5 class="text-dark mb-3 mt-4">
+            <i class="bi bi-shield-lock me-2"></i>
+            Sécurité et Droits d'Accès
+        </h5>
+        <div class="alert alert-danger">
+            <h6 class="mb-3">⚠️ Important :</h6>
+            <ul>
+                <li>Vous avez accès à <strong>toutes</strong> les fonctionnalités d'administration</li>
+                <li>Utilisez ces droits avec <strong>précaution</strong></li>
+                <li>Toutes vos actions sont <strong>auditées</strong></li>
+                <li>Ne supprimez pas d'utilisateurs sans vérification</li>
+                <li>Vérifiez les rôles avant de les assigner</li>
+            </ul>
+        </div>
+
+        <h5 class="text-dark mb-3 mt-4">
+            <i class="bi bi-list-check me-2"></i>
+            Checklist d'Administration
+        </h5>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>Action</th>
+                        <th>Fréquence</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Vérifier les utilisateurs</strong></td>
+                        <td>Mensuelle</td>
+                        <td>Vérifier que tous les utilisateurs actifs ont les bons rôles</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Nettoyer les utilisateurs inactifs</strong></td>
+                        <td>Trimestrielle</td>
+                        <td>Désactiver ou supprimer les utilisateurs qui ne sont plus actifs</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Vérifier les délégations</strong></td>
+                        <td>Hebdomadaire</td>
+                        <td>Vérifier que les délégations actives sont toujours valides</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Consulter les logs d'audit</strong></td>
+                        <td>Mensuelle</td>
+                        <td>Vérifier les actions critiques dans les logs d'audit</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Mettre à jour les directions</strong></td>
+                        <td>Selon besoin</td>
+                        <td>Ajouter/modifier les directions selon l'organisation</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="alert alert-dark mt-4">
+            <i class="bi bi-shield-lock-fill me-2"></i>
+            <strong>Sécurité :</strong> Vous avez accès à toutes les fonctionnalités d'administration. 
+            Utilisez ces droits avec précaution et respectez les procédures de sécurité.
+        </div>
+    </div>
+</div>
+

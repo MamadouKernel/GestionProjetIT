@@ -1,0 +1,53 @@
+@model GestionProjects.Domain.Models.Projet
+
+@{
+    var utilisateurs = ViewBag.Utilisateurs as IEnumerable<GestionProjects.Domain.Models.Utilisateur> ?? new List<GestionProjects.Domain.Models.Utilisateur>();
+}
+
+<div class="modal fade" id="ajouterMembreModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
+            <form asp-action="AjouterMembre" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="projetId" value="@Model.Id" />
+                <div class="modal-header" style="border-bottom: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <h5 class="modal-title" style="font-weight: 600; color: var(--gray-800); display: flex; align-items: center; gap: var(--spacing-sm);">
+                        <i class="bi bi-person-plus" style="color: var(--primary-blue);"></i>
+                        Ajouter un Membre
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: var(--spacing-lg);">
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Utilisateur *</label>
+                        <select name="utilisateurId" class="form-control-modern" required>
+                            <option value="">-- Sélectionner --</option>
+                            @if (utilisateurs != null)
+                            {
+                                @foreach (var user in utilisateurs)
+                                {
+                                    <option value="@user.Id">@user.Nom @user.Prenoms (@user.Matricule)</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Rôle dans le projet *</label>
+                        <input type="text" name="roleDansProjet" class="form-control-modern" required placeholder="Ex: Développeur, Analyste, Testeur..." />
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-plus-circle"></i>
+                        Ajouter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+

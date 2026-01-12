@@ -1,0 +1,231 @@
+@model IEnumerable<GestionProjects.Domain.Models.ParametreSysteme>
+
+@{
+    ViewData["Title"] = "Paramètres Système";
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="display-6 mb-0">
+            <i class="bi bi-gear-fill" style="color: var(--primary-blue);"></i>
+            Paramètres Système
+        </h2>
+        <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#createParametreModal" onclick="resetForm()">
+            <i class="bi bi-plus-circle"></i> Nouveau Paramètre
+        </button>
+    </div>
+
+    @await Html.PartialAsync("_ValidationSummary")
+
+    <div class="card-modern">
+        <div class="card-header-modern">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="card-title-modern mb-0">
+                    <i class="bi bi-list-ul"></i> Liste des Paramètres
+                </h3>
+                <span class="badge-modern badge-modern-info">@Model.Count() paramètre(s)</span>
+            </div>
+        </div>
+        <div class="card-body-modern p-0">
+            <div class="table-responsive">
+                <table class="table table-modern mb-0">
+                    <thead>
+                        <tr>
+                            <th><i class="bi bi-key"></i> Clé</th>
+                            <th><i class="bi bi-file-earmark-text"></i> Valeur</th>
+                            <th><i class="bi bi-info-circle"></i> Description</th>
+                            <th class="text-center"><i class="bi bi-gear"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Any())
+                        {
+                            @foreach (var param in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="fw-semibold text-primary">
+                                            <i class="bi bi-key-fill"></i> @param.Cle
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <code class="text-success" style="background: var(--gray-100); padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.875rem;">
+                                            @param.Valeur
+                                        </code>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrWhiteSpace(param.Description))
+                                        {
+                                            <span class="text-muted">@param.Description</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted fst-italic">Aucune description</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-2 justify-content-center">
+                                            <button type="button" 
+                                                    class="btn-modern btn-modern-warning btn-sm" 
+                                                    onclick="editParametre('@param.Id')"
+                                                    title="Modifier">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                            <form asp-action="DeleteParametre" asp-route-id="@param.Id" method="post" class="d-inline" 
+                                                  onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce paramètre ?');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn-modern btn-modern-danger btn-sm" title="Supprimer">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center py-5">
+                                    <i class="bi bi-inbox" style="font-size: 3rem; color: var(--gray-400);"></i>
+                                    <p class="text-muted mt-3">Aucun paramètre configuré</p>
+                                    <button type="button" class="btn-modern btn-modern-primary mt-2" data-bs-toggle="modal" data-bs-target="#createParametreModal" onclick="resetForm()">
+                                        <i class="bi bi-plus-circle"></i> Créer le premier paramètre
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Create/Edit Parametre -->
+<div class="modal fade" id="createParametreModal" tabindex="-1" aria-labelledby="createParametreModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius: var(--radius-lg); border: none; box-shadow: var(--shadow-xl);">
+            <form id="parametreForm" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header" style="border-bottom: 1px solid var(--gray-200); padding: var(--spacing-lg); background: var(--gray-50); border-radius: var(--radius-lg) var(--radius-lg) 0 0;">
+                    <h5 class="modal-title" id="createParametreModalLabel" style="font-weight: 600; color: var(--gray-800); display: flex; align-items: center; gap: var(--spacing-sm);">
+                        <i class="bi bi-gear" style="color: var(--primary-blue); font-size: 1.5rem;"></i>
+                        <span id="modalTitle">Nouveau Paramètre</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: var(--spacing-lg);">
+                    <input type="hidden" name="Id" id="parametreId" />
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <div class="form-group-modern">
+                                <label class="form-label-modern" for="cle">
+                                    <i class="bi bi-key"></i> Clé *
+                                </label>
+                                <input type="text" name="Cle" id="cle" class="form-control-modern" required maxlength="100" placeholder="Ex: MAX_FILE_SIZE" />
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> Identifiant unique du paramètre (sans espaces, recommandé en majuscules)
+                                </small>
+                                <span class="text-danger field-validation-valid" data-valmsg-for="Cle" data-valmsg-replace="true"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group-modern">
+                                <label class="form-label-modern" for="valeur">
+                                    <i class="bi bi-file-earmark-text"></i> Valeur *
+                                </label>
+                                <input type="text" name="Valeur" id="valeur" class="form-control-modern" required maxlength="500" placeholder="Ex: 10485760" />
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> Valeur du paramètre
+                                </small>
+                                <span class="text-danger field-validation-valid" data-valmsg-for="Valeur" data-valmsg-replace="true"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group-modern">
+                                <label class="form-label-modern" for="description">
+                                    <i class="bi bi-info-circle"></i> Description
+                                </label>
+                                <textarea name="Description" id="description" class="form-control-modern" rows="3" maxlength="500" placeholder="Description détaillée du paramètre..."></textarea>
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> Optionnel : Expliquez à quoi sert ce paramètre
+                                </small>
+                                <span class="text-danger field-validation-valid" data-valmsg-for="Description" data-valmsg-replace="true"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--gray-200); padding: var(--spacing-lg); background: var(--gray-50); border-radius: 0 0 var(--radius-lg) var(--radius-lg);">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-save"></i> Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Fonction pour réinitialiser le formulaire
+        function resetForm() {
+            document.getElementById('parametreForm').reset();
+            document.getElementById('parametreId').value = '';
+            document.getElementById('parametreForm').action = '@Url.Action("CreateParametre")';
+            document.getElementById('modalTitle').textContent = 'Nouveau Paramètre';
+            
+            // Réinitialiser les champs required
+            document.getElementById('cle').setAttribute('required', 'required');
+        }
+
+        // Fonction pour charger et éditer un paramètre
+        async function editParametre(parametreId) {
+            try {
+                // Afficher un loader
+                const modal = new bootstrap.Modal(document.getElementById('createParametreModal'));
+                modal.show();
+                
+                document.getElementById('modalTitle').textContent = 'Modifier le Paramètre';
+                document.getElementById('parametreId').value = parametreId;
+                document.getElementById('parametreForm').action = '@Url.Action("UpdateParametre")';
+
+                // Charger les données du paramètre via AJAX
+                const response = await fetch('@Url.Action("GetParametre")?id=' + parametreId);
+                
+                if (!response.ok) {
+                    throw new Error('Erreur lors du chargement des données');
+                }
+
+                const parametre = await response.json();
+
+                // Remplir le formulaire
+                document.getElementById('cle').value = parametre.cle || '';
+                document.getElementById('valeur').value = parametre.valeur || '';
+                document.getElementById('description').value = parametre.description || '';
+
+                // Retirer le required du champ clé en mode édition (déjà existant)
+                document.getElementById('cle').removeAttribute('required');
+                
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors du chargement des données du paramètre');
+            }
+        }
+
+        // Réinitialiser le formulaire quand le modal est fermé
+        document.getElementById('createParametreModal').addEventListener('hidden.bs.modal', function () {
+            resetForm();
+        });
+
+        // Gestion de la soumission du formulaire
+        document.getElementById('parametreForm').addEventListener('submit', function(e) {
+            if (!this.action.includes('UpdateParametre')) {
+                this.action = '@Url.Action("CreateParametre")';
+            }
+        });
+    </script>
+}

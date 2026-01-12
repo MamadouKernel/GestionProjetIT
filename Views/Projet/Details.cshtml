@@ -1,0 +1,239 @@
+@model GestionProjects.Domain.Models.Projet
+
+@{
+    ViewData["Title"] = $"Projet {Model.CodeProjet}";
+    var activeTab = ViewBag.ActiveTab ?? "synthese";
+    var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Guid.Empty.ToString());
+    var isChefProjet = User.IsInRole("ChefDeProjet") && Model.ChefProjetId == userId;
+    var isDirecteurMetier = User.IsInRole("DirecteurMetier") && Model.SponsorId == userId;
+    var isDSI = User.IsInRole("DSI") || User.IsInRole("AdminIT");
+    var isResponsableSolutionsIT = User.IsInRole("ResponsableSolutionsIT");
+    var isDSIOrResponsable = isDSI || isResponsableSolutionsIT;
+    var isReadOnly = ViewBag.IsReadOnly as bool? ?? false;
+}
+
+<div class="fade-in">
+    @if (isReadOnly && User.IsInRole("DirecteurMetier"))
+    {
+        <div class="alert-modern alert-modern-info mb-4" style="border-left: 4px solid var(--info);">
+            <i class="bi bi-info-circle-fill"></i>
+            <div>
+                <strong>Mode lecture seule</strong> - Ce projet appartient à votre direction mais vous n'en êtes pas le sponsor. Vous pouvez consulter les informations mais ne pouvez pas effectuer d'actions.
+            </div>
+        </div>
+    }
+    
+    <!-- En-tête du projet -->
+    <div class="card-modern mb-4">
+        <div class="card-header-modern">
+            <div>
+                <h2 class="card-title-modern mb-0">
+                    <i class="bi bi-folder"></i>
+                    @Model.CodeProjet - @Model.Titre
+                    @if (isReadOnly && User.IsInRole("DirecteurMetier"))
+                    {
+                        <span class="badge-modern badge-modern-secondary" style="margin-left: var(--spacing-sm); font-size: 0.75rem;">
+                            <i class="bi bi-eye"></i> Lecture seule
+                        </span>
+                    }
+                </h2>
+                <div class="mt-2" style="display: flex; gap: var(--spacing-sm); flex-wrap: wrap;">
+                    <span class="badge-modern badge-modern-@GetPhaseClass(Model.PhaseActuelle)">@Model.PhaseActuelle</span>
+                    <span class="badge-modern badge-modern-@GetStatutClass(Model.StatutProjet)">@Model.StatutProjet</span>
+                    <span class="badge-modern badge-modern-@GetRAGClass(Model.IndicateurRAG)" title="Indicateur RAG calculé automatiquement (Budget, Planning, Risques, Livrables)">
+                        RAG: @GetRAGLabel(Model.IndicateurRAG)
+                    </span>
+                    <span class="badge-modern badge-modern-@GetEtatClass(Model.EtatProjet)">@Model.EtatProjet</span>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: var(--spacing-md);">
+                <div style="text-align: right;">
+                    <div style="font-size: 0.875rem; color: var(--gray-500);">Avancement</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-blue);">@Model.PourcentageAvancement%</div>
+                </div>
+                <div style="width: 100px; height: 100px; position: relative;">
+                    <svg width="100" height="100" style="transform: rotate(-90deg);">
+                        <circle cx="50" cy="50" r="40" fill="none" stroke="var(--gray-200)" stroke-width="8"/>
+                        <circle cx="50" cy="50" r="40" fill="none" stroke="var(--primary-blue)" stroke-width="8"
+                                stroke-dasharray="@(2 * Math.PI * 40)" 
+                                stroke-dashoffset="@(2 * Math.PI * 40 * (1 - Model.PourcentageAvancement / 100.0))"
+                                stroke-linecap="round"/>
+                    </svg>
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 700; color: var(--primary-blue);">
+                        @Model.PourcentageAvancement%
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation par onglets -->
+    <div class="card-modern mb-4">
+        <ul class="nav nav-tabs" style="border-bottom: 2px solid var(--gray-200);">
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "synthese" ? "active" : "")" 
+                   href="@Url.Action("Details", new { id = Model.Id, tab = "synthese" })"
+                   style="border: none; border-bottom: @(activeTab == "synthese" ? "3px solid var(--primary-blue)" : "none"); color: @(activeTab == "synthese" ? "var(--primary-blue)" : "var(--gray-600)"); font-weight: @(activeTab == "synthese" ? "600" : "500");">
+                    <i class="bi bi-speedometer2"></i> Synthèse
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "analyse" ? "active" : "")" 
+                   href="@Url.Action("Details", new { id = Model.Id, tab = "analyse" })"
+                   style="border: none; border-bottom: @(activeTab == "analyse" ? "3px solid var(--primary-blue)" : "none"); color: @(activeTab == "analyse" ? "var(--primary-blue)" : "var(--gray-600)"); font-weight: @(activeTab == "analyse" ? "600" : "500");">
+                    <i class="bi bi-search"></i> Analyse
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "planification" ? "active" : "")" 
+                   href="@Url.Action("Details", new { id = Model.Id, tab = "planification" })"
+                   style="border: none; border-bottom: @(activeTab == "planification" ? "3px solid var(--primary-blue)" : "none"); color: @(activeTab == "planification" ? "var(--primary-blue)" : "var(--gray-600)"); font-weight: @(activeTab == "planification" ? "600" : "500");">
+                    <i class="bi bi-calendar-check"></i> Planification
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "execution" ? "active" : "")" 
+                   href="@Url.Action("Details", new { id = Model.Id, tab = "execution" })"
+                   style="border: none; border-bottom: @(activeTab == "execution" ? "3px solid var(--primary-blue)" : "none"); color: @(activeTab == "execution" ? "var(--primary-blue)" : "var(--gray-600)"); font-weight: @(activeTab == "execution" ? "600" : "500");">
+                    <i class="bi bi-play-circle"></i> Exécution
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "uat" ? "active" : "")" 
+                   href="@Url.Action("Details", new { id = Model.Id, tab = "uat" })"
+                   style="border: none; border-bottom: @(activeTab == "uat" ? "3px solid var(--primary-blue)" : "none"); color: @(activeTab == "uat" ? "var(--primary-blue)" : "var(--gray-600)"); font-weight: @(activeTab == "uat" ? "600" : "500");">
+                    <i class="bi bi-check2-square"></i> UAT & MEP
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "cloture" ? "active" : "")" 
+                   href="@Url.Action("Details", new { id = Model.Id, tab = "cloture" })"
+                   style="border: none; border-bottom: @(activeTab == "cloture" ? "3px solid var(--primary-blue)" : "none"); color: @(activeTab == "cloture" ? "var(--primary-blue)" : "var(--gray-600)"); font-weight: @(activeTab == "cloture" ? "600" : "500");">
+                    <i class="bi bi-flag"></i> Clôture
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "charges" ? "active" : "")" 
+                   href="@Url.Action("Charges", new { id = Model.Id })"
+                   style="border: none; border-bottom: @(activeTab == "charges" ? "3px solid var(--primary-blue)" : "none"); color: @(activeTab == "charges" ? "var(--primary-blue)" : "var(--gray-600)"); font-weight: @(activeTab == "charges" ? "600" : "500");">
+                    <i class="bi bi-clock-history"></i> Charges
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "historique" ? "active" : "")" 
+                   href="@Url.Action("Details", new { id = Model.Id, tab = "historique" })"
+                   style="border: none; border-bottom: @(activeTab == "historique" ? "3px solid var(--primary-blue)" : "none"); color: @(activeTab == "historique" ? "var(--primary-blue)" : "var(--gray-600)"); font-weight: @(activeTab == "historique" ? "600" : "500");">
+                    <i class="bi bi-clock-history"></i> Historique
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Contenu des onglets -->
+    @if (activeTab == "synthese")
+    {
+        @await Html.PartialAsync("_ProjetSynthese", Model)
+    }
+    else if (activeTab == "analyse")
+    {
+        @await Html.PartialAsync("_ProjetAnalyse", Model)
+    }
+    else if (activeTab == "planification")
+    {
+        @await Html.PartialAsync("_ProjetPlanification", Model)
+    }
+    else if (activeTab == "execution")
+    {
+        @await Html.PartialAsync("_ProjetExecution", Model)
+    }
+    else if (activeTab == "uat")
+    {
+        @await Html.PartialAsync("_ProjetUAT", Model)
+    }
+    else if (activeTab == "cloture")
+    {
+        @await Html.PartialAsync("_ProjetCloture", Model)
+    }
+    else if (activeTab == "historique")
+    {
+        @await Html.PartialAsync("_ProjetHistorique", Model)
+    }
+
+    <div class="mt-4">
+        <a asp-action="Index" class="btn-modern btn-modern-secondary">
+            <i class="bi bi-arrow-left"></i>
+            Retour à la liste
+        </a>
+    </div>
+</div>
+
+<!-- Modales -->
+@if (isChefProjet)
+{
+    @await Html.PartialAsync("_UploadLivrableModal", Model)
+    @await Html.PartialAsync("_AjouterAnomalieModal", Model)
+    @await Html.PartialAsync("_AjouterRisqueModal", Model)
+    @await Html.PartialAsync("_AjouterMembreModal", Model)
+}
+
+@functions {
+    string GetPhaseClass(GestionProjects.Domain.Enums.PhaseProjet phase)
+    {
+        return phase switch
+        {
+            GestionProjects.Domain.Enums.PhaseProjet.AnalyseClarification => "info",
+            GestionProjects.Domain.Enums.PhaseProjet.PlanificationValidation => "warning",
+            GestionProjects.Domain.Enums.PhaseProjet.ExecutionSuivi => "primary",
+            GestionProjects.Domain.Enums.PhaseProjet.UatMep => "success",
+            GestionProjects.Domain.Enums.PhaseProjet.ClotureLeconsApprises => "secondary",
+            _ => "secondary"
+        };
+    }
+
+    string GetStatutClass(GestionProjects.Domain.Enums.StatutProjet statut)
+    {
+        return statut switch
+        {
+            GestionProjects.Domain.Enums.StatutProjet.NonDemarre => "secondary",
+            GestionProjects.Domain.Enums.StatutProjet.EnCours => "info",
+            GestionProjects.Domain.Enums.StatutProjet.Suspendu => "warning",
+            GestionProjects.Domain.Enums.StatutProjet.ClotureEnCours => "info",
+            GestionProjects.Domain.Enums.StatutProjet.Cloture => "success",
+            GestionProjects.Domain.Enums.StatutProjet.Annule => "danger",
+            _ => "secondary"
+        };
+    }
+
+    string GetEtatClass(GestionProjects.Domain.Enums.EtatProjet etat)
+    {
+        return etat switch
+        {
+            GestionProjects.Domain.Enums.EtatProjet.Vert => "success",
+            GestionProjects.Domain.Enums.EtatProjet.Orange => "warning",
+            GestionProjects.Domain.Enums.EtatProjet.Rouge => "danger",
+            _ => "secondary"
+        };
+    }
+
+    string GetRAGClass(GestionProjects.Domain.Enums.IndicateurRAG rag)
+    {
+        return rag switch
+        {
+            GestionProjects.Domain.Enums.IndicateurRAG.Vert => "success",
+            GestionProjects.Domain.Enums.IndicateurRAG.Amber => "warning",
+            GestionProjects.Domain.Enums.IndicateurRAG.Rouge => "danger",
+            _ => "secondary"
+        };
+    }
+
+    string GetRAGLabel(GestionProjects.Domain.Enums.IndicateurRAG rag)
+    {
+        return rag switch
+        {
+            GestionProjects.Domain.Enums.IndicateurRAG.Vert => "🟢 Vert",
+            GestionProjects.Domain.Enums.IndicateurRAG.Amber => "🟡 Amber",
+            GestionProjects.Domain.Enums.IndicateurRAG.Rouge => "🔴 Rouge",
+            _ => "N/A"
+        };
+    }
+}

@@ -1,0 +1,67 @@
+@model GestionProjects.Domain.Models.DemandeProjet
+
+@{
+    var chefsProjet = ViewBag.ChefsProjet as IEnumerable<GestionProjects.Domain.Models.Utilisateur> ?? new List<GestionProjects.Domain.Models.Utilisateur>();
+}
+
+<div class="modal fade" id="validerDSIModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
+            <form asp-action="ValiderDSI" asp-route-id="@Model.Id" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header" style="border-bottom: 1px solid var(--gray-200); padding: var(--spacing-lg); background: #d1fae5;">
+                    <h5 class="modal-title" style="font-weight: 600; color: #065f46; display: flex; align-items: center; gap: var(--spacing-sm);">
+                        <i class="bi bi-check-circle-fill" style="color: var(--success);"></i>
+                        Valider la demande et créer le projet
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: var(--spacing-lg);">
+                    <div class="alert-modern alert-modern-info" style="margin-bottom: var(--spacing-lg);">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <div>
+                            <strong>Important :</strong> La validation créera automatiquement un nouveau projet avec le code généré. Vous pouvez assigner un Chef de Projet maintenant ou plus tard.
+                        </div>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">
+                            <i class="bi bi-person-badge"></i> Chef de Projet (optionnel)
+                        </label>
+                        <select name="chefProjetId" class="form-control-modern">
+                            <option value="">-- Non assigné (peut être assigné plus tard) --</option>
+                            @foreach (var cp in chefsProjet)
+                            {
+                                <option value="@cp.Id">@cp.Nom @cp.Prenoms</option>
+                            }
+                        </select>
+                        <small style="color: var(--gray-500); font-size: 0.875rem;">
+                            <i class="bi bi-info-circle"></i> 
+                            @if (User.IsInRole("ResponsableSolutionsIT"))
+                            {
+                                <text>Vous pouvez assigner un Chef de Projet maintenant ou plus tard. Les utilisateurs avec délégation active sont également disponibles.</text>
+                            }
+                            else
+                            {
+                                <text>Vous pourrez assigner un Chef de Projet ultérieurement si nécessaire.</text>
+                            }
+                        </small>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Commentaire (optionnel)</label>
+                        <textarea name="commentaire" class="form-control-modern" rows="4" placeholder="Ajoutez un commentaire si nécessaire..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-success">
+                        <i class="bi bi-check-circle"></i>
+                        Valider et créer le projet
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

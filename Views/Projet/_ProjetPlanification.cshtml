@@ -1,0 +1,153 @@
+@model GestionProjects.Domain.Models.Projet
+
+@{
+    var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Guid.Empty.ToString());
+    var isChefProjet = User.IsInRole("ChefDeProjet") && Model.ChefProjetId == userId;
+    var isDirecteurMetier = User.IsInRole("DirecteurMetier") && Model.SponsorId == userId;
+    var isDSI = User.IsInRole("DSI") || User.IsInRole("AdminIT");
+    var isReadOnly = ViewBag.IsReadOnly as bool? ?? false;
+    var livrablesPlanif = Model.Livrables?.Where(l => l.Phase == GestionProjects.Domain.Enums.PhaseProjet.PlanificationValidation).ToList() ?? new List<GestionProjects.Domain.Models.LivrableProjet>();
+    var canValiderDM = isDirecteurMetier && !isReadOnly && Model.PhaseActuelle == GestionProjects.Domain.Enums.PhaseProjet.PlanificationValidation && !Model.PlanningValideParDM;
+    var canValiderDSI = isDSI && Model.PhaseActuelle == GestionProjects.Domain.Enums.PhaseProjet.PlanificationValidation && Model.PlanningValideParDM && !Model.PlanningValideParDSI;
+}
+
+<div class="card-modern mb-4">
+    <div class="card-header-modern">
+        <h3 class="card-title-modern" style="font-size: 1.1rem;">
+            <i class="bi bi-calendar-check"></i>
+            Phase Planification & Validation
+        </h3>
+    </div>
+    <div class="card-body-modern">
+        <!-- Statut des validations -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div style="padding: var(--spacing-lg); background: @(Model.PlanningValideParDM ? "#d1fae5" : "#fef3c7"); border-radius: var(--radius-lg); border-left: 4px solid @(Model.PlanningValideParDM ? "var(--success)" : "var(--warning)");">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 600; color: var(--gray-800); margin-bottom: var(--spacing-xs);">
+                                Validation Directeur Métier
+                            </div>
+                            @if (Model.PlanningValideParDM)
+                            {
+                                <div style="color: #065f46; font-size: 0.875rem;">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    Validé le @Model.DatePlanningValideParDM?.ToString("dd/MM/yyyy")
+                                </div>
+                            }
+                            else
+                            {
+                                <div style="color: #92400e; font-size: 0.875rem;">
+                                    <i class="bi bi-clock"></i>
+                                    En attente
+                                </div>
+                            }
+                        </div>
+                        @if (canValiderDM)
+                        {
+                            <form asp-action="ValiderPlanifDM" method="post" style="display: inline;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <button type="submit" class="btn-modern btn-modern-success">
+                                    <i class="bi bi-check-circle"></i>
+                                    Valider
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div style="padding: var(--spacing-lg); background: @(Model.PlanningValideParDSI ? "#d1fae5" : "#dbeafe"); border-radius: var(--radius-lg); border-left: 4px solid @(Model.PlanningValideParDSI ? "var(--success)" : "var(--info)");">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 600; color: var(--gray-800); margin-bottom: var(--spacing-xs);">
+                                Validation DSI
+                            </div>
+                            @if (Model.PlanningValideParDSI)
+                            {
+                                <div style="color: #065f46; font-size: 0.875rem;">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    Validé le @Model.DatePlanningValideParDSI?.ToString("dd/MM/yyyy")
+                                </div>
+                            }
+                            else if (Model.PlanningValideParDM)
+                            {
+                                <div style="color: #1e40af; font-size: 0.875rem;">
+                                    <i class="bi bi-clock"></i>
+                                    En attente (DM validé)
+                                </div>
+                            }
+                            else
+                            {
+                                <div style="color: #1e40af; font-size: 0.875rem;">
+                                    <i class="bi bi-info-circle"></i>
+                                    En attente validation DM
+                                </div>
+                            }
+                        </div>
+                        @if (canValiderDSI)
+                        {
+                            <form asp-action="ValiderPlanifDSI" method="post" style="display: inline;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <button type="submit" class="btn-modern btn-modern-success" onclick="return confirm('Valider la planification ? Le projet passera en phase Exécution.');">
+                                    <i class="bi bi-check-circle"></i>
+                                    Valider
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr style="margin: var(--spacing-lg) 0; border-color: var(--gray-200);" />
+
+        <!-- Livrables -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
+            <h6 style="color: var(--gray-700); font-weight: 600; margin: 0;">Livrables de planification</h6>
+            @if (isChefProjet && Model.PhaseActuelle == GestionProjects.Domain.Enums.PhaseProjet.PlanificationValidation)
+            {
+                <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#uploadLivrableModal" data-phase="PlanificationValidation">
+                    <i class="bi bi-upload"></i>
+                    Upload Livrable
+                </button>
+            }
+        </div>
+
+        @if (livrablesPlanif.Any())
+        {
+            <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
+                @foreach (var livrable in livrablesPlanif)
+                {
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--spacing-md); background: var(--gray-50); border-radius: var(--radius-lg);">
+                        <div style="display: flex; align-items: center; gap: var(--spacing-md);">
+                            <i class="bi bi-file-earmark" style="font-size: 1.5rem; color: var(--primary-blue);"></i>
+                            <div>
+                                <a href="~/@livrable.CheminRelatif" target="_blank" style="color: var(--primary-blue); text-decoration: none; font-weight: 500;">
+                                    @livrable.NomDocument
+                                </a>
+                                <div style="font-size: 0.875rem; color: var(--gray-500);">
+                                    Type: @livrable.TypeLivrable | Déposé le @livrable.DateDepot.ToString("dd/MM/yyyy")
+                                </div>
+                            </div>
+                        </div>
+                        <a href="~/@livrable.CheminRelatif" target="_blank" class="btn-modern btn-modern-secondary" style="padding: var(--spacing-xs) var(--spacing-md);">
+                            <i class="bi bi-download"></i>
+                        </a>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div style="text-align: center; padding: var(--spacing-xl); color: var(--gray-500);">
+                <i class="bi bi-inbox" style="font-size: 2rem; margin-bottom: var(--spacing-sm);"></i>
+                <p>Aucun livrable de planification pour le moment.</p>
+            </div>
+        }
+    </div>
+</div>
+
+

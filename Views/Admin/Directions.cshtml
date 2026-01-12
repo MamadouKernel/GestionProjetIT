@@ -1,0 +1,312 @@
+@model IEnumerable<GestionProjects.Domain.Models.Direction>
+
+@{
+    ViewData["Title"] = "Gestion des Directions";
+}
+
+<div class="fade-in">
+    <div class="card-modern mb-4">
+        <div class="card-header-modern">
+            <h2 class="card-title-modern">
+                <i class="bi bi-building"></i>
+                Gestion des Directions
+            </h2>
+            <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#createDirectionModal" onclick="resetDirectionForm()">
+                <i class="bi bi-plus-circle"></i>
+                Nouvelle Direction
+            </button>
+        </div>
+    </div>
+
+    @await Html.PartialAsync("_ValidationSummary")
+
+    <div class="card-modern">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Libellé</th>
+                            <th>Responsable de direction</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var direction in Model.Where(d => !d.EstSupprime))
+                        {
+                            <tr>
+                                <td><strong>@direction.Code</strong></td>
+                                <td>@direction.Libelle</td>
+                                <td>
+                                    @if (direction.DSI != null)
+                                    {
+                                        <span class="badge-modern badge-modern-info">
+                                            <i class="bi bi-person-badge"></i> @direction.DSI.Nom @direction.DSI.Prenoms
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Non assigné</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (direction.EstActive)
+                                    {
+                                        <span class="badge-modern badge-modern-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-modern badge-modern-secondary">Inactive</span>
+                                    }
+                                </td>
+                                <td>
+                                    <button type="button" class="btn-modern btn-modern-gold" style="padding: var(--spacing-xs) var(--spacing-md); font-size: 0.875rem;" 
+                                            onclick="editDirection('@direction.Id', '@Html.Raw(direction.Code.Replace("'", "\\'"))', '@Html.Raw(direction.Libelle.Replace("'", "\\'"))', '@(direction.DSIId?.ToString() ?? "")', @direction.EstActive.ToString().ToLower())">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <form asp-action="DeleteDirection" asp-route-id="@direction.Id" method="post" class="d-inline ms-2" onsubmit="return confirm('Supprimer cette direction ?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn-modern btn-modern-danger" style="padding: var(--spacing-xs) var(--spacing-md); font-size: 0.875rem;">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="card-body-modern text-center" style="padding: var(--spacing-2xl);">
+                <i class="bi bi-inbox" style="font-size: 3rem; color: var(--gray-400); margin-bottom: var(--spacing-md);"></i>
+                <p style="color: var(--gray-500); font-size: 1.1rem;">
+                    Aucune direction enregistrée.
+                </p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal Create/Edit Direction -->
+<div class="modal fade" id="createDirectionModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
+            <form id="directionForm" method="post" action="@Url.Action("CreateDirection")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" id="directionId" value="" />
+                <div class="modal-header" style="border-bottom: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <h5 class="modal-title" style="font-weight: 600; color: var(--gray-800); display: flex; align-items: center; gap: var(--spacing-sm);">
+                        <i class="bi bi-building" style="color: var(--primary-blue);"></i>
+                        <span id="modalTitle">Nouvelle Direction</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: var(--spacing-lg);">
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Libellé *</label>
+                        <input type="text" name="Libelle" id="libelle" class="form-control-modern" required maxlength="200" value="" />
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> Le code sera généré automatiquement à partir du libellé
+                        </small>
+                        <span class="text-danger field-validation-valid" data-valmsg-for="Libelle" data-valmsg-replace="true"></span>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Code *</label>
+                        <input type="text" name="Code" id="code" class="form-control-modern" required maxlength="50" value="" readonly style="background-color: var(--gray-50); cursor: not-allowed;" />
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> Généré automatiquement (vous pouvez le modifier si nécessaire)
+                        </small>
+                        <span class="text-danger field-validation-valid" data-valmsg-for="Code" data-valmsg-replace="true"></span>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Responsable de la Direction</label>
+                        <select name="DSIId" id="dsiId" class="form-control-modern">
+                            <option value="">-- Non assigné --</option>
+                            @if (ViewBag.DSIs != null)
+                            {
+                                var utilisateurs = ViewBag.DSIs as IEnumerable<GestionProjects.Domain.Models.Utilisateur>;
+                                @if (utilisateurs != null && utilisateurs.Any())
+                                {
+                                    @foreach (var utilisateur in utilisateurs)
+                                    {
+                                        <option value="@utilisateur.Id">@utilisateur.Nom @utilisateur.Prenoms</option>
+                                    }
+                                }
+                                else
+                                {
+                                    <option value="" disabled>Aucun utilisateur disponible</option>
+                                }
+                            }
+                            else
+                            {
+                                <option value="" disabled>Aucun utilisateur disponible</option>
+                            }
+                        </select>
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> Sélectionnez le responsable de cette direction
+                        </small>
+                        <span class="text-danger field-validation-valid" data-valmsg-for="DSIId" data-valmsg-replace="true"></span>
+                    </div>
+                    <div class="form-group-modern">
+                        <div style="display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-md); background: var(--gray-50); border-radius: var(--radius-lg);">
+                            <input type="checkbox" name="EstActive" id="estActive" value="true" class="form-check-input" style="width: 20px; height: 20px; cursor: pointer;" checked />
+                            <input type="hidden" name="EstActive" value="false" />
+                            <label class="form-check-label" for="estActive" style="cursor: pointer; font-weight: 500; color: var(--gray-700); margin: 0;">
+                                Direction active
+                            </label>
+                        </div>
+                        <span class="text-danger field-validation-valid" data-valmsg-for="EstActive" data-valmsg-replace="true"></span>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-save"></i>
+                        Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function editDirection(id, code, libelle, dsiId, estActive) {
+        document.getElementById('directionForm').action = '@Url.Action("UpdateDirection")';
+        document.getElementById('directionId').value = id;
+        document.getElementById('code').value = code;
+        document.getElementById('libelle').value = libelle;
+        document.getElementById('dsiId').value = dsiId || '';
+        document.getElementById('estActive').checked = estActive === true || estActive === 'true';
+        document.getElementById('modalTitle').textContent = 'Modifier la Direction';
+        
+        // En mode édition, permettre la modification du code
+        const codeInput = document.getElementById('code');
+        if (codeInput) {
+            codeInput.removeAttribute('readonly');
+            codeInput.style.backgroundColor = '';
+            codeInput.style.cursor = '';
+        }
+        
+        $('#createDirectionModal').modal('show');
+    }
+
+    document.getElementById('directionForm').addEventListener('submit', function(e) {
+        if (!this.action.includes('UpdateDirection')) {
+            this.action = '@Url.Action("CreateDirection")';
+        }
+    });
+
+    // Fonction pour générer le code à partir du libellé
+    function generateCodeFromLibelle(libelle) {
+        if (!libelle || libelle.trim() === '') {
+            return '';
+        }
+
+        // Exception spéciale : Direction d'exploitation -> DEX
+        let libelleNormalise = libelle.trim().toLowerCase()
+            .replace(/'/g, ' ')
+            .replace(/-/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        if (libelleNormalise.includes('direction') && libelleNormalise.includes('exploitation')) {
+            return 'DEX';
+        }
+
+        // Liste des mots à ignorer
+        const motsIgnorer = ['de', 'des', 'du', "d'", 'le', 'la', 'les', 'un', 'une',
+            'et', 'ou', 'à', 'au', 'aux', 'en', 'pour', 'par', 'avec',
+            'sans', 'sous', 'sur', 'dans', 'entre', 'vers'];
+
+        // Nettoyer le libellé : remplacer apostrophes et tirets par des espaces
+        let texteNettoye = libelle
+            .replace(/'/g, ' ')
+            .replace(/-/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        // Diviser en mots
+        const mots = texteNettoye.split(' ').filter(m => m.trim() !== '');
+
+        // Générer le code en prenant la première lettre de chaque mot significatif
+        let code = '';
+        for (const mot of mots) {
+            const motNettoye = mot.trim();
+            // Ignorer les mots trop courts (< 2 lettres) ou dans la liste d'exclusion
+            if (motNettoye.length >= 2 && !motsIgnorer.includes(motNettoye.toLowerCase())) {
+                code += motNettoye[0].toUpperCase();
+            }
+        }
+
+        return code;
+    }
+
+    // Générer automatiquement le code quand le libellé change (en mode création uniquement)
+    document.getElementById('libelle')?.addEventListener('input', function() {
+        const directionId = document.getElementById('directionId').value;
+        const codeInput = document.getElementById('code');
+        
+        // Ne générer que si on est en mode création (pas d'ID) et que le code n'a pas été modifié manuellement
+        if (!directionId && codeInput) {
+            const codeGenere = generateCodeFromLibelle(this.value);
+            if (codeGenere) {
+                codeInput.value = codeGenere;
+            }
+        }
+    });
+
+    // Permettre la modification manuelle du code (enlever readonly temporairement si l'utilisateur clique)
+    document.getElementById('code')?.addEventListener('focus', function() {
+        this.removeAttribute('readonly');
+        this.style.backgroundColor = '';
+        this.style.cursor = '';
+    });
+
+    // Réinitialiser le formulaire quand le modal est fermé
+    $('#createDirectionModal').on('hidden.bs.modal', function () {
+        resetDirectionForm();
+    });
+
+    // Réinitialiser le formulaire quand le modal est ouvert (pour création)
+    $('#createDirectionModal').on('show.bs.modal', function (e) {
+        // Si le bouton qui a déclenché l'ouverture n'est pas un bouton d'édition, réinitialiser
+        const triggerButton = e.relatedTarget;
+        if (!triggerButton || !triggerButton.hasAttribute('onclick') || !triggerButton.getAttribute('onclick').includes('editDirection')) {
+            resetDirectionForm();
+        }
+    });
+
+    // Fonction pour réinitialiser le formulaire
+    function resetDirectionForm() {
+        document.getElementById('directionForm').reset();
+        document.getElementById('directionForm').action = '@Url.Action("CreateDirection")';
+        document.getElementById('directionId').value = '';
+        document.getElementById('modalTitle').textContent = 'Nouvelle Direction';
+        document.getElementById('libelle').value = '';
+        document.getElementById('code').value = '';
+        document.getElementById('dsiId').value = '';
+        document.getElementById('estActive').checked = true;
+        // Remettre le champ code en readonly
+        const codeInput = document.getElementById('code');
+        if (codeInput) {
+            codeInput.readOnly = true;
+            codeInput.style.backgroundColor = 'var(--gray-50)';
+            codeInput.style.cursor = 'not-allowed';
+        }
+        // Réinitialiser les messages d'erreur
+        const errorSpans = document.querySelectorAll('.field-validation-valid');
+        errorSpans.forEach(span => {
+            span.textContent = '';
+            span.classList.remove('field-validation-error');
+        });
+    }
+</script>

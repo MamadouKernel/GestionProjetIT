@@ -1,0 +1,59 @@
+@model GestionProjects.Domain.Models.Projet
+
+<div class="modal fade" id="ajouterAnomalieModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
+            <form asp-action="AjouterAnomalie" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="projetId" value="@Model.Id" />
+                <div class="modal-header" style="border-bottom: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <h5 class="modal-title" style="font-weight: 600; color: var(--gray-800); display: flex; align-items: center; gap: var(--spacing-sm);">
+                        <i class="bi bi-bug" style="color: var(--warning);"></i>
+                        Ajouter une Anomalie
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: var(--spacing-lg);">
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Description *</label>
+                        <textarea name="description" class="form-control-modern" rows="4" required placeholder="Décrivez l'anomalie en détail..."></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group-modern">
+                                <label class="form-label-modern">Priorité *</label>
+                                <select name="priorite" class="form-control-modern" asp-items="Html.GetEnumSelectList<GestionProjects.Domain.Enums.PrioriteAnomalie>()" required></select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group-modern">
+                                <label class="form-label-modern">Environnement *</label>
+                                <select name="environnement" class="form-control-modern" asp-items="Html.GetEnumSelectList<GestionProjects.Domain.Enums.Environnement>()" required></select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Module concerné</label>
+                        <input type="text" name="moduleConcerne" class="form-control-modern" placeholder="Ex: Module Authentification, Module Facturation..." />
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Assigné à</label>
+                        <input type="text" name="assigneeA" class="form-control-modern" placeholder="Nom de la personne responsable de la correction" />
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-warning">
+                        <i class="bi bi-plus-circle"></i>
+                        Ajouter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+

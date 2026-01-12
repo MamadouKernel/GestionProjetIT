@@ -1,0 +1,127 @@
+@model IEnumerable<GestionProjects.Domain.Models.DemandeProjet>
+
+@{
+    ViewData["Title"] = "Historique des Validations DSI";
+}
+
+<div class="fade-in">
+    <div class="card-modern">
+        <div class="card-header-modern">
+            <h2 class="card-title-modern">
+                <i class="bi bi-clock-history"></i>
+                Historique des Validations DSI
+            </h2>
+        </div>
+
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th>Titre</th>
+                            <th>Demandeur</th>
+                            <th>Direction</th>
+                            <th>Directeur Métier</th>
+                            <th>Date Soumission</th>
+                            <th>Date Validation</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var demande in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <strong style="color: var(--primary-blue);">@demande.Titre</strong>
+                                </td>
+                                <td>@demande.Demandeur?.Nom @demande.Demandeur?.Prenoms</td>
+                                <td>
+                                    @if (demande.Direction != null)
+                                    {
+                                        <span class="badge-modern badge-modern-secondary">
+                                            @demande.Direction.Libelle
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">N/A</span>
+                                    }
+                                </td>
+                                <td>@demande.DirecteurMetier?.Nom @demande.DirecteurMetier?.Prenoms</td>
+                                <td>
+                                    <small>@demande.DateSoumission.ToString("dd/MM/yyyy HH:mm")</small>
+                                </td>
+                                <td>
+                                    @if (demande.DateValidationDSI.HasValue)
+                                    {
+                                        <small>@demande.DateValidationDSI.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                                    }
+                                    else
+                                    {
+                                        <small class="text-muted">-</small>
+                                    }
+                                </td>
+                                <td>
+                                    @{
+                                        var badgeClass = "";
+                                        var statutText = "";
+                                        var icon = "";
+                                        
+                                        switch (demande.StatutDemande)
+                                        {
+                                            case GestionProjects.Domain.Enums.StatutDemande.ValideeParDSI:
+                                                badgeClass = "badge-modern-success";
+                                                statutText = "Validée";
+                                                icon = "bi-check-circle-fill";
+                                                break;
+                                            case GestionProjects.Domain.Enums.StatutDemande.RejeteeParDSI:
+                                                badgeClass = "badge-modern-danger";
+                                                statutText = "Rejetée";
+                                                icon = "bi-x-circle-fill";
+                                                break;
+                                            case GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDirecteurMetierParDSI:
+                                                badgeClass = "badge-modern-info";
+                                                statutText = "Retour DM";
+                                                icon = "bi-arrow-left-circle-fill";
+                                                break;
+                                            case GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDemandeurParDSI:
+                                                badgeClass = "badge-modern-warning";
+                                                statutText = "Retour Demandeur";
+                                                icon = "bi-arrow-left-circle-fill";
+                                                break;
+                                            default:
+                                                badgeClass = "badge-modern-secondary";
+                                                statutText = demande.StatutDemande.ToString();
+                                                icon = "bi-info-circle";
+                                                break;
+                                        }
+                                    }
+                                    <span class="badge-modern @badgeClass">
+                                        <i class="bi @icon"></i> @statutText
+                                    </span>
+                                </td>
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@demande.Id" class="btn-modern btn-modern-primary btn-sm">
+                                        <i class="bi bi-eye"></i> Voir
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="card-body-modern text-center" style="padding: var(--spacing-2xl);">
+                <i class="bi bi-inbox" style="font-size: 3rem; color: var(--gray-400); margin-bottom: var(--spacing-md);"></i>
+                <p style="color: var(--gray-500); font-size: 1.1rem;">
+                    Aucune demande traitée pour le moment.
+                </p>
+            </div>
+        }
+    </div>
+</div>
+

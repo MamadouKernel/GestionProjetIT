@@ -1,0 +1,252 @@
+@model IEnumerable<GestionProjects.Domain.Models.Projet>
+
+@{
+    ViewData["Title"] = "Validations Projet";
+    var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+    var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Guid.Empty.ToString());
+    var isDM = userRole == "DirecteurMetier";
+    var isDSI = userRole == "DSI" || userRole == "AdminIT";
+}
+
+<div class="fade-in">
+    <div class="card-modern mb-4">
+        <div class="card-header-modern">
+            <h2 class="card-title-modern">
+                <i class="bi bi-file-check"></i>
+                Validations Projet
+            </h2>
+            <div>
+                <small style="color: var(--gray-500);">
+                    <i class="bi bi-info-circle"></i>
+                    Projets en phase Analyse nécessitant validation de charte
+                </small>
+            </div>
+        </div>
+
+        @if (Model.Any())
+        {
+            <div class="card-body-modern">
+                <div class="table-responsive">
+                    <table class="table-modern">
+                        <thead>
+                            <tr>
+                                <th>Code Projet</th>
+                                <th>Titre</th>
+                                <th>Chef de Projet</th>
+                                <th>Direction</th>
+                                <th>Sponsor</th>
+                                <th>Validation DM</th>
+                                <th>Validation DSI</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var projet in Model)
+                            {
+                                <tr>
+                                    <td><strong>@projet.CodeProjet</strong></td>
+                                    <td>@projet.Titre</td>
+                                    <td>@(projet.ChefProjet != null ? $"{projet.ChefProjet.Nom} {projet.ChefProjet.Prenoms}" : "Non assigné")</td>
+                                    <td>@(projet.Direction?.Libelle ?? "N/A")</td>
+                                    <td>@(projet.Sponsor != null ? $"{projet.Sponsor.Nom} {projet.Sponsor.Prenoms}" : "N/A")</td>
+                                    <td>
+                                        @if (projet.CharteValideeParDM)
+                                        {
+                                            <span class="badge-modern badge-modern-success">
+                                                <i class="bi bi-check-circle"></i>
+                                                Validée le @projet.DateCharteValideeParDM?.ToString("dd/MM/yyyy")
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge-modern badge-modern-warning">
+                                                <i class="bi bi-clock"></i>
+                                                En attente
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (projet.CharteValideeParDSI)
+                                        {
+                                            <span class="badge-modern badge-modern-success">
+                                                <i class="bi bi-check-circle"></i>
+                                                Validée le @projet.DateCharteValideeParDSI?.ToString("dd/MM/yyyy")
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge-modern badge-modern-warning">
+                                                <i class="bi bi-clock"></i>
+                                                En attente
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; gap: var(--spacing-xs);">
+                                            <a asp-action="Details" asp-controller="Projet" asp-route-id="@projet.Id" class="btn-modern btn-modern-primary" style="padding: var(--spacing-xs) var(--spacing-md); font-size: 0.875rem;">
+                                                <i class="bi bi-eye"></i>
+                                                Détails
+                                            </a>
+                                            @if (isDM && !projet.CharteValideeParDM)
+                                            {
+                                                <button type="button" class="btn-modern btn-modern-success" style="padding: var(--spacing-xs) var(--spacing-md); font-size: 0.875rem;" 
+                                                        onclick="validerCharteDM('@projet.Id')">
+                                                    <i class="bi bi-check-circle"></i>
+                                                    Valider
+                                                </button>
+                                                <button type="button" class="btn-modern btn-modern-danger" style="padding: var(--spacing-xs) var(--spacing-md); font-size: 0.875rem;" 
+                                                        onclick="rejeterCharteDM('@projet.Id')">
+                                                    <i class="bi bi-x-circle"></i>
+                                                    Refuser
+                                                </button>
+                                            }
+                                            @if (isDSI && !projet.CharteValideeParDSI)
+                                            {
+                                                <button type="button" class="btn-modern btn-modern-success" style="padding: var(--spacing-xs) var(--spacing-md); font-size: 0.875rem;" 
+                                                        onclick="validerCharteDSI('@projet.Id')">
+                                                    <i class="bi bi-check-circle"></i>
+                                                    Valider
+                                                </button>
+                                                <button type="button" class="btn-modern btn-modern-danger" style="padding: var(--spacing-xs) var(--spacing-md); font-size: 0.875rem;" 
+                                                        onclick="rejeterCharteDSI('@projet.Id')">
+                                                    <i class="bi bi-x-circle"></i>
+                                                    Refuser
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card-body-modern text-center" style="padding: var(--spacing-2xl);">
+                <i class="bi bi-inbox" style="font-size: 3rem; color: var(--gray-400); margin-bottom: var(--spacing-md);"></i>
+                <p style="color: var(--gray-500); font-size: 1.1rem;">
+                    Aucun projet en attente de validation.
+                </p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal pour rejeter charte DM -->
+<div class="modal fade" id="modalRejeterCharteDM" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="RejeterCharteDM" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="projetIdRejeterDM" />
+                <div class="modal-header">
+                    <h5 class="modal-title">Refuser la charte projet</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Commentaire *</label>
+                        <textarea name="commentaire" class="form-control-modern" rows="4" required placeholder="Indiquez la raison du refus..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn-modern btn-modern-danger">Refuser</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour rejeter charte DSI -->
+<div class="modal fade" id="modalRejeterCharteDSI" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="RejeterCharteDSI" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="projetIdRejeterDSI" />
+                <div class="modal-header">
+                    <h5 class="modal-title">Refuser la charte projet</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Commentaire *</label>
+                        <textarea name="commentaire" class="form-control-modern" rows="4" required placeholder="Indiquez la raison du refus..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn-modern btn-modern-danger">Refuser</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function validerCharteDM(projetId) {
+            if (confirm('Valider la charte projet ?')) {
+                var form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '@Url.Action("ValiderCharteDM")';
+                
+                var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                var tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = '__RequestVerificationToken';
+                tokenInput.value = token;
+                form.appendChild(tokenInput);
+                
+                var idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'id';
+                idInput.value = projetId;
+                form.appendChild(idInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        function validerCharteDSI(projetId) {
+            if (confirm('Valider la charte projet ?')) {
+                var form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '@Url.Action("ValiderCharteDSI")';
+                
+                var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                var tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = '__RequestVerificationToken';
+                tokenInput.value = token;
+                form.appendChild(tokenInput);
+                
+                var idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'id';
+                idInput.value = projetId;
+                form.appendChild(idInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        function rejeterCharteDM(projetId) {
+            document.getElementById('projetIdRejeterDM').value = projetId;
+            var modal = new bootstrap.Modal(document.getElementById('modalRejeterCharteDM'));
+            modal.show();
+        }
+
+        function rejeterCharteDSI(projetId) {
+            document.getElementById('projetIdRejeterDSI').value = projetId;
+            var modal = new bootstrap.Modal(document.getElementById('modalRejeterCharteDSI'));
+            modal.show();
+        }
+    </script>
+}
+

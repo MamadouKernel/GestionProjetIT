@@ -1,0 +1,151 @@
+@model GestionProjects.Domain.Models.Utilisateur
+
+@{
+    ViewData["Title"] = "Gérer les Rôles";
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="display-6 mb-0">
+            <i class="bi bi-shield-check" style="color: var(--primary-blue);"></i>
+            Gérer les Rôles - @Model.Nom @Model.Prenoms
+        </h2>
+        <a asp-action="Users" class="btn-modern btn-modern-secondary">
+            <i class="bi bi-arrow-left"></i> Retour à la liste
+        </a>
+    </div>
+
+    @await Html.PartialAsync("_ValidationSummary")
+
+    <div class="card-modern">
+        <div class="card-header-modern">
+            <h3 class="card-title-modern mb-0">
+                <i class="bi bi-person-circle"></i> Informations de l'utilisateur
+            </h3>
+        </div>
+        <div class="card-body-modern">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <strong>Matricule :</strong> @Model.Matricule
+                    </div>
+                    <div class="mb-3">
+                        <strong>Nom complet :</strong> @Model.Nom @Model.Prenoms
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <strong>Email :</strong> @Model.Email
+                    </div>
+                    <div class="mb-3">
+                        <strong>Direction :</strong> 
+                        @if (Model.Direction != null)
+                        {
+                            <span class="badge-modern badge-modern-secondary">@Model.Direction.Libelle</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">Non assignée</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-modern mt-4">
+        <div class="card-header-modern">
+            <h3 class="card-title-modern mb-0">
+                <i class="bi bi-shield-check"></i> Assignation des Rôles
+            </h3>
+        </div>
+        <div class="card-body-modern">
+            <form asp-action="UpdateRoles" method="post" id="rolesForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+
+                <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                    <p class="text-muted mb-4" style="font-size: 0.95rem;">
+                        <i class="bi bi-info-circle" style="color: #3481c0;"></i> 
+                        Sélectionnez les rôles à assigner à cet utilisateur. Vous pouvez sélectionner plusieurs rôles.
+                    </p>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                        @foreach (var role in (List<GestionProjects.Domain.Enums.RoleUtilisateur>)ViewBag.AllRoles)
+                        {
+                            var userRolesActifs = Model.GetRolesActifs().ToList();
+                            var isChecked = userRolesActifs.Contains(role);
+                            
+                            <div class="role-card" style="display: flex; align-items: center; gap: 12px; padding: 16px; background: white; border-radius: 10px; border: 2px solid @(isChecked ? "#dbb438" : "#e8e8e8"); cursor: pointer; transition: all 0.3s ease; @(isChecked ? "box-shadow: 0 4px 12px rgba(219,180,56,0.2);" : "")" 
+                                 onmouseover="this.style.borderColor='#dbb438'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(219,180,56,0.2)'" 
+                                 onmouseout="this.style.borderColor='@(isChecked ? "#dbb438" : "#e8e8e8")'; this.style.transform='translateY(0)'; this.style.boxShadow='@(isChecked ? "0 4px 12px rgba(219,180,56,0.2)" : "none")'">
+                                <input type="checkbox" 
+                                       data-role-id="@((int)role)" 
+                                       id="role_@((int)role)" 
+                                       value="@((int)role)" 
+                                       class="form-check-input role-checkbox" 
+                                       style="width: 24px; height: 24px; cursor: pointer; accent-color: #dbb438;" 
+                                       @(isChecked ? "checked" : "") />
+                                <label for="role_@((int)role)" style="cursor: pointer; font-weight: 500; color: #333; margin: 0; flex: 1; font-size: 1rem;">
+                                    @role
+                                </label>
+                            </div>
+                        }
+                    </div>
+
+                    <input type="hidden" name="Roles" id="rolesHidden" value="" />
+                    
+                    <div class="mt-4 d-flex justify-content-end gap-3">
+                        <a asp-action="Users" class="btn-modern btn-modern-secondary" style="padding: 10px 24px; border-radius: 8px; font-weight: 500;">
+                            <i class="bi bi-x-circle"></i> Annuler
+                        </a>
+                        <button type="submit" class="btn-modern btn-modern-primary" style="padding: 10px 24px; border-radius: 8px; font-weight: 500; background: #3481c0; border: none; color: white; transition: all 0.3s;" onmouseover="this.style.background='#2a6ba5'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(52,129,192,0.3)'" onmouseout="this.style.background='#3481c0'; this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                            <i class="bi bi-check-circle"></i> Enregistrer les rôles
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Fonction pour mettre à jour le champ hidden des rôles
+        function updateRolesHidden() {
+            const checkedRoles = Array.from(document.querySelectorAll('.role-checkbox:checked'))
+                .map(cb => cb.value)
+                .filter(v => v)
+                .join(',');
+            const hiddenField = document.getElementById('rolesHidden');
+            if (hiddenField) {
+                hiddenField.value = checkedRoles;
+                console.log('Rôles sélectionnés:', checkedRoles);
+            }
+        }
+
+        // Initialiser les rôles au chargement
+        document.addEventListener('DOMContentLoaded', function() {
+            // Gérer les checkboxes de rôles
+            document.querySelectorAll('.role-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', updateRolesHidden);
+            });
+            
+            // Initialiser le champ caché avec les rôles cochés par défaut
+            updateRolesHidden();
+            
+            // Mettre à jour avant la soumission
+            document.getElementById('rolesForm')?.addEventListener('submit', function(e) {
+                updateRolesHidden();
+                
+                const rolesValue = document.getElementById('rolesHidden')?.value || '';
+                if (!rolesValue || rolesValue.trim() === '') {
+                    e.preventDefault();
+                    alert('Veuillez sélectionner au moins un rôle.');
+                    return false;
+                }
+            });
+        });
+    </script>
+}
+

@@ -1,0 +1,613 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Gestion Projets IT</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+    <style>
+        .sidebar {
+            scrollbar-width: thin;
+            scrollbar-color: var(--gray-300) transparent;
+        }
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background-color: var(--gray-300);
+            border-radius: 3px;
+        }
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background-color: var(--gray-400);
+        }
+    </style>
+</head>
+@Html.Raw("<body>")
+    @if (User?.Identity?.IsAuthenticated == true)
+    {
+        <div class="app-container">
+            <!-- Sidebar Overlay (mobile) -->
+            <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+            
+            <!-- Sidebar -->
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-header">
+                    <h4>
+                        <span class="logo-icon">GP</span>
+                        <span>Gestion Projets</span>
+                    </h4>
+                </div>
+                <nav class="sidebar-nav">
+                    @if (User.IsInRole("Demandeur"))
+                    {
+                        <div class="nav-section-title">Mes Demandes</div>
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "DemandeProjet" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" asp-controller="DemandeProjet" asp-action="Index">
+                            <i class="bi bi-list-ul"></i>
+                            <span>Mes Demandes</span>
+                        </a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Create" ? "active" : "")" asp-controller="DemandeProjet" asp-action="Create">
+                            <i class="bi bi-plus-circle"></i>
+                            <span>Nouvelle Demande</span>
+                        </a>
+                    }
+                    
+                    @if (User.IsInRole("DirecteurMetier"))
+                    {
+                        <div class="nav-section-title">Validations</div>
+                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "ListeValidationDM" ? "active" : "")" asp-controller="DemandeProjet" asp-action="ListeValidationDM">
+                            <i class="bi bi-check-circle"></i>
+                            <span>Validations DM</span>
+                        </a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "ValidationsProjet" ? "active" : "")" asp-controller="Projet" asp-action="ValidationsProjet">
+                            <i class="bi bi-file-check"></i>
+                            <span>Validations Projet</span>
+                        </a>
+                        <div class="nav-section-title" style="margin-top: var(--spacing-lg);">Projets</div>
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Projet" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" asp-controller="Projet" asp-action="Index">
+                            <i class="bi bi-folder"></i>
+                            <span>Mes Projets</span>
+                        </a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "HistoriqueDM" ? "active" : "")" asp-controller="Projet" asp-action="HistoriqueDM">
+                            <i class="bi bi-clock-history"></i>
+                            <span>Historique & Traçabilité</span>
+                        </a>
+                    }
+                    
+                    @if (User.IsInRole("DSI") || User.IsInRole("AdminIT"))
+                    {
+                        <div class="nav-section-title">Mes Demandes</div>
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "DemandeProjet" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" asp-controller="DemandeProjet" asp-action="Index">
+                            <i class="bi bi-list-ul"></i>
+                            <span>Mes Demandes</span>
+                        </a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Create" ? "active" : "")" asp-controller="DemandeProjet" asp-action="Create">
+                            <i class="bi bi-plus-circle"></i>
+                            <span>Nouvelle Demande</span>
+                        </a>
+                        
+                        <div class="nav-section-title" style="margin-top: var(--spacing-lg);">Validations</div>
+                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "ListeValidationDM" ? "active" : "")" asp-controller="DemandeProjet" asp-action="ListeValidationDM">
+                            <i class="bi bi-check-circle"></i>
+                            <span>Validations DM</span>
+                        </a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "ListeValidationDSI" ? "active" : "")" asp-controller="DemandeProjet" asp-action="ListeValidationDSI">
+                            <i class="bi bi-shield-check"></i>
+                            <span>Validations DSI</span>
+                        </a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "ValidationsProjet" ? "active" : "")" asp-controller="Projet" asp-action="ValidationsProjet">
+                            <i class="bi bi-file-check"></i>
+                            <span>Validations Projet</span>
+                        </a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "ListeValidationClotureDSI" ? "active" : "")" asp-controller="Projet" asp-action="ListeValidationClotureDSI">
+                            <i class="bi bi-flag-checkered"></i>
+                            <span>Validations Clôture</span>
+                        </a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "HistoriqueValidationsDSI" ? "active" : "")" asp-controller="DemandeProjet" asp-action="HistoriqueValidationsDSI">
+                            <i class="bi bi-clock-history"></i>
+                            <span>Historique Validations</span>
+                        </a>
+                        
+                        <div class="nav-section-title" style="margin-top: var(--spacing-lg);">Projets</div>
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Projet" && ViewContext.RouteData.Values["action"]?.ToString() == "Portefeuille" ? "active" : "")" asp-controller="Projet" asp-action="Portefeuille">
+                            <i class="bi bi-briefcase"></i>
+                            <span>Portefeuille DSI</span>
+                        </a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Projet" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" asp-controller="Projet" asp-action="Index">
+                            <i class="bi bi-grid"></i>
+                            <span>Liste des Projets</span>
+                        </a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "HistoriqueDM" ? "active" : "")" asp-controller="Projet" asp-action="HistoriqueDM">
+                            <i class="bi bi-clock-history"></i>
+                            <span>Historique & Traçabilité</span>
+                        </a>
+                        
+                        <div class="nav-section-title" style="margin-top: var(--spacing-lg);">Administration</div>
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["action"]?.ToString() == "Users" ? "active" : "")" asp-controller="Admin" asp-action="Users">
+                            <i class="bi bi-people"></i>
+                            <span>Utilisateurs</span>
+                        </a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Directions" ? "active" : "")" asp-controller="Admin" asp-action="Directions">
+                            <i class="bi bi-building"></i>
+                            <span>Directions</span>
+                        </a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Services" ? "active" : "")" asp-controller="Admin" asp-action="Services">
+                            <i class="bi bi-boxes"></i>
+                            <span>Services</span>
+                        </a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Parametres" ? "active" : "")" asp-controller="Admin" asp-action="Parametres">
+                            <i class="bi bi-gear"></i>
+                            <span>Paramètres</span>
+                        </a>
+                               <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Delegations" || ViewContext.RouteData.Values["action"]?.ToString() == "DelegationsChefProjet" ? "active" : "")" asp-controller="Admin" asp-action="Delegations">
+                                   <i class="bi bi-person-badge"></i>
+                                   <span>Délégations</span>
+                               </a>
+                    }
+                    
+                    @if (User.IsInRole("ResponsableSolutionsIT"))
+                    {
+                        <div class="nav-section-title">Mes Demandes</div>
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "DemandeProjet" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" asp-controller="DemandeProjet" asp-action="Index">
+                            <i class="bi bi-list-ul"></i>
+                            <span>Mes Demandes</span>
+                        </a>
+                        
+                        <div class="nav-section-title" style="margin-top: var(--spacing-lg);">Validations</div>
+                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "ListeValidationDSI" ? "active" : "")" asp-controller="DemandeProjet" asp-action="ListeValidationDSI">
+                            <i class="bi bi-shield-check"></i>
+                            <span>Validations DSI</span>
+                        </a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "HistoriqueValidationsDSI" ? "active" : "")" asp-controller="DemandeProjet" asp-action="HistoriqueValidationsDSI">
+                            <i class="bi bi-clock-history"></i>
+                            <span>Historique Validations</span>
+                        </a>
+                        
+                        <div class="nav-section-title" style="margin-top: var(--spacing-lg);">Projets</div>
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Projet" && ViewContext.RouteData.Values["action"]?.ToString() == "Portefeuille" ? "active" : "")" asp-controller="Projet" asp-action="Portefeuille">
+                            <i class="bi bi-briefcase"></i>
+                            <span>Portefeuille DSI</span>
+                        </a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Projet" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" asp-controller="Projet" asp-action="Index">
+                            <i class="bi bi-grid"></i>
+                            <span>Liste des Projets</span>
+                        </a>
+                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "HistoriqueDM" ? "active" : "")" asp-controller="Projet" asp-action="HistoriqueDM">
+                            <i class="bi bi-clock-history"></i>
+                            <span>Historique & Traçabilité</span>
+                        </a>
+                        
+                        <div class="nav-section-title" style="margin-top: var(--spacing-lg);">Administration</div>
+                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Delegations" || ViewContext.RouteData.Values["action"]?.ToString() == "DelegationsChefProjet" ? "active" : "")" asp-controller="Admin" asp-action="Delegations">
+                            <i class="bi bi-person-badge"></i>
+                            <span>Délégations</span>
+                        </a>
+                    }
+                    
+                    @if (User.IsInRole("ChefDeProjet"))
+                    {
+                        <div class="nav-section-title">Projets</div>
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Projet" ? "active" : "")" asp-controller="Projet" asp-action="Index">
+                            <i class="bi bi-folder"></i>
+                            <span>Mes Projets</span>
+                        </a>
+                    }
+                    
+                    <div class="nav-section-title" style="margin-top: var(--spacing-lg);">Général</div>
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" asp-controller="Home" asp-action="Index">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>Tableau de bord</span>
+                    </a>
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Aide" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" asp-controller="Aide" asp-action="Index">
+                        <i class="bi bi-question-circle"></i>
+                        <span>Aide</span>
+                    </a>
+                </nav>
+            </aside>
+            
+            <!-- Main Content -->
+            <div class="main-content">
+                <div class="topbar">
+                    <div>
+                        <button class="btn-modern d-md-none" onclick="toggleSidebar()" id="sidebarToggleBtn" style="margin-right: var(--spacing-md); z-index: 1051; background: var(--primary-blue); color: var(--primary-white); box-shadow: var(--shadow-md); padding: var(--spacing-sm) var(--spacing-md); min-width: 44px; min-height: 44px;" aria-label="Toggle menu">
+                            <i class="bi bi-list" style="font-size: 1.5rem;"></i>
+                        </button>
+                        <h1 class="topbar-title">@ViewData["Title"]</h1>
+                    </div>
+                    <div class="topbar-user">
+                        <!-- Notifications -->
+                        <div class="dropdown" id="notificationsDropdown" style="margin-right: var(--spacing-md); position: relative;">
+                            <div class="dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style="cursor: pointer; padding: var(--spacing-sm); border-radius: var(--radius-md); transition: background-color 0.2s; position: relative;" onmouseover="this.style.backgroundColor='var(--gray-100)'" onmouseout="this.style.backgroundColor='transparent'">
+                                <i class="bi bi-bell" style="font-size: 1.25rem; color: var(--gray-600);"></i>
+                                <span id="notificationBadge" class="badge-modern badge-modern-danger" style="position: absolute; top: 0; right: 0; transform: translate(25%, -25%); font-size: 0.7rem; min-width: 18px; display: none;">0</span>
+                            </div>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationsDropdown" style="min-width: 350px; max-height: 500px; overflow-y: auto; margin-top: var(--spacing-sm); box-shadow: var(--shadow-lg); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); padding: 0;">
+                                <li class="dropdown-header" style="padding: var(--spacing-md); border-bottom: 1px solid var(--gray-200); font-weight: 600;">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span>Notifications</span>
+                                        <a asp-controller="Notification" asp-action="Index" class="text-decoration-none" style="font-size: 0.875rem; color: var(--primary-blue);">Voir tout</a>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div id="notificationsList" style="max-height: 400px; overflow-y: auto;">
+                                        <div class="text-center p-3 text-muted" style="font-size: 0.875rem;">Chargement...</div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="dropdown" style="position: relative;">
+                            <div class="user-info" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="cursor: pointer;">
+                                <div class="user-avatar">
+                                    @{
+                                        var nom = User.FindFirst("Nom")?.Value ?? "";
+                                        var prenom = User.FindFirst("Prenoms")?.Value ?? "";
+                                        var initiales = (!string.IsNullOrEmpty(nom) ? nom[0].ToString() : "") + (!string.IsNullOrEmpty(prenom) ? prenom[0].ToString() : "");
+                                    }
+                                    @initiales
+                                </div>
+                                <div>
+                                    <div style="font-weight: 600; font-size: 0.875rem; color: var(--gray-800);">@nom @prenom</div>
+                                    <div style="font-size: 0.75rem; color: var(--gray-500);">@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</div>
+                                </div>
+                                <i class="bi bi-chevron-down" style="margin-left: var(--spacing-sm); transition: transform 0.2s;"></i>
+                            </div>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown" style="min-width: 200px; margin-top: var(--spacing-sm); box-shadow: var(--shadow-lg); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); padding: var(--spacing-xs);">
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Account" asp-action="Profil" style="display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--radius-md);">
+                                        <i class="bi bi-person-circle"></i> 
+                                        <span>Mon Profil</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Aide" asp-action="Index" style="display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--radius-md);">
+                                        <i class="bi bi-question-circle"></i> 
+                                        <span>Aide</span>
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider" style="margin: var(--spacing-xs) 0;" /></li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Account" asp-action="Logout" style="display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--radius-md);">
+                                        <i class="bi bi-box-arrow-right"></i> 
+                                        <span>Déconnexion</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="content-wrapper">
+                    @if (TempData["Success"] != null)
+                    {
+                        <div class="alert-modern alert-modern-success alert-dismissible fade show" role="alert">
+                            <i class="bi bi-check-circle-fill"></i>
+                            <div>
+                                <strong>Succès :</strong> @TempData["Success"]
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert-modern alert-modern-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            <div>
+                                <strong>Erreur :</strong> @Html.Raw(TempData["Error"])
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    @if (TempData["Warning"] != null)
+                    {
+                        <div class="alert-modern alert-modern-warning alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-circle-fill"></i>
+                            <div>
+                                <strong>Attention :</strong> @TempData["Warning"]
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    @if (TempData["Info"] != null)
+                    {
+                        <div class="alert-modern alert-modern-info alert-dismissible fade show" role="alert">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <div>
+                                <strong>Information :</strong> @TempData["Info"]
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    
+                    <form id="antiForgeryForm" style="display: none;">@Html.AntiForgeryToken()</form>
+                    <div style="flex: 1;">
+                        @RenderBody()
+                    </div>
+                    
+                    <!-- Footer avec Copyright -->
+                    <footer style="background: var(--gray-50); border-top: 1px solid var(--gray-200); padding: var(--spacing-md) var(--spacing-lg); margin-top: var(--spacing-xl); text-align: center; flex-shrink: 0;">
+                        <div style="color: var(--gray-600); font-size: 0.875rem;">
+                            <p style="margin: 0;">
+                                &copy; @DateTime.Now.Year - <strong>KernelKM & Zeïnab epse KONATE</strong> - Gestion Projets IT - Côte d'Ivoire Terminal
+                            </p>
+                        </div>
+                    </footer>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <form id="antiForgeryForm" style="display: none;">@Html.AntiForgeryToken()</form>
+        @RenderBody()
+    }
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            sidebar.classList.toggle('open');
+            if (overlay) {
+                overlay.classList.toggle('active');
+            }
+            
+            // Empêcher le scroll du body quand le menu est ouvert
+            if (sidebar.classList.contains('open')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
+        }
+        
+        // Fermer le menu si on clique en dehors (mobile)
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const toggleBtn = document.querySelector('[onclick="toggleSidebar()"]');
+            
+            if (window.innerWidth <= 768) {
+                if (sidebar && sidebar.classList.contains('open')) {
+                    if (!sidebar.contains(event.target) && 
+                        toggleBtn && !toggleBtn.contains(event.target)) {
+                        toggleSidebar();
+                    }
+                }
+            }
+        });
+        
+        // Animation du chevron du dropdown utilisateur
+        (function() {
+            function initUserDropdown() {
+                const userDropdown = document.getElementById('userDropdown');
+                if (!userDropdown) return;
+                
+                const chevron = userDropdown.querySelector('.bi-chevron-down');
+                if (!chevron) return;
+                
+                // S'assurer que Bootstrap dropdown est initialisé
+                if (typeof bootstrap !== 'undefined') {
+                    try {
+                        // Vérifier si une instance existe déjà
+                        let dropdownInstance = bootstrap.Dropdown.getInstance(userDropdown);
+                        if (!dropdownInstance) {
+                            dropdownInstance = new bootstrap.Dropdown(userDropdown);
+                        }
+                    } catch (e) {
+                        console.warn('Erreur lors de l\'initialisation du dropdown:', e);
+                    }
+                }
+                
+                // Animation du chevron
+                userDropdown.addEventListener('show.bs.dropdown', function() {
+                    const chevronEl = userDropdown.querySelector('.bi-chevron-down');
+                    if (chevronEl) chevronEl.style.transform = 'rotate(180deg)';
+                });
+                
+                userDropdown.addEventListener('hide.bs.dropdown', function() {
+                    const chevronEl = userDropdown.querySelector('.bi-chevron-down');
+                    if (chevronEl) chevronEl.style.transform = 'rotate(0deg)';
+                });
+            }
+            
+            // Initialiser au chargement de la page
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    setTimeout(initUserDropdown, 50);
+                });
+            } else {
+                setTimeout(initUserDropdown, 50);
+            }
+        })();
+
+        // Détection d'inactivité - Déconnexion automatique après 1h
+        @if (User?.Identity?.IsAuthenticated == true)
+        {
+            <script type="text/javascript">
+            (function() {
+            
+            let inactivityTimer;
+            const INACTIVITY_TIMEOUT = 60 * 60 * 1000; // 1 heure en millisecondes
+            const WARNING_TIME = 5 * 60 * 1000; // Avertir 5 minutes avant
+            
+            let warningShown = false;
+            let warningTimer;
+
+            function resetTimer() {
+                clearTimeout(inactivityTimer);
+                clearTimeout(warningTimer);
+                warningShown = false;
+                
+                // Définir le timer principal
+                inactivityTimer = setTimeout(function() {
+                    // Déconnexion automatique
+                    window.location.href = '@Url.Action("Logout", "Account")?reason=inactivity';
+                }, INACTIVITY_TIMEOUT);
+
+                // Afficher un avertissement 5 minutes avant la déconnexion
+                warningTimer = setTimeout(function() {
+                    if (!warningShown) {
+                        warningShown = true;
+                        const warningModal = document.createElement('div');
+                        warningModal.className = 'modal fade show';
+                        warningModal.style.display = 'block';
+                        warningModal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                        warningModal.innerHTML = 
+                            "<div class=\"modal-dialog modal-dialog-centered\">" +
+                                "<div class=\"modal-content\" style=\"border-radius: var(--radius-lg);\">" +
+                                    "<div class=\"modal-header\" style=\"background: var(--warning); color: white; border-radius: var(--radius-lg) var(--radius-lg) 0 0;\">" +
+                                        "<h5 class=\"modal-title\">" +
+                                            "<i class=\"bi bi-exclamation-triangle-fill\"></i> Session sur le point d'expirer" +
+                                        "</h5>" +
+                                    "</div>" +
+                                    "<div class=\"modal-body\" style=\"padding: var(--spacing-lg);\">" +
+                                        "<p>Votre session expirera dans <strong id=\"countdown\">5:00</strong> minutes en raison de l'inactivité.</p>" +
+                                        "<p class=\"mb-0\">Souhaitez-vous continuer votre session ?</p>" +
+                                    "</div>" +
+                                    "<div class=\"modal-footer\">" +
+                                        "<button type=\"button\" class=\"btn-modern btn-modern-primary\" onclick=\"extendSession()\">" +
+                                            "<i class=\"bi bi-check-circle\"></i> Continuer" +
+                                        "</button>" +
+                                        "<button type=\"button\" class=\"btn-modern btn-modern-secondary\" onclick=\"logoutNow()\">" +
+                                            "<i class=\"bi bi-box-arrow-right\"></i> Se déconnecter" +
+                                        "</button>" +
+                                    "</div>" +
+                                "</div>" +
+                            "</div>";
+                        document.body.appendChild(warningModal);
+                        
+                        // Compte à rebours
+                        let seconds = 300; // 5 minutes
+                        const countdownEl = warningModal.querySelector('#countdown');
+                        const countdownInterval = setInterval(function() {
+                            seconds--;
+                            const mins = Math.floor(seconds / 60);
+                            const secs = seconds % 60;
+                            const secsStr = secs.toString().padStart(2, '0');
+                            countdownEl.textContent = mins + ':' + secsStr;
+                            
+                            if (seconds <= 0) {
+                                clearInterval(countdownInterval);
+                                logoutNow();
+                            }
+                        }, 1000);
+                    }
+                }, INACTIVITY_TIMEOUT - WARNING_TIME);
+            }
+
+            function extendSession() {
+                // Récupérer le token anti-forgery
+                const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+                const token = tokenInput ? tokenInput.value : '';
+                
+                // Faire une requête pour renouveler la session
+                const formData = new FormData();
+                if (token) {
+                    formData.append('__RequestVerificationToken', token);
+                }
+                
+                fetch('@Url.Action("KeepAlive", "Account")', {
+                    method: 'POST',
+                    body: formData
+                }).then(() => {
+                    const modal = document.querySelector('.modal.show');
+                    if (modal) {
+                        modal.remove();
+                    }
+                    warningShown = false;
+                    resetTimer();
+                }).catch(() => {
+                    // En cas d'erreur, réinitialiser quand même le timer
+                    const modal = document.querySelector('.modal.show');
+                    if (modal) {
+                        modal.remove();
+                    }
+                    warningShown = false;
+                    resetTimer();
+                });
+            }
+
+            function logoutNow() {
+                window.location.href = '@Url.Action("Logout", "Account")?reason=inactivity';
+            }
+
+            // Événements qui réinitialisent le timer
+            const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+            events.forEach(function(event) {
+                document.addEventListener(event, resetTimer, true);
+            });
+
+            // Démarrer le timer au chargement
+            resetTimer();
+            })();
+            
+            // Charger les notifications
+            function loadNotifications() {
+                fetch('@Url.Action("GetUnreadCount", "Notification")')
+                    .then(response => response.json())
+                    .then(data => {
+                        const badge = document.getElementById('notificationBadge');
+                        if (data.count > 0) {
+                            badge.textContent = data.count > 99 ? '99+' : data.count;
+                            badge.style.display = 'inline-block';
+                        } else {
+                            badge.style.display = 'none';
+                        }
+                    })
+                    .catch(err => console.error('Erreur chargement notifications:', err));
+                
+                fetch('@Url.Action("GetUnreadNotifications", "Notification")?count=5')
+                    .then(response => response.json())
+                    .then(data => {
+                        const list = document.getElementById('notificationsList');
+                        if (data.length === 0) {
+                            list.innerHTML = '<div class="text-center p-3 text-muted" style="font-size: 0.875rem;">Aucune notification</div>';
+                        } else {
+                            list.innerHTML = data.map(n => `
+                                <div class="dropdown-item-text" style="padding: var(--spacing-md); border-bottom: 1px solid var(--gray-100);">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <div style="font-weight: 600; font-size: 0.875rem; margin-bottom: var(--spacing-xs);">${escapeHtml(n.titre)}</div>
+                                            <div style="font-size: 0.8rem; color: var(--gray-600); margin-bottom: var(--spacing-xs);">${escapeHtml(n.message)}</div>
+                                            <div style="font-size: 0.75rem; color: var(--gray-500);">${n.dateCreationFormatted}</div>
+                                        </div>
+                                        ${n.entiteType && n.entiteId ? `<a href="${getEntityUrl(n.entiteType, n.entiteId)}" class="btn-modern btn-modern-sm btn-modern-secondary" style="margin-left: var(--spacing-sm);"><i class="bi bi-arrow-right"></i></a>` : ''}
+                                    </div>
+                                </div>
+                            `).join('');
+                        }
+                    })
+                    .catch(err => console.error('Erreur chargement liste notifications:', err));
+            }
+            
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            function getEntityUrl(entiteType, entiteId) {
+                switch(entiteType) {
+                    case 'Projet': return '@Url.Action("Details", "Projet")/' + entiteId;
+                    case 'DemandeProjet': return '@Url.Action("Details", "DemandeProjet")/' + entiteId;
+                    case 'AnomalieProjet': return '@Url.Action("Details", "Projet")/' + entiteId + '?tab=execution';
+                    default: return '#';
+                }
+            }
+            
+            // Charger les notifications au chargement de la page
+            loadNotifications();
+            // Recharger toutes les 30 secondes
+            setInterval(loadNotifications, 30000);
+            </script>
+        }
+    @await RenderSectionAsync("Scripts", required: false)
+@Html.Raw("</body>")
+</html>

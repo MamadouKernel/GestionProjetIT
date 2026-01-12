@@ -1,0 +1,272 @@
+@model GestionProjects.Domain.Models.DemandeProjet
+@using GestionProjects.Domain.Enums
+
+@{
+    ViewData["Title"] = "Vérification des Doublons";
+    var demandesSimilaires = ViewBag.DemandesSimilaires as System.Collections.Generic.List<object>;
+    var demandeCourante = ViewBag.DemandeCourante as GestionProjects.Domain.Models.DemandeProjet ?? Model;
+}
+
+<div class="fade-in">
+    <div class="card-modern mb-4" style="border-left: 4px solid var(--warning);">
+        <div class="card-header-modern" style="background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%); color: white;">
+            <h2 class="card-title-modern mb-0" style="color: white;">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                Demande Similaire Détectée
+            </h2>
+        </div>
+        <div class="card-body-modern">
+            <div class="alert alert-warning" role="alert">
+                <h5 class="alert-heading">
+                    <i class="bi bi-info-circle"></i>
+                    Attention
+                </h5>
+                <p class="mb-0">
+                    Des demandes similaires ont été détectées dans le système. Veuillez examiner les informations ci-dessous avant de confirmer la soumission de votre demande.
+                </p>
+            </div>
+
+            <!-- Demande courante -->
+            <div class="card-modern mb-4" style="background: var(--gray-50);">
+                <div class="card-header-modern">
+                    <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                        <i class="bi bi-file-earmark-text"></i>
+                        Votre Demande
+                    </h3>
+                </div>
+                <div class="card-body-modern">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <p><strong>Titre :</strong> @demandeCourante?.Titre</p>
+                            <p><strong>Description :</strong> @(demandeCourante?.Description?.Length > 200 ? demandeCourante.Description.Substring(0, 200) + "..." : demandeCourante?.Description)</p>
+                            <p><strong>Direction :</strong> @demandeCourante?.Direction?.Libelle</p>
+                            <p><strong>Date de création :</strong> @demandeCourante?.DateCreation.ToString("dd/MM/yyyy HH:mm")</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Demandes similaires -->
+            <div class="card-modern mb-4">
+                <div class="card-header-modern">
+                    <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                        <i class="bi bi-list-ul"></i>
+                        Demandes Similaires Existantes (@demandesSimilaires?.Count)
+                    </h3>
+                </div>
+                <div class="card-body-modern p-0">
+                    <div class="table-responsive">
+                        <table class="table-modern">
+                            <thead>
+                                <tr>
+                                    <th>Titre</th>
+                                    <th>Statut</th>
+                                    <th>Demandeur</th>
+                                    <th>Direction</th>
+                                    <th>Date Soumission</th>
+                                    <th>Projet Existant</th>
+                                    <th>Commentaire</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (demandesSimilaires != null && demandesSimilaires.Count > 0)
+                                {
+                                    @foreach (dynamic demandeSimilaire in demandesSimilaires)
+                                    {
+                                        var demandeId = (Guid)demandeSimilaire.GetType().GetProperty("DemandeId")!.GetValue(demandeSimilaire)!;
+                                        var titre = (string)demandeSimilaire.GetType().GetProperty("Titre")!.GetValue(demandeSimilaire)!;
+                                        var statutDemande = (StatutDemande)demandeSimilaire.GetType().GetProperty("StatutDemande")!.GetValue(demandeSimilaire)!;
+                                        var demandeur = (string)demandeSimilaire.GetType().GetProperty("Demandeur")!.GetValue(demandeSimilaire)!;
+                                        var direction = (string)demandeSimilaire.GetType().GetProperty("Direction")!.GetValue(demandeSimilaire)!;
+                                        var dateSoumission = (DateTime)demandeSimilaire.GetType().GetProperty("DateSoumission")!.GetValue(demandeSimilaire)!;
+                                        var commentaireRejet = demandeSimilaire.GetType().GetProperty("CommentaireRejet")!.GetValue(demandeSimilaire) as string;
+                                        var projetExistant = demandeSimilaire.GetType().GetProperty("ProjetExistant")!.GetValue(demandeSimilaire);
+                                        var similarite = (double)demandeSimilaire.GetType().GetProperty("Similarite")!.GetValue(demandeSimilaire)!;
+                                        
+                                        <tr>
+                                            <td>
+                                                <strong style="color: var(--primary-blue);">@titre</strong>
+                                                <br />
+                                                <small class="text-muted">Similarité: @((similarite * 100).ToString("F0"))%</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge-modern badge-modern-@GetStatutClass(statutDemande)">
+                                                    @GetStatutLibelle(statutDemande)
+                                                </span>
+                                            </td>
+                                            <td>@demandeur</td>
+                                            <td>@direction</td>
+                                            <td>@dateSoumission.ToString("dd/MM/yyyy")</td>
+                                            <td>
+                                                @if (projetExistant != null)
+                                                {
+                                                    var projetId = (Guid)projetExistant.GetType().GetProperty("ProjetId")!.GetValue(projetExistant)!;
+                                                    var codeProjet = (string)projetExistant.GetType().GetProperty("CodeProjet")!.GetValue(projetExistant)!;
+                                                    var projetTitre = (string)projetExistant.GetType().GetProperty("Titre")!.GetValue(projetExistant)!;
+                                                    var statutProjet = (StatutProjet)projetExistant.GetType().GetProperty("StatutProjet")!.GetValue(projetExistant)!;
+                                                    var phaseActuelle = (PhaseProjet)projetExistant.GetType().GetProperty("PhaseActuelle")!.GetValue(projetExistant)!;
+                                                    var chefProjet = (string)projetExistant.GetType().GetProperty("ChefProjet")!.GetValue(projetExistant)!;
+                                                    
+                                                    <div>
+                                                        <i class="bi bi-check-circle-fill" style="color: var(--success);"></i>
+                                                        <strong>@codeProjet</strong>
+                                                        <br />
+                                                        <small>@projetTitre</small>
+                                                        <br />
+                                                        <span class="badge-modern badge-modern-info">@GetStatutProjetLibelle(statutProjet)</span>
+                                                        <br />
+                                                        <small>Phase: @GetPhaseLibelle(phaseActuelle)</small>
+                                                        <br />
+                                                        <small>Chef Projet: @chefProjet</small>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">Aucun projet</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (!string.IsNullOrWhiteSpace(commentaireRejet))
+                                                {
+                                                    <div class="alert alert-danger p-2 mb-0" style="font-size: 0.85rem;">
+                                                        <i class="bi bi-exclamation-circle"></i>
+                                                        @commentaireRejet
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <a asp-action="Details" asp-route-id="@demandeId" 
+                                                   class="btn-modern btn-modern-primary" 
+                                                   style="padding: var(--spacing-xs) var(--spacing-md); font-size: 0.875rem;"
+                                                   target="_blank">
+                                                    <i class="bi bi-eye"></i> Voir
+                                                </a>
+                                                @if (projetExistant != null)
+                                                {
+                                                    var projetId = (Guid)projetExistant.GetType().GetProperty("ProjetId")!.GetValue(projetExistant)!;
+                                                    <a asp-controller="Projet" asp-action="Details" asp-route-id="@projetId" 
+                                                       class="btn-modern btn-modern-info" 
+                                                       style="padding: var(--spacing-xs) var(--spacing-md); font-size: 0.875rem; margin-top: 0.25rem;"
+                                                       target="_blank">
+                                                        <i class="bi bi-briefcase"></i> Projet
+                                                    </a>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="8" class="text-center text-muted">Aucune demande similaire trouvée</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card-modern">
+                <div class="card-body-modern">
+                    <div class="alert alert-info" role="alert">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-question-circle"></i>
+                            Que faire ?
+                        </h6>
+                        <ul class="mb-0">
+                            <li>Si une demande similaire a déjà été <strong>validée</strong> et a donné lieu à un projet, vérifiez si votre demande n'est pas un doublon.</li>
+                            <li>Si une demande similaire a été <strong>rejetée</strong>, examinez les commentaires pour comprendre pourquoi et ajustez votre demande si nécessaire.</li>
+                            <li>Si une demande similaire est <strong>en attente</strong>, contactez le demandeur pour éviter les doublons.</li>
+                            <li>Si votre demande est différente et justifiée, vous pouvez confirmer la soumission.</li>
+                        </ul>
+                    </div>
+
+                    <form asp-action="ConfirmerSoumission" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="confirmerMalgreDoublons" value="true" />
+                        
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn-modern btn-modern-warning">
+                                <i class="bi bi-check-circle"></i>
+                                Confirmer la Soumission Malgré les Doublons
+                            </button>
+                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn-modern btn-modern-secondary">
+                                <i class="bi bi-x-circle"></i>
+                                Annuler et Revenir à la Demande
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    private string GetStatutClass(StatutDemande statut)
+    {
+        return statut switch
+        {
+            StatutDemande.Brouillon => "secondary",
+            StatutDemande.EnAttenteValidationDirecteurMetier => "warning",
+            StatutDemande.EnAttenteValidationDSI => "info",
+            StatutDemande.ValideeParDSI => "success",
+            StatutDemande.RejeteeParDirecteurMetier => "danger",
+            StatutDemande.RejeteeParDSI => "danger",
+            StatutDemande.CorrectionDemandeeParDirecteurMetier => "warning",
+            StatutDemande.RetourneeAuDemandeurParDSI => "warning",
+            StatutDemande.RetourneeAuDirecteurMetierParDSI => "warning",
+            _ => "secondary"
+        };
+    }
+
+    private string GetStatutLibelle(StatutDemande statut)
+    {
+        return statut switch
+        {
+            StatutDemande.Brouillon => "Brouillon",
+            StatutDemande.EnAttenteValidationDirecteurMetier => "En attente validation DM",
+            StatutDemande.EnAttenteValidationDSI => "En attente validation DSI",
+            StatutDemande.ValideeParDSI => "Validée par DSI",
+            StatutDemande.RejeteeParDirecteurMetier => "Rejetée par DM",
+            StatutDemande.RejeteeParDSI => "Rejetée par DSI",
+            StatutDemande.CorrectionDemandeeParDirecteurMetier => "Correction demandée",
+            StatutDemande.RetourneeAuDemandeurParDSI => "Retournée au demandeur",
+            StatutDemande.RetourneeAuDirecteurMetierParDSI => "Retournée au DM",
+            _ => statut.ToString()
+        };
+    }
+
+    private string GetStatutProjetLibelle(StatutProjet statut)
+    {
+        return statut switch
+        {
+            StatutProjet.EnCours => "En cours",
+            StatutProjet.Cloture => "Clôturé",
+            StatutProjet.Annule => "Annulé",
+            _ => statut.ToString()
+        };
+    }
+
+    private string GetPhaseLibelle(PhaseProjet phase)
+    {
+        return phase switch
+        {
+            PhaseProjet.AnalyseClarification => "Analyse",
+            PhaseProjet.PlanificationValidation => "Planification",
+            PhaseProjet.ExecutionSuivi => "Exécution",
+            PhaseProjet.UatMep => "UAT/MEP",
+            PhaseProjet.ClotureLeconsApprises => "Clôture",
+            _ => phase.ToString()
+        };
+    }
+}
+

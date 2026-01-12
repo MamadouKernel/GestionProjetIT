@@ -1,0 +1,59 @@
+@model GestionProjects.Domain.Models.DemandeProjet
+
+<div class="modal fade" id="validerDMModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
+            <form asp-action="ValiderDM" asp-route-id="@Model.Id" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header" style="border-bottom: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <h5 class="modal-title" style="font-weight: 600; color: var(--gray-800); display: flex; align-items: center; gap: var(--spacing-sm);">
+                        <i class="bi bi-check-circle-fill" style="color: var(--success);"></i>
+                        Valider la demande
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: var(--spacing-lg);">
+                    <p style="color: var(--gray-600); margin-bottom: var(--spacing-lg);">
+                        Vous êtes sur le point de valider cette demande. Elle sera ensuite transmise à la DSI pour validation finale.
+                        <br><small style="color: var(--gray-500);"><i class="bi bi-info-circle"></i> Vous pouvez modifier certains champs avant validation.</small>
+                    </p>
+                    
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Titre *</label>
+                        <input type="text" name="titre" class="form-control-modern" value="@Model.Titre" required />
+                    </div>
+                    
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Description *</label>
+                        <textarea name="description" class="form-control-modern" rows="4" required>@Model.Description</textarea>
+                    </div>
+                    
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Objectifs *</label>
+                        <textarea name="objectifs" class="form-control-modern" rows="4" required>@Model.Objectifs</textarea>
+                    </div>
+                    
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Avantages attendus</label>
+                        <textarea name="avantagesAttendus" class="form-control-modern" rows="3">@Model.AvantagesAttendus</textarea>
+                    </div>
+                    
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Commentaire (optionnel)</label>
+                        <textarea name="commentaire" class="form-control-modern" rows="3" placeholder="Ajoutez un commentaire si nécessaire..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-success">
+                        <i class="bi bi-check-circle"></i>
+                        Valider
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

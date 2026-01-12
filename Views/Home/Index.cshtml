@@ -1,0 +1,1871 @@
+﻿@model GestionProjects.Application.ViewModels.DashboardStatsViewModel
+@{
+    ViewData["Title"] = "Tableau de bord";
+    var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+}
+
+<div class="fade-in">
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        @if (User.IsInRole("DSI") || User.IsInRole("AdminIT"))
+        {
+            <div class="stat-card info">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Total Projets</p>
+                        <h3 class="stat-value">@Model.TotalProjets</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-folder"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card success">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Projets en Cours</p>
+                        <h3 class="stat-value">@Model.ProjetsEnCours</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-play-circle"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card warning">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Demandes en Attente</p>
+                        <h3 class="stat-value">@Model.DemandesEnAttente</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card gold">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Utilisateurs</p>
+                        <h3 class="stat-value">@Model.TotalUtilisateurs</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-people"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card danger">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Risques Critiques</p>
+                        <h3 class="stat-value">@Model.RisquesCritiques</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card info">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Anomalies Ouvertes</p>
+                        <h3 class="stat-value">@Model.AnomaliesOuvertes</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-bug"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card success">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Taux Avancement Moyen</p>
+                        <h3 class="stat-value">@Model.TauxAvancementMoyen.ToString("F1")%</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-speedometer2"></i>
+                    </div>
+                </div>
+            </div>
+        }
+        else if (User.IsInRole("ResponsableSolutionsIT") || User.IsInRole("DSI") || User.IsInRole("AdminIT"))
+        {
+            <div class="stat-card info">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Total Projets</p>
+                        <h3 class="stat-value">@Model.TotalProjets</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-folder"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card success">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Projets en Cours</p>
+                        <h3 class="stat-value">@Model.ProjetsEnCours</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-play-circle"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card warning">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">En Exécution</p>
+                        <h3 class="stat-value">@Model.ProjetsEnExecution</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-gear"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card gold">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Projets Clôturés</p>
+                        <h3 class="stat-value">@Model.ProjetsClotures</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card danger">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Risques Critiques</p>
+                        <h3 class="stat-value">@Model.RisquesCritiques</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card info">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Anomalies Ouvertes</p>
+                        <h3 class="stat-value">@Model.AnomaliesOuvertes</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-bug"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card success">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Taux Avancement</p>
+                        <h3 class="stat-value">@Model.TauxAvancementMoyen.ToString("F1")%</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-speedometer2"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card gold">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Total Livrables</p>
+                        <h3 class="stat-value">@Model.TotalLivrables</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-file-earmark-check"></i>
+                    </div>
+                </div>
+            </div>
+        }
+        else if (User.IsInRole("DirecteurMetier"))
+        {
+            <div class="stat-card info">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Demandes à Valider</p>
+                        <h3 class="stat-value">@Model.DemandesEnAttente</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card success">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Projets de ma Direction</p>
+                        <h3 class="stat-value">@Model.TotalProjets</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-folder"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card warning">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Projets en Cours</p>
+                        <h3 class="stat-value">@Model.ProjetsEnCours</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-play-circle"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card success">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Demandes Validées</p>
+                        <h3 class="stat-value">@Model.DemandesValidees</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card danger">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Demandes Rejetées</p>
+                        <h3 class="stat-value">@Model.DemandesRejetees</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-x-circle"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card info">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Taux Avancement</p>
+                        <h3 class="stat-value">@Model.TauxAvancementMoyen.ToString("F1")%</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-speedometer2"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card gold">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Total Risques</p>
+                        <h3 class="stat-value">@Model.TotalRisques</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-shield-exclamation"></i>
+                    </div>
+                </div>
+            </div>
+        }
+        else if (User.IsInRole("ChefDeProjet"))
+        {
+            <div class="stat-card info">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Mes Projets</p>
+                        <h3 class="stat-value">@Model.TotalProjets</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-folder"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card success">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">En Cours</p>
+                        <h3 class="stat-value">@Model.ProjetsEnCours</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-play-circle"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card warning">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">En Analyse</p>
+                        <h3 class="stat-value">@Model.ProjetsEnAnalyse</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-search"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card gold">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">En Planification</p>
+                        <h3 class="stat-value">@Model.ProjetsEnPlanification</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card info">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">En Exécution</p>
+                        <h3 class="stat-value">@Model.ProjetsEnExecution</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-gear"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card success">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">En UAT & MEP</p>
+                        <h3 class="stat-value">@Model.ProjetsEnUAT</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-check2-square"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card danger">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Risques Critiques</p>
+                        <h3 class="stat-value">@Model.RisquesCritiques</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card warning">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Anomalies Ouvertes</p>
+                        <h3 class="stat-value">@Model.AnomaliesOuvertes</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-bug"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card gold">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Taux Avancement</p>
+                        <h3 class="stat-value">@Model.TauxAvancementMoyen.ToString("F1")%</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-speedometer2"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card info">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Total Livrables</p>
+                        <h3 class="stat-value">@Model.TotalLivrables</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-file-earmark-check"></i>
+                    </div>
+                </div>
+            </div>
+        }
+        else if (User.IsInRole("Demandeur"))
+        {
+            <div class="stat-card info">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Mes Demandes</p>
+                        <h3 class="stat-value">@Model.TotalDemandes</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-file-earmark-text"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card warning">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">En Attente</p>
+                        <h3 class="stat-value">@Model.DemandesEnAttente</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card success">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Validées</p>
+                        <h3 class="stat-value">@Model.DemandesValidees</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card gold">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Projets Créés</p>
+                        <h3 class="stat-value">@Model.TotalProjets</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-folder"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card success">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Projets en Cours</p>
+                        <h3 class="stat-value">@Model.ProjetsEnCours</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-play-circle"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card danger">
+                <div class="stat-header">
+                    <div>
+                        <p class="stat-label">Demandes Rejetées</p>
+                        <h3 class="stat-value">@Model.DemandesRejetees</h3>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-x-circle"></i>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Graphiques -->
+    <div class="row g-4 mt-2">
+        @if (User.IsInRole("DSI") || User.IsInRole("AdminIT"))
+        {
+            <!-- Graphique Projets par Statut -->
+            @if (Model.ProjetsParStatut != null && Model.ProjetsParStatut.Any())
+            {
+                <div class="col-md-6">
+                    <div class="card-modern">
+                        <div class="card-header-modern">
+                            <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                                <i class="bi bi-pie-chart"></i>
+                                Répartition des Projets par Statut
+                            </h3>
+                        </div>
+                        <div class="card-body-modern">
+                            <canvas id="projetsParStatutChart" style="max-height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Graphique Demandes par Statut -->
+            @if (Model.DemandesParStatut != null && Model.DemandesParStatut.Any())
+            {
+                <div class="col-md-6">
+                    <div class="card-modern">
+                        <div class="card-header-modern">
+                            <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                                <i class="bi bi-bar-chart"></i>
+                                Répartition des Demandes par Statut
+                            </h3>
+                        </div>
+                        <div class="card-body-modern">
+                            <canvas id="demandesParStatutChart" style="max-height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Graphique Projets par Phase -->
+            @if (Model.ProjetsParPhase != null && Model.ProjetsParPhase.Any())
+            {
+                <div class="col-md-6">
+                    <div class="card-modern">
+                        <div class="card-header-modern">
+                            <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                                <i class="bi bi-diagram-3"></i>
+                                Répartition des Projets par Phase
+                            </h3>
+                        </div>
+                        <div class="card-body-modern">
+                            <canvas id="projetsParPhaseChart" style="max-height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Graphique Évolution Projets -->
+            @if (Model.EvolutionProjets != null && Model.EvolutionProjets.Any())
+            {
+                <div class="col-md-6">
+                    <div class="card-modern">
+                        <div class="card-header-modern">
+                            <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                                <i class="bi bi-graph-up"></i>
+                                Évolution des Projets (6 derniers mois)
+                            </h3>
+                        </div>
+                        <div class="card-body-modern">
+                            <canvas id="evolutionProjetsChart" style="max-height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Graphique Projets par Direction -->
+            @if (Model.ProjetsParDirection != null && Model.ProjetsParDirection.Any())
+            {
+                <div class="col-md-12">
+                    <div class="card-modern">
+                        <div class="card-header-modern">
+                            <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                                <i class="bi bi-building"></i>
+                                Répartition des Projets par Direction
+                            </h3>
+                        </div>
+                        <div class="card-body-modern">
+                            <canvas id="projetsParDirectionChart" style="max-height: 250px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else if (User.IsInRole("DirecteurMetier"))
+        {
+            <!-- Graphique Projets par Statut (DM) -->
+            @if (Model.ProjetsParStatut != null && Model.ProjetsParStatut.Any())
+            {
+                <div class="col-md-6">
+                    <div class="card-modern">
+                        <div class="card-header-modern">
+                            <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                                <i class="bi bi-pie-chart"></i>
+                                Mes Projets par Statut
+                            </h3>
+                        </div>
+                        <div class="card-body-modern">
+                            <canvas id="projetsParStatutChart" style="max-height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Graphique Demandes par Statut (DM) -->
+            @if (Model.DemandesParStatut != null && Model.DemandesParStatut.Any())
+            {
+                <div class="col-md-6">
+                    <div class="card-modern">
+                        <div class="card-header-modern">
+                            <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                                <i class="bi bi-bar-chart"></i>
+                                Demandes à Traiter
+                            </h3>
+                        </div>
+                        <div class="card-body-modern">
+                            <canvas id="demandesParStatutChart" style="max-height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Graphique Projets par Phase (DM) -->
+            @if (Model.ProjetsParPhase != null && Model.ProjetsParPhase.Any())
+            {
+                <div class="col-md-6">
+                    <div class="card-modern">
+                        <div class="card-header-modern">
+                            <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                                <i class="bi bi-diagram-3"></i>
+                                Mes Projets par Phase
+                            </h3>
+                        </div>
+                        <div class="card-body-modern">
+                            <canvas id="projetsParPhaseChart" style="max-height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Graphique Évolution Projets (DM) -->
+            @if (Model.EvolutionProjets != null && Model.EvolutionProjets.Any())
+            {
+                <div class="col-md-6">
+                    <div class="card-modern">
+                        <div class="card-header-modern">
+                            <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                                <i class="bi bi-graph-up"></i>
+                                Évolution des Projets (6 derniers mois)
+                            </h3>
+                        </div>
+                        <div class="card-body-modern">
+                            <canvas id="evolutionProjetsChart" style="max-height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Graphique Évolution Demandes (DM) -->
+            @if (Model.EvolutionDemandes != null && Model.EvolutionDemandes.Any())
+            {
+                <div class="col-md-12">
+                    <div class="card-modern">
+                        <div class="card-header-modern">
+                            <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                                <i class="bi bi-graph-up-arrow"></i>
+                                Évolution des Demandes (6 derniers mois)
+                            </h3>
+                        </div>
+                        <div class="card-body-modern">
+                            <canvas id="evolutionDemandesChart" style="max-height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else if (User.IsInRole("ResponsableSolutionsIT") || User.IsInRole("DSI") || User.IsInRole("AdminIT"))
+        {
+            <!-- Graphique Projets par Statut (Responsable Solutions IT / DSI) -->
+            @if (Model.ProjetsParStatut != null && Model.ProjetsParStatut.Any())
+            {
+                <div class="col-md-6">
+                    <div class="card-modern">
+                        <div class="card-header-modern">
+                            <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                                <i class="bi bi-pie-chart"></i>
+                                Répartition des Projets par Statut
+                            </h3>
+                        </div>
+                        <div class="card-body-modern">
+                            <canvas id="projetsParStatutChart" style="max-height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Graphique Projets par Phase (Responsable Solutions IT) -->
+            @if (Model.ProjetsParPhase != null && Model.ProjetsParPhase.Any())
+            {
+                <div class="col-md-6">
+                    <div class="card-modern">
+                        <div class="card-header-modern">
+                            <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                                <i class="bi bi-diagram-3"></i>
+                                Répartition des Projets par Phase
+                            </h3>
+                        </div>
+                        <div class="card-body-modern">
+                            <canvas id="projetsParPhaseChart" style="max-height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Graphique Évolution Projets (Responsable Solutions IT) -->
+            @if (Model.EvolutionProjets != null && Model.EvolutionProjets.Any())
+            {
+                <div class="col-md-6">
+                    <div class="card-modern">
+                        <div class="card-header-modern">
+                            <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                                <i class="bi bi-graph-up"></i>
+                                Évolution des Projets (6 derniers mois)
+                            </h3>
+                        </div>
+                        <div class="card-body-modern">
+                            <canvas id="evolutionProjetsChart" style="max-height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Graphique Projets par Direction (Responsable Solutions IT) -->
+            @if (Model.ProjetsParDirection != null && Model.ProjetsParDirection.Any())
+            {
+                <div class="col-md-6">
+                    <div class="card-modern">
+                        <div class="card-header-modern">
+                            <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                                <i class="bi bi-building"></i>
+                                Répartition des Projets par Direction
+                            </h3>
+                        </div>
+                        <div class="card-body-modern">
+                            <canvas id="projetsParDirectionChart" style="max-height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else if (User.IsInRole("ChefDeProjet"))
+        {
+            <!-- Graphique Projets par Statut (Chef de Projet) -->
+            @if (Model.ProjetsParStatut != null && Model.ProjetsParStatut.Any())
+            {
+                <div class="col-md-6">
+                    <div class="card-modern">
+                        <div class="card-header-modern">
+                            <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                                <i class="bi bi-pie-chart"></i>
+                                Mes Projets par Statut
+                            </h3>
+                        </div>
+                        <div class="card-body-modern">
+                            <canvas id="projetsParStatutChart" style="max-height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Graphique Projets par Phase (Chef de Projet) -->
+            @if (Model.ProjetsParPhase != null && Model.ProjetsParPhase.Any())
+            {
+                <div class="col-md-6">
+                    <div class="card-modern">
+                        <div class="card-header-modern">
+                            <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                                <i class="bi bi-diagram-3"></i>
+                                Mes Projets par Phase
+                            </h3>
+                        </div>
+                        <div class="card-body-modern">
+                            <canvas id="projetsParPhaseChart" style="max-height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else if (User.IsInRole("Demandeur"))
+        {
+            <!-- Graphique Demandes par Statut (Demandeur) -->
+            @if (Model.DemandesParStatut != null && Model.DemandesParStatut.Any())
+            {
+                <div class="col-md-6">
+                    <div class="card-modern">
+                        <div class="card-header-modern">
+                            <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                                <i class="bi bi-pie-chart"></i>
+                                Mes Demandes par Statut
+                            </h3>
+                        </div>
+                        <div class="card-body-modern">
+                            <canvas id="demandesParStatutChart" style="max-height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Graphique Évolution Demandes (Demandeur) -->
+            @if (Model.EvolutionDemandes != null && Model.EvolutionDemandes.Any())
+            {
+                <div class="col-md-6">
+                    <div class="card-modern">
+                        <div class="card-header-modern">
+                            <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                                <i class="bi bi-graph-up"></i>
+                                Évolution de mes Demandes (6 derniers mois)
+                            </h3>
+                        </div>
+                        <div class="card-body-modern">
+                            <canvas id="evolutionDemandesChart" style="max-height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card-modern slide-up mt-4">
+        <div class="card-header-modern">
+            <h2 class="card-title-modern">
+                <i class="bi bi-lightning-charge"></i>
+                Actions Rapides
+            </h2>
+        </div>
+        <div class="card-body-modern">
+            <div class="row g-3">
+                @if (User.IsInRole("Demandeur"))
+                {
+                    <div class="col-md-4">
+                        <a asp-controller="DemandeProjet" asp-action="Create" class="btn-modern btn-modern-primary w-100">
+                            <i class="bi bi-plus-circle"></i>
+                            Nouvelle Demande
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a asp-controller="DemandeProjet" asp-action="Index" class="btn-modern btn-modern-secondary w-100">
+                            <i class="bi bi-list-ul"></i>
+                            Mes Demandes
+                        </a>
+                    </div>
+                }
+                @if (User.IsInRole("DirecteurMetier"))
+                {
+                    <div class="col-md-4">
+                        <a asp-controller="DemandeProjet" asp-action="ListeValidationDM" class="btn-modern btn-modern-primary w-100">
+                            <i class="bi bi-check-circle"></i>
+                            Valider Demandes
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a asp-controller="Projet" asp-action="Index" class="btn-modern btn-modern-secondary w-100">
+                            <i class="bi bi-folder"></i>
+                            Mes Projets
+                        </a>
+                    </div>
+                }
+                @if (User.IsInRole("DSI") || User.IsInRole("AdminIT"))
+                {
+                    <div class="col-md-3">
+                        <a asp-controller="Projet" asp-action="Index" class="btn-modern btn-modern-primary w-100">
+                            <i class="bi bi-grid"></i>
+                            Portefeuille
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a asp-controller="DemandeProjet" asp-action="ListeValidationDSI" class="btn-modern btn-modern-warning w-100">
+                            <i class="bi bi-shield-check"></i>
+                            Validations DSI
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a asp-controller="DemandeProjet" asp-action="HistoriqueValidationsDSI" class="btn-modern btn-modern-info w-100">
+                            <i class="bi bi-clock-history"></i>
+                            Historique
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a asp-controller="Admin" asp-action="Users" class="btn-modern btn-modern-secondary w-100">
+                            <i class="bi bi-people"></i>
+                            Utilisateurs
+                        </a>
+                    </div>
+                }
+                @if (User.IsInRole("ChefDeProjet"))
+                {
+                    <div class="col-md-4">
+                        <a asp-controller="Projet" asp-action="Index" class="btn-modern btn-modern-primary w-100">
+                            <i class="bi bi-folder"></i>
+                            Mes Projets
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        // Configuration globale Chart.js
+        Chart.defaults.font.family = "'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif";
+        Chart.defaults.font.size = 12;
+        Chart.defaults.color = '#374151';
+
+        // Couleurs pour les graphiques
+        const colors = {
+            primary: '#3481c0',
+            success: '#10b981',
+            warning: '#f59e0b',
+            danger: '#ef4444',
+            info: '#3b82f6',
+            gold: '#dbb438',
+            secondary: '#6b7280'
+        };
+
+        const colorPalette = [
+            colors.primary,
+            colors.success,
+            colors.warning,
+            colors.danger,
+            colors.info,
+            colors.gold,
+            colors.secondary,
+            '#8b5cf6',
+            '#ec4899',
+            '#14b8a6'
+        ];
+
+        @if (User.IsInRole("DSI") || User.IsInRole("AdminIT"))
+        {
+            @if (Model.ProjetsParStatut != null && Model.ProjetsParStatut.Any())
+            {
+                <text>
+                // Graphique Projets par Statut (DSI)
+                const projetsParStatutCtx = document.getElementById('projetsParStatutChart');
+                if (projetsParStatutCtx) {
+                    new Chart(projetsParStatutCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: @Html.Raw(Json.Serialize(Model.ProjetsParStatut.Keys)),
+                            datasets: [{
+                                data: @Html.Raw(Json.Serialize(Model.ProjetsParStatut.Values)),
+                                backgroundColor: colorPalette.slice(0, @Model.ProjetsParStatut.Count),
+                                borderWidth: 2,
+                                borderColor: '#ffffff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 15,
+                                        usePointStyle: true
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+
+            @if (Model.DemandesParStatut != null && Model.DemandesParStatut.Any())
+            {
+                <text>
+                // Graphique Demandes par Statut (DSI)
+                const demandesParStatutCtx = document.getElementById('demandesParStatutChart');
+                if (demandesParStatutCtx) {
+                    new Chart(demandesParStatutCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: @Html.Raw(Json.Serialize(Model.DemandesParStatut.Keys)),
+                            datasets: [{
+                                label: 'Nombre de demandes',
+                                data: @Html.Raw(Json.Serialize(Model.DemandesParStatut.Values)),
+                                backgroundColor: colorPalette.slice(0, @Model.DemandesParStatut.Count),
+                                borderColor: colorPalette.slice(0, @Model.DemandesParStatut.Count),
+                                borderWidth: 2,
+                                borderRadius: 8
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+
+            @if (Model.ProjetsParPhase != null && Model.ProjetsParPhase.Any())
+            {
+                <text>
+                // Graphique Projets par Phase (DSI)
+                const projetsParPhaseCtx = document.getElementById('projetsParPhaseChart');
+                if (projetsParPhaseCtx) {
+                    new Chart(projetsParPhaseCtx, {
+                        type: 'pie',
+                        data: {
+                            labels: @Html.Raw(Json.Serialize(Model.ProjetsParPhase.Keys)),
+                            datasets: [{
+                                data: @Html.Raw(Json.Serialize(Model.ProjetsParPhase.Values)),
+                                backgroundColor: colorPalette.slice(0, @Model.ProjetsParPhase.Count),
+                                borderWidth: 2,
+                                borderColor: '#ffffff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 15,
+                                        usePointStyle: true
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+
+            @if (Model.EvolutionProjets != null && Model.EvolutionProjets.Any())
+            {
+                <text>
+                // Graphique Évolution Projets (DSI)
+                const evolutionProjetsCtx = document.getElementById('evolutionProjetsChart');
+                if (evolutionProjetsCtx) {
+                    const evolutionLabels = @Html.Raw(Json.Serialize(Model.EvolutionProjets.Keys));
+                    const evolutionData = @Html.Raw(Json.Serialize(Model.EvolutionProjets.Values));
+                    
+                    new Chart(evolutionProjetsCtx, {
+                        type: 'line',
+                        data: {
+                            labels: evolutionLabels,
+                            datasets: [{
+                                label: 'Projets créés',
+                                data: evolutionData,
+                                borderColor: colors.primary,
+                                backgroundColor: colors.primary + '20',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 5,
+                                pointHoverRadius: 7
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top'
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+
+            @if (Model.ProjetsParDirection != null && Model.ProjetsParDirection.Any())
+            {
+                <text>
+                // Graphique Projets par Direction (DSI)
+                const projetsParDirectionCtx = document.getElementById('projetsParDirectionChart');
+                if (projetsParDirectionCtx) {
+                    new Chart(projetsParDirectionCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: @Html.Raw(Json.Serialize(Model.ProjetsParDirection.Keys)),
+                            datasets: [{
+                                label: 'Nombre de projets',
+                                data: @Html.Raw(Json.Serialize(Model.ProjetsParDirection.Values)),
+                                backgroundColor: colorPalette.slice(0, @Model.ProjetsParDirection.Count),
+                                borderColor: colorPalette.slice(0, @Model.ProjetsParDirection.Count),
+                                borderWidth: 2,
+                                borderRadius: 8
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            indexAxis: 'y',
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+        }
+        else if (User.IsInRole("DirecteurMetier"))
+        {
+            @if (Model.ProjetsParStatut != null && Model.ProjetsParStatut.Any())
+            {
+                <text>
+                // Graphique Projets par Statut (DM)
+                const projetsParStatutCtx = document.getElementById('projetsParStatutChart');
+                if (projetsParStatutCtx) {
+                    new Chart(projetsParStatutCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: @Html.Raw(Json.Serialize(Model.ProjetsParStatut.Keys)),
+                            datasets: [{
+                                data: @Html.Raw(Json.Serialize(Model.ProjetsParStatut.Values)),
+                                backgroundColor: colorPalette.slice(0, @Model.ProjetsParStatut.Count),
+                                borderWidth: 2,
+                                borderColor: '#ffffff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 15,
+                                        usePointStyle: true
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+
+            @if (Model.DemandesParStatut != null && Model.DemandesParStatut.Any())
+            {
+                <text>
+                // Graphique Demandes par Statut (DM)
+                const demandesParStatutCtx = document.getElementById('demandesParStatutChart');
+                if (demandesParStatutCtx) {
+                    new Chart(demandesParStatutCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: @Html.Raw(Json.Serialize(Model.DemandesParStatut.Keys)),
+                            datasets: [{
+                                label: 'Nombre de demandes',
+                                data: @Html.Raw(Json.Serialize(Model.DemandesParStatut.Values)),
+                                backgroundColor: colorPalette.slice(0, @Model.DemandesParStatut.Count),
+                                borderColor: colorPalette.slice(0, @Model.DemandesParStatut.Count),
+                                borderWidth: 2,
+                                borderRadius: 8
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+
+            @if (Model.ProjetsParPhase != null && Model.ProjetsParPhase.Any())
+            {
+                <text>
+                // Graphique Projets par Phase (DM)
+                const projetsParPhaseCtx = document.getElementById('projetsParPhaseChart');
+                if (projetsParPhaseCtx) {
+                    new Chart(projetsParPhaseCtx, {
+                        type: 'pie',
+                        data: {
+                            labels: @Html.Raw(Json.Serialize(Model.ProjetsParPhase.Keys)),
+                            datasets: [{
+                                data: @Html.Raw(Json.Serialize(Model.ProjetsParPhase.Values)),
+                                backgroundColor: colorPalette.slice(0, @Model.ProjetsParPhase.Count),
+                                borderWidth: 2,
+                                borderColor: '#ffffff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 15,
+                                        usePointStyle: true
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+
+            @if (Model.EvolutionProjets != null && Model.EvolutionProjets.Any())
+            {
+                <text>
+                // Graphique Évolution Projets (DM)
+                const evolutionProjetsCtx = document.getElementById('evolutionProjetsChart');
+                if (evolutionProjetsCtx) {
+                    const evolutionLabels = @Html.Raw(Json.Serialize(Model.EvolutionProjets.Keys));
+                    const evolutionData = @Html.Raw(Json.Serialize(Model.EvolutionProjets.Values));
+                    
+                    new Chart(evolutionProjetsCtx, {
+                        type: 'line',
+                        data: {
+                            labels: evolutionLabels,
+                            datasets: [{
+                                label: 'Projets créés',
+                                data: evolutionData,
+                                borderColor: colors.primary,
+                                backgroundColor: colors.primary + '20',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 5,
+                                pointHoverRadius: 7
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top'
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+
+            @if (Model.EvolutionDemandes != null && Model.EvolutionDemandes.Any())
+            {
+                <text>
+                // Graphique Évolution Demandes (DM)
+                const evolutionDemandesCtx = document.getElementById('evolutionDemandesChart');
+                if (evolutionDemandesCtx) {
+                    const evolutionLabels = @Html.Raw(Json.Serialize(Model.EvolutionDemandes.Keys));
+                    const evolutionData = @Html.Raw(Json.Serialize(Model.EvolutionDemandes.Values));
+                    
+                    new Chart(evolutionDemandesCtx, {
+                        type: 'line',
+                        data: {
+                            labels: evolutionLabels,
+                            datasets: [{
+                                label: 'Demandes traitées',
+                                data: evolutionData,
+                                borderColor: colors.warning,
+                                backgroundColor: colors.warning + '20',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 5,
+                                pointHoverRadius: 7
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top'
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+        }
+        else if (User.IsInRole("ResponsableSolutionsIT") || User.IsInRole("DSI") || User.IsInRole("AdminIT"))
+        {
+            @if (Model.ProjetsParStatut != null && Model.ProjetsParStatut.Any())
+            {
+                <text>
+                // Graphique Projets par Statut (Responsable Solutions IT)
+                const projetsParStatutCtx = document.getElementById('projetsParStatutChart');
+                if (projetsParStatutCtx) {
+                    new Chart(projetsParStatutCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: @Html.Raw(Json.Serialize(Model.ProjetsParStatut.Keys)),
+                            datasets: [{
+                                data: @Html.Raw(Json.Serialize(Model.ProjetsParStatut.Values)),
+                                backgroundColor: colorPalette.slice(0, @Model.ProjetsParStatut.Count),
+                                borderWidth: 2,
+                                borderColor: '#ffffff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 15,
+                                        usePointStyle: true
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+
+            @if (Model.ProjetsParPhase != null && Model.ProjetsParPhase.Any())
+            {
+                <text>
+                // Graphique Projets par Phase (Responsable Solutions IT)
+                const projetsParPhaseCtx = document.getElementById('projetsParPhaseChart');
+                if (projetsParPhaseCtx) {
+                    new Chart(projetsParPhaseCtx, {
+                        type: 'pie',
+                        data: {
+                            labels: @Html.Raw(Json.Serialize(Model.ProjetsParPhase.Keys)),
+                            datasets: [{
+                                data: @Html.Raw(Json.Serialize(Model.ProjetsParPhase.Values)),
+                                backgroundColor: colorPalette.slice(0, @Model.ProjetsParPhase.Count),
+                                borderWidth: 2,
+                                borderColor: '#ffffff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 15,
+                                        usePointStyle: true
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+
+            @if (Model.EvolutionProjets != null && Model.EvolutionProjets.Any())
+            {
+                <text>
+                // Graphique Évolution Projets (Responsable Solutions IT)
+                const evolutionProjetsCtx = document.getElementById('evolutionProjetsChart');
+                if (evolutionProjetsCtx) {
+                    const evolutionLabels = @Html.Raw(Json.Serialize(Model.EvolutionProjets.Keys));
+                    const evolutionData = @Html.Raw(Json.Serialize(Model.EvolutionProjets.Values));
+                    
+                    new Chart(evolutionProjetsCtx, {
+                        type: 'line',
+                        data: {
+                            labels: evolutionLabels,
+                            datasets: [{
+                                label: 'Projets créés',
+                                data: evolutionData,
+                                borderColor: colors.primary,
+                                backgroundColor: colors.primary + '20',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 5,
+                                pointHoverRadius: 7
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top'
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+
+            @if (Model.ProjetsParDirection != null && Model.ProjetsParDirection.Any())
+            {
+                <text>
+                // Graphique Projets par Direction (Responsable Solutions IT)
+                const projetsParDirectionCtx = document.getElementById('projetsParDirectionChart');
+                if (projetsParDirectionCtx) {
+                    new Chart(projetsParDirectionCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: @Html.Raw(Json.Serialize(Model.ProjetsParDirection.Keys)),
+                            datasets: [{
+                                label: 'Nombre de projets',
+                                data: @Html.Raw(Json.Serialize(Model.ProjetsParDirection.Values)),
+                                backgroundColor: colorPalette.slice(0, @Model.ProjetsParDirection.Count),
+                                borderColor: colorPalette.slice(0, @Model.ProjetsParDirection.Count),
+                                borderWidth: 2,
+                                borderRadius: 8
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            indexAxis: 'y',
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+        }
+        else if (User.IsInRole("ChefDeProjet"))
+        {
+            @if (Model.ProjetsParStatut != null && Model.ProjetsParStatut.Any())
+            {
+                <text>
+                // Graphique Projets par Statut (Chef de Projet)
+                const projetsParStatutCtx = document.getElementById('projetsParStatutChart');
+                if (projetsParStatutCtx) {
+                    new Chart(projetsParStatutCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: @Html.Raw(Json.Serialize(Model.ProjetsParStatut.Keys)),
+                            datasets: [{
+                                data: @Html.Raw(Json.Serialize(Model.ProjetsParStatut.Values)),
+                                backgroundColor: colorPalette.slice(0, @Model.ProjetsParStatut.Count),
+                                borderWidth: 2,
+                                borderColor: '#ffffff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 15,
+                                        usePointStyle: true
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+
+            @if (Model.ProjetsParPhase != null && Model.ProjetsParPhase.Any())
+            {
+                <text>
+                // Graphique Projets par Phase (Chef de Projet)
+                const projetsParPhaseCtx = document.getElementById('projetsParPhaseChart');
+                if (projetsParPhaseCtx) {
+                    new Chart(projetsParPhaseCtx, {
+                        type: 'pie',
+                        data: {
+                            labels: @Html.Raw(Json.Serialize(Model.ProjetsParPhase.Keys)),
+                            datasets: [{
+                                data: @Html.Raw(Json.Serialize(Model.ProjetsParPhase.Values)),
+                                backgroundColor: colorPalette.slice(0, @Model.ProjetsParPhase.Count),
+                                borderWidth: 2,
+                                borderColor: '#ffffff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 15,
+                                        usePointStyle: true
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+
+            @if (Model.EvolutionProjets != null && Model.EvolutionProjets.Any())
+            {
+                <text>
+                // Graphique Évolution Projets (Chef de Projet)
+                const evolutionProjetsCtx = document.getElementById('evolutionProjetsChart');
+                if (evolutionProjetsCtx) {
+                    const evolutionLabels = @Html.Raw(Json.Serialize(Model.EvolutionProjets.Keys));
+                    const evolutionData = @Html.Raw(Json.Serialize(Model.EvolutionProjets.Values));
+                    
+                    new Chart(evolutionProjetsCtx, {
+                        type: 'line',
+                        data: {
+                            labels: evolutionLabels,
+                            datasets: [{
+                                label: 'Projets créés',
+                                data: evolutionData,
+                                borderColor: colors.primary,
+                                backgroundColor: colors.primary + '20',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 5,
+                                pointHoverRadius: 7
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top'
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+        }
+        else if (User.IsInRole("ResponsableSolutionsIT") || User.IsInRole("DSI") || User.IsInRole("AdminIT"))
+        {
+            @if (Model.ProjetsParStatut != null && Model.ProjetsParStatut.Any())
+            {
+                <text>
+                // Graphique Projets par Statut (Responsable Solutions IT)
+                const projetsParStatutCtx = document.getElementById('projetsParStatutChart');
+                if (projetsParStatutCtx) {
+                    new Chart(projetsParStatutCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: @Html.Raw(Json.Serialize(Model.ProjetsParStatut.Keys)),
+                            datasets: [{
+                                data: @Html.Raw(Json.Serialize(Model.ProjetsParStatut.Values)),
+                                backgroundColor: colorPalette.slice(0, @Model.ProjetsParStatut.Count),
+                                borderWidth: 2,
+                                borderColor: '#ffffff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 15,
+                                        usePointStyle: true
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+
+            @if (Model.ProjetsParPhase != null && Model.ProjetsParPhase.Any())
+            {
+                <text>
+                // Graphique Projets par Phase (Responsable Solutions IT)
+                const projetsParPhaseCtx = document.getElementById('projetsParPhaseChart');
+                if (projetsParPhaseCtx) {
+                    new Chart(projetsParPhaseCtx, {
+                        type: 'pie',
+                        data: {
+                            labels: @Html.Raw(Json.Serialize(Model.ProjetsParPhase.Keys)),
+                            datasets: [{
+                                data: @Html.Raw(Json.Serialize(Model.ProjetsParPhase.Values)),
+                                backgroundColor: colorPalette.slice(0, @Model.ProjetsParPhase.Count),
+                                borderWidth: 2,
+                                borderColor: '#ffffff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 15,
+                                        usePointStyle: true
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+
+            @if (Model.EvolutionProjets != null && Model.EvolutionProjets.Any())
+            {
+                <text>
+                // Graphique Évolution Projets (Responsable Solutions IT)
+                const evolutionProjetsCtx = document.getElementById('evolutionProjetsChart');
+                if (evolutionProjetsCtx) {
+                    const evolutionLabels = @Html.Raw(Json.Serialize(Model.EvolutionProjets.Keys));
+                    const evolutionData = @Html.Raw(Json.Serialize(Model.EvolutionProjets.Values));
+                    
+                    new Chart(evolutionProjetsCtx, {
+                        type: 'line',
+                        data: {
+                            labels: evolutionLabels,
+                            datasets: [{
+                                label: 'Projets créés',
+                                data: evolutionData,
+                                borderColor: colors.primary,
+                                backgroundColor: colors.primary + '20',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 5,
+                                pointHoverRadius: 7
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top'
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+
+            @if (Model.ProjetsParDirection != null && Model.ProjetsParDirection.Any())
+            {
+                <text>
+                // Graphique Projets par Direction (Responsable Solutions IT)
+                const projetsParDirectionCtx = document.getElementById('projetsParDirectionChart');
+                if (projetsParDirectionCtx) {
+                    new Chart(projetsParDirectionCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: @Html.Raw(Json.Serialize(Model.ProjetsParDirection.Keys)),
+                            datasets: [{
+                                label: 'Nombre de projets',
+                                data: @Html.Raw(Json.Serialize(Model.ProjetsParDirection.Values)),
+                                backgroundColor: colorPalette.slice(0, @Model.ProjetsParDirection.Count),
+                                borderColor: colorPalette.slice(0, @Model.ProjetsParDirection.Count),
+                                borderWidth: 2,
+                                borderRadius: 8
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            indexAxis: 'y',
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+        }
+        else if (User.IsInRole("Demandeur"))
+        {
+            @if (Model.DemandesParStatut != null && Model.DemandesParStatut.Any())
+            {
+                <text>
+                // Graphique Demandes par Statut (Demandeur)
+                const demandesParStatutCtx = document.getElementById('demandesParStatutChart');
+                if (demandesParStatutCtx) {
+                    new Chart(demandesParStatutCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: @Html.Raw(Json.Serialize(Model.DemandesParStatut.Keys)),
+                            datasets: [{
+                                data: @Html.Raw(Json.Serialize(Model.DemandesParStatut.Values)),
+                                backgroundColor: colorPalette.slice(0, @Model.DemandesParStatut.Count),
+                                borderWidth: 2,
+                                borderColor: '#ffffff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 15,
+                                        usePointStyle: true
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+
+            @if (Model.EvolutionDemandes != null && Model.EvolutionDemandes.Any())
+            {
+                <text>
+                // Graphique Évolution Demandes (Demandeur)
+                const evolutionDemandesCtx = document.getElementById('evolutionDemandesChart');
+                if (evolutionDemandesCtx) {
+                    const evolutionLabels = @Html.Raw(Json.Serialize(Model.EvolutionDemandes.Keys));
+                    const evolutionData = @Html.Raw(Json.Serialize(Model.EvolutionDemandes.Values));
+                    
+                    new Chart(evolutionDemandesCtx, {
+                        type: 'line',
+                        data: {
+                            labels: evolutionLabels,
+                            datasets: [{
+                                label: 'Demandes soumises',
+                                data: evolutionData,
+                                borderColor: colors.primary,
+                                backgroundColor: colors.primary + '20',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 5,
+                                pointHoverRadius: 7
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top'
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+        }
+    </script>
+}

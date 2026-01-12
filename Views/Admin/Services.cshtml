@@ -1,0 +1,276 @@
+@model IEnumerable<GestionProjects.Domain.Models.Service>
+
+@{
+    ViewData["Title"] = "Gestion des Services";
+}
+
+<div class="fade-in">
+    <div class="card-modern mb-4">
+        <div class="card-header-modern">
+            <h2 class="card-title-modern">
+                <i class="bi bi-boxes"></i>
+                Gestion des Services
+            </h2>
+            <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#createServiceModal">
+                <i class="bi bi-plus-circle"></i>
+                Nouveau Service
+            </button>
+        </div>
+    </div>
+
+    @await Html.PartialAsync("_ValidationSummary")
+
+    <div class="card-modern">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Libellé</th>
+                            <th>Direction</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var service in Model.Where(s => !s.EstSupprime))
+                        {
+                            <tr>
+                                <td><strong>@service.Code</strong></td>
+                                <td>@service.Libelle</td>
+                                <td>
+                                    @if (service.Direction != null)
+                                    {
+                                        <span class="badge-modern badge-modern-info">
+                                            <i class="bi bi-building"></i> @service.Direction.Libelle
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Non définie</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (service.EstActive)
+                                    {
+                                        <span class="badge-modern badge-modern-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-modern badge-modern-secondary">Inactive</span>
+                                    }
+                                </td>
+                                <td>
+                                    <button type="button" class="btn-modern btn-modern-gold" style="padding: var(--spacing-xs) var(--spacing-md); font-size: 0.875rem;" 
+                                            onclick="editService('@service.Id', '@Html.Raw(service.Code.Replace("'", "\\'"))', '@Html.Raw(service.Libelle.Replace("'", "\\'"))', '@service.DirectionId', @service.EstActive.ToString().ToLower())">
+                                        <i class="bi bi-pencil"></i>
+                                        Modifier
+                                    </button>
+                                    <form asp-action="DeleteService" asp-route-id="@service.Id" method="post" class="d-inline ms-2" onsubmit="return confirm('Supprimer ce service ?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn-modern btn-modern-danger" style="padding: var(--spacing-xs) var(--spacing-md); font-size: 0.875rem;">
+                                            <i class="bi bi-trash"></i>
+                                            Supprimer
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="card-body-modern text-center" style="padding: var(--spacing-2xl);">
+                <i class="bi bi-inbox" style="font-size: 3rem; color: var(--gray-400); margin-bottom: var(--spacing-md);"></i>
+                <p style="color: var(--gray-500); font-size: 1.1rem;">
+                    Aucun service enregistré.
+                </p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal Create/Edit Service -->
+<div class="modal fade" id="createServiceModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
+            <form id="serviceForm" method="post" action="@Url.Action("CreateService")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" id="serviceId" value="" />
+                <div class="modal-header" style="border-bottom: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <h5 class="modal-title" style="font-weight: 600; color: var(--gray-800); display: flex; align-items: center; gap: var(--spacing-sm);">
+                        <i class="bi bi-boxes" style="color: var(--primary-blue);"></i>
+                        <span id="modalTitle">Nouveau Service</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: var(--spacing-lg);">
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Direction *</label>
+                        <select name="DirectionId" id="directionId" class="form-control-modern" required>
+                            <option value="">-- Sélectionner une direction --</option>
+                            @if (ViewBag.Directions != null)
+                            {
+                                @foreach (var dir in (IEnumerable<GestionProjects.Domain.Models.Direction>)ViewBag.Directions)
+                                {
+                                    <option value="@dir.Id" data-code="@dir.Code">@dir.Libelle</option>
+                                }
+                            }
+                        </select>
+                        <span class="text-danger field-validation-valid" data-valmsg-for="DirectionId" data-valmsg-replace="true"></span>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Libellé *</label>
+                        <input type="text" name="Libelle" id="libelle" class="form-control-modern" required maxlength="200" value="" />
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> Le code sera généré automatiquement (code direction + initiales du service)
+                        </small>
+                        <span class="text-danger field-validation-valid" data-valmsg-for="Libelle" data-valmsg-replace="true"></span>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Code *</label>
+                        <input type="text" name="Code" id="code" class="form-control-modern" required maxlength="50" value="" readonly style="background-color: var(--gray-50); cursor: not-allowed;" />
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> Généré automatiquement (vous pouvez le modifier si nécessaire)
+                        </small>
+                        <span class="text-danger field-validation-valid" data-valmsg-for="Code" data-valmsg-replace="true"></span>
+                    </div>
+                    <div class="form-group-modern">
+                        <div style="display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-md); background: var(--gray-50); border-radius: var(--radius-lg);">
+                            <input type="checkbox" name="EstActive" id="estActive" value="true" class="form-check-input" style="width: 20px; height: 20px; cursor: pointer;" checked />
+                            <input type="hidden" name="EstActive" value="false" />
+                            <label class="form-check-label" for="estActive" style="cursor: pointer; font-weight: 500; color: var(--gray-700); margin: 0;">
+                                Service actif
+                            </label>
+                        </div>
+                        <span class="text-danger field-validation-valid" data-valmsg-for="EstActive" data-valmsg-replace="true"></span>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-save"></i>
+                        Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Fonction pour générer les initiales à partir du libellé
+    function generateInitialesFromLibelle(libelle) {
+        if (!libelle || libelle.trim() === '') {
+            return '';
+        }
+
+        const motsIgnorer = ['de', 'des', 'du', "d'", 'le', 'la', 'les', 'un', 'une',
+            'et', 'ou', 'à', 'au', 'aux', 'en', 'pour', 'par', 'avec',
+            'sans', 'sous', 'sur', 'dans', 'entre', 'vers'];
+
+        let texteNettoye = libelle
+            .replace(/'/g, ' ')
+            .replace(/-/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        const mots = texteNettoye.split(' ').filter(m => m.trim() !== '');
+
+        let initiales = '';
+        for (const mot of mots) {
+            const motNettoye = mot.trim();
+            if (motNettoye.length >= 2 && !motsIgnorer.includes(motNettoye.toLowerCase())) {
+                initiales += motNettoye[0].toUpperCase();
+            }
+        }
+
+        return initiales;
+    }
+
+    // Fonction pour générer le code de service
+    function generateServiceCode() {
+        const serviceId = document.getElementById('serviceId').value;
+        const directionSelect = document.getElementById('directionId');
+        const libelleInput = document.getElementById('libelle');
+        const codeInput = document.getElementById('code');
+        
+        // Ne générer que si on est en mode création (pas d'ID)
+        if (!serviceId && directionSelect && libelleInput && codeInput) {
+            const selectedOption = directionSelect.options[directionSelect.selectedIndex];
+            const directionCode = selectedOption ? selectedOption.getAttribute('data-code') : '';
+            const libelle = libelleInput.value || '';
+            
+            if (directionCode && libelle) {
+                const initialesService = generateInitialesFromLibelle(libelle);
+                if (initialesService) {
+                    codeInput.value = directionCode + '-' + initialesService;
+                }
+            } else {
+                codeInput.value = '';
+            }
+        }
+    }
+
+    // Générer le code quand la direction ou le libellé change
+    document.getElementById('directionId')?.addEventListener('change', generateServiceCode);
+    document.getElementById('libelle')?.addEventListener('input', generateServiceCode);
+
+    // Permettre la modification manuelle du code (enlever readonly temporairement si l'utilisateur clique)
+    document.getElementById('code')?.addEventListener('focus', function() {
+        this.removeAttribute('readonly');
+        this.style.backgroundColor = '';
+        this.style.cursor = '';
+    });
+
+    function editService(id, code, libelle, directionId, estActive) {
+        document.getElementById('serviceForm').action = '@Url.Action("UpdateService")';
+        document.getElementById('serviceId').value = id;
+        document.getElementById('code').value = code;
+        document.getElementById('libelle').value = libelle;
+        document.getElementById('directionId').value = directionId || '';
+        document.getElementById('estActive').checked = estActive === true || estActive === 'true';
+        document.getElementById('modalTitle').textContent = 'Modifier le Service';
+        
+        // En mode édition, permettre la modification du code
+        const codeInput = document.getElementById('code');
+        if (codeInput) {
+            codeInput.removeAttribute('readonly');
+            codeInput.style.backgroundColor = '';
+            codeInput.style.cursor = '';
+        }
+        
+        $('#createServiceModal').modal('show');
+    }
+
+    document.getElementById('serviceForm').addEventListener('submit', function(e) {
+        if (!this.action.includes('UpdateService')) {
+            this.action = '@Url.Action("CreateService")';
+        }
+    });
+
+    // Réinitialiser le formulaire quand le modal est fermé
+    $('#createServiceModal').on('hidden.bs.modal', function () {
+        document.getElementById('serviceForm').reset();
+        document.getElementById('serviceForm').action = '@Url.Action("CreateService")';
+        document.getElementById('serviceId').value = '';
+        document.getElementById('modalTitle').textContent = 'Nouveau Service';
+        document.getElementById('directionId').value = '';
+        document.getElementById('estActive').checked = true;
+        // Remettre le champ code en readonly
+        const codeInput = document.getElementById('code');
+        if (codeInput) {
+            codeInput.readOnly = true;
+            codeInput.style.backgroundColor = 'var(--gray-50)';
+            codeInput.style.cursor = 'not-allowed';
+        }
+    });
+</script>
+

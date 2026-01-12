@@ -1,0 +1,155 @@
+@model GestionProjects.Application.ViewModels.ProfilViewModel
+
+@{
+    ViewData["Title"] = "Mon Profil";
+}
+
+<div class="fade-in">
+    <div class="card-modern mb-4">
+        <div class="card-header-modern">
+            <h2 class="card-title-modern">
+                <i class="bi bi-person-circle"></i>
+                Mon Profil
+            </h2>
+        </div>
+    </div>
+
+    <form asp-action="Profil" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        
+        @await Html.PartialAsync("_ValidationSummary")
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card-modern mb-4">
+                    <div class="card-header-modern">
+                        <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                            <i class="bi bi-info-circle"></i>
+                            Informations personnelles
+                        </h3>
+                    </div>
+                    <div class="card-body-modern">
+                        <div class="form-group-modern">
+                            <label asp-for="Matricule" class="form-label-modern">Matricule</label>
+                            <input asp-for="Matricule" class="form-control-modern" readonly style="background: var(--gray-100);" />
+                            <small style="color: var(--gray-500); font-size: 0.875rem;">Le matricule ne peut pas être modifié</small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group-modern">
+                                    <label asp-for="Nom" class="form-label-modern">Nom *</label>
+                                    <input asp-for="Nom" class="form-control-modern" required />
+                                    <span asp-validation-for="Nom" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group-modern">
+                                    <label asp-for="Prenoms" class="form-label-modern">Prénoms *</label>
+                                    <input asp-for="Prenoms" class="form-control-modern" required />
+                                    <span asp-validation-for="Prenoms" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="Email" class="form-label-modern">Email *</label>
+                            <input asp-for="Email" type="email" class="form-control-modern" required />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Direction</label>
+                            <input type="text" class="form-control-modern" value="@Model.DirectionLibelle" readonly style="background: var(--gray-100);" />
+                            <small style="color: var(--gray-500); font-size: 0.875rem;">La direction ne peut pas être modifiée depuis le profil</small>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Rôle</label>
+                            <input type="text" class="form-control-modern" value="@Model.Role" readonly style="background: var(--gray-100);" />
+                            <small style="color: var(--gray-500); font-size: 0.875rem;">Le rôle ne peut pas être modifié depuis le profil</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card-modern mb-4">
+                    <div class="card-header-modern">
+                        <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                            <i class="bi bi-lock"></i>
+                            Changer le mot de passe
+                        </h3>
+                    </div>
+                    <div class="card-body-modern">
+                        <div class="alert-modern alert-modern-info" style="margin-bottom: var(--spacing-md);">
+                            <i class="bi bi-info-circle"></i>
+                            <div style="font-size: 0.875rem;">
+                                Laissez ces champs vides si vous ne souhaitez pas changer votre mot de passe.
+                            </div>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="MotDePasseActuel" class="form-label-modern">Mot de passe actuel</label>
+                            <input asp-for="MotDePasseActuel" type="password" class="form-control-modern" autocomplete="current-password" />
+                            <span asp-validation-for="MotDePasseActuel" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="NouveauMotDePasse" class="form-label-modern">Nouveau mot de passe</label>
+                            <input asp-for="NouveauMotDePasse" type="password" class="form-control-modern" autocomplete="new-password" />
+                            <span asp-validation-for="NouveauMotDePasse" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="ConfirmerMotDePasse" class="form-label-modern">Confirmer le nouveau mot de passe</label>
+                            <input asp-for="ConfirmerMotDePasse" type="password" class="form-control-modern" autocomplete="new-password" />
+                            <span asp-validation-for="ConfirmerMotDePasse" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-modern">
+                    <div class="card-header-modern">
+                        <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                            <i class="bi bi-clock-history"></i>
+                            Informations de connexion
+                        </h3>
+                    </div>
+                    <div class="card-body-modern">
+                        <div style="margin-bottom: var(--spacing-md);">
+                            <div style="font-size: 0.875rem; color: var(--gray-500); font-weight: 600; margin-bottom: var(--spacing-xs);">Dernière connexion</div>
+                            <div style="color: var(--gray-800);">
+                                @(Model.DateDerniereConnexion?.ToString("dd/MM/yyyy HH:mm") ?? "Jamais")
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.875rem; color: var(--gray-500); font-weight: 600; margin-bottom: var(--spacing-xs);">Nombre de connexions</div>
+                            <div style="color: var(--gray-800); font-weight: 600;">
+                                @Model.NombreConnexion
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-3 mt-4">
+            <button type="submit" class="btn-modern btn-modern-primary">
+                <i class="bi bi-save"></i>
+                Enregistrer les modifications
+            </button>
+            <a asp-action="Index" asp-controller="Home" class="btn-modern btn-modern-secondary">
+                <i class="bi bi-x-circle"></i>
+                Annuler
+            </a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+
+

@@ -1,0 +1,151 @@
+@model GestionProjects.Domain.Models.Projet
+
+@{
+    var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Guid.Empty.ToString());
+    var isChefProjet = User.IsInRole("ChefDeProjet") && Model.ChefProjetId == userId;
+    var livrablesExec = Model.Livrables?.Where(l => l.Phase == GestionProjects.Domain.Enums.PhaseProjet.ExecutionSuivi).ToList() ?? new List<GestionProjects.Domain.Models.LivrableProjet>();
+    var canPretUAT = isChefProjet && Model.PhaseActuelle == GestionProjects.Domain.Enums.PhaseProjet.ExecutionSuivi;
+}
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card-modern mb-4">
+            <div class="card-header-modern">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                        <i class="bi bi-file-earmark"></i>
+                        Livrables
+                    </h3>
+                    @if (isChefProjet && Model.PhaseActuelle == GestionProjects.Domain.Enums.PhaseProjet.ExecutionSuivi)
+                    {
+                        <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#uploadLivrableModal" data-phase="ExecutionSuivi">
+                            <i class="bi bi-upload"></i>
+                            Upload
+                        </button>
+                    }
+                </div>
+            </div>
+            <div class="card-body-modern">
+                @if (livrablesExec.Any())
+                {
+                    <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
+                        @foreach (var livrable in livrablesExec)
+                        {
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--spacing-md); background: var(--gray-50); border-radius: var(--radius-lg);">
+                                <div style="display: flex; align-items: center; gap: var(--spacing-md);">
+                                    <i class="bi bi-file-earmark" style="font-size: 1.5rem; color: var(--primary-blue);"></i>
+                                    <div>
+                                        <a href="~/@livrable.CheminRelatif" target="_blank" style="color: var(--primary-blue); text-decoration: none; font-weight: 500;">
+                                            @livrable.NomDocument
+                                        </a>
+                                        <div style="font-size: 0.875rem; color: var(--gray-500);">
+                                            Déposé le @livrable.DateDepot.ToString("dd/MM/yyyy")
+                                        </div>
+                                    </div>
+                                </div>
+                                <a href="~/@livrable.CheminRelatif" target="_blank" class="btn-modern btn-modern-secondary" style="padding: var(--spacing-xs) var(--spacing-md);">
+                                    <i class="bi bi-download"></i>
+                                </a>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div style="text-align: center; padding: var(--spacing-xl); color: var(--gray-500);">
+                        <i class="bi bi-inbox" style="font-size: 2rem; margin-bottom: var(--spacing-sm);"></i>
+                        <p>Aucun livrable pour le moment.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card-modern mb-4">
+            <div class="card-header-modern">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <h3 class="card-title-modern" style="font-size: 1.1rem;">
+                        <i class="bi bi-bug"></i>
+                        Anomalies (@(Model.Anomalies?.Count ?? 0))
+                    </h3>
+                    @if (isChefProjet && Model.PhaseActuelle == GestionProjects.Domain.Enums.PhaseProjet.ExecutionSuivi)
+                    {
+                        <button type="button" class="btn-modern btn-modern-warning" data-bs-toggle="modal" data-bs-target="#ajouterAnomalieModal">
+                            <i class="bi bi-plus-circle"></i>
+                            Ajouter
+                        </button>
+                    }
+                </div>
+            </div>
+            <div class="card-body-modern">
+                @if (Model.Anomalies != null && Model.Anomalies.Any())
+                {
+                    <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
+                        @foreach (var anomalie in Model.Anomalies.Take(10))
+                        {
+                            <div style="padding: var(--spacing-md); background: var(--gray-50); border-radius: var(--radius-lg); border-left: 4px solid @GetAnomalieColor(anomalie.Priorite);">
+                                <div style="font-weight: 600; color: var(--gray-800); margin-bottom: var(--spacing-xs);">
+                                    @anomalie.Reference - @anomalie.Description
+                                </div>
+                                <div style="font-size: 0.875rem; color: var(--gray-600);">
+                                    Priorité: @anomalie.Priorite | Statut: @anomalie.Statut | Environnement: @anomalie.Environnement
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    @if (Model.Anomalies.Count > 10)
+                    {
+                        <div style="text-align: center; margin-top: var(--spacing-md);">
+                            <small style="color: var(--gray-500);">... et @(Model.Anomalies.Count - 10) autre(s) anomalie(s)</small>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div style="text-align: center; padding: var(--spacing-xl); color: var(--gray-500);">
+                        <i class="bi bi-check-circle" style="font-size: 2rem; margin-bottom: var(--spacing-sm);"></i>
+                        <p>Aucune anomalie signalée.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (canPretUAT)
+{
+    <div class="card-modern" style="background: linear-gradient(135deg, var(--success) 0%, #059669 100%); border: none;">
+        <div class="card-body-modern" style="text-align: center; padding: var(--spacing-xl);">
+            <i class="bi bi-check-circle-fill" style="font-size: 3rem; color: white; margin-bottom: var(--spacing-md);"></i>
+            <h4 style="color: white; margin-bottom: var(--spacing-md);">Projet prêt pour UAT ?</h4>
+            <p style="color: rgba(255,255,255,0.9); margin-bottom: var(--spacing-lg);">
+                Si tous les développements sont terminés et testés, vous pouvez passer le projet en phase UAT & MEP.
+            </p>
+            <form asp-action="PretUAT" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" class="btn-modern" style="background: white; color: var(--success); padding: var(--spacing-md) var(--spacing-xl); font-weight: 600;" onclick="return confirm('Le projet est prêt pour UAT ? Cette action passera le projet en phase UAT & MEP.');">
+                    <i class="bi bi-arrow-right-circle"></i>
+                    Projet prêt pour UAT
+                </button>
+            </form>
+        </div>
+    </div>
+}
+
+@functions {
+    string GetAnomalieColor(GestionProjects.Domain.Enums.PrioriteAnomalie priorite)
+    {
+        return priorite switch
+        {
+            GestionProjects.Domain.Enums.PrioriteAnomalie.Critique => "var(--danger)",
+            GestionProjects.Domain.Enums.PrioriteAnomalie.Haute => "var(--warning)",
+            GestionProjects.Domain.Enums.PrioriteAnomalie.Moyenne => "var(--info)",
+            GestionProjects.Domain.Enums.PrioriteAnomalie.Basse => "var(--gray-400)",
+            _ => "var(--gray-400)"
+        };
+    }
+}
+
+

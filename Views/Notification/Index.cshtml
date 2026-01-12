@@ -1,0 +1,127 @@
+@model IEnumerable<GestionProjects.Domain.Models.Notification>
+
+@{
+    ViewData["Title"] = "Mes Notifications";
+    var nonLues = ViewBag.NonLues as int? ?? 0;
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="display-6 mb-0">
+            <i class="bi bi-bell" style="color: var(--primary-blue);"></i>
+            Mes Notifications
+            @if (nonLues > 0)
+            {
+                <span class="badge-modern badge-modern-danger" style="margin-left: var(--spacing-sm);">@nonLues non lue(s)</span>
+            }
+        </h2>
+        @if (nonLues > 0)
+        {
+            <form asp-action="MarquerToutesLues" method="post" style="display: inline;">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-modern btn-modern-secondary">
+                    <i class="bi bi-check-all"></i> Tout marquer comme lu
+                </button>
+            </form>
+        }
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="card-modern">
+            <div class="card-body-modern text-center" style="padding: var(--spacing-xl);">
+                <i class="bi bi-bell-slash" style="font-size: 3rem; color: var(--gray-400); margin-bottom: var(--spacing-md);"></i>
+                <p class="text-muted" style="font-size: 1.1rem;">Aucune notification</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card-modern">
+            <div class="card-body-modern p-0">
+                <div class="list-group list-group-flush">
+                    @foreach (var notification in Model)
+                    {
+                        <div class="list-group-item @(!notification.EstLue ? "border-start border-4 border-primary" : "")" 
+                             style="padding: var(--spacing-lg); @(!notification.EstLue ? "background-color: #f0f7ff;" : "")">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        @if (!notification.EstLue)
+                                        {
+                                            <span class="badge-modern badge-modern-primary" style="font-size: 0.7rem;">Nouveau</span>
+                                        }
+                                        <h5 class="mb-0" style="font-size: 1rem; font-weight: @(!notification.EstLue ? "600" : "500");">
+                                            @GetNotificationIcon(notification.TypeNotification)
+                                            @notification.Titre
+                                        </h5>
+                                    </div>
+                                    <p class="mb-2" style="color: var(--gray-700); font-size: 0.9rem;">@notification.Message</p>
+                                    <div class="d-flex align-items-center gap-3" style="font-size: 0.8rem; color: var(--gray-500);">
+                                        <span>
+                                            <i class="bi bi-clock"></i>
+                                            @notification.DateCreation.ToString("dd/MM/yyyy à HH:mm")
+                                        </span>
+                                        @if (notification.EntiteType != null && notification.EntiteId.HasValue)
+                                        {
+                                            <a href="@GetEntityUrl(notification.EntiteType, notification.EntiteId.Value)" 
+                                               class="text-decoration-none" 
+                                               style="color: var(--primary-blue);">
+                                                <i class="bi bi-arrow-right-circle"></i> Voir
+                                            </a>
+                                        }
+                                    </div>
+                                </div>
+                                @if (!notification.EstLue)
+                                {
+                                    <form asp-action="MarquerLue" method="post" style="display: inline;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@notification.Id" />
+                                        <button type="submit" class="btn-modern btn-modern-sm btn-modern-secondary" title="Marquer comme lu">
+                                            <i class="bi bi-check"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        
+        @await Html.PartialAsync("_Pagination")
+    }
+</div>
+
+@functions {
+    string GetNotificationIcon(GestionProjects.Domain.Enums.TypeNotification type)
+    {
+        return type switch
+        {
+            GestionProjects.Domain.Enums.TypeNotification.ProjetEntreEnUAT => "<i class='bi bi-check2-square' style='color: var(--info);'></i>",
+            GestionProjects.Domain.Enums.TypeNotification.ProjetEntreEnMEP => "<i class='bi bi-rocket' style='color: var(--success);'></i>",
+            GestionProjects.Domain.Enums.TypeNotification.DemandeSupportTechnique => "<i class='bi bi-tools' style='color: var(--warning);'></i>",
+            GestionProjects.Domain.Enums.TypeNotification.DemandeValidationDSI => "<i class='bi bi-shield-check' style='color: var(--primary-blue);'></i>",
+            GestionProjects.Domain.Enums.TypeNotification.DemandeValidationDM => "<i class='bi bi-check-circle' style='color: var(--info);'></i>",
+            GestionProjects.Domain.Enums.TypeNotification.ProjetPhaseChangee => "<i class='bi bi-arrow-repeat' style='color: var(--primary-blue);'></i>",
+            GestionProjects.Domain.Enums.TypeNotification.NouveauRisqueCritique => "<i class='bi bi-exclamation-triangle' style='color: var(--danger);'></i>",
+            GestionProjects.Domain.Enums.TypeNotification.NouvelleAnomalie => "<i class='bi bi-bug' style='color: var(--warning);'></i>",
+            GestionProjects.Domain.Enums.TypeNotification.LivrableDepose => "<i class='bi bi-file-earmark' style='color: var(--info);'></i>",
+            GestionProjects.Domain.Enums.TypeNotification.DelegationDSIActivee => "<i class='bi bi-person-badge' style='color: var(--success);'></i>",
+            GestionProjects.Domain.Enums.TypeNotification.DelegationDSIExpiree => "<i class='bi bi-person-x' style='color: var(--gray-500);'></i>",
+            _ => "<i class='bi bi-bell' style='color: var(--gray-500);'></i>"
+        };
+    }
+
+    string GetEntityUrl(string? entiteType, Guid entiteId)
+    {
+        return entiteType switch
+        {
+            "Projet" => Url.Action("Details", "Projet", new { id = entiteId }),
+            "DemandeProjet" => Url.Action("Details", "DemandeProjet", new { id = entiteId }),
+            "AnomalieProjet" => Url.Action("Details", "Projet", new { id = entiteId, tab = "execution" }),
+            _ => "#"
+        };
+    }
+}
+

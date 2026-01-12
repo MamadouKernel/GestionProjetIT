@@ -1,0 +1,89 @@
+@model IEnumerable<GestionProjects.Domain.Models.DemandeClotureProjet>
+
+@{
+    ViewData["Title"] = "Validations Clôture DSI";
+}
+
+<div class="fade-in">
+    <div class="card-modern">
+        <div class="card-header-modern">
+            <h2 class="card-title-modern">
+                <i class="bi bi-flag-checkered"></i>
+                Validations Clôture DSI
+            </h2>
+        </div>
+
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th>Projet</th>
+                            <th>Code Projet</th>
+                            <th>Direction</th>
+                            <th>Demandeur</th>
+                            <th>Date Demande</th>
+                            <th>Date Souhaitée</th>
+                            <th>Validation Demandeur</th>
+                            <th>Validation DM</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var demande in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@demande.Projet.Titre</strong>
+                                </td>
+                                <td>
+                                    <span style="color: var(--primary-blue); font-weight: 600;">@demande.Projet.CodeProjet</span>
+                                </td>
+                                <td>@(demande.Projet.Direction?.Libelle ?? "N/A")</td>
+                                <td>
+                                    @if (demande.Projet.DemandeProjet?.Demandeur != null)
+                                    {
+                                        <div>@demande.Projet.DemandeProjet.Demandeur.Nom @demande.Projet.DemandeProjet.Demandeur.Prenoms</div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">N/A</span>
+                                    }
+                                </td>
+                                <td>@demande.DateDemande.ToString("dd/MM/yyyy")</td>
+                                <td>@(demande.DateSouhaiteeCloture?.ToString("dd/MM/yyyy") ?? "Non spécifiée")</td>
+                                <td>
+                                    <span class="badge-modern badge-modern-@(demande.StatutValidationDemandeur == GestionProjects.Domain.Enums.StatutValidationCloture.Validee ? "success" : "warning")">
+                                        @demande.StatutValidationDemandeur
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge-modern badge-modern-@(demande.StatutValidationDirecteurMetier == GestionProjects.Domain.Enums.StatutValidationCloture.Validee ? "success" : "warning")">
+                                        @demande.StatutValidationDirecteurMetier
+                                    </span>
+                                </td>
+                                <td>
+                                    <a asp-action="Details" asp-controller="Projet" asp-route-id="@demande.ProjetId" asp-route-tab="cloture" class="btn-modern btn-modern-primary" style="padding: var(--spacing-xs) var(--spacing-md); font-size: 0.875rem;">
+                                        <i class="bi bi-eye"></i>
+                                        Consulter
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="card-body-modern text-center" style="padding: var(--spacing-2xl);">
+                <i class="bi bi-inbox" style="font-size: 3rem; color: var(--gray-400); margin-bottom: var(--spacing-md);"></i>
+                <p style="color: var(--gray-500); font-size: 1.1rem;">
+                    Aucune demande de clôture en attente de validation DSI.
+                </p>
+            </div>
+        }
+    </div>
+</div>
+
