@@ -1,3 +1,4 @@
+using GestionProjects.Application.ViewModels.Admin;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -9,18 +10,17 @@ namespace GestionProjects.Controllers
     {
         public async Task<IActionResult> Parametres()
         {
+            return View(await BuildParametresViewModelAsync());
+        }
+
+        private async Task<ParametresViewModel> BuildParametresViewModelAsync()
+        {
             var parametres = await _db.ParametresSysteme
                 .Where(p => !p.EstSupprime)
                 .OrderBy(p => p.Cle)
                 .ToListAsync();
 
-            ViewBag.DSIPrincipalId = parametres.FirstOrDefault(p => p.Cle == "DSIPrincipalId")?.Valeur;
-            ViewBag.DSIDelegueId = parametres.FirstOrDefault(p => p.Cle == "DSIDelegueId")?.Valeur;
-            ViewBag.DelaiInactiviteSessionMinutes = parametres.FirstOrDefault(p => p.Cle == "DelaiInactiviteSessionMinutes")?.Valeur;
-            ViewBag.RepertoireStockageRacine = parametres.FirstOrDefault(p => p.Cle == "RepertoireStockageRacine")?.Valeur;
-            ViewBag.TypesLivrables = parametres.FirstOrDefault(p => p.Cle == "TypesLivrables")?.Valeur;
-
-            ViewBag.UtilisateursDsi = await _db.Utilisateurs
+            var utilisateursDsi = await _db.Utilisateurs
                 .Include(u => u.UtilisateurRoles)
                 .Where(u => !u.EstSupprime &&
                             u.UtilisateurRoles.Any(ur => !ur.EstSupprime &&
@@ -29,7 +29,16 @@ namespace GestionProjects.Controllers
                 .ThenBy(u => u.Prenoms)
                 .ToListAsync();
 
-            return View(parametres);
+            return new ParametresViewModel
+            {
+                Parametres                   = parametres,
+                UtilisateursDsi              = utilisateursDsi,
+                DSIPrincipalId               = parametres.FirstOrDefault(p => p.Cle == "DSIPrincipalId")?.Valeur,
+                DSIDelegueId                 = parametres.FirstOrDefault(p => p.Cle == "DSIDelegueId")?.Valeur,
+                DelaiInactiviteSessionMinutes = parametres.FirstOrDefault(p => p.Cle == "DelaiInactiviteSessionMinutes")?.Valeur,
+                RepertoireStockageRacine     = parametres.FirstOrDefault(p => p.Cle == "RepertoireStockageRacine")?.Valeur,
+                TypesLivrables               = parametres.FirstOrDefault(p => p.Cle == "TypesLivrables")?.Valeur
+            };
         }
 
         [HttpPost]
@@ -129,7 +138,7 @@ namespace GestionProjects.Controllers
                 return RedirectToAction(nameof(Parametres));
             }
 
-            return View("Parametres", await _db.ParametresSysteme.ToListAsync());
+            return View("Parametres", await BuildParametresViewModelAsync());
         }
 
         [HttpPost]
@@ -178,7 +187,7 @@ namespace GestionProjects.Controllers
                 return RedirectToAction(nameof(Parametres));
             }
 
-            return View("Parametres", await _db.ParametresSysteme.ToListAsync());
+            return View("Parametres", await BuildParametresViewModelAsync());
         }
 
         [HttpPost]

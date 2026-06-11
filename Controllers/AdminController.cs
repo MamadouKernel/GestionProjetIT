@@ -11,12 +11,6 @@ using Microsoft.Extensions.Logging;
 
 namespace GestionProjects.Controllers
 {
-    public class DelegationsViewModel
-    {
-        public IEnumerable<DelegationValidationDSI> DelegationsDSI { get; set; } = new List<DelegationValidationDSI>();
-        public IEnumerable<DelegationChefProjet> DelegationsChefProjet { get; set; } = new List<DelegationChefProjet>();
-    }
-
     [Authorize]
     public partial class AdminController : Controller
     {

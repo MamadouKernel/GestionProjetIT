@@ -1,4 +1,5 @@
 using GestionProjects.Application.Common.Extensions;
+using GestionProjects.Application.ViewModels.Admin;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -44,17 +45,19 @@ namespace GestionProjects.Controllers
             ViewBag.PageSizeDsi   = pagedDsi.PageSize;
             ViewBag.RechercheDsi  = rechercheDsi;
 
-            ViewBag.DSIs = await _db.Utilisateurs
+            var dsis = await _db.Utilisateurs
                 .Where(u => !u.EstSupprime)
                 .OrderBy(u => u.Nom)
                 .ThenBy(u => u.Prenoms)
                 .ToListAsync();
+            ViewBag.DSIs = dsis;
 
-            ViewBag.DeleguesDSI = await _db.Utilisateurs
+            var deleguesDsi = await _db.Utilisateurs
                 .Include(u => u.UtilisateurRoles)
                 .Where(u => !u.EstSupprime && u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.ResponsableSolutionsIT))
                 .OrderBy(u => u.Nom)
                 .ToListAsync();
+            ViewBag.DeleguesDSI = deleguesDsi;
 
             IQueryable<DelegationChefProjet> queryChefProjet = _db.DelegationsChefProjet
                 .Include(d => d.Delegant)
@@ -79,33 +82,54 @@ namespace GestionProjects.Controllers
             ViewBag.PageSizeChef   = pagedChef.PageSize;
             ViewBag.RechercheChef  = rechercheChef;
 
-            ViewBag.Projets = await _db.Projets
+            var projets = await _db.Projets
                 .Where(p => !p.EstSupprime && p.StatutProjet != StatutProjet.Cloture)
                 .OrderByDescending(p => p.DateCreation)
                 .ToListAsync();
+            ViewBag.Projets = projets;
 
-            ViewBag.Delegants = await _db.Utilisateurs
+            var delegants = await _db.Utilisateurs
                 .Include(u => u.UtilisateurRoles)
                 .Where(u => !u.EstSupprime && u.UtilisateurRoles.Any(ur => !ur.EstSupprime &&
                            (ur.Role == RoleUtilisateur.DSI || ur.Role == RoleUtilisateur.ResponsableSolutionsIT)) &&
                            (hasFullAdminScope || u.Id == userId))
                 .OrderBy(u => u.Nom)
                 .ToListAsync();
+            ViewBag.Delegants = delegants;
 
-            ViewBag.DeleguesChefProjet = await _db.Utilisateurs
+            var deleguesChefProjet = await _db.Utilisateurs
                 .Include(u => u.UtilisateurRoles)
                 .Where(u => !u.EstSupprime && !u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.Demandeur))
                 .OrderBy(u => u.Nom)
                 .ToListAsync();
+            ViewBag.DeleguesChefProjet = deleguesChefProjet;
 
             ViewBag.CurrentUserId = userId;
             ViewBag.CanAdminDelegations = hasFullAdminScope;
             ViewBag.ActiveTab = tab ?? "dsi";
 
-            var viewModel = new DelegationsViewModel
+            var viewModel = new DelegationsPageViewModel
             {
-                DelegationsDSI = delegationsDSI,
-                DelegationsChefProjet = delegationsChefProjet
+                DelegationsDSI          = delegationsDSI,
+                DelegationsChefProjet   = delegationsChefProjet,
+                DSIs                    = dsis,
+                DeleguesDSI             = deleguesDsi,
+                Delegants               = delegants,
+                DeleguesChefProjet      = deleguesChefProjet,
+                Projets                 = projets,
+                ActiveTab               = tab ?? "dsi",
+                CanAdminDelegations     = hasFullAdminScope,
+                CurrentUserId           = userId,
+                PageNumberDsi           = pagedDsi.PageNumber,
+                TotalPagesDsi           = pagedDsi.TotalPages,
+                TotalCountDsi           = pagedDsi.TotalCount,
+                PageSizeDsi             = pagedDsi.PageSize,
+                RechercheDsi            = rechercheDsi,
+                PageNumberChef          = pagedChef.PageNumber,
+                TotalPagesChef          = pagedChef.TotalPages,
+                TotalCountChef          = pagedChef.TotalCount,
+                PageSizeChef            = pagedChef.PageSize,
+                RechercheChef           = rechercheChef
             };
 
             return View(viewModel);

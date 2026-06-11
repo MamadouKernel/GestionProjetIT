@@ -10,6 +10,23 @@ namespace GestionProjects.Controllers
     {
         public async Task<IActionResult> Directions(string? recherche = null, int page = 1, int pageSize = 20)
         {
+            var vm = await BuildDirectionsListViewModelAsync(recherche, page, pageSize);
+
+            ViewBag.PageNumber = vm.PageNumber;
+            ViewBag.TotalPages = vm.TotalPages;
+            ViewBag.TotalCount = vm.TotalCount;
+            ViewBag.PageSize   = vm.PageSize;
+            ViewBag.Recherche  = vm.Recherche;
+            ViewBag.DSIs       = vm.DSIs;
+
+            return View(vm);
+        }
+
+        private async Task<DirectionsListViewModel> BuildDirectionsListViewModelAsync(
+            string? recherche = null,
+            int page = 1,
+            int pageSize = 20)
+        {
             page     = Math.Max(1, page);
             pageSize = Math.Clamp(pageSize, 10, 100);
 
@@ -24,20 +41,14 @@ namespace GestionProjects.Controllers
             query = query.OrderBy(d => d.Libelle);
 
             var paged = await query.ToPagedResultAsync(page, pageSize);
-            ViewBag.PageNumber = paged.PageNumber;
-            ViewBag.TotalPages = paged.TotalPages;
-            ViewBag.TotalCount = paged.TotalCount;
-            ViewBag.PageSize   = paged.PageSize;
-            ViewBag.Recherche  = recherche;
 
             var dsis = await _db.Utilisateurs
                 .Where(u => !u.EstSupprime)
                 .OrderBy(u => u.Nom)
                 .ThenBy(u => u.Prenoms)
                 .ToListAsync();
-            ViewBag.DSIs = dsis;
 
-            var vm = new DirectionsListViewModel
+            return new DirectionsListViewModel
             {
                 Directions  = paged.Items,
                 DSIs        = dsis,
@@ -47,8 +58,6 @@ namespace GestionProjects.Controllers
                 PageSize    = paged.PageSize,
                 Recherche   = recherche
             };
-
-            return View(vm);
         }
 
         private string GenerateCodeFromLibelle(string libelle)
@@ -174,19 +183,7 @@ namespace GestionProjects.Controllers
                 return RedirectToAction(nameof(Directions));
             }
 
-            var directions = await _db.Directions
-                .Include(d => d.DSI)
-                .Where(d => !d.EstSupprime)
-                .OrderBy(d => d.Libelle)
-                .ToListAsync();
-
-            ViewBag.DSIs = await _db.Utilisateurs
-                .Where(u => !u.EstSupprime)
-                .OrderBy(u => u.Nom)
-                .ThenBy(u => u.Prenoms)
-                .ToListAsync();
-
-            return View("Directions", directions);
+            return View("Directions", await BuildDirectionsListViewModelAsync());
         }
 
         [HttpPost]
@@ -253,19 +250,7 @@ namespace GestionProjects.Controllers
                 return RedirectToAction(nameof(Directions));
             }
 
-            var directions = await _db.Directions
-                .Include(d => d.DSI)
-                .Where(d => !d.EstSupprime)
-                .OrderBy(d => d.Libelle)
-                .ToListAsync();
-
-            ViewBag.DSIs = await _db.Utilisateurs
-                .Where(u => !u.EstSupprime)
-                .OrderBy(u => u.Nom)
-                .ThenBy(u => u.Prenoms)
-                .ToListAsync();
-
-            return View("Directions", directions);
+            return View("Directions", await BuildDirectionsListViewModelAsync());
         }
 
         [HttpPost]

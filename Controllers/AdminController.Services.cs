@@ -10,6 +10,25 @@ namespace GestionProjects.Controllers
     {
         public async Task<IActionResult> Services(string? recherche = null, Guid? directionId = null, int page = 1, int pageSize = 20)
         {
+            var vm = await BuildServicesListViewModelAsync(recherche, directionId, page, pageSize);
+
+            ViewBag.PageNumber          = vm.PageNumber;
+            ViewBag.TotalPages          = vm.TotalPages;
+            ViewBag.TotalCount          = vm.TotalCount;
+            ViewBag.PageSize            = vm.PageSize;
+            ViewBag.Recherche           = vm.Recherche;
+            ViewBag.SelectedDirectionId = vm.SelectedDirectionId;
+            ViewBag.Directions          = vm.Directions;
+
+            return View(vm);
+        }
+
+        private async Task<ServicesListViewModel> BuildServicesListViewModelAsync(
+            string? recherche = null,
+            Guid? directionId = null,
+            int page = 1,
+            int pageSize = 20)
+        {
             page     = Math.Max(1, page);
             pageSize = Math.Clamp(pageSize, 10, 100);
 
@@ -27,20 +46,13 @@ namespace GestionProjects.Controllers
             query = query.OrderBy(s => s.Libelle);
 
             var paged = await query.ToPagedResultAsync(page, pageSize);
-            ViewBag.PageNumber  = paged.PageNumber;
-            ViewBag.TotalPages  = paged.TotalPages;
-            ViewBag.TotalCount  = paged.TotalCount;
-            ViewBag.PageSize    = paged.PageSize;
-            ViewBag.Recherche   = recherche;
-            ViewBag.SelectedDirectionId = directionId;
 
             var directions = await _db.Directions
                 .Where(d => !d.EstSupprime && d.EstActive)
                 .OrderBy(d => d.Libelle)
                 .ToListAsync();
-            ViewBag.Directions = directions;
 
-            var vm = new ServicesListViewModel
+            return new ServicesListViewModel
             {
                 Services            = paged.Items,
                 Directions          = directions,
@@ -51,8 +63,6 @@ namespace GestionProjects.Controllers
                 Recherche           = recherche,
                 SelectedDirectionId = directionId
             };
-
-            return View(vm);
         }
 
         private async Task<string> GenerateServiceCodeAsync(string libelle, Guid? directionId)
@@ -129,12 +139,7 @@ namespace GestionProjects.Controllers
                 return RedirectToAction(nameof(Services));
             }
 
-            ViewBag.Directions = await _db.Directions
-                .Where(d => !d.EstSupprime && d.EstActive)
-                .OrderBy(d => d.Libelle)
-                .ToListAsync();
-
-            return View("Services", await _db.Services.Include(s => s.Direction).ToListAsync());
+            return View("Services", await BuildServicesListViewModelAsync());
         }
 
         [HttpPost]
@@ -188,12 +193,7 @@ namespace GestionProjects.Controllers
                 return RedirectToAction(nameof(Services));
             }
 
-            ViewBag.Directions = await _db.Directions
-                .Where(d => !d.EstSupprime && d.EstActive)
-                .OrderBy(d => d.Libelle)
-                .ToListAsync();
-
-            return View("Services", await _db.Services.Include(s => s.Direction).ToListAsync());
+            return View("Services", await BuildServicesListViewModelAsync());
         }
 
         [HttpPost]

@@ -1,21 +1,21 @@
-@model GestionProjects.Controllers.DelegationsViewModel
+@model GestionProjects.Application.ViewModels.Admin.DelegationsPageViewModel
 
 @{
     ViewData["Title"] = "Gestion des Délégations";
-    var activeTab = ViewBag.ActiveTab as string ?? "dsi";
-    var canCreateForOthers = ViewBag.CanAdminDelegations is bool canAdmin && canAdmin;
+    var activeTab = Model.ActiveTab ?? "dsi";
+    var canCreateForOthers = Model.CanAdminDelegations;
 
-    var pageNumDsi   = ViewBag.PageNumberDsi as int? ?? 1;
-    var totalPgDsi   = ViewBag.TotalPagesDsi as int? ?? 1;
-    var totalCtDsi   = ViewBag.TotalCountDsi as int? ?? 0;
-    var pgSizeDsi    = ViewBag.PageSizeDsi   as int? ?? 15;
-    var rechDsi      = ViewBag.RechercheDsi  as string ?? string.Empty;
+    var pageNumDsi   = Model.PageNumberDsi;
+    var totalPgDsi   = Model.TotalPagesDsi;
+    var totalCtDsi   = Model.TotalCountDsi;
+    var pgSizeDsi    = Model.PageSizeDsi > 0 ? Model.PageSizeDsi : 15;
+    var rechDsi      = Model.RechercheDsi ?? string.Empty;
 
-    var pageNumChef  = ViewBag.PageNumberChef as int? ?? 1;
-    var totalPgChef  = ViewBag.TotalPagesChef as int? ?? 1;
-    var totalCtChef  = ViewBag.TotalCountChef as int? ?? 0;
-    var pgSizeChef   = ViewBag.PageSizeChef   as int? ?? 15;
-    var rechChef     = ViewBag.RechercheChef  as string ?? string.Empty;
+    var pageNumChef  = Model.PageNumberChef;
+    var totalPgChef  = Model.TotalPagesChef;
+    var totalCtChef  = Model.TotalCountChef;
+    var pgSizeChef   = Model.PageSizeChef > 0 ? Model.PageSizeChef : 15;
+    var rechChef     = Model.RechercheChef ?? string.Empty;
 }
 
 <div class="fade-in admin-page">

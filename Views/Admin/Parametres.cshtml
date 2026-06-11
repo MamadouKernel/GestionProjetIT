@@ -1,18 +1,17 @@
-@model IEnumerable<GestionProjects.Domain.Models.ParametreSysteme>
+@model GestionProjects.Application.ViewModels.Admin.ParametresViewModel
 
 @{
     ViewData["Title"] = "Paramètres Système";
 
-    var dsiPrincipalId = ViewBag.DSIPrincipalId as string ?? string.Empty;
-    var dsiDelegueId = ViewBag.DSIDelegueId as string ?? string.Empty;
-    var delaiInactiviteSessionMinutes = ViewBag.DelaiInactiviteSessionMinutes as string ?? "30";
-    var repertoireStockageRacine = ViewBag.RepertoireStockageRacine as string ?? string.Empty;
-    var typesLivrables = ViewBag.TypesLivrables as string ?? string.Empty;
-    var utilisateursDsi = ViewBag.UtilisateursDsi as IEnumerable<GestionProjects.Domain.Models.Utilisateur>
-        ?? Enumerable.Empty<GestionProjects.Domain.Models.Utilisateur>();
-    var teamsParam = Model.FirstOrDefault(p => p.Cle == "TeamsWebhookUrl");
+    var dsiPrincipalId                = Model.DSIPrincipalId ?? string.Empty;
+    var dsiDelegueId                  = Model.DSIDelegueId ?? string.Empty;
+    var delaiInactiviteSessionMinutes = Model.DelaiInactiviteSessionMinutes ?? "30";
+    var repertoireStockageRacine      = Model.RepertoireStockageRacine ?? string.Empty;
+    var typesLivrables                = Model.TypesLivrables ?? string.Empty;
+    var utilisateursDsi               = Model.UtilisateursDsi as IEnumerable<GestionProjects.Domain.Models.Utilisateur>;
+    var teamsParam      = Model.Parametres.FirstOrDefault(p => p.Cle == "TeamsWebhookUrl");
     var teamsWebhookUrl = teamsParam?.Valeur ?? string.Empty;
-    var teamsParamId = teamsParam?.Id;
+    var teamsParamId    = teamsParam?.Id;
 }
 
 <div class="fade-in admin-page">
@@ -25,7 +24,7 @@
                     Centralisez les réglages de workflow, de sécurité, de stockage et d’intégration.
                 </p>
                 <div class="page-hero-meta">
-                    <span class="badge-modern badge-modern-info">@Model.Count() paramètre(s)</span>
+                    <span class="badge-modern badge-modern-info">@Model.Parametres.Count paramètre(s)</span>
                     @if (!string.IsNullOrWhiteSpace(teamsWebhookUrl))
                     {
                         <span class="badge-modern badge-modern-success">Webhook Teams configuré</span>
@@ -161,7 +160,7 @@
                     <i class="bi bi-list-ul"></i>
                     Liste des paramètres
                 </h3>
-                <span class="badge-modern badge-modern-info">@Model.Count() paramètre(s)</span>
+                <span class="badge-modern badge-modern-info">@Model.Parametres.Count paramètre(s)</span>
             </div>
         </div>
         <div class="card-body-modern p-0">
@@ -176,9 +175,9 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @if (Model.Any())
+                        @if (Model.Parametres.Any())
                         {
-                            @foreach (var param in Model)
+                            @foreach (var param in Model.Parametres)
                             {
                                 <tr>
                                     <td class="table-code">@param.Cle</td>

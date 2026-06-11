@@ -13,6 +13,28 @@ namespace GestionProjects.Controllers
     {
         public async Task<IActionResult> Users(string? recherche = null, Guid? directionId = null, RoleUtilisateur? role = null, int page = 1, int pageSize = 5)
         {
+            var vm = await BuildUsersListViewModelAsync(recherche, directionId, role, page, pageSize);
+
+            ViewBag.PageNumber          = vm.PageNumber;
+            ViewBag.TotalPages          = vm.TotalPages;
+            ViewBag.TotalCount          = vm.TotalCount;
+            ViewBag.PageSize            = vm.PageSize;
+            ViewBag.Recherche           = vm.Recherche;
+            ViewBag.SelectedDirectionId = vm.SelectedDirectionId;
+            ViewBag.SelectedRole        = vm.SelectedRole;
+            ViewBag.Directions          = vm.Directions;
+            ViewBag.AllRoles            = vm.AllRoles;
+
+            return View(vm);
+        }
+
+        private async Task<UsersListViewModel> BuildUsersListViewModelAsync(
+            string? recherche = null,
+            Guid? directionId = null,
+            RoleUtilisateur? role = null,
+            int page = 1,
+            int pageSize = 5)
+        {
             page     = Math.Max(1, page);
             pageSize = pageSize is 5 or 10 or 15 or 20 or 25 or 50 ? pageSize : 5;
 
@@ -39,23 +61,13 @@ namespace GestionProjects.Controllers
 
             var pagedResult = await query.ToPagedResultAsync(page, pageSize);
 
-            ViewBag.PageNumber  = pagedResult.PageNumber;
-            ViewBag.TotalPages  = pagedResult.TotalPages;
-            ViewBag.TotalCount  = pagedResult.TotalCount;
-            ViewBag.PageSize    = pagedResult.PageSize;
-            ViewBag.Recherche   = recherche;
-            ViewBag.SelectedDirectionId = directionId;
-            ViewBag.SelectedRole        = role;
-
             var directions = await _db.Directions
                 .Where(d => !d.EstSupprime && d.EstActive)
                 .OrderBy(d => d.Libelle)
                 .ToListAsync();
             var allRoles = Enum.GetValues(typeof(RoleUtilisateur)).Cast<RoleUtilisateur>().ToList();
-            ViewBag.Directions = directions;
-            ViewBag.AllRoles = allRoles;
 
-            var vm = new UsersListViewModel
+            return new UsersListViewModel
             {
                 Users               = pagedResult.Items,
                 Directions          = directions,
@@ -68,8 +80,6 @@ namespace GestionProjects.Controllers
                 SelectedDirectionId = directionId,
                 SelectedRole        = role
             };
-
-            return View(vm);
         }
 
         [HttpGet]
@@ -450,11 +460,7 @@ namespace GestionProjects.Controllers
                 ModelState.AddModelError("Email", "Cet email existe déjà.");
 
             if (!ModelState.IsValid)
-            {
-                ViewBag.Directions = await _db.Directions.Where(d => !d.EstSupprime && d.EstActive).OrderBy(d => d.Libelle).ToListAsync();
-                ViewBag.AllRoles = Enum.GetValues(typeof(RoleUtilisateur)).Cast<RoleUtilisateur>().ToList();
-                return View("Users", await _db.Utilisateurs.Include(u => u.Direction).Include(u => u.UtilisateurRoles).Where(u => !u.EstSupprime).ToListAsync());
-            }
+                return View("Users", await BuildUsersListViewModelAsync());
 
             Guid? directionGuid = Guid.TryParse(DirectionId, out var dg) ? dg : (Guid?)null;
             var rolesSelectionnes = ParseSelectedRoles(Roles);
@@ -510,11 +516,7 @@ namespace GestionProjects.Controllers
             }
 
             if (!ModelState.IsValid)
-            {
-                ViewBag.Directions = await _db.Directions.Where(d => !d.EstSupprime && d.EstActive).OrderBy(d => d.Libelle).ToListAsync();
-                ViewBag.AllRoles = Enum.GetValues(typeof(RoleUtilisateur)).Cast<RoleUtilisateur>().ToList();
-                return View("Users", await _db.Utilisateurs.Include(u => u.Direction).Include(u => u.UtilisateurRoles).Where(u => !u.EstSupprime).ToListAsync());
-            }
+                return View("Users", await BuildUsersListViewModelAsync());
 
             Guid? directionGuid = Guid.TryParse(DirectionId, out var dg) ? dg : (Guid?)null;
             var rolesSelectionnes = ParseSelectedRoles(Roles);
