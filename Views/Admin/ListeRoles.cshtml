@@ -1,16 +1,16 @@
-@model List<GestionProjects.Domain.Models.Utilisateur>
+@model GestionProjects.Application.ViewModels.Admin.RolesListViewModel
 @using GestionProjects.Domain.Enums
 @using GestionProjects.Domain.Models
 
 @{
     ViewData["Title"] = "Gestion des Rôles";
-    var allRoles        = (List<RoleUtilisateur>)ViewBag.AllRoles;
-    var recherche       = (string?)ViewBag.Recherche;
-    var directions      = ViewBag.Directions as IEnumerable<Direction> ?? Enumerable.Empty<Direction>();
-    var selectedDir     = ViewBag.SelectedDirectionId as Guid?;
-    var selectedRole    = ViewBag.SelectedRole as RoleUtilisateur?;
-    var totalCount      = ViewBag.TotalCount as int? ?? Model.Count;
-    var roleCounts      = ViewBag.RoleCounts as Dictionary<RoleUtilisateur, int> ?? new Dictionary<RoleUtilisateur, int>();
+    var allRoles     = Model.AllRoles;
+    var recherche    = Model.Recherche;
+    var directions   = Model.Directions;
+    var selectedDir  = Model.SelectedDirectionId;
+    var selectedRole = Model.SelectedRole;
+    var totalCount   = Model.TotalCount;
+    var roleCounts   = Model.RoleCounts;
 }
 
 <div class="fade-in admin-page">
@@ -144,9 +144,9 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @if (Model.Any())
+                        @if (Model.Users.Any())
                         {
-                            @foreach (var user in Model)
+                            @foreach (var user in Model.Users)
                             {
                                 var rolesActifs = user.GetRolesActifs().ToList();
                                 <tr>

@@ -1,4 +1,5 @@
 using GestionProjects.Application.Common.Extensions;
+using GestionProjects.Application.ViewModels.Admin;
 using GestionProjects.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -29,13 +30,25 @@ namespace GestionProjects.Controllers
             ViewBag.PageSize   = paged.PageSize;
             ViewBag.Recherche  = recherche;
 
-            ViewBag.DSIs = await _db.Utilisateurs
+            var dsis = await _db.Utilisateurs
                 .Where(u => !u.EstSupprime)
                 .OrderBy(u => u.Nom)
                 .ThenBy(u => u.Prenoms)
                 .ToListAsync();
+            ViewBag.DSIs = dsis;
 
-            return View(paged.Items);
+            var vm = new DirectionsListViewModel
+            {
+                Directions  = paged.Items,
+                DSIs        = dsis,
+                TotalCount  = paged.TotalCount,
+                PageNumber  = paged.PageNumber,
+                TotalPages  = paged.TotalPages,
+                PageSize    = paged.PageSize,
+                Recherche   = recherche
+            };
+
+            return View(vm);
         }
 
         private string GenerateCodeFromLibelle(string libelle)

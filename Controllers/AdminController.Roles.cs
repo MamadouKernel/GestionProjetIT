@@ -1,4 +1,5 @@
 using GestionProjects.Application.Common.Extensions;
+using GestionProjects.Application.ViewModels.Admin;
 using GestionProjects.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -39,8 +40,8 @@ namespace GestionProjects.Controllers
             ViewBag.SelectedDirectionId = directionId;
             ViewBag.SelectedRole        = role;
 
-            ViewBag.AllRoles   = Enum.GetValues(typeof(RoleUtilisateur)).Cast<RoleUtilisateur>().ToList();
-            ViewBag.Directions = await _db.Directions
+            var allRoles   = Enum.GetValues(typeof(RoleUtilisateur)).Cast<RoleUtilisateur>().ToList();
+            var directions = await _db.Directions
                 .Where(d => !d.EstSupprime && d.EstActive)
                 .OrderBy(d => d.Libelle)
                 .ToListAsync();
@@ -49,11 +50,30 @@ namespace GestionProjects.Controllers
                 .Include(u => u.UtilisateurRoles)
                 .Where(u => !u.EstSupprime)
                 .ToListAsync();
-            ViewBag.RoleCounts = Enum.GetValues(typeof(RoleUtilisateur))
+            var roleCounts = Enum.GetValues(typeof(RoleUtilisateur))
                 .Cast<RoleUtilisateur>()
                 .ToDictionary(r => r, r => allUsers.Count(u => u.GetRolesActifs().Contains(r)));
 
-            return View(paged.Items);
+            ViewBag.AllRoles   = allRoles;
+            ViewBag.Directions = directions;
+            ViewBag.RoleCounts = roleCounts;
+
+            var vm = new RolesListViewModel
+            {
+                Users               = paged.Items,
+                Directions          = directions,
+                AllRoles            = allRoles,
+                RoleCounts          = roleCounts,
+                TotalCount          = paged.TotalCount,
+                PageNumber          = paged.PageNumber,
+                TotalPages          = paged.TotalPages,
+                PageSize            = paged.PageSize,
+                Recherche           = recherche,
+                SelectedDirectionId = directionId,
+                SelectedRole        = role
+            };
+
+            return View(vm);
         }
 
         public async Task<IActionResult> GererRoles(Guid id)

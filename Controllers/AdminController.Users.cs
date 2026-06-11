@@ -1,5 +1,6 @@
 using GestionProjects.Application.Common.Extensions;
 using GestionProjects.Application.Common.Helpers;
+using GestionProjects.Application.ViewModels.Admin;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -46,13 +47,29 @@ namespace GestionProjects.Controllers
             ViewBag.SelectedDirectionId = directionId;
             ViewBag.SelectedRole        = role;
 
-            ViewBag.Directions = await _db.Directions
+            var directions = await _db.Directions
                 .Where(d => !d.EstSupprime && d.EstActive)
                 .OrderBy(d => d.Libelle)
                 .ToListAsync();
-            ViewBag.AllRoles = Enum.GetValues(typeof(RoleUtilisateur)).Cast<RoleUtilisateur>().ToList();
+            var allRoles = Enum.GetValues(typeof(RoleUtilisateur)).Cast<RoleUtilisateur>().ToList();
+            ViewBag.Directions = directions;
+            ViewBag.AllRoles = allRoles;
 
-            return View(pagedResult.Items);
+            var vm = new UsersListViewModel
+            {
+                Users               = pagedResult.Items,
+                Directions          = directions,
+                AllRoles            = allRoles,
+                TotalCount          = pagedResult.TotalCount,
+                PageNumber          = pagedResult.PageNumber,
+                TotalPages          = pagedResult.TotalPages,
+                PageSize            = pagedResult.PageSize,
+                Recherche           = recherche,
+                SelectedDirectionId = directionId,
+                SelectedRole        = role
+            };
+
+            return View(vm);
         }
 
         [HttpGet]

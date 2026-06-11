@@ -1,9 +1,9 @@
-@model IEnumerable<GestionProjects.Domain.Models.Service>
+@model GestionProjects.Application.ViewModels.Admin.ServicesListViewModel
 
 @{
     ViewData["Title"] = "Gestion des Services";
-    var directions = ViewBag.Directions as IEnumerable<GestionProjects.Domain.Models.Direction> ?? Enumerable.Empty<GestionProjects.Domain.Models.Direction>();
-    var activeCount = Model.Count(s => !s.EstSupprime && s.EstActive);
+    var directions  = Model.Directions;
+    var activeCount = Model.Services.Count(s => !s.EstSupprime && s.EstActive);
 }
 
 <div class="fade-in admin-page">
@@ -16,7 +16,7 @@
                     Structurez les services rattachés aux directions métier et gardez un référentiel propre pour les affectations.
                 </p>
                 <div class="page-hero-meta">
-                    <span class="badge-modern badge-modern-info">@Model.Count() service(s)</span>
+                    <span class="badge-modern badge-modern-info">@Model.Services.Count() service(s)</span>
                     <span class="badge-modern badge-modern-success">@activeCount actif(s)</span>
                 </div>
             </div>
@@ -55,7 +55,7 @@
             </div>
         </div>
 
-        @if (Model.Any(s => !s.EstSupprime))
+        @if (Model.Services.Any(s => !s.EstSupprime))
         {
             <div class="card-body-modern p-0">
                 <div class="table-responsive">
@@ -70,7 +70,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var service in Model.Where(s => !s.EstSupprime))
+                            @foreach (var service in Model.Services.Where(s => !s.EstSupprime))
                             {
                                 <tr>
                                     <td class="table-code">@service.Code</td>

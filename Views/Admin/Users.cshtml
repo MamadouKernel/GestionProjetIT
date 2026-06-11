@@ -1,21 +1,21 @@
-@model IEnumerable<GestionProjects.Domain.Models.Utilisateur>
+@model GestionProjects.Application.ViewModels.Admin.UsersListViewModel
 @using GestionProjects.Domain.Enums
 @using GestionProjects.Domain.Models
 
 @{
     ViewData["Title"] = "Gestion des Utilisateurs";
 
-    var directions        = ViewBag.Directions as IEnumerable<Direction> ?? Enumerable.Empty<Direction>();
-    var allRoles          = ViewBag.AllRoles as IEnumerable<RoleUtilisateur> ?? Enum.GetValues(typeof(RoleUtilisateur)).Cast<RoleUtilisateur>();
-    var totalCount        = ViewBag.TotalCount as int? ?? Model.Count();
-    var adminCount        = Model.Count(u => u.GetRolesActifs().Contains(RoleUtilisateur.AdminIT));
-    var chefProjetCount   = Model.Count(u => u.GetRolesActifs().Contains(RoleUtilisateur.ChefDeProjet));
-    var sansDirectionCount = Model.Count(u => u.Direction == null);
-    var recherche         = ViewBag.Recherche as string ?? string.Empty;
-    var selectedDir       = ViewBag.SelectedDirectionId as Guid?;
-    var selectedRole      = ViewBag.SelectedRole as RoleUtilisateur?;
-    var pageSize          = ViewBag.PageSize as int? ?? 5;
-    var filtreActif       = !string.IsNullOrWhiteSpace(recherche) || selectedDir.HasValue || selectedRole.HasValue;
+    var directions         = Model.Directions;
+    var allRoles           = Model.AllRoles;
+    var totalCount         = Model.TotalCount;
+    var adminCount         = Model.Users.Count(u => u.GetRolesActifs().Contains(RoleUtilisateur.AdminIT));
+    var chefProjetCount    = Model.Users.Count(u => u.GetRolesActifs().Contains(RoleUtilisateur.ChefDeProjet));
+    var sansDirectionCount = Model.Users.Count(u => u.Direction == null);
+    var recherche          = Model.Recherche ?? string.Empty;
+    var selectedDir        = Model.SelectedDirectionId;
+    var selectedRole       = Model.SelectedRole;
+    var pageSize           = Model.PageSize;
+    var filtreActif        = !string.IsNullOrWhiteSpace(recherche) || selectedDir.HasValue || selectedRole.HasValue;
 }
 
 <div class="fade-in admin-page">
@@ -163,7 +163,7 @@
                 <span class="badge-modern badge-modern-info">@totalCount entrée(s)</span>
             </div>
         </div>
-        @if (Model.Any())
+        @if (Model.Users.Any())
         {
             <div class="card-body-modern p-0">
                 <div class="table-responsive">
@@ -179,7 +179,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var user in Model)
+                            @foreach (var user in Model.Users)
                             {
                                 var rolesActifs = user.GetRolesActifs().ToList();
                                 <tr>

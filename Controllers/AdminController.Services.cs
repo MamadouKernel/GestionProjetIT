@@ -1,4 +1,5 @@
 using GestionProjects.Application.Common.Extensions;
+using GestionProjects.Application.ViewModels.Admin;
 using GestionProjects.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -33,12 +34,25 @@ namespace GestionProjects.Controllers
             ViewBag.Recherche   = recherche;
             ViewBag.SelectedDirectionId = directionId;
 
-            ViewBag.Directions = await _db.Directions
+            var directions = await _db.Directions
                 .Where(d => !d.EstSupprime && d.EstActive)
                 .OrderBy(d => d.Libelle)
                 .ToListAsync();
+            ViewBag.Directions = directions;
 
-            return View(paged.Items);
+            var vm = new ServicesListViewModel
+            {
+                Services            = paged.Items,
+                Directions          = directions,
+                TotalCount          = paged.TotalCount,
+                PageNumber          = paged.PageNumber,
+                TotalPages          = paged.TotalPages,
+                PageSize            = paged.PageSize,
+                Recherche           = recherche,
+                SelectedDirectionId = directionId
+            };
+
+            return View(vm);
         }
 
         private async Task<string> GenerateServiceCodeAsync(string libelle, Guid? directionId)

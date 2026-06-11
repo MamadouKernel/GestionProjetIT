@@ -1,4 +1,5 @@
-@model IEnumerable<GestionProjects.Domain.Models.Direction>
+@model GestionProjects.Application.ViewModels.Admin.DirectionsListViewModel
+@using GestionProjects.Domain.Models
 
 @{
     ViewData["Title"] = "Gestion des Directions";
@@ -14,7 +15,7 @@
                     Gérez les directions métier, leurs responsables et leur statut d'activation.
                 </p>
                 <div class="page-hero-meta">
-                    <span class="badge-modern badge-modern-info">@Model.Count(d => !d.EstSupprime) direction(s)</span>
+                    <span class="badge-modern badge-modern-info">@Model.Directions.Count(d => !d.EstSupprime) direction(s)</span>
                 </div>
             </div>
         </div>
@@ -36,11 +37,11 @@
                     <i class="bi bi-building"></i>
                     Référentiel des directions
                 </h3>
-                <span class="badge-modern badge-modern-info">@Model.Count(d => !d.EstSupprime) active(s)</span>
+                <span class="badge-modern badge-modern-info">@Model.Directions.Count(d => !d.EstSupprime) active(s)</span>
             </div>
         </div>
 
-        @if (Model.Any(d => !d.EstSupprime))
+        @if (Model.Directions.Any(d => !d.EstSupprime))
         {
             <div class="card-body-modern p-0">
                 <div class="table-responsive">
@@ -55,7 +56,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var direction in Model.Where(d => !d.EstSupprime))
+                            @foreach (var direction in Model.Directions.Where(d => !d.EstSupprime))
                             {
                                 <tr>
                                     <td class="table-code">@direction.Code</td>
@@ -164,19 +165,11 @@
                             <label class="form-label-modern">Responsable de la direction</label>
                             <select name="DSIId" id="dsiId" class="form-control-modern">
                                 <option value="">-- Non assigné --</option>
-                                @if (ViewBag.DSIs != null)
+                                @if (Model.DSIs.Any())
                                 {
-                                    var utilisateurs = ViewBag.DSIs as IEnumerable<GestionProjects.Domain.Models.Utilisateur>;
-                                    @if (utilisateurs != null && utilisateurs.Any())
+                                    @foreach (var utilisateur in Model.DSIs)
                                     {
-                                        @foreach (var utilisateur in utilisateurs)
-                                        {
-                                            <option value="@utilisateur.Id">@utilisateur.Nom @utilisateur.Prenoms</option>
-                                        }
-                                    }
-                                    else
-                                    {
-                                        <option value="" disabled>Aucun utilisateur disponible</option>
+                                        <option value="@utilisateur.Id">@utilisateur.Nom @utilisateur.Prenoms</option>
                                     }
                                 }
                                 else
