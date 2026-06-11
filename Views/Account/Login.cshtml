@@ -1,0 +1,375 @@
+﻿@model GestionProjects.Application.ViewModels.LoginViewModel
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment WebHostEnvironment
+@{
+    ViewData["Title"] = "Connexion";
+    Layout = null;
+    var cspNonce = Context.Items["CspNonce"] as string ?? string.Empty;
+
+    var tenantId = Configuration["AzureAd:TenantId"];
+    var clientId = Configuration["AzureAd:ClientId"];
+    var clientSecret = Configuration["AzureAd:ClientSecret"];
+    var azureConfigured =
+        !string.IsNullOrWhiteSpace(tenantId) &&
+        !string.IsNullOrWhiteSpace(clientId) &&
+        !string.IsNullOrWhiteSpace(clientSecret) &&
+        !tenantId.Contains("PLACEHOLDER", StringComparison.OrdinalIgnoreCase) &&
+        !clientId.Contains("PLACEHOLDER", StringComparison.OrdinalIgnoreCase) &&
+        !clientSecret.Contains("PLACEHOLDER", StringComparison.OrdinalIgnoreCase);
+
+    bool? localLoginOverride = null;
+    if (bool.TryParse(Configuration["Authentication:AllowLocalLogin"], out var parsedLocalLogin))
+    {
+        localLoginOverride = parsedLocalLogin;
+    }
+
+    var allowLocalLogin = localLoginOverride ?? (WebHostEnvironment.IsDevelopment() || !azureConfigured);
+
+    // Le bouton Microsoft est toujours affiché si AllowMicrosoftLogin=true,
+    // mais désactivé (grisé) si Azure AD n'est pas encore configuré.
+    var microsoftLoginEnabled = false;
+    if (bool.TryParse(Configuration["Authentication:AllowMicrosoftLogin"], out var parsedMicrosoftLogin))
+    {
+        microsoftLoginEnabled = parsedMicrosoftLogin;
+    }
+    var allowMicrosoftLogin = microsoftLoginEnabled; // affiche la section même sans config Azure
+    var microsoftLoginReady = azureConfigured;       // true seulement si les secrets sont renseignés
+
+    var defaultLoginMode = (Configuration["Authentication:DefaultLoginMode"] ?? string.Empty).Trim().ToLowerInvariant();
+    var requestedMode = Context.Request.Query["mode"].ToString().Trim().ToLowerInvariant();
+    var hasChoice = allowLocalLogin && allowMicrosoftLogin;  // affiche les onglets si les deux sont activés
+    var selectedMode = requestedMode;
+
+    if (selectedMode != "local" && selectedMode != "microsoft")
+    {
+        selectedMode = defaultLoginMode is "local" or "microsoft"
+            ? defaultLoginMode
+            : (allowLocalLogin ? "local" : "microsoft");
+    }
+
+    if (!allowLocalLogin && selectedMode == "local")
+    {
+        selectedMode = "microsoft";
+    }
+
+    if (!allowMicrosoftLogin && selectedMode == "microsoft")
+    {
+        selectedMode = "local";
+    }
+}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Connexion - Z&eacute;&iuml;nab</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="auth-premium-page" data-controller="Account" data-action="Login" data-page-title="Connexion">
+    <section class="auth-premium-left">
+        <div class="auth-premium-blob is-one"></div>
+        <div class="auth-premium-blob is-two"></div>
+
+        <div class="auth-premium-brand">
+            <img src="~/images/logo_cit.jpeg" alt="C&ocirc;te d'Ivoire Terminal" />
+        </div>
+
+        <div class="auth-premium-copy">
+            <h1>Z&eacute;&iuml;nab</h1>
+            <p>
+                Plateforme unifiée de pilotage du portefeuille, des validations métier et des livrables
+                de C&ocirc;te d'Ivoire Terminal.
+            </p>
+        </div>
+
+        <div class="auth-premium-feature-list">
+            <article class="auth-premium-feature">
+                <div class="auth-premium-feature-icon is-blue">
+                    <i class="bi bi-kanban-fill"></i>
+                </div>
+                <div>
+                    <strong>Cycle projet complet</strong>
+                    <span>Demande, cadrage, exécution, UAT, clôture et leçons apprises.</span>
+                </div>
+            </article>
+            <article class="auth-premium-feature">
+                <div class="auth-premium-feature-icon is-gold">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <div>
+                    <strong>Gouvernance maîtrisée</strong>
+                    <span>Workflow DM, DSI, délégations, validation de charte et clôture.</span>
+                </div>
+            </article>
+            <article class="auth-premium-feature">
+                <div class="auth-premium-feature-icon is-blue">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <div>
+                    <strong>Cockpit portefeuille</strong>
+                    <span>Charges, budget, alertes, capacité et suivi transverse DSI.</span>
+                </div>
+            </article>
+        </div>
+
+        <div class="auth-premium-footer">
+            <span>&copy; @DateTime.Now.Year C&ocirc;te d'Ivoire Terminal</span>
+            <span>Direction des Systèmes d'Information</span>
+        </div>
+    </section>
+
+    <section class="auth-premium-right">
+        <div class="auth-premium-panel">
+            <div class="auth-premium-header">
+                <div class="auth-premium-brand-fallback">
+                    <div class="auth-premium-brand-fallback-icon">ZE</div>
+                    <div class="auth-premium-brand-fallback-copy">
+                        <strong>Z&eacute;&iuml;nab</strong>
+                        <span>CIT · Portefeuille IT</span>
+                    </div>
+                </div>
+                <h2 class="auth-premium-title">Connexion</h2>
+                <p class="auth-premium-subtitle">Accédez à votre espace de pilotage et de validation.</p>
+            </div>
+
+            @if (TempData["Success"] != null)
+            {
+                <div class="auth-premium-alert is-success">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span>@TempData["Success"]</span>
+                </div>
+            }
+            @if (TempData["Info"] != null)
+            {
+                <div class="auth-premium-alert is-info">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <span>@TempData["Info"]</span>
+                </div>
+            }
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="auth-premium-alert is-danger">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <div>
+                        @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            if (!string.IsNullOrWhiteSpace(err.ErrorMessage))
+                            {
+                                <div>@err.ErrorMessage</div>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (hasChoice)
+            {
+                <div class="auth-account-choice" role="tablist" aria-label="Choix du type de compte">
+                    <button type="button"
+                            class="auth-account-choice-btn @(selectedMode == "local" ? "is-active" : string.Empty)"
+                            data-auth-mode-target="local"
+                            aria-pressed="@(selectedMode == "local")">
+                        <i class="bi bi-person-badge"></i>
+                        <span>Compte local CIT</span>
+                    </button>
+                    <button type="button"
+                            class="auth-account-choice-btn @(selectedMode == "microsoft" ? "is-active" : string.Empty)"
+                            data-auth-mode-target="microsoft"
+                            aria-pressed="@(selectedMode == "microsoft")">
+                        <i class="bi bi-microsoft"></i>
+                        <span>Compte Microsoft</span>
+                    </button>
+                </div>
+
+                <p class="auth-account-choice-copy">Choisissez le type de compte que vous voulez utiliser.</p>
+            }
+
+            @if (allowLocalLogin)
+            {
+                <section class="auth-login-mode @(selectedMode == "local" ? "is-active" : string.Empty)" data-auth-mode-panel="local">
+                    <div class="auth-premium-method-card">
+                        <div class="auth-premium-method-icon is-blue">
+                            <i class="bi bi-person-vcard-fill"></i>
+                        </div>
+                        <div class="auth-premium-method-copy">
+                            <strong>Connexion locale CIT</strong>
+                            <span>Utilisez votre matricule et votre mot de passe interne si vous avez déjà un compte applicatif.</span>
+                        </div>
+                    </div>
+
+                    <form asp-action="Login" method="post" autocomplete="on" novalidate class="auth-premium-form">
+                        @Html.AntiForgeryToken()
+                        @if (!string.IsNullOrEmpty(Model.ReturnUrl))
+                        {
+                            <input type="hidden" asp-for="ReturnUrl" />
+                        }
+
+                        <div class="auth-premium-field">
+                            <label class="form-label-modern" for="matricule">Matricule</label>
+                            <div class="auth-premium-input-wrap">
+                                <i class="bi bi-person auth-premium-field-icon"></i>
+                                <input asp-for="Matricule"
+                                       id="matricule"
+                                       type="text"
+                                       placeholder="Votre matricule CIT"
+                                       autocomplete="username"
+                                       class="form-control-modern @((ViewData.ModelState["Matricule"]?.Errors.Any() ?? false) ? "input-validation-error" : string.Empty)" />
+                            </div>
+                        </div>
+
+                        <div class="auth-premium-field">
+                            <label class="form-label-modern" for="motdepasse">Mot de passe</label>
+                            <div class="auth-premium-input-wrap">
+                                <i class="bi bi-lock auth-premium-field-icon"></i>
+                                <input asp-for="MotDePasse"
+                                       id="motdepasse"
+                                       type="password"
+                                       placeholder="Votre mot de passe"
+                                       autocomplete="current-password"
+                                       class="form-control-modern" />
+                                <button type="button" class="auth-premium-toggle" data-toggle-password tabindex="-1" aria-label="Afficher le mot de passe">
+                                    <i class="bi bi-eye" id="eyeIcon"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="auth-premium-submit">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            <span>Se connecter</span>
+                        </button>
+                    </form>
+                </section>
+            }
+
+            @if (allowMicrosoftLogin)
+            {
+                <section class="auth-login-mode @(selectedMode == "microsoft" ? "is-active" : string.Empty)" data-auth-mode-panel="microsoft">
+                    <div class="auth-premium-method-card">
+                        <div class="auth-premium-method-icon is-gold">
+                            <i class="bi bi-microsoft"></i>
+                        </div>
+                        <div class="auth-premium-method-copy">
+                            <strong>Connexion Microsoft (Azure AD)</strong>
+                            <span>Utilisez votre compte Microsoft professionnel pour un accès fédéré et sécurisé.</span>
+                        </div>
+                    </div>
+
+                    @if (microsoftLoginReady)
+                    {
+                        <a href="@Url.Action("LoginMicrosoft", "Account", new { returnUrl = Model.ReturnUrl })" class="auth-premium-ms">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 21 21" aria-hidden="true">
+                                <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+                                <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+                                <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+                                <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+                            </svg>
+                            <span>Se connecter avec Microsoft (Azure AD)</span>
+                        </a>
+                    }
+                    else
+                    {
+                        <button type="button" class="auth-premium-ms is-disabled" disabled aria-disabled="true" title="La connexion Microsoft sera disponible prochainement.">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 21 21" aria-hidden="true" style="opacity:.45">
+                                <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+                                <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+                                <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+                                <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+                            </svg>
+                            <span>Se connecter avec Microsoft (Azure AD)</span>
+                        </button>
+                        <p class="auth-premium-ms-pending">
+                            <i class="bi bi-info-circle"></i>
+                            La connexion Microsoft sera activée prochainement. Utilisez votre compte local CIT pour l'instant.
+                        </p>
+                    }
+                </section>
+            }
+
+            @if (!allowLocalLogin && !allowMicrosoftLogin)
+            {
+                <div class="auth-premium-alert is-danger">
+                    <i class="bi bi-exclamation-octagon-fill"></i>
+                    <span>Aucun mode de connexion n'est disponible sur cet environnement. Activez la connexion locale CIT ou configurez Azure AD.</span>
+                </div>
+            }
+
+            <div class="auth-premium-signup">
+                <p class="auth-premium-signup-label">Pas encore de compte ?</p>
+                <div class="auth-premium-signup-grid">
+                    <a class="auth-premium-signup-card" asp-action="Inscription" asp-controller="Account">
+                        <div class="auth-premium-feature-icon is-blue">
+                            <i class="bi bi-person-plus-fill"></i>
+                        </div>
+                        <strong>S'inscrire</strong>
+                        <span>Créer votre compte employé CIT.</span>
+                    </a>
+                    <a class="auth-premium-signup-card" asp-action="DemandeAcces" asp-controller="Account">
+                        <div class="auth-premium-feature-icon is-gold">
+                            <i class="bi bi-envelope-check-fill"></i>
+                        </div>
+                        <strong>Demander l'accès</strong>
+                        <span>Déclarer un utilisateur non référencé.</span>
+                    </a>
+                </div>
+            </div>
+
+            <p class="auth-premium-note">
+                Réservée aux employés de C&ocirc;te d'Ivoire Terminal. Pour toute assistance, contactez la DSI.
+            </p>
+        </div>
+    </section>
+
+    <script nonce="@cspNonce">
+        function togglePwd() {
+            const input = document.getElementById('motdepasse');
+            const icon = document.getElementById('eyeIcon');
+            if (!input || !icon) {
+                return;
+            }
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'bi bi-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'bi bi-eye';
+            }
+        }
+
+        const passwordToggle = document.querySelector('[data-toggle-password]');
+        if (passwordToggle) {
+            passwordToggle.addEventListener('click', togglePwd);
+        }
+
+        const modeButtons = Array.from(document.querySelectorAll('[data-auth-mode-target]'));
+        const modePanels = Array.from(document.querySelectorAll('[data-auth-mode-panel]'));
+
+        function activateAuthMode(mode) {
+            modeButtons.forEach(button => {
+                const isActive = button.getAttribute('data-auth-mode-target') === mode;
+                button.classList.toggle('is-active', isActive);
+                button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            });
+
+            modePanels.forEach(panel => {
+                const isActive = panel.getAttribute('data-auth-mode-panel') === mode;
+                panel.classList.toggle('is-active', isActive);
+            });
+
+            const url = new URL(window.location.href);
+            url.searchParams.set('mode', mode);
+            window.history.replaceState({}, '', url);
+        }
+
+        modeButtons.forEach(button => {
+            button.addEventListener('click', () => activateAuthMode(button.getAttribute('data-auth-mode-target')));
+        });
+    </script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+</body>
+</html>
+
+

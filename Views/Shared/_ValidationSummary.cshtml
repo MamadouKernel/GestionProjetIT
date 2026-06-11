@@ -1,0 +1,22 @@
+@if (!ViewData.ModelState.IsValid && ViewData.ModelState.Values.Any(v => v.Errors.Any()))
+{
+    <div class="alert alert-danger alert-dismissible fade show alert-modern" role="alert" style="border-radius: var(--radius-lg); border-left: 4px solid var(--danger);">
+        <strong style="display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-md);">
+            <i class="bi bi-exclamation-triangle-fill"></i> Erreurs de validation
+        </strong>
+        <ul class="mb-0 mt-2" style="list-style: none; padding-left: 0;">
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                if (!string.IsNullOrWhiteSpace(error.ErrorMessage))
+                {
+                    <li style="padding: var(--spacing-xs) 0; display: flex; align-items: start; gap: var(--spacing-xs);">
+                        <i class="bi bi-dot" style="color: var(--danger); font-size: 1.2rem; line-height: 1;"></i>
+                        <span>@error.ErrorMessage</span>
+                    </li>
+                }
+            }
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="opacity: 0.7;"></button>
+    </div>
+}
+

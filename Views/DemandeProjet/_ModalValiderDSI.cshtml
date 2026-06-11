@@ -1,0 +1,60 @@
+@model GestionProjects.Domain.Models.DemandeProjet
+
+@{
+    var chefsProjet = ViewBag.ChefsProjet as IEnumerable<GestionProjects.Domain.Models.Utilisateur> ?? new List<GestionProjects.Domain.Models.Utilisateur>();
+}
+
+<div class="modal fade" id="validerDSIModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content app-modal-content">
+            <form asp-action="ValiderDSI" asp-route-id="@Model.Id" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header app-modal-header is-success">
+                    <h5 class="modal-title app-modal-title">
+                        <i class="bi bi-check-circle-fill"></i>
+                        Valider la demande et crÃ©er le projet
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body app-modal-body">
+                    <div class="alert-modern alert-modern-info document-alert-tight">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <div>
+                            <strong>Important :</strong> La validation crÃ©era automatiquement un nouveau projet avec le code gÃ©nÃ©rÃ©. Vous pouvez assigner un Chef de Projet maintenant ou plus tard.
+                        </div>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">
+                            <i class="bi bi-person-badge"></i> Chef de Projet (optionnel)
+                        </label>
+                        <select name="chefProjetId" class="form-control-modern">
+                            <option value="">-- Non assignÃ© (peut Ãªtre assignÃ© plus tard) --</option>
+                            @foreach (var cp in chefsProjet)
+                            {
+                                <option value="@cp.Id">@cp.Nom @cp.Prenoms</option>
+                            }
+                        </select>
+                        <small class="app-modal-note">
+                            <i class="bi bi-info-circle"></i>
+                            <text>Vous pouvez assigner un Chef de Projet maintenant ou plus tard. Les profils Chef de Projet et les dÃ©lÃ©gations actives disponibles sont proposÃ©s ici.</text>
+                        </small>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Commentaire (optionnel)</label>
+                        <textarea name="commentaire" class="form-control-modern" rows="4" placeholder="Ajoutez un commentaire si nÃ©cessaire..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer app-modal-footer">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-success">
+                        <i class="bi bi-check-circle"></i>
+                        Valider et crÃ©er le projet
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

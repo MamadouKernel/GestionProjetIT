@@ -1,0 +1,296 @@
+@model GestionProjects.Domain.Models.Projet
+@inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
+
+@{
+    ViewData["Title"] = $"Projet {Model.CodeProjet}";
+    var activeTab = ViewBag.ActiveTab ?? "synthese";
+    var isReadOnly = ViewBag.IsReadOnly as bool? ?? false;
+    var isDemandeurProject = ViewBag.IsDemandeurProject as bool? ?? false;
+    var canAccessCharges = ViewBag.CanAccessCharges as bool? ?? false;
+    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, Model, isReadOnly, isDemandeurProject);
+    var canShowDmReadOnlyBanner = isReadOnly && ui.HasProjectValidationAccess && !ui.IsProjectSponsor;
+}
+
+<div class="fade-in app-page">
+    @if (canShowDmReadOnlyBanner)
+    {
+        <div class="alert-modern alert-modern-info mb-4">
+            <i class="bi bi-info-circle-fill"></i>
+            <div>
+                <strong>Mode lecture seule</strong> - Ce projet appartient à votre direction mais vous n'en êtes pas le sponsor. Vous pouvez consulter les informations mais ne pouvez pas effectuer d'actions.
+            </div>
+        </div>
+    }
+    else if (isReadOnly && isDemandeurProject)
+    {
+        <div class="alert-modern alert-modern-info mb-4">
+            <i class="bi bi-info-circle-fill"></i>
+            <div>
+                <strong>Suivi demandeur</strong> - Vous consultez ce projet en lecture seule parce qu'il provient de votre demande. Vous pouvez suivre son état et participer à la validation de clôture quand elle vous est soumise.
+            </div>
+        </div>
+    }
+    
+    <!-- En-tête du projet -->
+    <div class="card-modern mb-4">
+        <div class="card-header-modern project-hero">
+            <div class="project-hero-main">
+                <h2 class="card-title-modern project-hero-title mb-0">
+                    <i class="bi bi-folder"></i>
+                    @Model.CodeProjet - @Model.Titre
+                    @if (canShowDmReadOnlyBanner)
+                    {
+                        <span class="badge-modern badge-modern-secondary">
+                            <i class="bi bi-eye"></i> Lecture seule
+                        </span>
+                    }
+                    else if (isReadOnly && isDemandeurProject)
+                    {
+                        <span class="badge-modern badge-modern-secondary">
+                            <i class="bi bi-eye"></i> Suivi demandeur
+                        </span>
+                    }
+                </h2>
+                <div class="page-hero-meta mt-2">
+                    <span class="badge-modern badge-modern-@GetPhaseClass(Model.PhaseActuelle)">@Model.PhaseWorkflowLabel</span>
+                    <span class="badge-modern badge-modern-@GetStatutClass(Model.StatutProjet)">@Model.StatutWorkflowLabel</span>
+                    <span class="badge-modern badge-modern-@GetRAGClass(Model.IndicateurRAG)" title="Indicateur RAG calculé automatiquement (Budget, Planning, Risques, Livrables)">
+                        RAG: @GetRAGLabel(Model.IndicateurRAG)
+                    </span>
+                    <span class="badge-modern badge-modern-@GetEtatClass(Model.EtatProjet)">@Model.EtatProjet</span>
+                </div>
+                @if (Model.DemandeProjet != null)
+                {
+                    <div class="page-hero-meta mt-2">
+                        <span class="soft-note" style="font-weight: 700;">
+                            Workflow demande initiale :
+                        </span>
+                        @if (Model.DemandeProjet.DateValidationDM.HasValue)
+                        {
+                            <span class="badge-modern badge-modern-success" title="Validation initiale Directeur Métier enregistrée sur la demande source.">
+                                <i class="bi bi-check-circle"></i>
+                                Demande initiale validée DM le @Model.DemandeProjet.DateValidationDM.Value.ToString("dd/MM/yyyy")
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge-modern badge-modern-warning" title="La validation initiale Directeur Métier n'est pas encore enregistrée sur la demande source.">
+                                <i class="bi bi-clock"></i>
+                                Demande initiale en attente DM
+                            </span>
+                        }
+                        @if (Model.DemandeProjet.DateValidationDSI.HasValue)
+                        {
+                            <span class="badge-modern badge-modern-success" title="Validation initiale DSI enregistrée sur la demande source.">
+                                <i class="bi bi-check-circle"></i>
+                                Demande initiale validée DSI le @Model.DemandeProjet.DateValidationDSI.Value.ToString("dd/MM/yyyy")
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge-modern badge-modern-warning" title="La validation initiale DSI n'est pas encore enregistrée sur la demande source.">
+                                <i class="bi bi-clock"></i>
+                                Demande initiale en attente DSI
+                            </span>
+                        }
+                    </div>
+                }
+            </div>
+            <div class="project-progress-panel">
+                <div class="project-progress-copy">
+                    <div class="project-progress-kicker">Avancement</div>
+                    <div class="project-progress-value">@Model.PourcentageAvancement%</div>
+                </div>
+                <div class="project-progress-ring">
+                    <svg width="100" height="100">
+                        <circle cx="50" cy="50" r="40" fill="none" stroke="var(--gray-200)" stroke-width="8"/>
+                        <circle cx="50" cy="50" r="40" fill="none" stroke="var(--primary-blue)" stroke-width="8"
+                                stroke-dasharray="@(2 * Math.PI * 40)" 
+                                stroke-dashoffset="@(2 * Math.PI * 40 * (1 - Model.PourcentageAvancement / 100.0))"
+                                stroke-linecap="round"/>
+                    </svg>
+                    <div class="project-progress-ring-value">
+                        @Model.PourcentageAvancement%
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation par onglets -->
+    <div class="card-modern mb-4">
+        <ul class="nav project-tabs">
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "synthese" ? "active" : "")" 
+                   href="@Url.Action("Details", new { id = Model.Id, tab = "synthese" })">
+                    <i class="bi bi-speedometer2"></i> Synthèse
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "analyse" ? "active" : "")" 
+                   href="@Url.Action("Details", new { id = Model.Id, tab = "analyse" })">
+                    <i class="bi bi-search"></i> Analyse
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "planification" ? "active" : "")" 
+                   href="@Url.Action("Details", new { id = Model.Id, tab = "planification" })">
+                    <i class="bi bi-calendar-check"></i> Planification
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "execution" ? "active" : "")" 
+                   href="@Url.Action("Details", new { id = Model.Id, tab = "execution" })">
+                    <i class="bi bi-play-circle"></i> Exécution
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "uat" ? "active" : "")" 
+                   href="@Url.Action("Details", new { id = Model.Id, tab = "uat" })">
+                    <i class="bi bi-check2-square"></i> UAT & MEP
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "collaboration" ? "active" : "")"
+                   href="@Url.Action("Details", new { id = Model.Id, tab = "collaboration" })">
+                    <i class="bi bi-people"></i> Collaboration
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "cloture" ? "active" : "")"
+                   href="@Url.Action("Details", new { id = Model.Id, tab = "cloture" })">
+                    <i class="bi bi-flag"></i> Clôture
+                </a>
+            </li>
+            @if (canAccessCharges && ui.CanOpenChargesTab)
+            {
+                <li class="nav-item">
+                    <a class="nav-link @(activeTab == "charges" ? "active" : "")" 
+                       href="@Url.Action("Charges", new { id = Model.Id })">
+                        <i class="bi bi-clock-history"></i> Charges
+                    </a>
+                </li>
+            }
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "historique" ? "active" : "")" 
+                   href="@Url.Action("Details", new { id = Model.Id, tab = "historique" })">
+                    <i class="bi bi-clock-history"></i> Historique
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Contenu des onglets -->
+    @if (activeTab == "synthese")
+    {
+        @await Html.PartialAsync("_ProjetSynthese", Model)
+    }
+    else if (activeTab == "analyse")
+    {
+        @await Html.PartialAsync("_ProjetAnalyse", Model)
+    }
+    else if (activeTab == "planification")
+    {
+        @await Html.PartialAsync("_ProjetPlanification", Model)
+    }
+    else if (activeTab == "execution")
+    {
+        @await Html.PartialAsync("_ProjetExecution", Model)
+    }
+    else if (activeTab == "uat")
+    {
+        @await Html.PartialAsync("_ProjetUAT", Model)
+    }
+    else if (activeTab == "collaboration")
+    {
+        @await Html.PartialAsync("_ProjetCollaboration", Model)
+    }
+    else if (activeTab == "cloture")
+    {
+        @await Html.PartialAsync("_ProjetCloture", Model)
+    }
+    else if (activeTab == "historique")
+    {
+        @await Html.PartialAsync("_ProjetHistorique", Model)
+    }
+
+    <div class="mt-4">
+        <a asp-action="Index" class="btn-modern btn-modern-secondary">
+            <i class="bi bi-arrow-left"></i>
+            Retour à la liste
+        </a>
+    </div>
+</div>
+
+<!-- Modales -->
+@if (ui.CanUseProjectModals)
+{
+    @await Html.PartialAsync("_UploadLivrableModal", Model)
+    @await Html.PartialAsync("_AjouterAnomalieModal", Model)
+    @await Html.PartialAsync("_AjouterRisqueModal", Model)
+    @await Html.PartialAsync("_AjouterMembreModal", Model)
+    @await Html.PartialAsync("_ModifierMembreModal", Model)
+    @await Html.PartialAsync("_ModifierRisqueModal", Model)
+}
+
+@functions {
+    string GetPhaseClass(GestionProjects.Domain.Enums.PhaseProjet phase)
+    {
+        return phase switch
+        {
+            GestionProjects.Domain.Enums.PhaseProjet.AnalyseClarification => "info",
+            GestionProjects.Domain.Enums.PhaseProjet.PlanificationValidation => "warning",
+            GestionProjects.Domain.Enums.PhaseProjet.ExecutionSuivi => "primary",
+            GestionProjects.Domain.Enums.PhaseProjet.UatMep => "success",
+            GestionProjects.Domain.Enums.PhaseProjet.ClotureLeconsApprises => "secondary",
+            _ => "secondary"
+        };
+    }
+
+    string GetStatutClass(GestionProjects.Domain.Enums.StatutProjet statut)
+    {
+        return statut switch
+        {
+            GestionProjects.Domain.Enums.StatutProjet.NonDemarre => "secondary",
+            GestionProjects.Domain.Enums.StatutProjet.EnCours => "info",
+            GestionProjects.Domain.Enums.StatutProjet.Suspendu => "warning",
+            GestionProjects.Domain.Enums.StatutProjet.ClotureEnCours => "info",
+            GestionProjects.Domain.Enums.StatutProjet.Cloture => "success",
+            GestionProjects.Domain.Enums.StatutProjet.Annule => "danger",
+            _ => "secondary"
+        };
+    }
+
+    string GetEtatClass(GestionProjects.Domain.Enums.EtatProjet etat)
+    {
+        return etat switch
+        {
+            GestionProjects.Domain.Enums.EtatProjet.Vert => "success",
+            GestionProjects.Domain.Enums.EtatProjet.Orange => "warning",
+            GestionProjects.Domain.Enums.EtatProjet.Rouge => "danger",
+            _ => "secondary"
+        };
+    }
+
+    string GetRAGClass(GestionProjects.Domain.Enums.IndicateurRAG rag)
+    {
+        return rag switch
+        {
+            GestionProjects.Domain.Enums.IndicateurRAG.Vert => "success",
+            GestionProjects.Domain.Enums.IndicateurRAG.Amber => "warning",
+            GestionProjects.Domain.Enums.IndicateurRAG.Rouge => "danger",
+            _ => "secondary"
+        };
+    }
+
+    string GetRAGLabel(GestionProjects.Domain.Enums.IndicateurRAG rag)
+    {
+        return rag switch
+        {
+            GestionProjects.Domain.Enums.IndicateurRAG.Vert => "🟢 Vert",
+            GestionProjects.Domain.Enums.IndicateurRAG.Amber => "🟡 Amber",
+            GestionProjects.Domain.Enums.IndicateurRAG.Rouge => "🔴 Rouge",
+            _ => "N/A"
+        };
+    }
+}

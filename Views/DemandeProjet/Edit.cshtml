@@ -1,0 +1,411 @@
+@model GestionProjects.Domain.Models.DemandeProjet
+@inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
+
+@{
+    ViewData["Title"] = "Modifier la Demande";
+    var isCorrection = Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier ||
+                       Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDemandeurParDSI;
+    var canValidateDemandeAsDm = await PermissionService.CurrentUserHasPermissionAsync("DemandeProjet", "ValiderDM");
+    var isDirecteurMetierEdit = canValidateDemandeAsDm &&
+                                (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.EnAttenteValidationDirecteurMetier ||
+                                 Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDirecteurMetierParDSI);
+    var autresSponsors = ViewBag.AutresSponsors as System.Collections.Generic.IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>;
+    var hasMembresCodir = ViewBag.HasMembresCodir as bool? ?? false;
+    var cahierPresent = Model.CahierChargesDocument != null || !string.IsNullOrEmpty(Model.CahierChargesPath);
+    var annexesExistantes = Model.DocumentsAnnexes.ToList();
+    var pageTitle = isDirecteurMetierEdit ? "Modifier avant validation" : (isCorrection ? "Corriger la demande" : "Modifier la demande");
+}
+
+<div class="phase-shell">
+    <section class="phase-hero">
+        <div class="phase-hero-top">
+            <div>
+                <div class="phase-eyebrow">
+                    <i class="bi bi-pencil-square"></i>
+                    Demande projet
+                </div>
+                <h2 class="phase-title">@pageTitle</h2>
+                <p class="phase-subtitle">
+                    Ajustez le contenu fonctionnel, les priorites et les pieces jointes tout en conservant le circuit de validation metier.
+                </p>
+            </div>
+            <div class="phase-action-row">
+                <span class="phase-chip is-info">
+                    <i class="bi bi-diagram-3"></i>
+                    @Model.StatutDemande
+                </span>
+                @if (Model.DateSoumission != default)
+                {
+                    <span class="phase-chip">
+                        <i class="bi bi-calendar3"></i>
+                        @Model.DateSoumission.ToString("dd/MM/yyyy")
+                    </span>
+                }
+            </div>
+        </div>
+    </section>
+
+    @if (isCorrection)
+    {
+        <section class="phase-note is-warning">
+            <div class="phase-strong">Correction demandee</div>
+            <p style="margin: .6rem 0 0;">
+                @(!string.IsNullOrWhiteSpace(Model.CommentaireDirecteurMetier) ? Model.CommentaireDirecteurMetier : Model.CommentaireDSI)
+            </p>
+        </section>
+    }
+    else if (isDirecteurMetierEdit)
+    {
+        <section class="phase-note is-info">
+            <div class="phase-strong">Modification avant validation</div>
+            <p style="margin: .6rem 0 0;">
+                Vous pouvez ajuster la demande avant de la valider, de la rejeter ou de demander une correction.
+            </p>
+        </section>
+    }
+
+    <form asp-action="Edit" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+
+        @await Html.PartialAsync("_ValidationSummary")
+
+        <div class="phase-grid">
+            <section class="phase-panel">
+                <h3 class="phase-panel-title">Informations generales</h3>
+
+                <div class="form-group-modern">
+                    <label asp-for="Titre" class="form-label-modern">Titre du projet *</label>
+                    <input asp-for="Titre" class="form-control-modern" required />
+                    <span asp-validation-for="Titre" class="text-danger"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="Description" class="form-label-modern">Description *</label>
+                    <textarea asp-for="Description" class="form-control-modern" rows="4" required></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="Contexte" class="form-label-modern">Contexte *</label>
+                    <textarea asp-for="Contexte" class="form-control-modern" rows="4" required></textarea>
+                    <span asp-validation-for="Contexte" class="text-danger"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="Objectifs" class="form-label-modern">Objectifs *</label>
+                    <textarea asp-for="Objectifs" class="form-control-modern" rows="4" required></textarea>
+                    <span asp-validation-for="Objectifs" class="text-danger"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="AvantagesAttendus" class="form-label-modern">Avantages attendus *</label>
+                    <textarea asp-for="AvantagesAttendus" class="form-control-modern" rows="3" required></textarea>
+                    <span asp-validation-for="AvantagesAttendus" class="text-danger"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="Perimetre" class="form-label-modern">Perimetre</label>
+                    <textarea asp-for="Perimetre" class="form-control-modern" rows="4" placeholder="Processus impactes, activites couvertes, utilisateurs concernes..."></textarea>
+                    <div class="soft-note">Decrivez le perimetre du projet : processus impactes, activites couvertes et population concernee.</div>
+                </div>
+            </section>
+
+            <section class="phase-panel">
+                <h3 class="phase-panel-title">Parametres & gouvernance</h3>
+
+                <div class="form-group-modern">
+                    <label asp-for="DirectionId" class="form-label-modern">Direction *</label>
+                    <select asp-for="DirectionId" id="DirectionId" class="form-control-modern" asp-items="ViewBag.Directions" required>
+                        <option value="">-- Selectionner --</option>
+                    </select>
+                    <span asp-validation-for="DirectionId" class="text-danger"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="DirecteurMetierId" class="form-label-modern">Directeur metier *</label>
+                    <select asp-for="DirecteurMetierId" id="DirecteurMetierId" class="form-control-modern" required>
+                        <option value="">-- Selectionner d'abord une direction --</option>
+                    </select>
+                    <span asp-validation-for="DirecteurMetierId" class="text-danger"></span>
+                    <div class="soft-note d-none" id="directeurMetierHelp">
+                        <i class="bi bi-info-circle"></i>
+                        Selectionnez une direction pour voir les directeurs metier disponibles.
+                    </div>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="AutreSponsorId" class="form-label-modern">Autre sponsor (CODIR)</label>
+                    <select asp-for="AutreSponsorId" class="form-control-modern" asp-items="autresSponsors">
+                        <option value="">-- Aucun autre sponsor --</option>
+                    </select>
+                    <span asp-validation-for="AutreSponsorId" class="text-danger"></span>
+                    @if (hasMembresCodir)
+                    {
+                        <div class="soft-note">Selectionnez, si besoin, un sponsor complementaire parmi les membres du CODIR.</div>
+                    }
+                    else
+                    {
+                        <div class="soft-note text-warning">Aucun membre CODIR n'est encore parametre dans l'administration.</div>
+                    }
+                </div>
+
+                <div class="form-group-modern">
+                    <label class="form-label-modern">Priorite *</label>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="Urgence" class="form-label-modern">Urgence</label>
+                            <select asp-for="Urgence" class="form-control-modern" asp-items="Html.GetEnumSelectList<GestionProjects.Domain.Enums.UrgenceProjet>()" required></select>
+                            <span asp-validation-for="Urgence" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Criticite" class="form-label-modern">Criticite</label>
+                            <select asp-for="Criticite" class="form-control-modern" asp-items="Html.GetEnumSelectList<GestionProjects.Domain.Enums.CriticiteProjet>()" required></select>
+                            <span asp-validation-for="Criticite" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="soft-note">La priorite du besoin est calculee a partir du couple urgence / criticite.</div>
+                    <div id="prioriteCalculeePreview" class="phase-note is-info mt-3">
+                        <div class="phase-strong">
+                            Priorite calculee
+                            <span id="prioriteCalculeeCode" class="badge-modern badge-modern-@Model.PrioriteBadgeClass ms-2">@Model.PrioriteCode</span>
+                        </div>
+                        <p id="prioriteCalculeeLibelle" style="margin: .6rem 0 0;">
+                            @Model.PrioriteLibelle (score @Model.PrioriteScore/7)
+                        </p>
+                    </div>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="DateMiseEnOeuvreSouhaitee" class="form-label-modern">Date de mise en oeuvre souhaitee</label>
+                    <input asp-for="DateMiseEnOeuvreSouhaitee" type="date" class="form-control-modern" />
+                </div>
+            </section>
+        </div>
+
+        <section class="phase-panel">
+            <div class="phase-section-header">
+                <div>
+                    <h3 class="phase-panel-title">Documents</h3>
+                    <div class="phase-record-meta">Cahier des charges obligatoire, annexes complementaires et lien vers le modele standard.</div>
+                </div>
+            </div>
+
+            @if (cahierPresent)
+            {
+                <article class="record-card">
+                    <div class="record-card-header">
+                        <div>
+                            <div class="record-card-title">Cahier des charges actuel</div>
+                            <div class="record-card-subtitle">Le fichier actuellement rattache a la demande reste consultable tant qu'il n'est pas remplace.</div>
+                        </div>
+                        <div class="record-card-actions">
+                            <a asp-controller="Document"
+                               asp-action="PreviewDemandeCahier"
+                               asp-route-demandeId="@Model.Id"
+                               target="_blank"
+                               class="btn-modern btn-modern-primary"
+                               title="Visualiser">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </div>
+                    </div>
+                </article>
+            }
+
+            <div class="phase-grid">
+                <section class="phase-panel">
+                    <div class="phase-section-header">
+                        <div>
+                            <h4 class="phase-panel-title">@(!cahierPresent ? "Cahier des charges" : "Nouveau cahier des charges")</h4>
+                            <div class="phase-record-meta">Formats acceptes : PDF, DOC, DOCX.</div>
+                        </div>
+                        <a href="~/templates/Modele_Cahier_Charges_Projet_IT.docx" class="btn-modern btn-modern-secondary">
+                            <i class="bi bi-download"></i>
+                            Template
+                        </a>
+                    </div>
+
+                    @if (!cahierPresent)
+                    {
+                        <input type="file" name="cahierCharges" class="form-control-modern" accept=".pdf,.doc,.docx" required />
+                    }
+                    else
+                    {
+                        <input type="file" name="cahierCharges" class="form-control-modern" accept=".pdf,.doc,.docx" />
+                    }
+
+                    @Html.ValidationMessage("cahierCharges", "", new { @class = "text-danger d-block mt-2" })
+                    <div class="soft-note mt-2">Le cahier des charges reste obligatoire. Deposez un nouveau fichier uniquement pour le remplacer.</div>
+                </section>
+
+                <section class="phase-panel">
+                    <h4 class="phase-panel-title">Annexes</h4>
+                    @if (annexesExistantes.Any())
+                    {
+                        <div class="record-card-note">
+                            <strong>Annexes existantes :</strong><br />
+                            @annexesExistantes.Count fichier(s) deja rattache(s) a la demande.
+                        </div>
+                    }
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">@(annexesExistantes.Any() ? "Nouvelles annexes" : "Annexes")</label>
+                        <input type="file" name="annexes" class="form-control-modern" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png" />
+                    </div>
+                </section>
+            </div>
+        </section>
+
+        <div class="phase-action-row">
+            <button type="submit" class="btn-modern btn-modern-primary">
+                <i class="bi bi-save"></i>
+                @(isDirecteurMetierEdit ? "Enregistrer les modifications" : (isCorrection ? "Enregistrer les corrections" : "Enregistrer"))
+            </button>
+            <a asp-action="Details" asp-route-id="@Model.Id" class="btn-modern btn-modern-secondary">
+                <i class="bi bi-x-circle"></i>
+                Annuler
+            </a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script type="text/javascript">
+        (function() {
+            const directionSelect = document.getElementById('DirectionId');
+            const directeurMetierSelect = document.getElementById('DirecteurMetierId');
+            const directeurMetierHelp = document.getElementById('directeurMetierHelp');
+
+            if (!directionSelect || !directeurMetierSelect) return;
+
+            const currentDirecteurMetierId = directeurMetierSelect.value;
+
+            function showHelp(visible) {
+                if (!directeurMetierHelp) return;
+                directeurMetierHelp.classList.toggle('d-none', !visible);
+            }
+
+            function loadDirecteursMetier(directionId, selectedId) {
+                if (!directionId) {
+                    directeurMetierSelect.innerHTML = '<option value="">-- Selectionner d\\'abord une direction --</option>';
+                    directeurMetierSelect.disabled = true;
+                    showHelp(true);
+                    return;
+                }
+
+                showHelp(false);
+                directeurMetierSelect.innerHTML = '<option value="">-- Chargement... --</option>';
+                directeurMetierSelect.disabled = true;
+
+                fetch(`/DemandeProjet/GetDirecteursMetierByDirection?directionId=${directionId}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Erreur lors du chargement des directeurs metier');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        directeurMetierSelect.innerHTML = '<option value="">-- Selectionner --</option>';
+
+                        if (data && data.length > 0) {
+                            let defaultDirecteurId = null;
+
+                            data.forEach(function(dm) {
+                                const option = document.createElement('option');
+                                option.value = dm.id;
+                                option.textContent = dm.text;
+
+                                if (dm.isDefault) {
+                                    defaultDirecteurId = dm.id;
+                                }
+
+                                if (selectedId && dm.id === selectedId) {
+                                    option.selected = true;
+                                }
+
+                                directeurMetierSelect.appendChild(option);
+                            });
+
+                            if (!selectedId && defaultDirecteurId) {
+                                directeurMetierSelect.value = defaultDirecteurId;
+                            }
+
+                            directeurMetierSelect.disabled = false;
+                        } else {
+                            directeurMetierSelect.innerHTML = '<option value="">-- Aucun directeur metier trouve pour cette direction --</option>';
+                            directeurMetierSelect.disabled = true;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erreur:', error);
+                        directeurMetierSelect.innerHTML = '<option value="">-- Erreur lors du chargement --</option>';
+                        directeurMetierSelect.disabled = true;
+                    });
+            }
+
+            directionSelect.addEventListener('change', function() {
+                loadDirecteursMetier(this.value, null);
+            });
+
+            if (directionSelect.value) {
+                loadDirecteursMetier(directionSelect.value, currentDirecteurMetierId);
+            } else {
+                showHelp(true);
+            }
+        })();
+    </script>
+    <script type="text/javascript">
+        (function() {
+            const urgenceSelect = document.getElementById('Urgence');
+            const criticiteSelect = document.getElementById('Criticite');
+            const prioriteCode = document.getElementById('prioriteCalculeeCode');
+            const prioriteLibelle = document.getElementById('prioriteCalculeeLibelle');
+
+            if (!urgenceSelect || !criticiteSelect || !prioriteCode || !prioriteLibelle) {
+                return;
+            }
+
+            function getPrioriteInfo(score) {
+                switch (score) {
+                    case 7:
+                        return { code: 'P1', label: 'Critique', badge: 'danger' };
+                    case 6:
+                        return { code: 'P2', label: 'Tres elevee', badge: 'warning' };
+                    case 5:
+                        return { code: 'P3', label: 'Elevee', badge: 'info' };
+                    case 4:
+                        return { code: 'P4', label: 'Moderee', badge: 'secondary' };
+                    case 3:
+                        return { code: 'P5', label: 'Faible', badge: 'secondary' };
+                    default:
+                        return { code: 'P6', label: 'Planifiee', badge: 'secondary' };
+                }
+            }
+
+            function updatePrioritePreview() {
+                const urgence = parseInt(urgenceSelect.value || '0', 10);
+                const criticite = parseInt(criticiteSelect.value || '0', 10);
+
+                if (!urgence || !criticite) {
+                    prioriteCode.textContent = '-';
+                    prioriteCode.className = 'badge-modern badge-modern-secondary';
+                    prioriteLibelle.textContent = "Selectionnez l'urgence et la criticite pour calculer la priorite.";
+                    return;
+                }
+
+                const score = urgence + criticite;
+                const priorite = getPrioriteInfo(score);
+
+                prioriteCode.textContent = priorite.code;
+                prioriteCode.className = 'badge-modern badge-modern-' + priorite.badge;
+                prioriteLibelle.textContent = priorite.label + ' (score ' + score + '/7)';
+            }
+
+            urgenceSelect.addEventListener('change', updatePrioritePreview);
+            criticiteSelect.addEventListener('change', updatePrioritePreview);
+            updatePrioritePreview();
+        })();
+    </script>
+}

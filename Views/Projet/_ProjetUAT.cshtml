@@ -1,0 +1,455 @@
+@using Microsoft.AspNetCore.Html
+@using System.Net
+@using GestionProjects.Domain.Enums
+@using GestionProjects.Domain.Models
+@model GestionProjects.Domain.Models.Projet
+@inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
+
+@functions {
+    private static IHtmlContent RenderHelpPopover(string title, string purpose, string guidance)
+    {
+        var encodedTitle = WebUtility.HtmlEncode(title);
+        var encodedPurpose = WebUtility.HtmlEncode(purpose);
+        var encodedGuidance = WebUtility.HtmlEncode(guidance);
+
+        return new HtmlString($@"
+<div class=""form-help"">
+    <button type=""button"" class=""form-help-trigger"" aria-label=""Aide : {encodedTitle}"">
+        <i class=""bi bi-info-circle""></i>
+    </button>
+    <div class=""form-help-popover"" role=""tooltip"">
+        <strong>{encodedTitle}</strong>
+        <div class=""form-help-popover-section"">
+            <span>À quoi sert ce bloc ?</span>
+            <p>{encodedPurpose}</p>
+        </div>
+        <div class=""form-help-popover-section"">
+            <span>Comment le renseigner ?</span>
+            <p>{encodedGuidance}</p>
+        </div>
+    </div>
+</div>");
+    }
+}
+
+@{
+    var isReadOnly = ViewBag.IsReadOnly as bool? ?? false;
+    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, Model, isReadOnly);
+    var fiche = Model.FicheProjet ?? new FicheProjet();
+    var livrablesUat = Model.Livrables?.Where(l => l.Phase == PhaseProjet.UatMep && !l.EstSupprime).ToList() ?? new List<LivrableProjet>();
+    var canEditUat = ui.CanEditUat && Model.PhaseActuelle == PhaseProjet.UatMep;
+    var canValiderRecette = ui.CanValidateRecette && Model.PhaseActuelle == PhaseProjet.UatMep && !Model.RecetteValidee;
+    var casTests = ViewBag.CasTests as List<CasTestProjet> ?? new List<CasTestProjet>();
+    var campagnes = ViewBag.Campagnes as List<CampagneTestProjet> ?? new List<CampagneTestProjet>();
+    var totalCas = casTests.Count;
+    var executions = casTests.SelectMany(c => c.Executions ?? Enumerable.Empty<ExecutionTestProjet>()).ToList();
+    var casReussis = executions.Count(e => e.Statut == StatutExecutionTest.Reussie);
+    var casEchec = executions.Count(e => e.Statut == StatutExecutionTest.EnEchec);
+    var pvRecettePresent = livrablesUat.Any(l => l.TypeLivrable == TypeLivrable.PvRecette);
+}
+
+<div class="phase-shell">
+    <section class="phase-hero">
+        <div class="phase-hero-top">
+            <div>
+                <div class="phase-eyebrow">
+                    <i class="bi bi-shield-check"></i>
+                    UAT / MEP
+                </div>
+                <h3 class="phase-title">Recette, mise en production et hypercare</h3>
+                <p class="phase-subtitle">
+                    La phase consolide les campagnes de test, la validation métier, la préparation MEP et le suivi post-déploiement avant ouverture de la clôture.
+                </p>
+            </div>
+            <div class="phase-action-row">
+                <span class="phase-chip @(Model.RecetteValidee ? "is-success" : "is-warning")">
+                    <i class="bi bi-check2-circle"></i>
+                    @(Model.RecetteValidee ? "Recette validée" : "Recette en attente")
+                </span>
+                <span class="phase-chip @(Model.MepEffectuee ? "is-success" : "is-info")">
+                    <i class="bi bi-rocket-takeoff"></i>
+                    @(Model.MepEffectuee ? "MEP effectuée" : "MEP à préparer")
+                </span>
+                <span class="phase-chip @(fiche.HypercareTermine ? "is-success" : "is-warning")">
+                    <i class="bi bi-heart-pulse"></i>
+                    @(fiche.HypercareTermine ? "Hypercare terminé" : "Hypercare en cours")
+                </span>
+            </div>
+        </div>
+    </section>
+
+    <div class="phase-grid phase-grid-3">
+        <article class="phase-panel">
+            <h4 class="phase-panel-title">Pilotage UAT</h4>
+            <div class="phase-summary-list">
+                <div class="phase-summary-item"><span>Début recette</span><strong>@(fiche.DateDebutRecette?.ToString("dd/MM/yyyy") ?? "Non défini")</strong></div>
+                <div class="phase-summary-item"><span>Fin recette</span><strong>@(fiche.DateFinRecette?.ToString("dd/MM/yyyy") ?? "Non définie")</strong></div>
+                <div class="phase-summary-item"><span>Testeurs</span><strong>@(string.IsNullOrWhiteSpace(fiche.UtilisateursTesteurs) ? "Non renseignés" : fiche.UtilisateursTesteurs)</strong></div>
+                <div class="phase-summary-item"><span>Périmètre</span><strong>@(string.IsNullOrWhiteSpace(fiche.PerimetreTeste) ? "Non renseigné" : fiche.PerimetreTeste)</strong></div>
+            </div>
+        </article>
+        <article class="phase-panel">
+            <h4 class="phase-panel-title">Qualite & validation</h4>
+            <div class="phase-summary-list">
+                <div class="phase-summary-item"><span>Campagnes</span><strong>@campagnes.Count</strong></div>
+                <div class="phase-summary-item"><span>Cas de test</span><strong>@totalCas</strong></div>
+                <div class="phase-summary-item"><span>Reussis / echec</span><strong>@casReussis / @casEchec</strong></div>
+                <div class="phase-summary-item"><span>PV recette signé</span><strong>@(pvRecettePresent ? "Oui" : "Non")</strong></div>
+            </div>
+        </article>
+        <article class="phase-panel">
+            <h4 class="phase-panel-title">Preparation MEP</h4>
+            <div class="phase-summary-list">
+                <div class="phase-summary-item"><span>Date MEP prévue</span><strong>@(fiche.DateMepPrevue?.ToString("dd/MM/yyyy") ?? "Non définie")</strong></div>
+                <div class="phase-summary-item"><span>Date MEP réelle</span><strong>@(Model.DateMep?.ToString("dd/MM/yyyy") ?? "Non renseignée")</strong></div>
+                <div class="phase-summary-item"><span>Change</span><strong>@(fiche.ChangeRequis ? $"Oui - {fiche.ReferenceChange}" : "Non requis")</strong></div>
+                <div class="phase-summary-item"><span>Hypercare</span><strong>@(string.IsNullOrWhiteSpace(fiche.StatutHypercare) ? "À définir" : fiche.StatutHypercare)</strong></div>
+            </div>
+        </article>
+    </div>
+
+    @if (canEditUat)
+    {
+        <form asp-action="UpdateUat" method="post" class="phase-shell">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+
+            <div class="phase-grid">
+                <section class="phase-panel">
+                    <div class="form-help-title-row">
+                        <h4 class="phase-panel-title">Preparation UAT</h4>
+                        @RenderHelpPopover(
+                            "Préparation UAT",
+                            "Ce bloc définit le périmètre, les dates et les testeurs de la recette métier.",
+                            "Renseignez les dates de recette, les utilisateurs testeurs et le périmètre exact à valider par le métier.")
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Date début recette</label>
+                        <input name="DateDebutRecette" type="date" class="form-control-modern" value="@(fiche.DateDebutRecette?.ToString("yyyy-MM-dd") ?? string.Empty)" />
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Date fin recette</label>
+                        <input name="DateFinRecette" type="date" class="form-control-modern" value="@(fiche.DateFinRecette?.ToString("yyyy-MM-dd") ?? string.Empty)" />
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Utilisateurs testeurs</label>
+                        <textarea name="UtilisateursTesteurs" class="form-control-modern" rows="3">@fiche.UtilisateursTesteurs</textarea>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Périmètre testé</label>
+                        <textarea name="PerimetreTeste" class="form-control-modern" rows="3">@fiche.PerimetreTeste</textarea>
+                    </div>
+                </section>
+
+                <section class="phase-panel">
+                    <div class="form-help-title-row">
+                        <h4 class="phase-panel-title">Preparation MEP</h4>
+                        @RenderHelpPopover(
+                            "Préparation MEP",
+                            "Ce bloc cadre la mise en production : date cible, prérequis, plan de déploiement et repli.",
+                            "Renseignez la date MEP prévue, les prérequis, le plan de déploiement et le plan de rollback avant tout passage en production.")
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Date MEP prévue</label>
+                        <input name="DateMepPrevue" type="date" class="form-control-modern" value="@(fiche.DateMepPrevue?.ToString("yyyy-MM-dd") ?? string.Empty)" />
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Prerequis</label>
+                        <textarea name="PrerequisMep" class="form-control-modern" rows="3">@fiche.PrerequisMep</textarea>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Plan de MEP</label>
+                        <textarea name="PlanMep" class="form-control-modern" rows="3">@fiche.PlanMep</textarea>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Plan de rollback</label>
+                        <textarea name="PlanRollback" class="form-control-modern" rows="3">@fiche.PlanRollback</textarea>
+                    </div>
+                </section>
+
+                <section class="phase-panel">
+                    <div class="form-help-title-row">
+                        <h4 class="phase-panel-title">Change, MEP et incidents</h4>
+                        @RenderHelpPopover(
+                            "Change, MEP et incidents",
+                            "Ce bloc sert à tracer le change, l'exécution réelle de la MEP et les incidents rencontrés.",
+                            "Indiquez si un change est requis, sa référence, la date réelle de MEP, puis décrivez le résultat et les incidents rencontrés.")
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="changeRequis" name="ChangeRequis" value="true" @(fiche.ChangeRequis ? "checked" : string.Empty) />
+                        <label class="form-check-label" for="changeRequis">Change requis</label>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Reference change</label>
+                        <input name="ReferenceChange" class="form-control-modern" value="@fiche.ReferenceChange" />
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Statut validation change</label>
+                        <input name="StatutValidationChange" class="form-control-modern" value="@fiche.StatutValidationChange" />
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="mepEffectuee" name="mepEffectuee" value="true" @(Model.MepEffectuee ? "checked" : string.Empty) />
+                        <label class="form-check-label" for="mepEffectuee">MEP effectuée</label>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Date MEP réelle</label>
+                        <input name="dateMepReelle" type="date" class="form-control-modern" value="@(Model.DateMep?.ToString("yyyy-MM-dd") ?? string.Empty)" />
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Resultat MEP</label>
+                        <textarea name="ResultatMep" class="form-control-modern" rows="2">@fiche.ResultatMep</textarea>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Incidents rencontres</label>
+                        <textarea name="IncidentsMep" class="form-control-modern" rows="2">@fiche.IncidentsMep</textarea>
+                    </div>
+                </section>
+
+                <section class="phase-panel">
+                    <div class="form-help-title-row">
+                        <h4 class="phase-panel-title">Hypercare</h4>
+                        @RenderHelpPopover(
+                            "Hypercare",
+                            "Ce bloc sert à décrire la période de surveillance renforcée après la mise en production.",
+                            "Précisez la période, les incidents post-MEP, le statut de stabilisation et cochez la fin d'hypercare quand le RUN est stabilisé.")
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Periode hypercare</label>
+                        <input name="PeriodeHypercare" class="form-control-modern" value="@fiche.PeriodeHypercare" />
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Incidents post-MEP</label>
+                        <textarea name="IncidentsPostMep" class="form-control-modern" rows="3">@fiche.IncidentsPostMep</textarea>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Statut hypercare</label>
+                        <input name="StatutHypercare" class="form-control-modern" value="@fiche.StatutHypercare" />
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="hypercareTermine" name="HypercareTermine" value="true" @(fiche.HypercareTermine ? "checked" : string.Empty) />
+                        <label class="form-check-label" for="hypercareTermine">Hypercare termine</label>
+                    </div>
+                </section>
+            </div>
+
+            <div class="phase-action-row">
+                <button type="submit" class="btn-modern btn-modern-primary">
+                    <i class="bi bi-save"></i>
+                    Enregistrer UAT / MEP
+                </button>
+            </div>
+        </form>
+    }
+    else
+    {
+        <div class="phase-grid">
+            <section class="phase-panel">
+                <h4 class="phase-panel-title">Recette</h4>
+                <div class="record-card-note">
+                    <strong>Testeurs :</strong><br />
+                    @(string.IsNullOrWhiteSpace(fiche.UtilisateursTesteurs) ? "Non renseignés" : fiche.UtilisateursTesteurs)
+                </div>
+                <div class="record-card-note">
+                    <strong>Périmètre testé :</strong><br />
+                    @(string.IsNullOrWhiteSpace(fiche.PerimetreTeste) ? "Non renseigné" : fiche.PerimetreTeste)
+                </div>
+            </section>
+            <section class="phase-panel">
+                <h4 class="phase-panel-title">MEP & hypercare</h4>
+                <div class="record-card-note">
+                    <strong>Plan MEP :</strong><br />
+                    @(string.IsNullOrWhiteSpace(fiche.PlanMep) ? "Non renseigné" : fiche.PlanMep)
+                </div>
+                <div class="record-card-note">
+                    <strong>Incidents post-MEP :</strong><br />
+                    @(string.IsNullOrWhiteSpace(fiche.IncidentsPostMep) ? "Aucun incident renseigné" : fiche.IncidentsPostMep)
+                </div>
+            </section>
+        </div>
+    }
+
+    <div class="phase-grid">
+        <section class="phase-panel">
+            <div class="phase-section-header">
+                <div>
+                    <div class="form-help-title-row">
+                        <h4 class="phase-panel-title">Validation recette</h4>
+                        @RenderHelpPopover(
+                            "Validation recette",
+                            "Ce bloc sert au feu vert métier final sur la recette avant d'autoriser la MEP puis la clôture.",
+                            "Le Directeur Métier valide ici seulement quand la recette est terminée et que le PV de recette signé est disponible.")
+                    </div>
+                    <div class="phase-record-meta">Décision métier et preuve de recette signée.</div>
+                </div>
+                <span class="phase-chip @(Model.RecetteValidee ? "is-success" : "is-warning")">
+                    @(Model.RecetteValidee ? "Validée" : "En attente")
+                </span>
+            </div>
+            <div class="phase-summary-list">
+                <div class="phase-summary-item"><span>PV recette signé</span><strong>@(pvRecettePresent ? "Oui" : "Non")</strong></div>
+                <div class="phase-summary-item"><span>Validateur métier</span><strong>@(Model.RecetteValideePar != null ? $"{Model.RecetteValideePar.Nom} {Model.RecetteValideePar.Prenoms}" : "Non renseigné")</strong></div>
+            </div>
+            @if (canValiderRecette)
+            {
+                <div class="phase-action-row">
+                    <form asp-action="ValiderRecette" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <button type="submit" class="btn-modern btn-modern-success">
+                            <i class="bi bi-check-circle"></i>
+                            Valider la recette
+                        </button>
+                    </form>
+                </div>
+            }
+        </section>
+
+        <section class="phase-panel">
+            <h4 class="phase-panel-title">Cahier de tests & campagnes</h4>
+            <div class="phase-summary-list">
+                <div class="phase-summary-item"><span>Campagnes</span><strong>@campagnes.Count</strong></div>
+                <div class="phase-summary-item"><span>Cas de test</span><strong>@totalCas</strong></div>
+                <div class="phase-summary-item"><span>Cas reussis</span><strong>@casReussis</strong></div>
+                <div class="phase-summary-item"><span>Cas en echec</span><strong>@casEchec</strong></div>
+            </div>
+        </section>
+    </div>
+
+    <section class="phase-panel">
+        <div class="phase-section-header">
+            <div>
+                <div class="form-help-title-row">
+                    <h4 class="phase-panel-title">Livrables UAT & MEP</h4>
+                    @RenderHelpPopover(
+                        "Livrables UAT & MEP",
+                        "Ce bloc regroupe les preuves documentaires de la recette, de la mise en production et de l'hypercare.",
+                        "Déposez ici les PV, dossiers de MEP, plans de rollback finalisés, rapports d'hypercare et autres pièces de preuve.")
+                </div>
+                <div class="phase-record-meta">PV recette, dossier MEP, rollback, hypercare et pièces de validation.</div>
+            </div>
+            @if (canEditUat)
+            {
+                <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#uploadLivrableModal" data-phase="UatMep">
+                    <i class="bi bi-upload"></i>
+                    Ajouter
+                </button>
+            }
+        </div>
+
+        @if (livrablesUat.Any())
+        {
+            <div class="record-stack">
+                @foreach (var livrable in livrablesUat)
+                {
+                    <article class="record-card">
+                        <div class="record-card-header">
+                            <div>
+                                <div class="record-card-title">@livrable.NomDocument</div>
+                                <div class="record-card-subtitle">@livrable.TypeLivrable - @livrable.DateDepot.ToString("dd/MM/yyyy")</div>
+                            </div>
+                            <div class="record-card-actions">
+                                <a asp-controller="Document" asp-action="PreviewProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@livrable.Id" target="_blank" class="btn-modern btn-modern-primary" title="Visualiser">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a asp-controller="Document" asp-action="StreamProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@livrable.Id" asp-route-download="true" class="btn-modern btn-modern-secondary" title="Télécharger">
+                                    <i class="bi bi-download"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="phase-empty">
+                <i class="bi bi-inbox"></i>
+                <p>Aucun livrable UAT / MEP pour le moment.</p>
+            </div>
+        }
+    </section>
+
+    @await Html.PartialAsync("_ProjetCasTests", Model)
+
+    <section class="phase-panel">
+        <div class="phase-section-header">
+            <div>
+                <div class="form-help-title-row">
+                    <h4 class="phase-panel-title">Feuille d'anomalies</h4>
+                    @RenderHelpPopover(
+                        "Feuille d'anomalies",
+                        "Ce bloc suit les anomalies ouvertes pendant les tests, la recette ou l'hypercare.",
+                        "Ajoutez une anomalie par défaut fonctionnel ou technique, avec priorité, statut et responsable, puis mettez-la à jour jusqu'à résolution.")
+                </div>
+                <div class="phase-record-meta">@((Model.Anomalies?.Count ?? 0)) anomalie(s) suivie(s) sur la phase.</div>
+            </div>
+            @if (canEditUat)
+            {
+                <button type="button" class="btn-modern btn-modern-warning" data-bs-toggle="modal" data-bs-target="#ajouterAnomalieModal">
+                    <i class="bi bi-plus-circle"></i>
+                    Ajouter
+                </button>
+            }
+        </div>
+
+        @if (Model.Anomalies != null && Model.Anomalies.Any())
+        {
+            <div class="record-stack">
+                @foreach (var anomalie in Model.Anomalies)
+                {
+                    <article class="record-card" style="border-left: 4px solid @GetAnomalieColor(anomalie.Priorite);">
+                        <div class="record-card-header">
+                            <div>
+                                <div class="record-card-title">@anomalie.Reference - @anomalie.Description</div>
+                                <div class="record-card-subtitle">Priorité : @anomalie.Priorite - Statut : @anomalie.Statut - Responsable : @anomalie.AssigneeA</div>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="phase-empty">
+                <i class="bi bi-check-circle"></i>
+                <p>Aucune anomalie signalée.</p>
+            </div>
+        }
+    </section>
+
+    @if (canEditUat)
+    {
+        <section class="phase-note is-success">
+            <div class="phase-section-header">
+                <div>
+                    <div class="phase-strong">Prêt pour la clôture</div>
+                    <p style="margin: .6rem 0 0;">
+                        Le passage en clôture vérifie la recette, la MEP, l'hypercare et la présence des livrables obligatoires.
+                    </p>
+                </div>
+                <form asp-action="FinUAT" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <button type="submit" class="btn-modern btn-modern-success" data-confirm-submit="Passer le projet en phase Clôture ?">
+                        <i class="bi bi-arrow-right-circle"></i>
+                        Ouvrir la clôture
+                    </button>
+                </form>
+            </div>
+        </section>
+    }
+</div>
+
+@functions {
+    string GetAnomalieColor(PrioriteAnomalie priorite)
+    {
+        return priorite switch
+        {
+            PrioriteAnomalie.Critique => "var(--danger)",
+            PrioriteAnomalie.Haute => "var(--warning)",
+            PrioriteAnomalie.Moyenne => "var(--info)",
+            PrioriteAnomalie.Basse => "var(--gray-400)",
+            _ => "var(--gray-400)"
+        };
+    }
+}

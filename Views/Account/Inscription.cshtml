@@ -1,0 +1,389 @@
+﻿@{
+    ViewData["Title"] = "Inscription";
+    Layout = null;
+    var directions = ViewBag.Directions as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var cspNonce = Context.Items["CspNonce"] as string ?? string.Empty;
+}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inscription - Z&eacute;&iuml;nab</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+</head>
+<body data-controller="Account" data-action="Inscription" data-page-title="Inscription">
+    <div class="auth-shell">
+        <section class="auth-visual">
+            <div class="auth-orb auth-orb-blue"></div>
+            <div class="auth-orb auth-orb-gold"></div>
+
+            <div class="auth-brand-card">
+                <div class="auth-brand-badge">ZE</div>
+                <div class="auth-brand-copy">
+                    <span class="auth-brand-title">Z&eacute;&iuml;nab</span>
+                    <span class="auth-brand-caption">DSI Côte d'Ivoire Terminal</span>
+                </div>
+            </div>
+
+            <span class="auth-side-kicker">
+                <i class="bi bi-person-vcard"></i>
+                Création de compte
+            </span>
+            <h1 class="auth-side-title">Un parcours d'inscription guide, lisible et fiable.</h1>
+            <p class="auth-side-copy">
+                Renseignez votre identité, votre organisation et votre directeur métier.
+                Le circuit de validation reste tracé jusqu'à la création finale du compte.
+            </p>
+
+            <div class="auth-feature-list">
+                <div class="auth-feature-item">
+                    <div class="auth-feature-icon"><i class="bi bi-signpost-split"></i></div>
+                    <div>
+                        <span class="auth-feature-title">Parcours en 3 étapes</span>
+                        <span class="auth-feature-copy">Le formulaire avance par blocs simples sans surcharge visuelle.</span>
+                    </div>
+                </div>
+                <div class="auth-feature-item">
+                    <div class="auth-feature-icon"><i class="bi bi-building"></i></div>
+                    <div>
+                        <span class="auth-feature-title">Rattachement organisationnel</span>
+                        <span class="auth-feature-copy">Direction, service et directeur métier sont reliés avant soumission.</span>
+                    </div>
+                </div>
+                <div class="auth-feature-item">
+                    <div class="auth-feature-icon"><i class="bi bi-envelope-check"></i></div>
+                    <div>
+                        <span class="auth-feature-title">Validation tracée</span>
+                        <span class="auth-feature-copy">La demande part ensuite vers le workflow de création de compte.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="auth-panel">
+            <div class="auth-card auth-card-wide">
+                <div class="auth-card-header">
+                    <div>
+                        <div class="auth-step-meta" id="stepSub">Étape 1 sur 3 - Identité</div>
+                        <h1 class="auth-card-title" id="stepTitle">Vos informations personnelles</h1>
+                        <p class="auth-card-subtitle">
+                            Commencez par votre identité, puis rattachez-vous à la bonne direction avant la soumission.
+                        </p>
+                    </div>
+                    <div class="auth-card-badge">
+                        <i class="bi bi-person-plus-fill"></i>
+                    </div>
+                </div>
+
+                <div class="auth-step-rail">
+                    <div class="auth-step-pill active" id="dot1"></div>
+                    <div class="auth-step-pill" id="dot2"></div>
+                    <div class="auth-step-pill" id="dot3"></div>
+                </div>
+
+                @if (TempData["Error"] != null)
+                {
+                    <div class="auth-alert auth-alert-danger">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <div>@TempData["Error"]</div>
+                    </div>
+                }
+
+                <form method="post" asp-action="Inscription" asp-controller="Account" id="inscriptionForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="serviceLibelle" id="serviceLibelleHidden" />
+
+                    <div class="auth-step step active" id="step1">
+                        <div class="auth-form-grid">
+                            <div class="form-group-modern">
+                                <label class="form-label-modern">Nom <span class="text-danger">*</span></label>
+                                <input type="text" name="nom" id="fNom" class="form-control-modern" placeholder="NOM" required maxlength="100" />
+                            </div>
+                            <div class="form-group-modern">
+                                <label class="form-label-modern">Prénom(s) <span class="text-danger">*</span></label>
+                                <input type="text" name="prenoms" id="fPrenoms" class="form-control-modern" placeholder="Prénom(s)" required maxlength="100" />
+                            </div>
+                            <div class="form-group-modern auth-form-grid-full">
+                                <label class="form-label-modern">Adresse email professionnelle <span class="text-danger">*</span></label>
+                                <input type="email" name="email" id="fEmail" class="form-control-modern" placeholder="prenom.nom@cit.ci" required maxlength="200" />
+                                <small class="text-muted">Cette adresse servira d'identifiant de connexion.</small>
+                            </div>
+                        </div>
+
+                        <div class="auth-actions auth-actions-end">
+                            <button type="button" class="btn-modern btn-modern-primary" data-go-step="2">
+                                Suivant
+                                <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="auth-step step" id="step2">
+                        <div class="auth-form-grid">
+                            <div class="form-group-modern auth-form-grid-full">
+                                <label class="form-label-modern">Direction <span class="text-danger">*</span></label>
+                                <select name="directionId" id="fDirection" class="form-control-modern" required>
+                                    <option value="">Sélectionnez votre direction</option>
+                                    @foreach (var d in directions)
+                                    {
+                                        <option value="@d.Id">@d.Libelle</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="form-group-modern">
+                                <label class="form-label-modern">Service / Département</label>
+                                <select id="fService" class="form-control-modern">
+                                    <option value="">Sélectionnez d'abord votre direction</option>
+                                </select>
+                            </div>
+                            <div class="form-group-modern">
+                                <label class="form-label-modern">Directeur Métier <span class="text-danger">*</span></label>
+                                <select name="directeurMetierId" id="fDM" class="form-control-modern" required>
+                                    <option value="">Sélectionnez d'abord votre direction</option>
+                                </select>
+                                <small class="text-muted">Votre directeur métier recevra une demande de validation.</small>
+                            </div>
+                        </div>
+
+                        <div class="auth-actions">
+                            <button type="button" class="btn-modern btn-modern-secondary" data-go-step="1">
+                                <i class="bi bi-arrow-left"></i>
+                                Précédent
+                            </button>
+                            <button type="button" class="btn-modern btn-modern-primary" data-go-step="3">
+                                Suivant
+                                <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="auth-step step" id="step3">
+                        <div class="auth-alert auth-alert-info">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <div>
+                                Vérifiez les informations ci-dessous avant d'envoyer la demande.
+                                Une fois soumise, elle suivra le circuit de validation interne.
+                            </div>
+                        </div>
+
+                        <div class="auth-meta-list" id="recapBox">
+                            <div class="auth-meta-item">
+                                <span class="auth-meta-label">Nom</span>
+                                <span class="auth-meta-value" id="rNom">-</span>
+                            </div>
+                            <div class="auth-meta-item">
+                                <span class="auth-meta-label">Prénom(s)</span>
+                                <span class="auth-meta-value" id="rPrenoms">-</span>
+                            </div>
+                            <div class="auth-meta-item">
+                                <span class="auth-meta-label">Email</span>
+                                <span class="auth-meta-value" id="rEmail">-</span>
+                            </div>
+                            <div class="auth-meta-item">
+                                <span class="auth-meta-label">Direction</span>
+                                <span class="auth-meta-value" id="rDirection">-</span>
+                            </div>
+                            <div class="auth-meta-item">
+                                <span class="auth-meta-label">Service</span>
+                                <span class="auth-meta-value" id="rService">-</span>
+                            </div>
+                            <div class="auth-meta-item">
+                                <span class="auth-meta-label">Directeur Métier</span>
+                                <span class="auth-meta-value" id="rDM">-</span>
+                            </div>
+                        </div>
+
+                        <div class="auth-alert auth-alert-warning mt-3">
+                            <i class="bi bi-send-check-fill"></i>
+                            <div>
+                                Après soumission, votre Directeur Métier recevra un email et devra valider votre demande
+                                avant la création finale du compte.
+                            </div>
+                        </div>
+
+                        <div class="auth-actions">
+                            <button type="button" class="btn-modern btn-modern-secondary" data-go-step="2">
+                                <i class="bi bi-arrow-left"></i>
+                                Précédent
+                            </button>
+                            <button type="submit" class="btn-modern btn-modern-primary">
+                                <i class="bi bi-send-fill"></i>
+                                Soumettre ma demande
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="auth-link-row">
+                    <a href="@Url.Action("Login", "Account")">Retour à la connexion</a>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script nonce="@cspNonce">
+        const steps = {
+            1: { title: 'Vos informations personnelles', sub: 'Étape 1 sur 3 - Identité' },
+            2: { title: 'Direction et Directeur Métier', sub: 'Étape 2 sur 3 - Organisation' },
+            3: { title: 'Récapitulatif', sub: 'Étape 3 sur 3 - Vérification' }
+        };
+
+        function goStep(n) {
+            if (n > 1 && !validateStep(n - 1)) return;
+            if (n === 3) fillRecap();
+
+            document.querySelectorAll('.auth-step').forEach(s => s.classList.remove('active'));
+            document.getElementById('step' + n).classList.add('active');
+
+            for (let i = 1; i <= 3; i++) {
+                const dot = document.getElementById('dot' + i);
+                dot.classList.remove('active', 'done');
+                if (i < n) {
+                    dot.classList.add('done');
+                } else if (i === n) {
+                    dot.classList.add('active');
+                }
+            }
+
+            document.getElementById('stepTitle').textContent = steps[n].title;
+            document.getElementById('stepSub').textContent = steps[n].sub;
+        }
+
+        function validateStep(n) {
+            if (n === 1) {
+                const stepOneFields = [
+                    document.getElementById('fNom'),
+                    document.getElementById('fPrenoms'),
+                    document.getElementById('fEmail')
+                ];
+
+                for (const field of stepOneFields) {
+                    if (field && !field.reportValidity()) {
+                        field.focus();
+                        return false;
+                    }
+                }
+
+                const eml = document.getElementById('fEmail').value.trim();
+                const emailPattern = new RegExp('^[^\\s@@]+@@[^\\s@@]+\\.[^\\s@@]+$');
+                if (!emailPattern.test(eml)) {
+                    const emailField = document.getElementById('fEmail');
+                    emailField.setCustomValidity('Veuillez saisir une adresse email professionnelle valide.');
+                    emailField.reportValidity();
+                    emailField.focus();
+                    return false;
+                }
+
+                document.getElementById('fEmail').setCustomValidity('');
+            }
+            if (n === 2) {
+                const directionField = document.getElementById('fDirection');
+                const dmField = document.getElementById('fDM');
+
+                if (directionField && !directionField.reportValidity()) {
+                    directionField.focus();
+                    return false;
+                }
+
+                if (dmField && !dmField.reportValidity()) {
+                    dmField.focus();
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function fillRecap() {
+            document.getElementById('rNom').textContent = document.getElementById('fNom').value || '-';
+            document.getElementById('rPrenoms').textContent = document.getElementById('fPrenoms').value || '-';
+            document.getElementById('rEmail').textContent = document.getElementById('fEmail').value || '-';
+
+            const dirSel = document.getElementById('fDirection');
+            document.getElementById('rDirection').textContent = dirSel.options[dirSel.selectedIndex]?.text || '-';
+
+            const srvSel = document.getElementById('fService');
+            document.getElementById('rService').textContent = srvSel.options[srvSel.selectedIndex]?.text || '-';
+
+            const dmSel = document.getElementById('fDM');
+            document.getElementById('rDM').textContent = dmSel.options[dmSel.selectedIndex]?.text || '-';
+        }
+
+        function updateServiceHidden() {
+            const sel = document.getElementById('fService');
+            const opt = sel.options[sel.selectedIndex];
+            document.getElementById('serviceLibelleHidden').value = opt?.text && opt.value ? opt.text : '';
+        }
+
+        function loadServices() {
+            const dirId = document.getElementById('fDirection').value;
+            const sel = document.getElementById('fService');
+            sel.innerHTML = '<option value="">Chargement...</option>';
+            if (!dirId) {
+                sel.innerHTML = "<option value=\"\">Sélectionnez d'abord votre direction</option>";
+                updateServiceHidden();
+                return;
+            }
+
+            fetch('/Account/GetServicesByDirection?directionId=' + encodeURIComponent(dirId))
+                .then(r => r.json())
+                .then(data => {
+                    sel.innerHTML = '<option value="">Aucun / Non listé</option>';
+                    data.forEach(s => sel.innerHTML += `<option value="${s.id}">${s.libelle}</option>`);
+                    updateServiceHidden();
+                })
+                .catch(() => {
+                    sel.innerHTML = '<option value="">Impossible de charger les services</option>';
+                    updateServiceHidden();
+                });
+        }
+
+        function loadDMs() {
+            const dirId = document.getElementById('fDirection').value;
+            const sel = document.getElementById('fDM');
+            sel.innerHTML = '<option value="">Chargement...</option>';
+            if (!dirId) {
+                sel.innerHTML = "<option value=\"\">Sélectionnez d'abord votre direction</option>";
+                return;
+            }
+
+            fetch('/Account/GetDMsByDirection?directionId=' + encodeURIComponent(dirId))
+                .then(r => r.json())
+                .then(data => {
+                    if (data.length === 0) {
+                        sel.innerHTML = '<option value="">Aucun Directeur Métier trouvé pour cette direction</option>';
+                    } else {
+                        sel.innerHTML = '<option value="">Sélectionnez votre DM</option>';
+                        data.forEach(d => {
+                            const id = d.id ?? d.Id ?? '';
+                            const libelle = d.libelle ?? d.Libelle ?? '';
+                            sel.innerHTML += `<option value="${id}">${libelle}</option>`;
+                        });
+                    }
+                })
+                .catch(() => {
+                    sel.innerHTML = '<option value="">Impossible de charger les directeurs métier</option>';
+                });
+        }
+
+        document.querySelectorAll('[data-go-step]').forEach(button => {
+            button.addEventListener('click', () => {
+                const targetStep = parseInt(button.dataset.goStep || '1', 10);
+                goStep(targetStep);
+            });
+        });
+
+        document.getElementById('fDirection')?.addEventListener('change', () => {
+            loadServices();
+            loadDMs();
+        });
+
+        document.getElementById('fService')?.addEventListener('change', updateServiceHidden);
+    </script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+</body>
+</html>
+

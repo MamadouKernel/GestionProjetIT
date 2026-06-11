@@ -1,0 +1,678 @@
+@using Microsoft.AspNetCore.Html
+@using System.Net
+@using GestionProjects.Domain.Enums
+@using GestionProjects.Domain.Models
+@model GestionProjects.Domain.Models.Projet
+@inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
+
+@functions {
+    private static IHtmlContent RenderHelpPopover(string title, string purpose, string guidance)
+    {
+        var encodedTitle = WebUtility.HtmlEncode(title);
+        var encodedPurpose = WebUtility.HtmlEncode(purpose);
+        var encodedGuidance = WebUtility.HtmlEncode(guidance);
+
+        return new HtmlString($@"
+<div class=""form-help"">
+    <button type=""button"" class=""form-help-trigger"" aria-label=""Aide : {encodedTitle}"">
+        <i class=""bi bi-info-circle""></i>
+    </button>
+    <div class=""form-help-popover"" role=""tooltip"">
+        <strong>{encodedTitle}</strong>
+        <div class=""form-help-popover-section"">
+            <span>À quoi sert ce bloc ?</span>
+            <p>{encodedPurpose}</p>
+        </div>
+        <div class=""form-help-popover-section"">
+            <span>Comment le renseigner ?</span>
+            <p>{encodedGuidance}</p>
+        </div>
+    </div>
+</div>");
+    }
+}
+
+@{
+    var isReadOnly = ViewBag.IsReadOnly as bool? ?? false;
+    var isDemandeurProject = Model.DemandeProjet != null &&
+        Guid.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Guid.Empty.ToString(), out var currentUserId) &&
+        Model.DemandeProjet.DemandeurId == currentUserId;
+    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, Model, isReadOnly, isDemandeurProject);
+    var fiche = Model.FicheProjet ?? new FicheProjet();
+    var livrablesCloture = Model.Livrables?.Where(l => l.Phase == PhaseProjet.ClotureLeconsApprises && !l.EstSupprime).ToList() ?? new List<LivrableProjet>();
+    var demandeClotureActive = Model.DemandesCloture?.FirstOrDefault(d => !d.EstTerminee);
+    var chargePrevue = Model.Charges?.Where(c => !c.EstSupprime).Sum(c => c.ChargePrevisionnelle) ?? 0m;
+    var chargeReelle = Model.Charges?.Where(c => !c.EstSupprime).Sum(c => c.ChargeReelle ?? 0m) ?? 0m;
+    var hasRightRole = ui.CanEditCloture || ui.CanValidateClotureDsi;
+    var isInRightPhase = Model.PhaseActuelle == PhaseProjet.ClotureLeconsApprises;
+    var noActiveDemand = demandeClotureActive == null;
+    var canDemanderCloture = hasRightRole && isInRightPhase && noActiveDemand;
+    var canEditCloture = ui.CanEditCloture && (Model.PhaseActuelle == PhaseProjet.ClotureLeconsApprises || Model.PhaseActuelle == PhaseProjet.UatMep);
+    var ecartCharge = chargeReelle - chargePrevue;
+}
+
+<div class="phase-shell">
+    <section class="phase-hero">
+        <div class="phase-hero-top">
+            <div>
+                <div class="phase-eyebrow">
+                    <i class="bi bi-flag"></i>
+                    Clôture
+                </div>
+                <h3 class="phase-title">Clôture et leçons apprises</h3>
+                <p class="phase-subtitle">
+                    Consolidez le bilan final du projet, préparez le transfert au RUN et pilotez la validation finale
+                    par le demandeur, le Directeur Métier et la DSI.
+                </p>
+            </div>
+            <div class="phase-action-row">
+                <span class="phase-chip @(demandeClotureActive != null ? "is-info" : "is-warning")">
+                    <i class="bi @(demandeClotureActive != null ? "bi-hourglass-split" : "bi-hourglass")"></i>
+                    @(demandeClotureActive != null ? "Validation en cours" : "Aucune demande active")
+                </span>
+                <span class="phase-chip @(Model.StatutProjet == StatutProjet.Cloture ? "is-success" : "is-warning")">
+                    <i class="bi bi-signpost"></i>
+                    @Model.StatutWorkflowLabel
+                </span>
+            </div>
+        </div>
+
+        <div class="inline-kpi-bar">
+            <span class="inline-kpi-chip">Budget prévu : @((fiche.BudgetPrevisionnel ?? 0).ToString("N0")) FCFA</span>
+            <span class="inline-kpi-chip">Budget consommé : @((fiche.BudgetConsomme ?? 0).ToString("N0")) FCFA</span>
+            <span class="inline-kpi-chip">Charge prévue : @chargePrevue.ToString("N1") h</span>
+            <span class="inline-kpi-chip">Charge réelle : @chargeReelle.ToString("N1") h</span>
+            <span class="inline-kpi-chip">Écart : @ecartCharge.ToString("N1") h</span>
+        </div>
+    </section>
+
+    <div class="phase-grid phase-grid-3">
+        <article class="phase-panel">
+            <h4 class="phase-panel-title">Synthèse dossier</h4>
+            <div class="phase-summary-list">
+                <div class="phase-summary-item">
+                    <span>Projet</span>
+                    <strong>@Model.CodeProjet</strong>
+                </div>
+                <div class="phase-summary-item">
+                    <span>Demandeur</span>
+                    <strong>@Model.DemandeProjet?.Demandeur?.Nom @Model.DemandeProjet?.Demandeur?.Prenoms</strong>
+                </div>
+                <div class="phase-summary-item">
+                    <span>Sponsor</span>
+                    <strong>@Model.Sponsor.Nom @Model.Sponsor.Prenoms</strong>
+                </div>
+                <div class="phase-summary-item">
+                    <span>Chef de projet</span>
+                    <strong>@(Model.ChefProjet != null ? $"{Model.ChefProjet.Nom} {Model.ChefProjet.Prenoms}" : "Non affecté")</strong>
+                </div>
+            </div>
+        </article>
+
+        <article class="phase-panel">
+            <h4 class="phase-panel-title">Bilan budget & charge</h4>
+            <div class="phase-summary-list">
+                <div class="phase-summary-item">
+                    <span>Budget prévu</span>
+                    <strong>@((fiche.BudgetPrevisionnel ?? 0).ToString("N0")) FCFA</strong>
+                </div>
+                <div class="phase-summary-item">
+                    <span>Budget consommé</span>
+                    <strong>@((fiche.BudgetConsomme ?? 0).ToString("N0")) FCFA</strong>
+                </div>
+                <div class="phase-summary-item">
+                    <span>Charge prévue</span>
+                    <strong>@chargePrevue.ToString("N1") h</strong>
+                </div>
+                <div class="phase-summary-item">
+                    <span>Charge consommée</span>
+                    <strong>@chargeReelle.ToString("N1") h</strong>
+                </div>
+            </div>
+        </article>
+
+        <article class="phase-panel">
+            <h4 class="phase-panel-title">Transfert RUN</h4>
+            <div class="phase-summary-list">
+                <div class="phase-summary-item">
+                    <span>Documentation transmise</span>
+                    <strong>@(fiche.TransfertRunDocumentation ? "Oui" : "Non")</strong>
+                </div>
+                <div class="phase-summary-item">
+                    <span>Accès créés</span>
+                    <strong>@(fiche.TransfertRunAcces ? "Oui" : "Non")</strong>
+                </div>
+                <div class="phase-summary-item">
+                    <span>Support informé</span>
+                    <strong>@(fiche.TransfertRunSupportInforme ? "Oui" : "Non")</strong>
+                </div>
+                <div class="phase-summary-item">
+                    <span>Exploitation prête</span>
+                    <strong>@(fiche.TransfertRunExploitationPrete ? "Oui" : "Non")</strong>
+                </div>
+            </div>
+        </article>
+    </div>
+
+    @if (canDemanderCloture)
+    {
+        <section class="phase-note is-info">
+            <div class="phase-section-header">
+                <div>
+                    <div class="phase-strong">Demande de clôture disponible</div>
+                    <div class="phase-record-meta">
+                        Le projet est en phase Clôture. Vous pouvez maintenant soumettre la validation finale.
+                    </div>
+                </div>
+                <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#demanderClotureModal">
+                    <i class="bi bi-send"></i>
+                    Soumettre la clôture
+                </button>
+            </div>
+        </section>
+    }
+    else if (demandeClotureActive == null && hasRightRole)
+    {
+        <section class="phase-note is-warning">
+            <div class="phase-strong">Soumission non disponible</div>
+            <ul>
+                @if (!isInRightPhase)
+                {
+                    <li>Le projet doit d'abord être en phase <strong>Clôture & Leçons apprises</strong>.</li>
+                }
+                @if (demandeClotureActive != null)
+                {
+                    <li>Une demande de clôture est déjà en cours.</li>
+                }
+            </ul>
+        </section>
+    }
+
+    @if (demandeClotureActive != null)
+    {
+        <section class="phase-panel">
+            <div class="phase-section-header">
+                <div>
+                    <div class="form-help-title-row">
+                        <h4 class="phase-panel-title">Workflow de validation</h4>
+                        @RenderHelpPopover(
+                            "Workflow de validation",
+                            "Ce bloc matérialise le circuit final Demandeur -> Directeur Métier -> DSI avant clôture effective du projet.",
+                            "Aucune saisie libre n'est attendue ici. Chaque acteur valide à son tour quand le dossier de clôture est complet.")
+                    </div>
+                    <div class="phase-record-meta">Demandée le @demandeClotureActive.DateDemande.ToString("dd/MM/yyyy")</div>
+                </div>
+                <span class="phase-chip is-info">
+                    <i class="bi bi-flag"></i>
+                    Clôture en validation
+                </span>
+            </div>
+
+            <div class="phase-status-grid">
+                <article class="phase-status-card @GetValidationTone(demandeClotureActive.StatutValidationDemandeur)">
+                    <h5 class="phase-status-title">Validation demandeur</h5>
+                    <div class="phase-status-value">@GetValidationStatus(demandeClotureActive.StatutValidationDemandeur)</div>
+                    @if (demandeClotureActive.DateValidationDemandeur.HasValue)
+                    {
+                        <div class="phase-status-date">Le @demandeClotureActive.DateValidationDemandeur.Value.ToString("dd/MM/yyyy")</div>
+                    }
+                    @if (ui.CanValidateClotureDemandeur && demandeClotureActive.StatutValidationDemandeur == StatutValidationCloture.EnAttente)
+                    {
+                        <div class="workflow-card-actions">
+                            <form asp-action="ValiderClotureDemandeur" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="demandeClotureId" value="@demandeClotureActive.Id" />
+                                <button type="submit" class="btn-modern btn-modern-success w-100">
+                                    <i class="bi bi-check-circle"></i>
+                                    Valider
+                                </button>
+                            </form>
+                        </div>
+                    }
+                </article>
+
+                <article class="phase-status-card @GetValidationTone(demandeClotureActive.StatutValidationDirecteurMetier)">
+                    <h5 class="phase-status-title">Validation Directeur Métier</h5>
+                    <div class="phase-status-value">@GetValidationStatus(demandeClotureActive.StatutValidationDirecteurMetier)</div>
+                    @if (demandeClotureActive.DateValidationDirecteurMetier.HasValue)
+                    {
+                        <div class="phase-status-date">Le @demandeClotureActive.DateValidationDirecteurMetier.Value.ToString("dd/MM/yyyy")</div>
+                    }
+                    @if (ui.CanValidateClotureDm &&
+                         demandeClotureActive.StatutValidationDemandeur == StatutValidationCloture.Validee &&
+                         demandeClotureActive.StatutValidationDirecteurMetier == StatutValidationCloture.EnAttente)
+                    {
+                        <div class="workflow-card-actions">
+                            <form asp-action="ValiderClotureDM" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="demandeClotureId" value="@demandeClotureActive.Id" />
+                                <button type="submit" class="btn-modern btn-modern-success w-100">
+                                    <i class="bi bi-check-circle"></i>
+                                    Valider
+                                </button>
+                            </form>
+                            <button type="button" class="btn-modern btn-modern-danger" data-bs-toggle="modal" data-bs-target="#rejeterClotureDMModal" data-demande-id="@demandeClotureActive.Id">
+                                <i class="bi bi-x-circle"></i>
+                                Rejeter
+                            </button>
+                        </div>
+                    }
+                </article>
+
+                <article class="phase-status-card @GetValidationTone(demandeClotureActive.StatutValidationDSI)">
+                    <h5 class="phase-status-title">Validation DSI</h5>
+                    <div class="phase-status-value">@GetValidationStatus(demandeClotureActive.StatutValidationDSI)</div>
+                    @if (demandeClotureActive.DateValidationDSI.HasValue)
+                    {
+                        <div class="phase-status-date">Le @demandeClotureActive.DateValidationDSI.Value.ToString("dd/MM/yyyy")</div>
+                    }
+                    @if (ui.CanValidateClotureDsi &&
+                         demandeClotureActive.StatutValidationDemandeur == StatutValidationCloture.Validee &&
+                         demandeClotureActive.StatutValidationDirecteurMetier == StatutValidationCloture.Validee &&
+                         demandeClotureActive.StatutValidationDSI == StatutValidationCloture.EnAttente)
+                    {
+                        <div class="workflow-card-actions">
+                            <form asp-action="ValiderClotureDSI" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="demandeClotureId" value="@demandeClotureActive.Id" />
+                                <button type="submit" class="btn-modern btn-modern-success w-100">
+                                    <i class="bi bi-check-circle"></i>
+                                    Valider
+                                </button>
+                            </form>
+                            <button type="button" class="btn-modern btn-modern-danger" data-bs-toggle="modal" data-bs-target="#rejeterClotureDSIModal" data-demande-id="@demandeClotureActive.Id">
+                                <i class="bi bi-x-circle"></i>
+                                Rejeter
+                            </button>
+                        </div>
+                    }
+                </article>
+            </div>
+        </section>
+    }
+
+    @if (canEditCloture)
+    {
+        <form asp-action="UpdateBilan" method="post" class="phase-shell">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+
+            <div class="phase-grid">
+                <section class="phase-panel">
+                    <div class="form-help-title-row">
+                        <h4 class="phase-panel-title">Bilan projet</h4>
+                        @RenderHelpPopover(
+                            "Bilan projet",
+                            "Ce bloc sert à formaliser le bilan final du périmètre, du planning et du budget.",
+                            "Renseignez un bilan sincère et exploitable : ce qui a été livré, les écarts de planning et les écarts budgétaires.")
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Bilan périmètre</label>
+                        <textarea name="bilanPerimetre" class="form-control-modern" rows="3">@Model.BilanPerimetre</textarea>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Bilan planning</label>
+                        <textarea name="bilanPlanning" class="form-control-modern" rows="3">@Model.BilanPlanning</textarea>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Bilan budget</label>
+                        <textarea name="bilanBudget" class="form-control-modern" rows="3">@Model.BilanBudget</textarea>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Bilan charge</label>
+                        <textarea class="form-control-modern" rows="3" disabled>Charge prévue : @chargePrevue.ToString("N1") h&#10;Charge consommée : @chargeReelle.ToString("N1") h&#10;Écart : @ecartCharge.ToString("N1") h</textarea>
+                    </div>
+                </section>
+
+                <section class="phase-panel">
+                    <div class="form-help-title-row">
+                        <h4 class="phase-panel-title">Retours & capitalisation</h4>
+                        @RenderHelpPopover(
+                            "Retours & capitalisation",
+                            "Ce bloc sert à conserver les leçons apprises, réussites, difficultés et recommandations pour les futurs projets.",
+                            "Renseignez ce qui doit être reproduit, évité ou amélioré. Visez des enseignements réutilisables, pas seulement un commentaire libre.")
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Réussites</label>
+                        <textarea name="bilanReussites" class="form-control-modern" rows="3">@Model.BilanReussites</textarea>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Difficultés</label>
+                        <textarea name="bilanDifficultes" class="form-control-modern" rows="3">@Model.BilanDifficultes</textarea>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Ce qu'il faut reproduire</label>
+                        <textarea name="leconsReussites" class="form-control-modern" rows="3">@Model.LeconsReussites</textarea>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Ce qu'il faut éviter</label>
+                        <textarea name="leconsEchecs" class="form-control-modern" rows="3">@Model.LeconsEchecs</textarea>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Recommandations</label>
+                        <textarea name="leconsRecommandations" class="form-control-modern" rows="3">@Model.LeconsRecommandations</textarea>
+                    </div>
+                </section>
+
+                <section class="phase-panel">
+                    <div class="form-help-title-row">
+                        <h4 class="phase-panel-title">Transfert RUN</h4>
+                        @RenderHelpPopover(
+                            "Transfert RUN",
+                            "Ce bloc vérifie que l'exploitation et le support peuvent reprendre le projet dans de bonnes conditions.",
+                            "Cochez chaque élément seulement quand la documentation, les accès, l'information support et la préparation de l'exploitation sont réellement en place.")
+                    </div>
+                    <div class="phase-toggle-grid">
+                        <div class="phase-note">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="transfertDoc" name="transfertRunDocumentation" value="true" @(fiche.TransfertRunDocumentation ? "checked" : string.Empty) />
+                                <label class="form-check-label" for="transfertDoc">Documentation transmise</label>
+                            </div>
+                        </div>
+                        <div class="phase-note">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="transfertAcces" name="transfertRunAcces" value="true" @(fiche.TransfertRunAcces ? "checked" : string.Empty) />
+                                <label class="form-check-label" for="transfertAcces">Accès créés</label>
+                            </div>
+                        </div>
+                        <div class="phase-note">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="transfertSupport" name="transfertRunSupportInforme" value="true" @(fiche.TransfertRunSupportInforme ? "checked" : string.Empty) />
+                                <label class="form-check-label" for="transfertSupport">Support informé</label>
+                            </div>
+                        </div>
+                        <div class="phase-note">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="transfertExploit" name="transfertRunExploitationPrete" value="true" @(fiche.TransfertRunExploitationPrete ? "checked" : string.Empty) />
+                                <label class="form-check-label" for="transfertExploit">Exploitation prête</label>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="phase-panel">
+                    <div class="form-help-title-row">
+                        <h4 class="phase-panel-title">Statut final</h4>
+                        @RenderHelpPopover(
+                            "Statut final",
+                            "Ce bloc formalise l'issue métier du projet : clôturé ou abandonné, avec un commentaire explicatif.",
+                            "Choisissez le statut final réel puis ajoutez un commentaire utile si le contexte de fin de projet doit être expliqué.")
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Statut final du projet</label>
+                        <select name="statutFinalCloture" class="form-control-modern">
+                            @if (string.IsNullOrWhiteSpace(fiche.StatutFinalCloture) || fiche.StatutFinalCloture == "Clôturé")
+                            {
+                                <option value="Clôturé" selected>Clôturé</option>
+                            }
+                            else
+                            {
+                                <option value="Clôturé">Clôturé</option>
+                            }
+                            @if (fiche.StatutFinalCloture == "Abandonné")
+                            {
+                                <option value="Abandonné" selected>Abandonné</option>
+                            }
+                            else
+                            {
+                                <option value="Abandonné">Abandonné</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Commentaire statut final</label>
+                        <textarea name="commentaireStatutFinal" class="form-control-modern" rows="4">@fiche.CommentaireStatutFinal</textarea>
+                    </div>
+                </section>
+            </div>
+
+            <div class="phase-action-row">
+                <button type="submit" class="btn-modern btn-modern-primary">
+                    <i class="bi bi-save"></i>
+                    Enregistrer la clôture
+                </button>
+            </div>
+        </form>
+    }
+    else
+    {
+        <div class="phase-grid">
+            <section class="phase-panel">
+                <h4 class="phase-panel-title">Bilan & leçons apprises</h4>
+                <div class="phase-record-list">
+                    <div class="phase-record-row">
+                        <div>
+                            <div class="phase-record-title">Périmètre</div>
+                            <div class="phase-record-meta">@(string.IsNullOrWhiteSpace(Model.BilanPerimetre) ? "Non renseigné" : Model.BilanPerimetre)</div>
+                        </div>
+                    </div>
+                    <div class="phase-record-row">
+                        <div>
+                            <div class="phase-record-title">Planning</div>
+                            <div class="phase-record-meta">@(string.IsNullOrWhiteSpace(Model.BilanPlanning) ? "Non renseigné" : Model.BilanPlanning)</div>
+                        </div>
+                    </div>
+                    <div class="phase-record-row">
+                        <div>
+                            <div class="phase-record-title">Budget</div>
+                            <div class="phase-record-meta">@(string.IsNullOrWhiteSpace(Model.BilanBudget) ? "Non renseigné" : Model.BilanBudget)</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="phase-panel">
+                <h4 class="phase-panel-title">Capitalisation</h4>
+                <div class="phase-record-list">
+                    <div class="phase-record-row">
+                        <div>
+                            <div class="phase-record-title">Réussites</div>
+                            <div class="phase-record-meta">@(string.IsNullOrWhiteSpace(Model.BilanReussites) ? "Non renseigné" : Model.BilanReussites)</div>
+                        </div>
+                    </div>
+                    <div class="phase-record-row">
+                        <div>
+                            <div class="phase-record-title">Recommandations</div>
+                            <div class="phase-record-meta">@(string.IsNullOrWhiteSpace(Model.LeconsRecommandations) ? "Non renseignées" : Model.LeconsRecommandations)</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    }
+
+    <section class="phase-panel">
+        <div class="phase-section-header">
+            <div>
+                <div class="form-help-title-row">
+                    <h4 class="phase-panel-title">Livrables de clôture</h4>
+                    @RenderHelpPopover(
+                        "Livrables de clôture",
+                        "Ce bloc centralise les preuves finales de clôture : rapport, PV, dossier d'exploitation et pièces de capitalisation.",
+                        "Déposez ici tous les documents finaux qui prouvent la fin de projet et facilitent la reprise par le RUN ou l'audit.")
+                </div>
+                <div class="phase-record-meta">Rapport de clôture, PV, dossier d'exploitation final et pièces associées.</div>
+            </div>
+            @if (canEditCloture)
+            {
+                <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#uploadLivrableModal" data-phase="ClotureLeconsApprises">
+                    <i class="bi bi-upload"></i>
+                    Ajouter
+                </button>
+            }
+        </div>
+
+        @if (livrablesCloture.Any())
+        {
+            <div class="record-stack">
+                @foreach (var livrable in livrablesCloture)
+                {
+                    <article class="record-card">
+                        <div class="record-card-header">
+                            <div>
+                                <div class="record-card-title">@livrable.NomDocument</div>
+                                <div class="record-card-subtitle">@livrable.TypeLivrable · @livrable.DateDepot.ToString("dd/MM/yyyy")</div>
+                            </div>
+                            <div class="record-card-actions">
+                                <a asp-controller="Document" asp-action="PreviewProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@livrable.Id" target="_blank" class="btn-modern btn-modern-primary" title="Visualiser">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a asp-controller="Document" asp-action="StreamProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@livrable.Id" asp-route-download="true" class="btn-modern btn-modern-secondary" title="Télécharger">
+                                    <i class="bi bi-download"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="phase-empty">
+                <i class="bi bi-inbox"></i>
+                <p>Aucun livrable de clôture pour le moment.</p>
+            </div>
+        }
+    </section>
+</div>
+
+@if (canDemanderCloture)
+{
+    <div class="modal fade" id="demanderClotureModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content app-modal-content">
+                <form asp-action="DemanderCloture" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="modal-header app-modal-header">
+                        <h5 class="modal-title app-modal-title">
+                            <i class="bi bi-flag-fill"></i>
+                            Soumettre la clôture
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body app-modal-body">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Commentaire initiateur</label>
+                            <textarea name="commentaire" class="form-control-modern" rows="4" placeholder="Ajoutez un commentaire de synthèse..."></textarea>
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Date souhaitée de clôture</label>
+                            <input type="date" name="dateSouhaiteeCloture" class="form-control-modern" />
+                        </div>
+                    </div>
+                    <div class="modal-footer app-modal-footer">
+                        <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i>
+                            Annuler
+                        </button>
+                        <button type="submit" class="btn-modern btn-modern-primary">
+                            <i class="bi bi-send"></i>
+                            Soumettre
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ui.CanValidateClotureDm)
+{
+    <div class="modal fade" id="rejeterClotureDMModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content app-modal-content">
+                <form asp-action="RejeterClotureDM" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="demandeClotureId" id="rejeterClotureDMId" value="" />
+                    <div class="modal-header app-modal-header is-danger">
+                        <h5 class="modal-title app-modal-title">Rejeter la clôture</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body app-modal-body">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Commentaire *</label>
+                            <textarea name="commentaire" class="form-control-modern" rows="4" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer app-modal-footer">
+                        <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn-modern btn-modern-danger">Rejeter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('rejeterClotureDMModal');
+            if (modal) {
+                modal.addEventListener('show.bs.modal', function(event) {
+                    const button = event.relatedTarget;
+                    document.getElementById('rejeterClotureDMId').value = button.getAttribute('data-demande-id');
+                });
+            }
+        });
+    </script>
+}
+
+@if (ui.CanValidateClotureDsi)
+{
+    <div class="modal fade" id="rejeterClotureDSIModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content app-modal-content">
+                <form asp-action="RejeterClotureDSI" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="demandeClotureId" id="rejeterClotureDSIId" value="" />
+                    <div class="modal-header app-modal-header is-danger">
+                        <h5 class="modal-title app-modal-title">Rejeter la clôture</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body app-modal-body">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Commentaire *</label>
+                            <textarea name="commentaire" class="form-control-modern" rows="4" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer app-modal-footer">
+                        <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn-modern btn-modern-danger">Rejeter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('rejeterClotureDSIModal');
+            if (modal) {
+                modal.addEventListener('show.bs.modal', function(event) {
+                    const button = event.relatedTarget;
+                    document.getElementById('rejeterClotureDSIId').value = button.getAttribute('data-demande-id');
+                });
+            }
+        });
+    </script>
+}
+
+@functions {
+    string GetValidationTone(StatutValidationCloture statut)
+    {
+        return statut switch
+        {
+            StatutValidationCloture.Validee => "is-success",
+            StatutValidationCloture.Rejetee => "is-danger",
+            _ => "is-warning"
+        };
+    }
+
+    string GetValidationStatus(StatutValidationCloture statut)
+    {
+        return statut switch
+        {
+            StatutValidationCloture.Validee => "Validée",
+            StatutValidationCloture.Rejetee => "Rejetée",
+            _ => "En attente"
+        };
+    }
+}

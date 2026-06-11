@@ -1,0 +1,23 @@
+@model List<GestionProjects.ViewComponents.MenuCategory>
+
+@if (Model != null && Model.Any())
+{
+    @foreach (var category in Model)
+    {
+        <div class="nav-section-title @(category.Title == "General" ? "nav-section-title-lg" : string.Empty)">@category.Title</div>
+
+        @foreach (var item in category.Items)
+        {
+            var isActive = ViewContext.RouteData.Values["controller"]?.ToString() == item.Controller &&
+                           ViewContext.RouteData.Values["action"]?.ToString() == item.Action;
+
+            <a class="nav-link @(isActive ? "active" : string.Empty)"
+               asp-controller="@item.Controller"
+               asp-action="@item.Action"
+               title="@item.Title">
+                <i class="bi @item.Icon"></i>
+                <span>@item.Title</span>
+            </a>
+        }
+    }
+}

@@ -1,0 +1,98 @@
+@model GestionProjects.Domain.Models.Projet
+
+<div class="modal fade" id="modifierRisqueModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
+            <form asp-action="UpdateRisque" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <input type="hidden" name="risqueId" id="modifierRisqueId" />
+                <div class="modal-header" style="border-bottom: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <h5 class="modal-title" style="font-weight: 600; color: var(--gray-800); display: flex; align-items: center; gap: var(--spacing-sm);">
+                        <i class="bi bi-pencil" style="color: var(--warning);"></i>
+                        Modifier un Risque
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: var(--spacing-lg);">
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Description du risque *</label>
+                        <textarea name="description" id="modifierRisqueDescription" class="form-control-modern" rows="3" required></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group-modern">
+                                <label class="form-label-modern">Probabilité *</label>
+                                <select name="probabilite" id="modifierRisqueProbabilite" class="form-control-modern" required>
+                                    <option value="1">Faible</option>
+                                    <option value="2">Moyenne</option>
+                                    <option value="3">Élevée</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group-modern">
+                                <label class="form-label-modern">Impact *</label>
+                                <select name="impact" id="modifierRisqueImpact" class="form-control-modern" required>
+                                    <option value="1">Faible</option>
+                                    <option value="2">Moyen</option>
+                                    <option value="3">Élevé</option>
+                                    <option value="4">Critique</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Statut *</label>
+                        <select name="statut" id="modifierRisqueStatut" class="form-control-modern" required>
+                            <option value="1">Identifié</option>
+                            <option value="2">En cours de traitement</option>
+                            <option value="3">Maîtrisé</option>
+                            <option value="4">Clos</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Plan de mitigation *</label>
+                        <textarea name="planMitigation" id="modifierRisquePlan" class="form-control-modern" rows="3" required placeholder="Actions prévues pour réduire ou éliminer le risque..."></textarea>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Responsable *</label>
+                        <input type="text" name="responsable" id="modifierRisqueResponsable" class="form-control-modern" required placeholder="Nom du responsable du suivi du risque" />
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-save"></i>
+                        Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var modifierRisqueModal = document.getElementById('modifierRisqueModal');
+        if (modifierRisqueModal) {
+            modifierRisqueModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                document.getElementById('modifierRisqueId').value = button.getAttribute('data-risque-id');
+                document.getElementById('modifierRisqueDescription').value = button.getAttribute('data-risque-description');
+                document.getElementById('modifierRisqueProbabilite').value = button.getAttribute('data-risque-probabilite');
+                document.getElementById('modifierRisqueImpact').value = button.getAttribute('data-risque-impact');
+                document.getElementById('modifierRisqueStatut').value = button.getAttribute('data-risque-statut');
+                document.getElementById('modifierRisquePlan').value = button.getAttribute('data-risque-plan') || '';
+                document.getElementById('modifierRisqueResponsable').value = button.getAttribute('data-risque-responsable') || '';
+            });
+        }
+    });
+</script>

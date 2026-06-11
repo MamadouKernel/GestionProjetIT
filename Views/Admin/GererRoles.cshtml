@@ -1,0 +1,232 @@
+@model GestionProjects.Domain.Models.Utilisateur
+@using GestionProjects.Domain.Enums
+
+@{
+    ViewData["Title"] = "Gérer les rôles";
+    var userRolesActifs = Model.GetRolesActifs().ToList();
+    var allRoles = (List<RoleUtilisateur>)ViewBag.AllRoles;
+}
+
+<div class="fade-in admin-page">
+    <div class="page-toolbar">
+        <div class="page-hero card-modern mb-0 flex-grow-1">
+            <div class="page-hero-main">
+                <span class="page-kicker">Administration</span>
+                <h1 class="page-hero-title">Gérer les rôles</h1>
+                <p class="page-hero-subtitle">
+                    Ajustez les droits applicatifs de <strong>@Model.Nom @Model.Prenoms</strong> avec un contrôle centralisé des accès.
+                </p>
+                <div class="page-hero-meta">
+                    <span class="badge-modern badge-modern-info">@userRolesActifs.Count rôle(s) actif(s)</span>
+                    @if (Model.Direction != null)
+                    {
+                        <span class="badge-modern badge-modern-secondary">@Model.Direction.Libelle</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-hero-actions">
+            <a asp-action="ListeRoles" class="btn-modern btn-modern-secondary">
+                <i class="bi bi-arrow-left"></i>
+                Retour aux rôles
+            </a>
+        </div>
+    </div>
+
+    @await Html.PartialAsync("_ValidationSummary")
+
+    @if (TempData["Info"] != null)
+    {
+        <div class="admin-inline-note mb-4">
+            <i class="bi bi-info-circle"></i>
+            <div>@TempData["Info"]</div>
+        </div>
+    }
+
+    <div class="detail-grid mb-4">
+        <div class="card-modern">
+            <div class="card-body-modern">
+                <span class="soft-kicker">Identité</span>
+                <div class="table-person mt-3">
+                    <span class="table-avatar primary">@GetInitiales(Model.Nom, Model.Prenoms)</span>
+                    <div class="table-person-main">
+                        <div class="table-person-title">@Model.Nom @Model.Prenoms</div>
+                        <div class="table-person-subtitle">@Model.Email</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-modern">
+            <div class="card-body-modern">
+                <span class="soft-kicker">Références</span>
+                <div class="table-inline-stack column mt-3">
+                    <span class="table-code">@Model.Matricule</span>
+                    <span class="soft-note">@(Model.Direction?.Libelle ?? "Aucune direction assignée")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-modern">
+        <div class="card-header-modern">
+            <div>
+                <h3 class="card-title-modern mb-1">
+                    <i class="bi bi-shield-check"></i>
+                    Assignation des rôles
+                </h3>
+                <p class="soft-note mb-0">Sélectionnez un ou plusieurs rôles. La sauvegarde met à jour immédiatement les droits de l'utilisateur.</p>
+            </div>
+        </div>
+        <div class="card-body-modern">
+            <form asp-action="UpdateRoles" method="post" id="rolesForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <input type="hidden" name="Roles" id="rolesHidden" value="" />
+
+                <div class="admin-inline-note mb-4">
+                    <i class="bi bi-info-circle"></i>
+                    <div>
+                        Un utilisateur peut avoir plusieurs rôles. Le rôle <strong>Admin IT</strong> est exclusif : s'il est sélectionné, tous les autres rôles sont automatiquement retirés.
+                    </div>
+                </div>
+
+                <div class="admin-role-grid">
+                    @foreach (var role in allRoles)
+                    {
+                        var isChecked = userRolesActifs.Contains(role);
+                        <label class="admin-role-card">
+                            <input type="checkbox"
+                                   data-role-id="@((int)role)"
+                                   id="role_@((int)role)"
+                                   value="@((int)role)"
+                                   class="form-check-input role-checkbox"
+                                   @(isChecked ? "checked" : null) />
+                            <span>
+                                <strong class="d-block">@GetRoleLabel(role)</strong>
+                                <small class="d-block text-muted">@GetRoleDescription(role)</small>
+                            </span>
+                        </label>
+                    }
+                </div>
+
+                <div class="d-flex justify-content-end gap-3 mt-4">
+                    <a asp-action="ListeRoles" class="btn-modern btn-modern-secondary">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </a>
+                    <button type="submit" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-check-circle"></i>
+                        Enregistrer les rôles
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function updateRolesHidden() {
+            const checkedRoles = Array.from(document.querySelectorAll('.role-checkbox:checked'))
+                .map(cb => cb.value)
+                .filter(Boolean)
+                .join(',');
+
+            const hiddenField = document.getElementById('rolesHidden');
+            if (hiddenField) {
+                hiddenField.value = checkedRoles;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const adminRoleValue = '@((int)RoleUtilisateur.AdminIT)';
+
+            function applyAdminExclusivity(changedCheckbox) {
+                const adminCheckbox = document.querySelector(`.role-checkbox[value="${adminRoleValue}"]`);
+                if (!adminCheckbox) return;
+
+                if (changedCheckbox.value === adminRoleValue && changedCheckbox.checked) {
+                    // AdminIT vient d'être coché → décocher et désactiver tous les autres
+                    document.querySelectorAll('.role-checkbox').forEach(cb => {
+                        if (cb.value !== adminRoleValue) {
+                            cb.checked = false;
+                            cb.disabled = true;
+                            cb.closest('label')?.classList.add('is-disabled');
+                        }
+                    });
+                } else if (changedCheckbox.value === adminRoleValue && !changedCheckbox.checked) {
+                    // AdminIT vient d'être décoché → réactiver tous les autres
+                    document.querySelectorAll('.role-checkbox').forEach(cb => {
+                        if (cb.value !== adminRoleValue) {
+                            cb.disabled = false;
+                            cb.closest('label')?.classList.remove('is-disabled');
+                        }
+                    });
+                } else if (adminCheckbox.checked) {
+                    // Un autre rôle coché alors qu'AdminIT est actif → l'empêcher
+                    changedCheckbox.checked = false;
+                }
+            }
+
+            // Initialiser l'état au chargement
+            const adminCheckbox = document.querySelector(`.role-checkbox[value="${adminRoleValue}"]`);
+            if (adminCheckbox && adminCheckbox.checked) {
+                document.querySelectorAll('.role-checkbox').forEach(cb => {
+                    if (cb.value !== adminRoleValue) {
+                        cb.disabled = true;
+                        cb.closest('label')?.classList.add('is-disabled');
+                    }
+                });
+            }
+
+            document.querySelectorAll('.role-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    applyAdminExclusivity(this);
+                    updateRolesHidden();
+                });
+            });
+
+            updateRolesHidden();
+
+            document.getElementById('rolesForm')?.addEventListener('submit', function(e) {
+                updateRolesHidden();
+
+                const rolesValue = document.getElementById('rolesHidden')?.value || '';
+                if (!rolesValue.trim()) {
+                    e.preventDefault();
+                    alert('Veuillez sélectionner au moins un rôle.');
+                }
+            });
+        });
+    </script>
+}
+
+@functions {
+    private static string GetInitiales(string? nom, string? prenoms)
+    {
+        var initialNom = string.IsNullOrWhiteSpace(nom) ? "?" : nom.Trim()[0].ToString().ToUpperInvariant();
+        var initialPrenom = string.IsNullOrWhiteSpace(prenoms) ? string.Empty : prenoms.Trim()[0].ToString().ToUpperInvariant();
+        return $"{initialNom}{initialPrenom}";
+    }
+
+    private static string GetRoleLabel(RoleUtilisateur role) => role switch
+    {
+        RoleUtilisateur.DirecteurMetier => "Directeur métier",
+        RoleUtilisateur.ResponsableSolutionsIT => "Resp. Solutions IT",
+        RoleUtilisateur.ChefDeProjet => "Chef de projet",
+        RoleUtilisateur.AdminIT => "Admin IT",
+        _ => role.ToString()
+    };
+
+    private static string GetRoleDescription(RoleUtilisateur role) => role switch
+    {
+        RoleUtilisateur.Demandeur => "Soumission et suivi des demandes.",
+        RoleUtilisateur.DirecteurMetier => "Validation métier et sponsor de projet.",
+        RoleUtilisateur.DSI => "Pilotage DSI et arbitrage global.",
+        RoleUtilisateur.ResponsableSolutionsIT => "Appui technique et délégation DSI.",
+        RoleUtilisateur.ChefDeProjet => "Pilotage opérationnel des phases.",
+        RoleUtilisateur.AdminIT => "Administration complète de l'application.",
+        _ => string.Empty
+    };
+}

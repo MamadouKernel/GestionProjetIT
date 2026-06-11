@@ -1,0 +1,1028 @@
+@using Microsoft.AspNetCore.Html
+@using System.Net
+@model GestionProjects.Domain.Models.CharteProjet
+@inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
+
+@functions {
+    private static IHtmlContent RenderHelpPopover(string title, string purpose, string guidance)
+    {
+        var encodedTitle = WebUtility.HtmlEncode(title);
+        var encodedPurpose = WebUtility.HtmlEncode(purpose);
+        var encodedGuidance = WebUtility.HtmlEncode(guidance);
+
+        return new HtmlString($@"
+<div class=""form-help"">
+    <button type=""button"" class=""form-help-trigger"" aria-label=""Aide : {encodedTitle}"">
+        <i class=""bi bi-info-circle""></i>
+    </button>
+    <div class=""form-help-popover"" role=""tooltip"">
+        <strong>{encodedTitle}</strong>
+        <div class=""form-help-popover-section"">
+            <span>A quoi sert ce bloc ?</span>
+            <p>{encodedPurpose}</p>
+        </div>
+        <div class=""form-help-popover-section"">
+            <span>Comment le renseigner ?</span>
+            <p>{encodedGuidance}</p>
+        </div>
+    </div>
+</div>");
+    }
+}
+
+@{
+    ViewData["Title"] = "Charte de Projet";
+    var projet = ViewBag.Projet as GestionProjects.Domain.Models.Projet;
+    var utilisateurs = ViewBag.Utilisateurs as List<GestionProjects.Domain.Models.Utilisateur> ?? new List<GestionProjects.Domain.Models.Utilisateur>();
+    var charteSignee = ViewBag.CharteSigneeLivrable as GestionProjects.Domain.Models.LivrableProjet;
+    var dossierSignatureCharte = ViewBag.DossierSignatureCharte as GestionProjects.Domain.Models.DossierSignatureProjet;
+    var signatairesDossier = dossierSignatureCharte?.Signataires?
+        .OrderBy(s => s.OrdreSignature)
+        .ToList() ?? new List<GestionProjects.Domain.Models.SignataireDossierSignatureProjet>();
+    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, projet);
+    var userId = ui.UserId;
+    var canEdit = ui.CanEditCharte;
+    var canManageSignedVersion = canEdit && projet?.PhaseActuelle == GestionProjects.Domain.Enums.PhaseProjet.AnalyseClarification;
+    var canManageExternalSignature = ui.CanManageDossierSignature && projet?.PhaseActuelle == GestionProjects.Domain.Enums.PhaseProjet.AnalyseClarification;
+    var dossierPretPourVersement = signatairesDossier.Any() &&
+        signatairesDossier.Where(s => s.Role == GestionProjects.Domain.Enums.RoleSignataireProjet.Sponsor || s.Role == GestionProjects.Domain.Enums.RoleSignataireProjet.ChefDeProjet)
+            .All(s => s.Statut == GestionProjects.Domain.Enums.StatutSignataireDossierSignature.Signe);
+}
+
+<div class="fade-in document-shell">
+    <div class="document-toolbar mb-4">
+        <div class="document-hero flex-grow-1">
+            <div class="document-hero-grid">
+                <div>
+                    <span class="badge-modern badge-modern-info mb-3">Analyse & cadrage</span>
+                    <h2 class="document-hero-title">Charte de Projet - @projet?.CodeProjet</h2>
+                    <p class="document-hero-copy">
+                        Document de référence du cadrage projet, des jalons, des parties prenantes et du circuit de signature.
+                    </p>
+                    <div class="document-hero-badges">
+                        <span class="badge-modern badge-modern-secondary">@projet?.Direction?.Libelle</span>
+                        <span class="badge-modern badge-modern-info">@projet?.PhaseActuelle</span>
+                        <span class="badge-modern badge-modern-@(charteSignee != null ? "success" : "warning")">
+                            @(charteSignee != null ? "Charte signée disponible" : "Charte signée attendue")
+                        </span>
+                    </div>
+                </div>
+                <div class="document-kpi-panel">
+                    <div class="document-kpi">
+                        <span class="document-kpi-label">Jalons</span>
+                        <span class="document-kpi-value">@Model.Jalons.Count</span>
+                        <span class="document-kpi-copy">Étapes prévisionnelles renseignées</span>
+                    </div>
+                    <div class="document-kpi">
+                        <span class="document-kpi-label">Parties prenantes</span>
+                        <span class="document-kpi-value">@Model.PartiesPrenantes.Count</span>
+                        <span class="document-kpi-copy">Acteurs enregistrés dans la charte</span>
+                    </div>
+                    <div class="document-kpi">
+                        <span class="document-kpi-label">Signataires</span>
+                        <span class="document-kpi-value">@signatairesDossier.Count</span>
+                        <span class="document-kpi-copy">Circuit externe actuellement suivi</span>
+                    </div>
+                    <div class="document-kpi">
+                        <span class="document-kpi-label">Versement</span>
+                        <span class="document-kpi-value">@(dossierPretPourVersement ? "Prêt" : "En cours")</span>
+                        <span class="document-kpi-copy">État du retour signé</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="document-actions">
+            <a asp-action="Details" asp-route-id="@projet?.Id" asp-route-tab="analyse" class="btn-modern btn-modern-secondary">
+                <i class="bi bi-arrow-left"></i> Retour
+            </a>
+            <form asp-action="GenererCharteCompletWord" method="post" class="document-inline-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@projet?.Id" />
+                <button type="submit" class="btn-modern btn-modern-primary">
+                    <i class="bi bi-file-earmark-word"></i> Télécharger Word
+                </button>
+            </form>
+            @if (canEdit)
+            {
+                <button type="button" class="btn-modern btn-modern-primary" onclick="toggleEditMode()">
+                    <i class="bi bi-pencil"></i> <span id="editModeText">Éditer</span>
+                </button>
+            }
+        </div>
+    </div>
+
+    <form asp-action="SauvegarderCharteProjet" method="post" id="charteForm" class="document-editor">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@projet?.Id" />
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="ProjetId" />
+
+        <!-- En-tête du document -->
+        <div class="card-modern mb-4">
+            <div class="card-header-modern document-accent-header">
+                <div class="form-help-title-row">
+                    <h3 class="card-title-modern mb-0">
+                        <i class="bi bi-info-circle"></i>
+                        Informations du Document
+                    </h3>
+                    @RenderHelpPopover(
+                        "Informations du document",
+                        "Ce bloc sert à identifier formellement la charte, sa révision et ses responsables de rédaction / validation.",
+                        "Renseignez le code, la révision et les responsables de document. Ces données seront reprises dans les exports officiels.")
+                </div>
+            </div>
+            <div class="card-body-modern">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Département</label>
+                            <input asp-for="Departement" class="form-control-modern" readonly />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Type de Document</label>
+                            <input asp-for="TypeDocument" class="form-control-modern" readonly />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Code du Document</label>
+                            <input asp-for="CodeDocument" class="form-control-modern" />
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">N° de Révision</label>
+                            <input asp-for="NumeroRevision" type="number" class="form-control-modern" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Date de Révision</label>
+                            <input asp-for="DateRevision" type="date" class="form-control-modern" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Description</label>
+                            <input asp-for="DescriptionRevision" class="form-control-modern" />
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Rédigé par</label>
+                            <input asp-for="RedigePar" class="form-control-modern" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Vérifié par</label>
+                            <input asp-for="VerifiePar" class="form-control-modern" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Approuvé par</label>
+                            <input asp-for="ApprouvePar" class="form-control-modern" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Identification du projet -->
+        <div class="card-modern mb-4">
+            <div class="card-header-modern">
+                <div class="form-help-title-row">
+                    <h3 class="card-title-modern">
+                        <i class="bi bi-fingerprint"></i>
+                        Identification du Projet
+                    </h3>
+                    @RenderHelpPopover(
+                        "Identification du projet",
+                        "Ce bloc sert à décrire le projet, son objectif, son périmètre, ses contraintes et ses risques initiaux.",
+                        "Renseignez un cadrage clair et synthétique. Les champs de ce bloc servent de base à la charte et aux validations DM / DSI.")
+                </div>
+            </div>
+            <div class="card-body-modern">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Nom du Projet *</label>
+                            <input asp-for="NomProjet" class="form-control-modern" required />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Numéro du Projet</label>
+                            <input asp-for="NumeroProjet" class="form-control-modern" />
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group-modern">
+                    <label class="form-label-modern">Objectif du Projet *</label>
+                    <textarea asp-for="ObjectifProjet" class="form-control-modern" rows="5" required placeholder="Un objectif par ligne, commencer par •"></textarea>
+                    <small class="text-muted">Un objectif par ligne, commencer chaque ligne par •</small>
+                </div>
+                <div class="form-group-modern">
+                    <label class="form-label-modern">Assurance de la Qualité</label>
+                    <textarea asp-for="AssuranceQualite" class="form-control-modern" rows="3" placeholder="Tests approfondis, conformité aux normes..."></textarea>
+                </div>
+                <div class="form-group-modern">
+                    <label class="form-label-modern">Périmètre</label>
+                    <textarea asp-for="Perimetre" class="form-control-modern" rows="3" placeholder="Mise en œuvre, intégration, formation..."></textarea>
+                </div>
+                <div class="form-group-modern">
+                    <label class="form-label-modern">Contraintes Initiales</label>
+                    <textarea asp-for="ContraintesInitiales" class="form-control-modern" rows="3" placeholder="Budget, Ressources Humaines, Calendrier..."></textarea>
+                </div>
+                <div class="form-group-modern">
+                    <label class="form-label-modern">Risques Initiaux</label>
+                    <textarea asp-for="RisquesInitiaux" class="form-control-modern" rows="3" placeholder="Retards possibles, risques de sécurité..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acteurs du projet -->
+        <div class="card-modern mb-4">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern">
+                    <i class="bi bi-people"></i>
+                    Acteurs du Projet
+                </h3>
+            </div>
+            <div class="card-body-modern">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Demandeur *</label>
+                            <select asp-for="DemandeurId" class="form-control-modern" required>
+                                <option value="">-- Sélectionner --</option>
+                                @foreach (var user in utilisateurs)
+                                {
+                                    <option value="@user.Id">@user.Nom @user.Prenoms</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Sponsors *</label>
+                            <textarea asp-for="Sponsors" class="form-control-modern" rows="2" required placeholder="Un sponsor par ligne"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Chef de Projet *</label>
+                            <select asp-for="ChefProjetId" class="form-control-modern" required>
+                                <option value="">-- Sélectionner --</option>
+                                @foreach (var user in utilisateurs)
+                                {
+                                    <option value="@user.Id">@user.Nom @user.Prenoms</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Email Chef de Projet</label>
+                            <input asp-for="EmailChefProjet" type="email" class="form-control-modern" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Jalons de planification -->
+        <div class="card-modern mb-4">
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
+                <h3 class="card-title-modern mb-0">
+                    <i class="bi bi-calendar-check"></i>
+                    Éléments de Planification Prévisionnelle
+                </h3>
+                @if (canEdit)
+                {
+                    <button type="button" class="btn-modern btn-modern-sm btn-modern-primary" onclick="ajouterJalon()">
+                        <i class="bi bi-plus-circle"></i> Ajouter Jalon
+                    </button>
+                }
+            </div>
+            <div class="card-body-modern">
+                <div id="jalonsContainer">
+                    @for (int i = 0; i < Model.Jalons.Count; i++)
+                    {
+                        var jalon = Model.Jalons.ElementAt(i);
+                        <div class="card-modern mb-3 jalon-item" data-jalon-id="@jalon.Id">
+                            <div class="card-body-modern">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <h5 class="document-jalon-title">Jalon @(i + 1)</h5>
+                                    @if (canEdit)
+                                    {
+                                        <button type="button" class="btn-modern btn-modern-sm btn-modern-danger" onclick="supprimerJalon(this)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    }
+                                </div>
+                                <input type="hidden" name="Jalons[@i].Id" value="@jalon.Id" />
+                                <input type="hidden" name="Jalons[@i].CharteProjetId" value="@Model.Id" />
+                                <input type="hidden" name="Jalons[@i].Ordre" value="@(i + 1)" />
+                                <div class="form-group-modern mb-2">
+                                    <label class="form-label-modern">Nom du Jalon</label>
+                                    <input name="Jalons[@i].Nom" value="@jalon.Nom" class="form-control-modern" />
+                                </div>
+                                <div class="form-group-modern mb-2">
+                                    <label class="form-label-modern">Description</label>
+                                    <textarea name="Jalons[@i].Description" class="form-control-modern" rows="2">@jalon.Description</textarea>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group-modern mb-2">
+                                            <label class="form-label-modern">Critères d'Approbation</label>
+                                            <textarea name="Jalons[@i].CriteresApprobation" class="form-control-modern" rows="2">@jalon.CriteresApprobation</textarea>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group-modern mb-2">
+                                            <label class="form-label-modern">Date Prévisionnelle</label>
+                                            <input name="Jalons[@i].DatePrevisionnelle" type="date" value="@(jalon.DatePrevisionnelle?.ToString("yyyy-MM-dd"))" class="form-control-modern" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Parties prenantes -->
+        <div class="card-modern mb-4">
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
+                <h3 class="card-title-modern mb-0">
+                    <i class="bi bi-person-badge"></i>
+                    Parties Prenantes
+                </h3>
+                @if (canEdit)
+                {
+                    <button type="button" class="btn-modern btn-modern-sm btn-modern-primary" onclick="ajouterPartiePrenante()">
+                        <i class="bi bi-plus-circle"></i> Ajouter
+                    </button>
+                }
+            </div>
+            <div class="card-body-modern">
+                <div class="table-responsive">
+                    <table class="table-modern" id="partiesPrenantesTable">
+                        <thead>
+                            <tr>
+                                <th>Partie Prenante</th>
+                                <th>Rôle</th>
+                                @if (canEdit)
+                                {
+                                    <th class="document-table-actions">Actions</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.PartiesPrenantes.Count; i++)
+                            {
+                                var partie = Model.PartiesPrenantes.ElementAt(i);
+                                <tr data-partie-id="@partie.Id">
+                                    <input type="hidden" name="PartiesPrenantes[@i].Id" value="@partie.Id" />
+                                    <input type="hidden" name="PartiesPrenantes[@i].CharteProjetId" value="@Model.Id" />
+                                    <td>
+                                        <input name="PartiesPrenantes[@i].Nom" value="@partie.Nom" class="form-control-modern" />
+                                    </td>
+                                    <td>
+                                        <input name="PartiesPrenantes[@i].Role" value="@partie.Role" class="form-control-modern" />
+                                    </td>
+                                    @if (canEdit)
+                                    {
+                                        <td>
+                                            <button type="button" class="btn-modern btn-modern-sm btn-modern-danger" onclick="supprimerPartiePrenante(this)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Autorisation officielle -->
+        <div class="card-modern mb-4">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern">
+                    <i class="bi bi-pen"></i>
+                    Autorisation Officielle
+                </h3>
+            </div>
+            <div class="card-body-modern">
+                <div class="document-signature-grid">
+                    <div class="document-signature-panel">
+                        <div class="document-signature-label">Signature Sponsor</div>
+                            @if (Model.SignatureSponsor)
+                            {
+                                <div class="document-signature-state is-success">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    <div>Signé le @Model.DateSignatureSponsor?.ToString("dd/MM/yyyy")</div>
+                                    <div>@Model.SignatureSponsorUtilisateur?.Nom @Model.SignatureSponsorUtilisateur?.Prenoms</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="document-signature-state">
+                                    <i class="bi bi-pen"></i>
+                                    <div>En attente de signature</div>
+                                </div>
+                            }
+                    </div>
+                    <div class="document-signature-panel">
+                        <div class="document-signature-label">Signature Chef de Projet</div>
+                            @if (Model.SignatureChefProjet)
+                            {
+                                <div class="document-signature-state is-success">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    <div>Signé le @Model.DateSignatureChefProjet?.ToString("dd/MM/yyyy")</div>
+                                    <div>@Model.SignatureChefProjetUtilisateur?.Nom @Model.SignatureChefProjetUtilisateur?.Prenoms</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="document-signature-state">
+                                    <i class="bi bi-pen"></i>
+                                    <div>En attente de signature</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        @if (canEdit)
+        {
+            <div class="d-flex justify-content-end gap-2 mb-4">
+                <a asp-action="Details" asp-route-id="@projet?.Id" asp-fragment="analyse" class="btn-modern btn-modern-secondary">
+                    <i class="bi bi-x-circle"></i> Annuler
+                </a>
+                <button type="submit" class="btn-modern btn-modern-primary">
+                    <i class="bi bi-check-circle"></i> Enregistrer
+                </button>
+            </div>
+        }
+    </form>
+
+    <div class="card-modern mb-4">
+        <div class="card-header-modern">
+            <h3 class="card-title-modern">
+                <i class="bi bi-pen"></i>
+                Signature Électronique Externe
+            </h3>
+        </div>
+        <div class="card-body-modern">
+            @if (dossierSignatureCharte == null)
+            {
+                <div class="alert-modern alert-modern-warning document-alert-tight">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <div>
+                        <strong>Aucun dossier de signature externe initialisé</strong>
+                        <p>Initialisez un dossier DocuSign, Adobe Sign ou manuel pour tracer l'envoi, les signataires et le retour du document signe.</p>
+                        </div>
+                    </div>
+            }
+            else
+            {
+                <div class="row mb-4">
+                    <div class="col-lg-7 mb-3 mb-lg-0">
+                        <div class="document-summary-card">
+                            <div class="document-summary-list">
+                                <div class="document-summary-label">Fournisseur</div>
+                                <div>@dossierSignatureCharte.Fournisseur</div>
+
+                                <div class="document-summary-label">Statut</div>
+                                <div>
+                                    <span class="badge-modern badge-modern-@GetSignatureStatusClass(dossierSignatureCharte.Statut)">@dossierSignatureCharte.Statut</span>
+                                </div>
+
+                                <div class="document-summary-label">Document source</div>
+                                <div>
+                                    @if (!string.IsNullOrWhiteSpace(dossierSignatureCharte.CheminDocumentSource))
+                                    {
+                                        <div class="document-summary-actions">
+                                            <a asp-controller="Document"
+                                               asp-action="PreviewDossierSignatureSource"
+                                               asp-route-projetId="@projet?.Id"
+                                               asp-route-dossierId="@dossierSignatureCharte.Id"
+                                               target="_blank">@dossierSignatureCharte.NomDocumentSource</a>
+                                            <a asp-controller="Document"
+                                               asp-action="StreamDossierSignatureSource"
+                                               asp-route-projetId="@projet?.Id"
+                                               asp-route-dossierId="@dossierSignatureCharte.Id"
+                                               asp-route-download="true"
+                                               class="btn-modern btn-modern-secondary">
+                                                <i class="bi bi-download"></i>
+                                                Télécharger
+                                            </a>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span>@dossierSignatureCharte.NomDocumentSource</span>
+                                    }
+                                </div>
+
+                                <div class="document-summary-label">Reference externe</div>
+                                <div>@(dossierSignatureCharte.ExternalRequestId ?? "Non envoyée")</div>
+
+                                <div class="document-summary-label">Suivi</div>
+                                <div>
+                                    @if (!string.IsNullOrWhiteSpace(dossierSignatureCharte.UrlSuivi))
+                                    {
+                                        <a href="@dossierSignatureCharte.UrlSuivi" target="_blank">Ouvrir le suivi</a>
+                                    }
+                                    else
+                                    {
+                                        <span>Non disponible</span>
+                                    }
+                                </div>
+
+                                <div class="document-summary-label">Message</div>
+                                <div>@dossierSignatureCharte.MessageStatut</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="document-status-card">
+                        @if (canManageExternalSignature)
+                        {
+                            <form asp-action="InitialiserDossierSignatureCharte" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@projet?.Id" />
+                                <div class="form-group-modern">
+                                    <label class="form-label-modern">Fournisseur</label>
+                                    <select name="fournisseur" class="form-control-modern">
+                                        <option value="@GestionProjects.Domain.Enums.FournisseurSignatureElectronique.Manuel" selected="@(dossierSignatureCharte.Fournisseur == GestionProjects.Domain.Enums.FournisseurSignatureElectronique.Manuel)">Manuel</option>
+                                        <option value="@GestionProjects.Domain.Enums.FournisseurSignatureElectronique.DocuSign" selected="@(dossierSignatureCharte.Fournisseur == GestionProjects.Domain.Enums.FournisseurSignatureElectronique.DocuSign)">DocuSign</option>
+                                        <option value="@GestionProjects.Domain.Enums.FournisseurSignatureElectronique.AdobeSign" selected="@(dossierSignatureCharte.Fournisseur == GestionProjects.Domain.Enums.FournisseurSignatureElectronique.AdobeSign)">Adobe Sign</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn-modern btn-modern-secondary w-100">
+                                    <i class="bi bi-arrow-repeat"></i>
+                                    Reinitialiser le dossier
+                                </button>
+                            </form>
+
+                            @if (dossierSignatureCharte.Statut != GestionProjects.Domain.Enums.StatutDossierSignature.Signe &&
+                                dossierSignatureCharte.Statut != GestionProjects.Domain.Enums.StatutDossierSignature.Refuse)
+                            {
+                                <form asp-action="EnvoyerDossierSignatureCharte" method="post" class="mt-3">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@projet?.Id" />
+                                    <input type="hidden" name="dossierSignatureId" value="@dossierSignatureCharte.Id" />
+                                    <button type="submit" class="btn-modern btn-modern-primary w-100">
+                                        <i class="bi bi-send"></i>
+                                        Envoyer en signature
+                                    </button>
+                                </form>
+                            }
+                        }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    @foreach (var signataire in signatairesDossier)
+                    {
+                        var canActForSignataire = canManageExternalSignature || signataire.UtilisateurId == userId || (ui.CanValidateCharteDm && signataire.Role == GestionProjects.Domain.Enums.RoleSignataireProjet.Sponsor);
+                        <div class="col-md-6 mb-3">
+                            <div class="document-signatory-card">
+                                <div class="document-signatory-head">
+                                    <div>
+                                        <div class="document-signatory-role">@signataire.Role</div>
+                                        <div class="document-signatory-name">@signataire.NomComplet</div>
+                                        <div class="document-signatory-mail">@signataire.Email</div>
+                                    </div>
+                                    <span class="badge-modern badge-modern-@GetSignataireStatusClass(signataire.Statut)">@signataire.Statut</span>
+                                </div>
+
+                                @if (signataire.DateSignature.HasValue)
+                                {
+                                    <div class="document-signatory-decision mb-3">
+                                        Décision enregistrée le @signataire.DateSignature.Value.ToString("dd/MM/yyyy HH:mm")
+                                    </div>
+                                }
+
+                                @if (canActForSignataire &&
+                                    dossierSignatureCharte.Statut != GestionProjects.Domain.Enums.StatutDossierSignature.Signe &&
+                                    dossierSignatureCharte.Statut != GestionProjects.Domain.Enums.StatutDossierSignature.Refuse)
+                                {
+                                    <div class="document-signatory-actions">
+                                        <form asp-action="MettreAJourSignataireDossierSignatureCharte" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@projet?.Id" />
+                                            <input type="hidden" name="dossierSignatureId" value="@dossierSignatureCharte.Id" />
+                                            <input type="hidden" name="signataireId" value="@signataire.Id" />
+                                            <input type="hidden" name="approuver" value="true" />
+                                            <button type="submit" class="btn-modern btn-modern-primary w-100">
+                                                <i class="bi bi-check-circle"></i>
+                                                Signer
+                                            </button>
+                                        </form>
+                                        <form asp-action="MettreAJourSignataireDossierSignatureCharte" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@projet?.Id" />
+                                            <input type="hidden" name="dossierSignatureId" value="@dossierSignatureCharte.Id" />
+                                            <input type="hidden" name="signataireId" value="@signataire.Id" />
+                                            <input type="hidden" name="approuver" value="false" />
+                                            <button type="submit" class="btn-modern btn-modern-danger w-100">
+                                                <i class="bi bi-x-circle"></i>
+                                                Refuser
+                                            </button>
+                                        </form>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                @if (dossierPretPourVersement && canManageSignedVersion)
+                {
+                    <div class="alert-modern alert-modern-success mt-3">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <div>
+                            <strong>Signatures complètes</strong>
+                            <p>Le dossier externe est complet. Versez maintenant le document signe dans la section ci-dessous pour finaliser la charte.</p>
+                        </div>
+                    </div>
+                }
+            }
+
+            @if (canManageExternalSignature && dossierSignatureCharte == null)
+            {
+                <form asp-action="InitialiserDossierSignatureCharte" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@projet?.Id" />
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="form-group-modern">
+                                <label class="form-label-modern">Fournisseur</label>
+                                <select name="fournisseur" class="form-control-modern">
+                                    <option value="@GestionProjects.Domain.Enums.FournisseurSignatureElectronique.Manuel">Manuel</option>
+                                    <option value="@GestionProjects.Domain.Enums.FournisseurSignatureElectronique.DocuSign">DocuSign</option>
+                                    <option value="@GestionProjects.Domain.Enums.FournisseurSignatureElectronique.AdobeSign">Adobe Sign</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn-modern btn-modern-primary w-100">
+                                <i class="bi bi-plus-circle"></i>
+                                Initialiser
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            }
+        </div>
+    </div>
+
+    <div class="card-modern mb-4">
+        <div class="card-header-modern">
+            <h3 class="card-title-modern">
+                <i class="bi bi-file-earmark-check"></i>
+                Version Signée de la Charte
+            </h3>
+        </div>
+        <div class="card-body-modern">
+            @if (charteSignee != null)
+            {
+                <div class="alert-modern alert-modern-success document-alert-tight">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <div>
+                        <strong>Version signée déposée</strong>
+                        <p class="mb-2">
+                            <a asp-controller="Document"
+                               asp-action="PreviewProjetLivrable"
+                               asp-route-projetId="@projet?.Id"
+                               asp-route-livrableId="@charteSignee.Id"
+                               target="_blank"
+                               class="fw-semibold">@charteSignee.NomDocument</a>
+                        </p>
+                        <p class="mb-0">
+                            Déposée le @charteSignee.DateDepot.ToString("dd/MM/yyyy HH:mm")
+                            @if (charteSignee.DeposePar != null)
+                            {
+                                <span>par @charteSignee.DeposePar.Nom @charteSignee.DeposePar.Prenoms</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(charteSignee.Version))
+                            {
+                                <span>| Version @charteSignee.Version</span>
+                            }
+                        </p>
+                        @if (!string.IsNullOrWhiteSpace(charteSignee.Commentaire))
+                        {
+                            <p class="mt-2 mb-0">@charteSignee.Commentaire</p>
+                        }
+                        <div class="document-summary-actions mt-2">
+                            <a asp-controller="Document"
+                               asp-action="PreviewProjetLivrable"
+                               asp-route-projetId="@projet?.Id"
+                               asp-route-livrableId="@charteSignee.Id"
+                               target="_blank"
+                               class="btn-modern btn-modern-primary">
+                                <i class="bi bi-eye"></i>
+                                Aperçu
+                            </a>
+                            <a asp-controller="Document"
+                               asp-action="StreamProjetLivrable"
+                               asp-route-projetId="@projet?.Id"
+                               asp-route-livrableId="@charteSignee.Id"
+                               asp-route-download="true"
+                               class="btn-modern btn-modern-secondary">
+                                <i class="bi bi-download"></i>
+                                Télécharger
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert-modern alert-modern-warning document-alert-tight">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <div>
+                        <strong>Aucune version signée déposée</strong>
+                        <p>La validation DM/DSI reste bloquée tant que la charte signée n'est pas déposée avec les signatures Sponsor et Chef de Projet.</p>
+                    </div>
+                </div>
+            }
+
+            <div class="document-summary-grid">
+                <div class="document-summary-card">
+                        <strong>Signature Sponsor</strong>
+                        <div class="mt-2 @(Model.SignatureSponsor ? "text-success" : "text-warning")">
+                            <i class="bi @(Model.SignatureSponsor ? "bi-check-circle-fill" : "bi-clock")"></i>
+                            @(Model.SignatureSponsor ? $"Signée le {Model.DateSignatureSponsor?.ToString("dd/MM/yyyy HH:mm")}" : "En attente")
+                        </div>
+                </div>
+                <div class="document-summary-card">
+                        <strong>Signature Chef de Projet</strong>
+                        <div class="mt-2 @(Model.SignatureChefProjet ? "text-success" : "text-warning")">
+                            <i class="bi @(Model.SignatureChefProjet ? "bi-check-circle-fill" : "bi-clock")"></i>
+                            @(Model.SignatureChefProjet ? $"Signée le {Model.DateSignatureChefProjet?.ToString("dd/MM/yyyy HH:mm")}" : "En attente")
+                        </div>
+                </div>
+            </div>
+
+            @if (canManageSignedVersion)
+            {
+                <div class="alert-modern alert-modern-warning document-alert-tight">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <div>
+                        <strong>Règle de gestion</strong>
+                        <p>Toute modification de la charte en phase Analyse réinitialise la version signée et relance le circuit de validation.</p>
+                    </div>
+                </div>
+
+                <form asp-action="UploadCharteSignee" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@projet?.Id" />
+                    @if (dossierSignatureCharte != null)
+                    {
+                        <input type="hidden" name="dossierSignatureId" value="@dossierSignatureCharte.Id" />
+                    }
+
+                    @if (dossierSignatureCharte != null && !dossierPretPourVersement)
+                    {
+                        <div class="alert-modern alert-modern-warning document-alert-tight">
+                            <i class="bi bi-lock-fill"></i>
+                            <div>
+                                <strong>Versement conditionne</strong>
+                                <p>Le document ne sera accepté que lorsque les deux signataires du dossier externe auront signé.</p>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group-modern">
+                                <label class="form-label-modern">Document signé *</label>
+                                <input type="file" name="fichierSigne" class="form-control-modern" accept=".pdf,.doc,.docx" required />
+                                <small class="text-muted">Formats autorisés: PDF, DOC, DOCX</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group-modern">
+                                <label class="form-label-modern">Version</label>
+                                <input type="text" name="version" class="form-control-modern" value="@(charteSignee?.Version ?? $"R{Model.NumeroRevision:00}-SIGNEE")" />
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group-modern">
+                                <label class="form-label-modern">Statut</label>
+                                <div class="document-upload-status">
+                                    @(charteSignee != null ? "Remplacement autorisé" : "Premier dépôt")
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Commentaire</label>
+                        <textarea name="commentaire" class="form-control-modern" rows="3" placeholder="Ex: charte signée après revue finale">@charteSignee?.Commentaire</textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label-modern">Signatures présentes sur le document</label>
+                            <div class="document-checkbox-panel">
+                                <label>
+                                    <input type="checkbox" name="signatureSponsor" value="true" @(Model.SignatureSponsor ? "checked" : "") />
+                                    <span>Sponsor / Directeur Métier</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="signatureChefProjet" value="true" @(Model.SignatureChefProjet ? "checked" : "") />
+                                    <span>Chef de Projet</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-modern">Impact</label>
+                            <div class="document-impact-card">
+                                <p>Le dépôt d'une nouvelle version signée :</p>
+                                <ul>
+                                    <li>met à jour l'état des signatures,</li>
+                                    <li>réinitialise les validations DM/DSI,</li>
+                                    <li>relance le circuit de validation si les deux signatures sont présentes.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="document-upload-actions">
+                        <button type="submit"
+                                class="btn-modern btn-modern-secondary"
+                                formaction="@Url.Action("MettreAJourSignaturesCharte", "Projet")"
+                                formmethod="post"
+                                formnovalidate>
+                            <i class="bi bi-check2-square"></i>
+                            Enregistrer les signatures
+                        </button>
+                        <button type="submit" class="btn-modern btn-modern-primary">
+                            <i class="bi bi-upload"></i>
+                            @(charteSignee != null ? "Remplacer la version signée" : "Déposer la version signée")
+                        </button>
+                    </div>
+                </form>
+            }
+            else if (projet?.PhaseActuelle != GestionProjects.Domain.Enums.PhaseProjet.AnalyseClarification)
+            {
+                <div class="alert-modern alert-modern-warning">
+                    <i class="bi bi-lock-fill"></i>
+                    <div>
+                        <strong>Dépôt verrouillé</strong>
+                        <p class="mb-0">Le dépôt de la charte signée est réservé à la phase Analyse.</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+    let jalonIndex = @Model.Jalons.Count;
+    let partiePrenanteIndex = @Model.PartiesPrenantes.Count;
+    let editMode = false;
+
+    function toggleEditMode() {
+        editMode = !editMode;
+        const inputs = document.querySelectorAll('#charteForm input, #charteForm textarea, #charteForm select');
+        inputs.forEach(input => {
+            if (input.type !== 'hidden') {
+                input.disabled = !editMode;
+            }
+        });
+        document.getElementById('editModeText').textContent = editMode ? 'Annuler' : 'Éditer';
+    }
+
+    function ajouterJalon() {
+        const container = document.getElementById('jalonsContainer');
+        const jalonHtml = `
+            <div class="card-modern mb-3 jalon-item">
+                <div class="card-body-modern">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 class="document-jalon-title">Jalon ${jalonIndex + 1}</h5>
+                        <button type="button" class="btn-modern btn-modern-sm btn-modern-danger" onclick="supprimerJalon(this)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                    <input type="hidden" name="Jalons[${jalonIndex}].Id" value="00000000-0000-0000-0000-000000000000" />
+                    <input type="hidden" name="Jalons[${jalonIndex}].CharteProjetId" value="@Model.Id" />
+                    <input type="hidden" name="Jalons[${jalonIndex}].Ordre" value="${jalonIndex + 1}" />
+                    <div class="form-group-modern mb-2">
+                        <label class="form-label-modern">Nom du Jalon</label>
+                        <input name="Jalons[${jalonIndex}].Nom" class="form-control-modern" />
+                    </div>
+                    <div class="form-group-modern mb-2">
+                        <label class="form-label-modern">Description</label>
+                        <textarea name="Jalons[${jalonIndex}].Description" class="form-control-modern" rows="2"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group-modern mb-2">
+                                <label class="form-label-modern">Critères d'Approbation</label>
+                                <textarea name="Jalons[${jalonIndex}].CriteresApprobation" class="form-control-modern" rows="2"></textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group-modern mb-2">
+                                <label class="form-label-modern">Date Prévisionnelle</label>
+                                <input name="Jalons[${jalonIndex}].DatePrevisionnelle" type="date" class="form-control-modern" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', jalonHtml);
+        jalonIndex++;
+    }
+
+    function supprimerJalon(button) {
+        if (confirm('Supprimer ce jalon ?')) {
+            button.closest('.jalon-item').remove();
+        }
+    }
+
+    function ajouterPartiePrenante() {
+        const tbody = document.querySelector('#partiesPrenantesTable tbody');
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <input type="hidden" name="PartiesPrenantes[${partiePrenanteIndex}].Id" value="00000000-0000-0000-0000-000000000000" />
+            <input type="hidden" name="PartiesPrenantes[${partiePrenanteIndex}].CharteProjetId" value="@Model.Id" />
+            <td>
+                <input name="PartiesPrenantes[${partiePrenanteIndex}].Nom" class="form-control-modern" />
+            </td>
+            <td>
+                <input name="PartiesPrenantes[${partiePrenanteIndex}].Role" class="form-control-modern" />
+            </td>
+            <td>
+                <button type="button" class="btn-modern btn-modern-sm btn-modern-danger" onclick="supprimerPartiePrenante(this)">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+        partiePrenanteIndex++;
+    }
+
+    function supprimerPartiePrenante(button) {
+        if (confirm('Supprimer cette partie prenante ?')) {
+            button.closest('tr').remove();
+        }
+    }
+
+    // Désactiver les champs au chargement si pas en mode édition
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputs = document.querySelectorAll('#charteForm input, #charteForm textarea, #charteForm select');
+        inputs.forEach(input => {
+            if (input.type !== 'hidden' && !@canEdit.ToString().ToLower()) {
+                input.disabled = true;
+            }
+        });
+    });
+</script>
+
+@functions {
+    string GetSignatureStatusClass(GestionProjects.Domain.Enums.StatutDossierSignature statut)
+    {
+        return statut switch
+        {
+            GestionProjects.Domain.Enums.StatutDossierSignature.Signe => "success",
+            GestionProjects.Domain.Enums.StatutDossierSignature.EnCoursSignature => "warning",
+            GestionProjects.Domain.Enums.StatutDossierSignature.Refuse => "danger",
+            GestionProjects.Domain.Enums.StatutDossierSignature.Brouillon => "secondary",
+            _ => "info"
+        };
+    }
+
+    string GetSignataireStatusClass(GestionProjects.Domain.Enums.StatutSignataireDossierSignature statut)
+    {
+        return statut switch
+        {
+            GestionProjects.Domain.Enums.StatutSignataireDossierSignature.Signe => "success",
+            GestionProjects.Domain.Enums.StatutSignataireDossierSignature.Refuse => "danger",
+            _ => "warning"
+        };
+    }
+}
+

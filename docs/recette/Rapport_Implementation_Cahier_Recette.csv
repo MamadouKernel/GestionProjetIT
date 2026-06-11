@@ -1,0 +1,200 @@
+ID Test,Module,Rôle,Point à vérifier,Statut Implémentation,Criticité,Commentaires
+AUTH-01,Connexion,Tout rôle,Connexion avec un compte CIT valide (Azure AD),NON IMPLÉMENTÉ,Bloquante,Authentification locale BCrypt au lieu d'Azure AD
+AUTH-02,Connexion,Utilisateur non référencé,Première connexion d'un utilisateur non enregistré,NON IMPLÉMENTÉ,Bloquante,Pas de gestion utilisateur non référencé
+AUTH-03,Profil,Tout rôle,Récupération automatique des informations du compte,IMPLÉMENTÉ,Majeure,Profil utilisateur fonctionnel
+AUTH-04,Profil,Tout rôle,Détermination automatique de la direction métier,PARTIELLEMENT,Bloquante,Direction en base mais pas depuis Azure AD
+AUTH-05,Sécurité,Demandeur,Interdiction d'accès aux écrans d'administration,IMPLÉMENTÉ,Bloquante,Système de permissions dynamiques
+AUTH-06,Sécurité,Directeur métier,Isolation des données entre directions,IMPLÉMENTÉ,Bloquante,Filtrage par direction implémenté
+AUTH-07,Sécurité,Chef de projet,Visibilité limitée aux projets dont il est responsable,IMPLÉMENTÉ,Bloquante,Filtrage par chef de projet
+AUTH-08,Sécurité,DSI,Accès global à tous les projets,IMPLÉMENTÉ,Bloquante,DSI voit tous les projets
+AUTH-09,Sécurité,Admin IT,Droits complets sur l'application,IMPLÉMENTÉ,Bloquante,AdminIT a tous les droits
+AUTH-10,Sécurité,Tout rôle,Blocage de l'accès à une page non autorisée via URL directe,IMPLÉMENTÉ,Bloquante,Contrôle d'accès par permissions
+ADM-01,Référentiel Directions,Admin IT,Création d'une direction métier dans le référentiel,IMPLÉMENTÉ,Majeure,CRUD Directions complet
+ADM-02,Référentiel Directions,Admin IT,Modification d'une direction existante,IMPLÉMENTÉ,Moyenne,CRUD Directions complet
+ADM-03,Référentiel Rôles,Admin IT,Création ou modification d'un rôle utilisateur,IMPLÉMENTÉ,Majeure,Gestion des rôles via UtilisateurRole
+ADM-04,Référentiel Directeurs,Admin IT,Ajout d'un Directeur métier dans le référentiel,IMPLÉMENTÉ,Bloquante,Gestion utilisateurs avec rôles
+ADM-05,Référentiel Livrables,Admin IT,Paramétrage des types de livrables obligatoires,IMPLÉMENTÉ,Majeure,Enum TypeLivrable + LivrableProjet
+ADM-06,Référentiel Statuts,Admin IT,Vérification des valeurs de statut projet,IMPLÉMENTÉ,Majeure,Enum StatutProjet
+ADM-07,Référentiel Phases,Admin IT,Vérification des phases du cycle projet,IMPLÉMENTÉ,Bloquante,Enum PhaseProjet
+ADM-08,Référentiel État projet,Admin IT,Vérification des indicateurs d'état projet,IMPLÉMENTÉ,Majeure,Enum IndicateurRAG (Vert/Orange/Rouge)
+ADM-09,Référentiel Urgence,Admin IT,Vérification des niveaux d'urgence,IMPLÉMENTÉ,Majeure,Enum UrgenceProjet
+ADM-10,Référentiel Criticité,Admin IT,Vérification des catégories de criticité,IMPLÉMENTÉ,Majeure,Enum CriticiteProjet
+ADM-11,Sécurité Administration,Demandeur,Interdiction de modification des référentiels pour les non-admin,IMPLÉMENTÉ,Bloquante,Système de permissions
+DEM-01,Formulaire Demande Projet,Demandeur,Présence du champ Titre du projet,IMPLÉMENTÉ,Bloquante,Champ Titre dans DemandeProjet
+DEM-02,Formulaire Demande Projet,Demandeur,Champ Demandeur récupéré automatiquement,IMPLÉMENTÉ,Bloquante,DemandeurId automatique
+DEM-03,Formulaire Demande Projet,Demandeur,Champ Direction métier automatique,IMPLÉMENTÉ,Bloquante,DirectionId automatique
+DEM-04,Formulaire Demande Projet,Demandeur,Champ Description du besoin,IMPLÉMENTÉ,Majeure,Champ Description
+DEM-05,Formulaire Demande Projet,Demandeur,Champ Contexte / problème,IMPLÉMENTÉ,Majeure,Champ Contexte
+DEM-06,Formulaire Demande Projet,Demandeur,Champ Objectifs du projet,IMPLÉMENTÉ,Majeure,Champ Objectifs
+DEM-07,Formulaire Demande Projet,Demandeur,Champ Avantages attendus,IMPLÉMENTÉ,Moyenne,Champ AvantagesAttendus
+DEM-08,Formulaire Demande Projet,Demandeur,Champ Urgence,IMPLÉMENTÉ,Majeure,Enum Urgence
+DEM-09,Formulaire Demande Projet,Demandeur,Champ Criticité,IMPLÉMENTÉ,Majeure,Enum Criticite
+DEM-10,Formulaire Demande Projet,Demandeur,Champ Date de mise en œuvre souhaitée,IMPLÉMENTÉ,Majeure,DateMiseEnOeuvreSouhaitee
+DEM-11,Formulaire Demande Projet,Demandeur,Upload Cahier de charges,IMPLÉMENTÉ,Bloquante,CahierChargesPath + FileStorageService
+DEM-12,Formulaire Demande Projet,Demandeur,Upload Annexes,IMPLÉMENTÉ,Moyenne,DocumentJointDemande
+DEM-13,Formulaire Demande Projet,Demandeur,Champ Directeur métier,IMPLÉMENTÉ,Bloquante,DirecteurMetierId
+DEM-14,Formulaire Demande Projet,Demandeur,Soumission sans Titre du projet,IMPLÉMENTÉ,Bloquante,Validation côté serveur
+DEM-15,Formulaire Demande Projet,Demandeur,Soumission sans Description du besoin,IMPLÉMENTÉ,Bloquante,Validation côté serveur
+DEM-16,Formulaire Demande Projet,Demandeur,Soumission sans Objectifs du projet,IMPLÉMENTÉ,Bloquante,Validation côté serveur
+DEM-17,Formulaire Demande Projet,Demandeur,Soumission sans Urgence,IMPLÉMENTÉ,Bloquante,Validation côté serveur
+DEM-18,Formulaire Demande Projet,Demandeur,Soumission sans Criticité,IMPLÉMENTÉ,Bloquante,Validation côté serveur
+DEM-19,Formulaire Demande Projet,Demandeur,Soumission sans Date souhaitée,IMPLÉMENTÉ,Majeure,Validation côté serveur
+DEM-20,Formulaire Demande Projet,Demandeur,Soumission sans Cahier de charges,IMPLÉMENTÉ,Bloquante,Validation côté serveur
+DEM-21,Formulaire Demande Projet,Demandeur,Soumission sans Directeur métier,IMPLÉMENTÉ,Bloquante,Validation côté serveur
+DEM-22,Formulaire Demande Projet,Demandeur,Longueur du titre,IMPLÉMENTÉ,Moyenne,Gestion des chaînes longues
+DEM-23,Formulaire Demande Projet,Demandeur,Caractères spéciaux,IMPLÉMENTÉ,Moyenne,Support UTF-8
+DEM-24,Formulaire Demande Projet,Demandeur,Upload CDC PDF,IMPLÉMENTÉ,Bloquante,FileStorageService
+DEM-25,Formulaire Demande Projet,Demandeur,Upload Annexe DOCX,IMPLÉMENTÉ,Moyenne,DocumentJointDemande
+DEM-26,Formulaire Demande Projet,Demandeur,Ouverture pièce jointe,IMPLÉMENTÉ,Majeure,Téléchargement fichiers
+DEM-27,Formulaire Demande Projet,Demandeur,Création demande valide,IMPLÉMENTÉ,Bloquante,Create action fonctionnel
+DEM-28,Formulaire Demande Projet,Demandeur,Statut initial de la demande,IMPLÉMENTÉ,Bloquante,StatutDemande.EnAttenteValidationDM
+DEM-29,Portefeuille projets,Demandeur,Mise à jour du portefeuille,IMPLÉMENTÉ,Bloquante,Portefeuille mis à jour
+DEM-30,Notification,Directeur métier,Notification mail,IMPLÉMENTÉ,Majeure,NotificationService
+VALM-01,Validation demandes,Directeur métier,Affichage de la liste des demandes,IMPLÉMENTÉ,Bloquante,ListeValidationDM
+VALM-02,Validation demandes,Directeur métier,Filtre statut demande,IMPLÉMENTÉ,Bloquante,Filtrage par statut
+VALM-03,Validation demandes,Directeur métier,Action Valider disponible,IMPLÉMENTÉ,Bloquante,ValiderDM action
+VALM-04,Portefeuille projets,Directeur métier,Synchronisation portefeuille,IMPLÉMENTÉ,Bloquante,Mise à jour automatique
+VALM-05,Notification,Directeur métier,Notification à la DSI,IMPLÉMENTÉ,Majeure,NotificationService
+VALM-06,Validation demandes,Directeur métier,Modification Titre du projet,IMPLÉMENTÉ,Majeure,Édition possible
+VALM-07,Validation demandes,Directeur métier,Modification Description,IMPLÉMENTÉ,Majeure,Édition possible
+VALM-08,Validation demandes,Directeur métier,Modification Objectifs,IMPLÉMENTÉ,Majeure,Édition possible
+VALM-09,Historique,Directeur métier,Historique des modifications,IMPLÉMENTÉ,Bloquante,AuditLog
+VALM-10,Validation demandes,Directeur métier,Demande de correction avec commentaire,IMPLÉMENTÉ,Bloquante,DemanderCorrection action
+VALM-11,Validation demandes,Directeur métier,Demande de correction sans commentaire,IMPLÉMENTÉ,Bloquante,Validation commentaire obligatoire
+VALM-12,Notification,Directeur métier,Notification au demandeur,IMPLÉMENTÉ,Majeure,NotificationService
+VALM-13,Validation demandes,Directeur métier,Rejet avec commentaire,IMPLÉMENTÉ,Bloquante,Rejeter action
+VALM-14,Validation demandes,Directeur métier,Rejet sans commentaire,IMPLÉMENTÉ,Bloquante,Validation commentaire obligatoire
+VALM-15,Notification,Directeur métier,Notification après rejet,IMPLÉMENTÉ,Majeure,NotificationService
+RET-01,Retour demandeur,Demandeur,Visibilité de la demande retournée,IMPLÉMENTÉ,Bloquante,Statut CorrectionDemandee visible
+RET-02,Retour demandeur,Demandeur,Affichage du commentaire du Directeur métier,IMPLÉMENTÉ,Majeure,CommentaireDirecteurMetier
+RET-03,Correction,Demandeur,Modification des champs demandés,IMPLÉMENTÉ,Majeure,Édition possible
+RET-04,Resoumission,Demandeur,Nouvelle soumission de la demande,IMPLÉMENTÉ,Bloquante,Resoumettre action
+RET-05,Historique,Demandeur,Conservation de l'historique des corrections,IMPLÉMENTÉ,Majeure,AuditLog
+VALD-01,Validation DSI,DSI,Liste des demandes à valider,IMPLÉMENTÉ,Bloquante,ListeValidationDSI
+VALD-02,Validation DSI,DSI,Validation de la prise en charge,IMPLÉMENTÉ,Bloquante,ValiderDSI action
+VALD-03,Création projet,DSI,Création automatique du projet,IMPLÉMENTÉ,Bloquante,Projet créé automatiquement
+VALD-04,Gestion projet,DSI,Statut initial du projet,IMPLÉMENTÉ,Bloquante,StatutProjet.ValideAnalyse
+VALD-05,Gestion projet,DSI,Affectation du Chef de Projet,IMPLÉMENTÉ,Majeure,ChefProjetId
+VALD-06,Validation DSI,DSI,Rejet avec commentaire,IMPLÉMENTÉ,Bloquante,Rejeter action
+VALD-07,Validation DSI,DSI,Rejet sans commentaire,IMPLÉMENTÉ,Bloquante,Validation commentaire obligatoire
+VALD-08,Notification,DSI,Notification après rejet,IMPLÉMENTÉ,Majeure,NotificationService
+VALD-09,Workflow,DSI,Retour vers demandeur,IMPLÉMENTÉ,Bloquante,RetourDemandeur action
+VALD-10,Workflow,DSI,Retour vers Directeur métier,IMPLÉMENTÉ,Bloquante,RetourDirecteurMetier action
+VALD-11,Délégation,DSI,Activation de la délégation,PARTIELLEMENT,Majeure,Tables créées mais pas d'UI
+VALD-12,Délégation,Responsable Solutions IT,Validation par délégataire,PARTIELLEMENT,Bloquante,Logique à implémenter
+VALD-13,Délégation,Responsable Solutions IT,Fin de délégation,PARTIELLEMENT,Bloquante,Logique à implémenter
+PORT-01,Portefeuille,Utilisateur,Colonne Numéro de projet,IMPLÉMENTÉ,Bloquante,CodeProjet visible
+PORT-02,Portefeuille,Utilisateur,Colonne Titre du projet,IMPLÉMENTÉ,Bloquante,Titre visible
+PORT-03,Portefeuille,Utilisateur,Colonne Direction métier,IMPLÉMENTÉ,Bloquante,Direction visible
+PORT-04,Portefeuille,Utilisateur,Colonne Demandeur,IMPLÉMENTÉ,Majeure,Demandeur visible
+PORT-05,Portefeuille,Utilisateur,Colonne Sponsor,IMPLÉMENTÉ,Majeure,Sponsor visible
+PORT-06,Portefeuille,Utilisateur,Colonne Chef de Projet DSI,IMPLÉMENTÉ,Majeure,ChefProjet visible
+PORT-07,Portefeuille,Utilisateur,Statut global du projet,IMPLÉMENTÉ,Bloquante,StatutProjet visible
+PORT-08,Portefeuille,Utilisateur,Phase en cours,IMPLÉMENTÉ,Bloquante,PhaseActuelle visible
+PORT-09,Portefeuille,Utilisateur,% d'avancement,IMPLÉMENTÉ,Majeure,PourcentageAvancement visible
+PORT-10,Portefeuille,Utilisateur,État projet,IMPLÉMENTÉ,Majeure,IndicateurRAG visible
+PORT-11,Portefeuille,Utilisateur,Dates projet,IMPLÉMENTÉ,Majeure,Toutes les dates visibles
+PORT-12,Portefeuille,Utilisateur,Filtre Direction métier,IMPLÉMENTÉ,Majeure,Filtrage fonctionnel
+PORT-13,Portefeuille,Utilisateur,Filtre Chef de Projet,IMPLÉMENTÉ,Majeure,Filtrage fonctionnel
+PORT-14,Portefeuille,Utilisateur,Filtre Statut projet,IMPLÉMENTÉ,Majeure,Filtrage fonctionnel
+PORT-15,Portefeuille,Utilisateur,Filtre Phase projet,IMPLÉMENTÉ,Majeure,Filtrage fonctionnel
+PORT-16,Portefeuille,Directeur métier,Visibilité par direction,IMPLÉMENTÉ,Bloquante,Filtrage par direction
+PORT-17,Portefeuille,DSI,Visibilité DSI,IMPLÉMENTÉ,Bloquante,DSI voit tout
+PORT-18,Portefeuille,Admin IT,Visibilité Admin IT,IMPLÉMENTÉ,Bloquante,AdminIT voit tout
+ANA-01,Équipe projet,Chef de projet / DSI,Ajout membre – Nom,NON IMPLÉMENTÉ,Majeure,Modèle MembreProjet existe mais pas de vue
+ANA-02,Équipe projet,Chef de projet / DSI,Ajout membre – Rôle,NON IMPLÉMENTÉ,Majeure,Modèle existe mais pas de vue
+ANA-03,Équipe projet,Chef de projet / DSI,Ajout membre – Direction,NON IMPLÉMENTÉ,Majeure,Modèle existe mais pas de vue
+ANA-04,Équipe projet,Chef de projet / DSI,Modification d'un membre,NON IMPLÉMENTÉ,Majeure,Pas de vue
+ANA-05,Clarification,Chef de projet,Notes de clarification,NON IMPLÉMENTÉ,Majeure,Pas de champ ni de vue
+ANA-06,Clarification,Chef de projet,Décisions prises,NON IMPLÉMENTÉ,Majeure,Pas de champ ni de vue
+ANA-07,Clarification,Chef de projet,Hypothèses projet,NON IMPLÉMENTÉ,Majeure,Pas de champ ni de vue
+ANA-08,Documents,Chef de projet,Upload cahier d'analyse technique,NON IMPLÉMENTÉ,Majeure,Pas de vue pour upload
+ANA-09,Documents,Chef de projet,Upload note de cadrage,NON IMPLÉMENTÉ,Majeure,Pas de vue pour upload
+ANA-10,Gestion des risques,Chef de projet,Champ Description du risque,PARTIELLEMENT,Majeure,Modèle RisqueProjet existe mais pas de vue
+ANA-11,Gestion des risques,Chef de projet,Champ Probabilité,PARTIELLEMENT,Majeure,Modèle existe mais pas de vue
+ANA-12,Gestion des risques,Chef de projet,Champ Impact,PARTIELLEMENT,Majeure,Modèle existe mais pas de vue
+ANA-13,Gestion des risques,Chef de projet,Champ Plan de mitigation,PARTIELLEMENT,Majeure,Modèle existe mais pas de vue
+ANA-14,Gestion des risques,Chef de projet,Champ Responsable du risque,PARTIELLEMENT,Majeure,Modèle existe mais pas de vue
+ANA-15,Gestion des risques,Chef de projet,Champ Statut du risque,PARTIELLEMENT,Majeure,Modèle existe mais pas de vue
+ANA-16,Gestion des risques,Chef de projet,Création d'un risque complet,NON IMPLÉMENTÉ,Majeure,Pas de vue
+ANA-17,Gestion des risques,Chef de projet,Modification d'un risque,NON IMPLÉMENTÉ,Majeure,Pas de vue
+CHR-01,Formulaire charte,Chef de projet,Champ Objectifs,PARTIELLEMENT,Bloquante,Modèle CharteProjet existe mais pas de vue
+CHR-02,Formulaire charte,Chef de projet,Champ Périmètre,PARTIELLEMENT,Bloquante,Modèle existe mais pas de vue
+CHR-03,Formulaire charte,Chef de projet,Champ Contraintes,PARTIELLEMENT,Majeure,Modèle existe mais pas de vue
+CHR-04,Formulaire charte,Chef de projet,Champ Risques initiaux,PARTIELLEMENT,Majeure,Modèle existe mais pas de vue
+CHR-05,Saisie,Chef de projet,Enregistrement des données de charte,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+CHR-06,PDF,Chef de projet,Génération de la charte en PDF,NON IMPLÉMENTÉ,Bloquante,PdfService existe mais pas implémenté pour charte
+CHR-07,PDF,Chef de projet,Exactitude du contenu PDF,NON IMPLÉMENTÉ,Bloquante,Pas de génération PDF
+CHR-08,Archivage,Chef de projet,PDF archivé dans le projet,NON IMPLÉMENTÉ,Majeure,Pas de génération PDF
+CHR-09,Notifications,Chef de projet,Envoi mail Directeur métier / DSI,NON IMPLÉMENTÉ,Moyenne,Pas de vue pour déclencher
+CHR-10,Signature,Chef de projet,Upload charte signée,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+CHR-11,Statut projet,Chef de projet,Champ Charte validée,PARTIELLEMENT,Bloquante,Champ CharteValidee existe mais pas de vue
+CHR-12,Workflow projet,Chef de projet,Passage vers phase planification,NON IMPLÉMENTÉ,Bloquante,Logique à implémenter
+PLAN-01,Livrables de planification,Chef de projet,Zone upload WBS,NON IMPLÉMENTÉ,Majeure,Pas de vue
+PLAN-02,Livrables de planification,Chef de projet,Zone upload Planning détaillé,NON IMPLÉMENTÉ,Majeure,Pas de vue
+PLAN-03,Livrables de planification,Chef de projet,Zone upload Matrice RACI,NON IMPLÉMENTÉ,Majeure,Pas de vue
+PLAN-04,Livrables de planification,Chef de projet,Zone upload Schéma de communication,NON IMPLÉMENTÉ,Majeure,Pas de vue
+PLAN-05,Livrables de planification,Chef de projet,Champ Budget prévisionnel,PARTIELLEMENT,Bloquante,Champ existe mais pas de vue
+PLAN-06,Livrables de planification,Chef de projet,Zone upload PV Kick-off,NON IMPLÉMENTÉ,Majeure,Pas de vue
+PLAN-07,Documents,Chef de projet,Upload WBS,NON IMPLÉMENTÉ,Majeure,Pas de vue
+PLAN-08,Documents,Chef de projet,Upload Planning détaillé,NON IMPLÉMENTÉ,Majeure,Pas de vue
+PLAN-09,Documents,Chef de projet,Upload Matrice RACI,NON IMPLÉMENTÉ,Majeure,Pas de vue
+PLAN-10,Documents,Chef de projet,Upload Schéma communication,NON IMPLÉMENTÉ,Majeure,Pas de vue
+PLAN-11,Budget,Chef de projet,Upload ou saisie Budget prévisionnel,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+PLAN-12,Documents,Chef de projet,Upload PV Kick-off,NON IMPLÉMENTÉ,Majeure,Pas de vue
+PLAN-13,Validation,DSI,Champ Planning validé par DSI,PARTIELLEMENT,Bloquante,Champ existe mais pas de vue
+PLAN-14,Validation,Directeur métier,Champ Planning validé par Directeur métier,PARTIELLEMENT,Bloquante,Champ existe mais pas de vue
+PLAN-15,Validation,DSI,Validation du planning,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+PLAN-16,Validation,Directeur métier,Validation du planning,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+PLAN-17,Contrôle workflow,Système,Validation unique insuffisante,NON IMPLÉMENTÉ,Bloquante,Logique à implémenter
+PLAN-18,Transition workflow,Système,Double validation requise,NON IMPLÉMENTÉ,Bloquante,Logique à implémenter
+EXEC-01,Documents,Chef de projet,Upload compte-rendu de réunion,NON IMPLÉMENTÉ,Majeure,Pas de vue
+EXEC-02,Documents,Chef de projet,Upload rapport d'avancement,NON IMPLÉMENTÉ,Majeure,Pas de vue
+EXEC-03,Commentaires,Chef de projet,Champ commentaire d'avancement,PARTIELLEMENT,Majeure,Champ CommentaireTechnique existe mais pas de vue
+EXEC-04,Avancement,Chef de projet,Champ % d'avancement,PARTIELLEMENT,Bloquante,Champ PourcentageAvancement existe mais pas de vue
+EXEC-05,Avancement,Chef de projet,Saisie 0 %,NON IMPLÉMENTÉ,Majeure,Pas de vue
+EXEC-06,Avancement,Chef de projet,Saisie 50 %,NON IMPLÉMENTÉ,Majeure,Pas de vue
+EXEC-07,Avancement,Chef de projet,Saisie 100 %,NON IMPLÉMENTÉ,Majeure,Pas de vue
+EXEC-08,Avancement,Système,Saisie >100 %,NON IMPLÉMENTÉ,Bloquante,Validation à implémenter
+EXEC-09,Avancement,Système,Saisie négative,NON IMPLÉMENTÉ,Bloquante,Validation à implémenter
+EXEC-10,État projet,Chef de projet,Champ statut Vert / Orange / Rouge,PARTIELLEMENT,Majeure,Champ EtatProjet existe mais pas de vue
+EXEC-11,Risques,Chef de projet,Mise à jour du registre des risques,NON IMPLÉMENTÉ,Majeure,Pas de vue
+EXEC-12,Go / No-Go,Chef de projet,Champ Prêt pour UAT / Recette,NON IMPLÉMENTÉ,Bloquante,Pas de champ ni de vue
+EXEC-13,Go / No-Go,Chef de projet,Validation Prêt pour UAT,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+EXEC-14,Transition,Système,Passage automatique vers UAT,NON IMPLÉMENTÉ,Bloquante,Logique à implémenter
+UAT-01,Documents UAT,Chef de projet / Testeurs,Zone upload Cahier de tests,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+UAT-02,Documents UAT,Chef de projet / Testeurs,Zone upload Feuille d'anomalies,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+UAT-03,Documents UAT,Chef de projet,Zone upload PV de recette,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+UAT-04,Mise en production,Chef de projet / Infra,Zone upload Dossier MEP,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+UAT-05,Mise en production,Chef de projet / Infra,Zone upload PV de MEP,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+UAT-06,Hypercare,Chef de projet,Zone upload Rapport hypercare,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+UAT-07,Statut recette,Chef de projet,Champ Recette validée ?,PARTIELLEMENT,Bloquante,Champ RecetteValidee existe mais pas de vue
+UAT-08,Statut MEP,Chef de projet,Champ MEP effectuée ?,PARTIELLEMENT,Bloquante,Champ MepEffectuee existe mais pas de vue
+UAT-09,Documents,Chef de projet,Upload Cahier de tests,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+UAT-10,Documents,Chef de projet,Upload Feuille d'anomalies,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+UAT-11,Documents,Chef de projet,Upload PV recette,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+UAT-12,Documents,Chef de projet,Upload Dossier MEP,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+UAT-13,Documents,Chef de projet,Upload PV MEP,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+UAT-14,Documents,Chef de projet,Upload Rapport hypercare,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+UAT-15,Validation recette,Chef de projet,Recette validée = Oui,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+UAT-16,Validation MEP,Chef de projet,MEP effectuée = Oui,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+UAT-17,Contrôle cohérence,Système,MEP sans PV de MEP,NON IMPLÉMENTÉ,Majeure,Validation à implémenter
+UAT-18,Contrôle cohérence,Système,Recette validée sans PV recette,NON IMPLÉMENTÉ,Majeure,Validation à implémenter
+UAT-19,Transition,Système,Fin hypercare,NON IMPLÉMENTÉ,Bloquante,Logique à implémenter
+CLOT-01,Bilan projet,Chef de projet,Champ Périmètre réalisé,PARTIELLEMENT,Majeure,Champ BilanCloture existe mais pas de vue
+CLOT-02,Bilan projet,Chef de projet,Champ Planning réalisé,NON IMPLÉMENTÉ,Majeure,Pas de champ ni de vue
+CLOT-03,Bilan projet,Chef de projet,Champ Budget réalisé,NON IMPLÉMENTÉ,Majeure,Pas de champ ni de vue
+CLOT-04,Bilan projet,Chef de projet,Champ Difficultés rencontrées,NON IMPLÉMENTÉ,Majeure,Pas de champ ni de vue
+CLOT-05,Bilan projet,Chef de projet,Champ Réussites du projet,NON IMPLÉMENTÉ,Majeure,Pas de champ ni de vue
+CLOT-06,Leçons apprises,Chef de projet,Champ Ce qui a bien marché,PARTIELLEMENT,Majeure,Champ LeconsApprises existe mais pas de vue
+CLOT-07,Leçons apprises,Chef de projet,Champ Ce qui n'a pas marché,NON IMPLÉMENTÉ,Majeure,Pas de champ ni de vue
+CLOT-08,Leçons apprises,Chef de projet,Champ Recommandations,NON IMPLÉMENTÉ,Majeure,Pas de champ ni de vue
+CLOT-09,Documents,Chef de projet,Upload rapport de clôture,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+CLOT-10,Documents,Chef de projet,Upload PV de clôture,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+CLOT-11,Documents,Chef de projet / RUN,Upload dossier d'exploitation / RUN,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+CLOT-12,Workflow,Chef de projet,Initier demande de clôture,PARTIELLEMENT,Bloquante,Modèle DemandeClotureProjet existe mais pas de vue
+CLOT-13,Workflow,Demandeur / Chef de projet,Validation demandeur,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+CLOT-14,Workflow,Directeur métier,Validation métier,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+CLOT-15,Workflow,DSI,Validation finale DSI,NON IMPLÉMENTÉ,Bloquante,Pas de vue
+CLOT-16,Contrôle workflow,Système,Chaîne de validation incomplète,NON IMPLÉMENTÉ,Bloquante,Logique à implémenter
+CLOT-17,Portefeuille projets,PMO / DSI,Projet clôturé visible dans portefeuille,PARTIELLEMENT,Majeure,Statut existe mais workflow incomplet

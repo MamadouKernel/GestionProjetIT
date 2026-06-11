@@ -1,0 +1,534 @@
+@model GestionProjects.Domain.Models.FicheProjet
+@inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
+
+@{
+    ViewData["Title"] = "Fiche Projet CIT";
+    var projet = ViewBag.Projet as GestionProjects.Domain.Models.Projet;
+    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, projet);
+    var canEdit = ui.CanEditCharte;
+}
+
+<div class="fade-in document-shell">
+    <div class="document-toolbar mb-4">
+        <div class="document-hero flex-grow-1">
+            <div class="document-hero-grid">
+                <div>
+                    <span class="badge-modern badge-modern-info mb-3">Référentiel projet</span>
+                    <h2 class="document-hero-title">Fiche Projet CIT - @projet?.CodeProjet</h2>
+                    <p class="document-hero-copy">
+                        Vue consolidée du cadrage, du périmètre, des indicateurs et des livrables obligatoires du projet.
+                    </p>
+                    <div class="document-hero-badges">
+                        <span class="badge-modern badge-modern-secondary">@projet?.Direction?.Libelle</span>
+                        <span class="badge-modern badge-modern-info">@projet?.PhaseActuelle</span>
+                        <span class="badge-modern badge-modern-@(projet?.EtatProjet == GestionProjects.Domain.Enums.EtatProjet.Vert ? "success" : projet?.EtatProjet == GestionProjects.Domain.Enums.EtatProjet.Orange ? "warning" : "danger")">
+                            @projet?.EtatProjet
+                        </span>
+                    </div>
+                </div>
+                <div class="document-kpi-panel">
+                    <div class="document-kpi">
+                        <span class="document-kpi-label">Avancement</span>
+                        <span class="document-kpi-value">@(projet?.PourcentageAvancement ?? 0)%</span>
+                        <span class="document-kpi-copy">Niveau de progression consolidé</span>
+                    </div>
+                    <div class="document-kpi">
+                        <span class="document-kpi-label">Date cible</span>
+                        <span class="document-kpi-value">@(projet?.DateFinPrevue?.ToString("dd/MM/yyyy") ?? "N/A")</span>
+                        <span class="document-kpi-copy">Fin prévisionnelle du projet</span>
+                    </div>
+                    <div class="document-kpi">
+                        <span class="document-kpi-label">Budget prévu</span>
+                        <span class="document-kpi-value">@(Model.BudgetPrevisionnel?.ToString("N0") ?? "N/A")</span>
+                        <span class="document-kpi-copy">Montant prévisionnel saisi</span>
+                    </div>
+                    <div class="document-kpi">
+                        <span class="document-kpi-label">Prochain jalon</span>
+                        <span class="document-kpi-value">@(string.IsNullOrWhiteSpace(Model.ProchainJalon) ? "À définir" : Model.ProchainJalon)</span>
+                        <span class="document-kpi-copy">Point de passage opérationnel</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="document-actions">
+            <a asp-action="Details" asp-route-id="@projet?.Id" class="btn-modern btn-modern-secondary">
+                <i class="bi bi-arrow-left"></i> Retour
+            </a>
+            <form asp-action="GenererFicheProjetWord" method="post" class="document-inline-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@projet?.Id" />
+                <button type="submit" class="btn-modern btn-modern-primary">
+                    <i class="bi bi-file-earmark-word"></i> Télécharger Word
+                </button>
+            </form>
+            @if (canEdit)
+            {
+                <button type="button" class="btn-modern btn-modern-primary" onclick="toggleEditMode()">
+                    <i class="bi bi-pencil"></i> <span id="editModeText">Éditer</span>
+                </button>
+            }
+        </div>
+    </div>
+
+    <form asp-action="SauvegarderFicheProjet" method="post" id="ficheForm" class="document-editor">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@projet?.Id" />
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="ProjetId" />
+
+        <div class="card-modern mb-4">
+            <div class="card-header-modern document-accent-header">
+                <h3 class="card-title-modern mb-0">
+                    <i class="bi bi-1-circle"></i>
+                    1. Identification du projet
+                </h3>
+            </div>
+            <div class="card-body-modern">
+                <div class="document-definition-grid">
+                    <strong class="document-definition-label">Code projet</strong>
+                    <div class="document-definition-value document-highlight-value">@projet?.CodeProjet</div>
+
+                    <strong class="document-definition-label">Titre court</strong>
+                    <input asp-for="TitreCourt" class="form-control-modern" placeholder="@projet?.Titre" />
+
+                    <strong class="document-definition-label">Titre long</strong>
+                    <input asp-for="TitreLong" class="form-control-modern" placeholder="@projet?.Titre" />
+
+                    <strong class="document-definition-label">Direction métier porteuse</strong>
+                    <div class="document-definition-value">@projet?.Direction?.Libelle</div>
+
+                    <strong class="document-definition-label">Demandeur</strong>
+                    <div class="document-definition-value">@projet?.DemandeProjet?.Demandeur?.Nom @projet?.DemandeProjet?.Demandeur?.Prenoms</div>
+
+                    <strong class="document-definition-label">Sponsor (Directeur métier)</strong>
+                    <div class="document-definition-value">@projet?.Sponsor?.Nom @projet?.Sponsor?.Prenoms</div>
+
+                    <strong class="document-definition-label">Chef de Projet DSI</strong>
+                    <div class="document-definition-value">@(projet?.ChefProjet != null ? $"{projet.ChefProjet.Nom} {projet.ChefProjet.Prenoms}" : "Non assigné")</div>
+
+                    <strong class="document-definition-label">Date de demande</strong>
+                    <div class="document-definition-value">@projet?.DemandeProjet?.DateSoumission.ToString("dd/MM/yyyy")</div>
+
+                    <strong class="document-definition-label">Date d'initiation</strong>
+                    <div class="document-definition-value">@(projet?.DateDebut?.ToString("dd/MM/yyyy") ?? "N/A")</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-modern mb-4">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern">
+                    <i class="bi bi-2-circle"></i>
+                    2. Objectifs & description
+                </h3>
+            </div>
+            <div class="card-body-modern">
+                <div class="form-group-modern mb-3">
+                    <label class="form-label-modern">Objectif principal (3-5 lignes)</label>
+                    <textarea asp-for="ObjectifPrincipal" class="form-control-modern" rows="5"></textarea>
+                </div>
+                <div class="form-group-modern mb-3">
+                    <label class="form-label-modern">Contexte / problème adressé</label>
+                    <textarea asp-for="ContexteProblemeAdresse" class="form-control-modern" rows="4"></textarea>
+                </div>
+                <div class="form-group-modern mb-3">
+                    <label class="form-label-modern">Description synthétique du projet</label>
+                    <textarea asp-for="DescriptionSynthetique" class="form-control-modern" rows="4"></textarea>
+                </div>
+                <div class="form-group-modern mb-3">
+                    <label class="form-label-modern">Résultats attendus</label>
+                    <textarea asp-for="ResultatsAttendus" class="form-control-modern" rows="4"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-modern mb-4">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern">
+                    <i class="bi bi-3-circle"></i>
+                    3. Périmètre
+                </h3>
+            </div>
+            <div class="card-body-modern">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Périmètre inclus (IN)</label>
+                            <textarea asp-for="PerimetreInclus" class="form-control-modern" rows="5" placeholder="Un élément par ligne"></textarea>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Périmètre exclu (OUT)</label>
+                            <textarea asp-for="PerimetreExclu" class="form-control-modern" rows="5" placeholder="Un élément par ligne"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-modern mb-4">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern">
+                    <i class="bi bi-4-circle"></i>
+                    4. Indicateurs clés
+                </h3>
+            </div>
+            <div class="card-body-modern">
+                <div class="form-group-modern mb-3">
+                    <label class="form-label-modern">Bénéfices attendus (opérationnels, financiers, qualité, conformité...)</label>
+                    <textarea asp-for="BeneficesAttendus" class="form-control-modern" rows="4"></textarea>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Criticité / urgence</label>
+                            <input asp-for="CriticiteUrgence" class="form-control-modern" />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Type de projet</label>
+                            <input asp-for="TypeProjet" class="form-control-modern" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-modern mb-4">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern">
+                    <i class="bi bi-5-circle"></i>
+                    5. Planning synthétique
+                </h3>
+            </div>
+            <div class="card-body-modern">
+                <div class="document-definition-grid">
+                    <strong class="document-definition-label">Phase actuelle</strong>
+                    <span class="badge-modern badge-modern-info">@projet?.PhaseActuelle</span>
+
+                    <strong class="document-definition-label">Date début</strong>
+                    <div class="document-definition-value">@(projet?.DateDebut?.ToString("dd/MM/yyyy") ?? "N/A")</div>
+
+                    <strong class="document-definition-label">Date fin prévisionnelle</strong>
+                    <div class="document-definition-value">@(projet?.DateFinPrevue?.ToString("dd/MM/yyyy") ?? "N/A")</div>
+
+                    <strong class="document-definition-label">Prochain jalon</strong>
+                    <input asp-for="ProchainJalon" class="form-control-modern" />
+
+                    <strong class="document-definition-label">Statut</strong>
+                    <span class="badge-modern badge-modern-@(projet?.EtatProjet == GestionProjects.Domain.Enums.EtatProjet.Vert ? "success" : projet?.EtatProjet == GestionProjects.Domain.Enums.EtatProjet.Orange ? "warning" : "danger")">
+                        @projet?.EtatProjet
+                    </span>
+
+                    <strong class="document-definition-label">% avancement</strong>
+                    <div class="document-progress">
+                        <div class="document-progress-track">
+                            <div class="document-progress-fill" style="width: @(projet?.PourcentageAvancement ?? 0)%"></div>
+                        </div>
+                        <span class="document-progress-value">@(projet?.PourcentageAvancement ?? 0)%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-modern mb-4">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern">
+                    <i class="bi bi-6-circle"></i>
+                    6. Principaux risques
+                </h3>
+            </div>
+            <div class="card-body-modern">
+                <div class="form-group-modern">
+                    <label class="form-label-modern">Synthèse des risques</label>
+                    <textarea asp-for="SyntheseRisques" class="form-control-modern" rows="6" placeholder="Pour chaque risque : description, impact, statut"></textarea>
+                </div>
+                @if (projet?.Risques != null && projet.Risques.Any(r => !r.EstSupprime))
+                {
+                    <div class="document-note-box mt-3">
+                        <strong>Risques enregistrés dans le projet</strong>
+                        <ul class="mt-2 mb-0">
+                            @foreach (var risque in projet.Risques.Where(r => !r.EstSupprime).Take(5))
+                            {
+                                <li>
+                                    <strong>@risque.Description</strong>
+                                    <span class="badge-modern badge-modern-@(risque.Statut == GestionProjects.Domain.Enums.StatutRisque.Maitrise || risque.Statut == GestionProjects.Domain.Enums.StatutRisque.Clos ? "success" : "warning")">
+                                        @risque.Statut
+                                    </span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="card-modern mb-4">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern">
+                    <i class="bi bi-7-circle"></i>
+                    7. Gouvernance et acteurs
+                </h3>
+            </div>
+            <div class="card-body-modern">
+                <div class="document-definition-grid mb-3">
+                    <strong class="document-definition-label">Chef de Projet DSI</strong>
+                    <div class="document-definition-value">@(projet?.ChefProjet != null ? $"{projet.ChefProjet.Nom} {projet.ChefProjet.Prenoms}" : "Non assigné")</div>
+
+                    <strong class="document-definition-label">Sponsor</strong>
+                    <div class="document-definition-value">@projet?.Sponsor?.Nom @projet?.Sponsor?.Prenoms</div>
+                </div>
+                <div class="form-group-modern mb-3">
+                    <label class="form-label-modern">Équipe projet (nom + rôle)</label>
+                    <textarea asp-for="EquipeProjet" class="form-control-modern" rows="5" placeholder="Un membre par ligne"></textarea>
+                </div>
+                <div class="form-group-modern mb-3">
+                    <label class="form-label-modern">Parties prenantes clés</label>
+                    <textarea asp-for="PartiesPrenantesCles" class="form-control-modern" rows="4"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-modern mb-4">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern">
+                    <i class="bi bi-8-circle"></i>
+                    8. Livrables obligatoires
+                </h3>
+            </div>
+            <div class="card-body-modern">
+                <div class="table-responsive">
+                    <table class="table-modern">
+                        <thead>
+                            <tr>
+                                <th>Phase</th>
+                                <th>Livrables</th>
+                                <th style="width: 100px;">Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Analyse / Clarification</strong></td>
+                                <td>Charte Projet</td>
+                                <td class="text-center">
+                                    @if (Model.CharteProjetPresente)
+                                    {
+                                        <span class="badge-modern badge-modern-success">✔</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-modern badge-modern-danger">✖</span>
+                                    }
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Planification</strong></td>
+                                <td>WBS / Planning / RACI / Budget</td>
+                                <td class="text-center">
+                                    @if (Model.WBSPlanningRACIBudgetPresent)
+                                    {
+                                        <span class="badge-modern badge-modern-success">✔</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-modern badge-modern-danger">✖</span>
+                                    }
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Exécution</strong></td>
+                                <td>CR réunions</td>
+                                <td class="text-center">
+                                    @if (Model.CRReunionsPresent)
+                                    {
+                                        <span class="badge-modern badge-modern-success">✔</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-modern badge-modern-danger">✖</span>
+                                    }
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Recette & MEP</strong></td>
+                                <td>Cahier tests / PV Recette / PV MEP</td>
+                                <td class="text-center">
+                                    @if (Model.CahierTestsPVRecettePVMEPPresent)
+                                    {
+                                        <span class="badge-modern badge-modern-success">✔</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-modern badge-modern-danger">✖</span>
+                                    }
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Clôture</strong></td>
+                                <td>Rapport / Leçons apprises / PV Clôture</td>
+                                <td class="text-center">
+                                    @if (Model.RapportLeconsApprisesPVCloturePresent)
+                                    {
+                                        <span class="badge-modern badge-modern-success">✔</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-modern badge-modern-danger">✖</span>
+                                    }
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-modern mb-4">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern">
+                    <i class="bi bi-9-circle"></i>
+                    9. Budget
+                </h3>
+            </div>
+            <div class="card-body-modern">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Budget prévisionnel</label>
+                            <input asp-for="BudgetPrevisionnel" type="number" step="0.01" class="form-control-modern" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Budget consommé</label>
+                            <input asp-for="BudgetConsomme" type="number" step="0.01" class="form-control-modern" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Écarts</label>
+                            <input asp-for="EcartsBudget" type="number" step="0.01" class="form-control-modern" readonly />
+                        </div>
+                    </div>
+                </div>
+                @{
+                    var ecartPourcentage = 0m;
+                    if (Model.BudgetPrevisionnel.HasValue && Model.BudgetConsomme.HasValue && Model.BudgetPrevisionnel.Value > 0)
+                    {
+                        ecartPourcentage = Math.Abs((Model.BudgetConsomme.Value - Model.BudgetPrevisionnel.Value) / Model.BudgetPrevisionnel.Value * 100);
+                    }
+                }
+                @if (ecartPourcentage > 10)
+                {
+                    <div class="alert-modern alert-modern-warning mt-3">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Attention :</strong> un écart de @ecartPourcentage.ToString("F1")% a été détecté. Une justification est obligatoire au-delà de 10%.
+                    </div>
+                    <div class="form-group-modern mt-3">
+                        <label class="form-label-modern">Justification de l'écart budget <span class="text-danger">*</span></label>
+                        <textarea asp-for="JustificationEcartBudget" class="form-control-modern" rows="4" required placeholder="Expliquez les raisons de l'écart budgétaire..."></textarea>
+                        <small class="profile-muted-note">
+                            @if (Model.JustificationPar != null && Model.DateJustificationEcart.HasValue)
+                            {
+                                <span>Justifié par @Model.JustificationPar.Nom @Model.JustificationPar.Prenoms le @Model.DateJustificationEcart.Value.ToString("dd/MM/yyyy")</span>
+                            }
+                        </small>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="card-modern mb-4">
+            <div class="card-header-modern document-accent-header">
+                <h3 class="card-title-modern mb-0">
+                    <i class="bi bi-10-circle"></i>
+                    10. Synthèse DSI
+                </h3>
+            </div>
+            <div class="card-body-modern">
+                <div class="form-group-modern mb-3">
+                    <label class="form-label-modern">Points forts du projet</label>
+                    <textarea asp-for="PointsForts" class="form-control-modern" rows="4"></textarea>
+                </div>
+                <div class="form-group-modern mb-3">
+                    <label class="form-label-modern">Points de vigilance</label>
+                    <textarea asp-for="PointsVigilance" class="form-control-modern" rows="4"></textarea>
+                </div>
+                <div class="form-group-modern mb-3">
+                    <label class="form-label-modern">Décisions attendues</label>
+                    <textarea asp-for="DecisionsAttendues" class="form-control-modern" rows="3"></textarea>
+                </div>
+                <div class="form-group-modern mb-3">
+                    <label class="form-label-modern">Demandes d'arbitrage</label>
+                    <textarea asp-for="DemandesArbitrage" class="form-control-modern" rows="3"></textarea>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.DateDerniereMiseAJour.HasValue)
+        {
+            <div class="profile-muted-note text-end mb-3">
+                Dernière mise à jour : @Model.DateDerniereMiseAJour.Value.ToString("dd/MM/yyyy à HH:mm")
+                @if (Model.DerniereMiseAJourPar != null)
+                {
+                    <span>par @Model.DerniereMiseAJourPar.Nom @Model.DerniereMiseAJourPar.Prenoms</span>
+                }
+            </div>
+        }
+
+        @if (canEdit)
+        {
+            <div class="d-flex justify-content-end gap-2 mb-4">
+                <a asp-action="Details" asp-route-id="@projet?.Id" class="btn-modern btn-modern-secondary">
+                    <i class="bi bi-x-circle"></i> Annuler
+                </a>
+                <button type="submit" class="btn-modern btn-modern-primary">
+                    <i class="bi bi-check-circle"></i> Enregistrer
+                </button>
+            </div>
+        }
+    </form>
+</div>
+
+<script>
+    let editMode = false;
+
+    function toggleEditMode() {
+        editMode = !editMode;
+        const inputs = document.querySelectorAll('#ficheForm input, #ficheForm textarea, #ficheForm select');
+        inputs.forEach(input => {
+            if (input.type !== 'hidden' && !input.readOnly) {
+                input.disabled = !editMode;
+            }
+        });
+        document.getElementById('editModeText').textContent = editMode ? 'Annuler' : 'Éditer';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const budgetPrevisionnel = document.querySelector('input[name="BudgetPrevisionnel"]');
+        const budgetConsomme = document.querySelector('input[name="BudgetConsomme"]');
+        const ecartsBudget = document.querySelector('input[name="EcartsBudget"]');
+
+        function calculerEcarts() {
+            const prev = parseFloat(budgetPrevisionnel?.value) || 0;
+            const cons = parseFloat(budgetConsomme?.value) || 0;
+            if (ecartsBudget) {
+                ecartsBudget.value = (cons - prev).toFixed(2);
+            }
+        }
+
+        if (budgetPrevisionnel) budgetPrevisionnel.addEventListener('input', calculerEcarts);
+        if (budgetConsomme) budgetConsomme.addEventListener('input', calculerEcarts);
+
+        if (!@canEdit.ToString().ToLower()) {
+            const inputs = document.querySelectorAll('#ficheForm input, #ficheForm textarea, #ficheForm select');
+            inputs.forEach(input => {
+                if (input.type !== 'hidden' && !input.readOnly) {
+                    input.disabled = true;
+                }
+            });
+        }
+    });
+</script>

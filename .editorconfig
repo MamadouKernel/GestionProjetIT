@@ -1,0 +1,6 @@
+root = true
+
+[*.{cs,cshtml,js,css,html,json,md,txt,xml,config,csv,csproj,sln}]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true

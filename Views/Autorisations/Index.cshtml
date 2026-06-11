@@ -1,0 +1,574 @@
+@using GestionProjects.Domain.Enums
+@using GestionProjects.Domain.Models
+@{
+    ViewData["Title"] = "Autorisations et droits";
+
+    var roles = ViewBag.Roles as List<RoleUtilisateur> ?? new List<RoleUtilisateur>();
+    var permissionsParRole = ViewBag.PermissionsParRole as Dictionary<RoleUtilisateur, List<RolePermission>>
+        ?? new Dictionary<RoleUtilisateur, List<RolePermission>>();
+    var vuesDisponibles = ViewBag.VuesDisponibles as List<GestionProjects.Controllers.VueInfo>
+        ?? new List<GestionProjects.Controllers.VueInfo>();
+
+    var totalPages = vuesDisponibles.Count;
+    var totalCategories = vuesDisponibles.Select(v => v.Categorie).Distinct().Count();
+    var totalPermissionsActives = permissionsParRole.Values.SelectMany(p => p).Count(p => p.EstActif);
+}
+
+@Html.AntiForgeryToken()
+
+<div class="fade-in admin-page authorization-page">
+    <div class="page-toolbar">
+        <div class="page-hero card-modern mb-0 flex-grow-1">
+            <div class="page-hero-main">
+                <span class="page-kicker">Administration</span>
+                <h1 class="page-hero-title">Autorisations et droits</h1>
+                <p class="page-hero-subtitle">
+                    Pilotez les accès par rôle avec une matrice claire des vues, actions et espaces métier disponibles.
+                </p>
+                <div class="page-hero-meta">
+                    <span class="badge-modern badge-modern-info">@roles.Count rôle(s)</span>
+                    <span class="badge-modern badge-modern-secondary">@totalPages vue(s)</span>
+                    <span class="badge-modern badge-modern-success">@totalPermissionsActives permission(s) active(s)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-hero-actions">
+            <div id="saveStatus" class="save-status-chip" style="display:none;"></div>
+            <form asp-action="InitialiserPermissions" method="post">
+                @Html.AntiForgeryToken()
+                <button type="submit"
+                        class="btn-modern btn-modern-secondary"
+                        onclick="return confirm('Réinitialiser toutes les permissions par défaut pour tous les rôles ?');">
+                    <i class="bi bi-arrow-clockwise"></i>
+                    Réinitialiser
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="admin-tabset nav nav-pills mb-4">
+        <a asp-controller="Admin" asp-action="Users" class="nav-link">Utilisateurs</a>
+        <a asp-controller="Admin" asp-action="ListeRoles" class="nav-link">Rôles</a>
+        <a asp-controller="Admin" asp-action="Directions" class="nav-link">Directions</a>
+        <a asp-controller="Admin" asp-action="Services" class="nav-link">Services</a>
+        <a asp-controller="Admin" asp-action="Delegations" class="nav-link">Délégations</a>
+        <a asp-controller="Admin" asp-action="Parametres" class="nav-link">Paramètres</a>
+        <a asp-controller="Autorisations" asp-action="Index" class="nav-link active">Autorisations</a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="success-banner mb-4">
+            <div class="success-banner-icon">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <div>
+                <div class="success-banner-title">Configuration mise à jour</div>
+                <div>@TempData["Success"]</div>
+            </div>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="admin-inline-note warning mb-4">
+            <i class="bi bi-exclamation-triangle"></i>
+            <div>@TempData["Error"]</div>
+        </div>
+    }
+
+    <div class="row g-3 mb-4">
+        <div class="col-lg-4">
+            <div class="card-modern card-accent info h-100">
+                <div class="card-body-modern">
+                    <span class="page-kicker">Couverture</span>
+                    <h3 class="mt-2 mb-1">@totalPages</h3>
+                    <p class="mb-0">Vues et actions suivies dans la matrice de droits.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card-modern card-accent gold h-100">
+                <div class="card-body-modern">
+                    <span class="page-kicker">Organisation</span>
+                    <h3 class="mt-2 mb-1">@totalCategories</h3>
+                    <p class="mb-0">Catégorie(s) fonctionnelle(s) répartissant les permissions.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card-modern card-accent success h-100">
+                <div class="card-body-modern">
+                    <span class="page-kicker">Accès actifs</span>
+                    <h3 class="mt-2 mb-1">@totalPermissionsActives</h3>
+                    <p class="mb-0">Permissions actuellement ouvertes dans l’ensemble des rôles.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-modern mb-4">
+        <div class="card-body-modern">
+            <div class="authorization-legend">
+                <div class="authorization-legend-title">
+                    <i class="bi bi-info-circle"></i>
+                    Lecture de la matrice
+                </div>
+                <div class="authorization-legend-items">
+                    <span class="authorization-legend-chip">
+                        <span class="authorization-legend-dot active"></span>
+                        Accès autorisé
+                    </span>
+                    <span class="authorization-legend-chip">
+                        <span class="authorization-legend-dot inactive"></span>
+                        Accès bloqué
+                    </span>
+                    <span class="authorization-legend-chip">
+                        <i class="bi bi-mouse"></i>
+                        Cliquez sur une carte pour changer l’état
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-modern">
+        <div class="card-header-modern pb-0">
+            <div class="page-toolbar w-100">
+                <div>
+                    <h3 class="card-title-modern mb-1">
+                        <i class="bi bi-grid-3x3-gap"></i>
+                        Matrice des permissions
+                    </h3>
+                    <p class="soft-note mb-0">Chaque rôle dispose de son propre panneau, avec catégories et bascule immédiate des autorisations.</p>
+                </div>
+            </div>
+
+            @if (roles.Any())
+            {
+                <ul class="nav authorization-role-tabs mt-4" id="rolesTabs" role="tablist">
+                    @for (int i = 0; i < roles.Count; i++)
+                    {
+                        var role = roles[i];
+                        var isActive = i == 0 ? "active" : string.Empty;
+                        var roleId = role.ToString().Replace(" ", string.Empty);
+                        var totalActifRole = permissionsParRole.ContainsKey(role)
+                            ? permissionsParRole[role].Count(p => p.EstActif)
+                            : 0;
+
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link @isActive"
+                                    id="@roleId-tab"
+                                    data-bs-toggle="tab"
+                                    data-bs-target="#@roleId"
+                                    type="button"
+                                    role="tab"
+                                    aria-controls="@roleId"
+                                    aria-selected="@(i == 0 ? "true" : "false")">
+                                <span class="authorization-role-tab-top">
+                                    <i class="bi @GetRoleIcon(role)"></i>
+                                    @GetRoleLabel(role)
+                                </span>
+                                <span class="authorization-role-tab-meta">
+                                    <span data-role-counter="@roleId">@totalActifRole</span> / @totalPages accès
+                                </span>
+                            </button>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+
+        <div class="card-body-modern">
+            @if (roles.Any() && vuesDisponibles.Any())
+            {
+                <div class="tab-content" id="rolesTabsContent">
+                    @for (int i = 0; i < roles.Count; i++)
+                    {
+                        var role = roles[i];
+                        var isActive = i == 0 ? "show active" : string.Empty;
+                        var roleId = role.ToString().Replace(" ", string.Empty);
+                        var permissions = permissionsParRole.ContainsKey(role)
+                            ? permissionsParRole[role]
+                            : new List<RolePermission>();
+                        var categoriesGroupees = vuesDisponibles.GroupBy(v => v.Categorie).OrderBy(g => GetCategoryOrder(g.Key)).ToList();
+                        var totalActif = permissions.Count(p => p.EstActif);
+                        var totalInactif = totalPages - totalActif;
+                        var isAdminRole = role == RoleUtilisateur.AdminIT;
+
+                        <div class="tab-pane fade @isActive" id="@roleId" role="tabpanel" aria-labelledby="@roleId-tab">
+                            <div class="permission-role-header">
+                                <div class="permission-role-header-main">
+                                    <span class="permission-role-badge" style="--role-color:@GetRoleColor(role);">
+                                        <i class="bi @GetRoleIcon(role)"></i>
+                                        @GetRoleLabel(role)
+                                    </span>
+                                    <h4>@GetRoleLabel(role)</h4>
+                                    <p>@GetRoleDescription(role)</p>
+                                    @if (isAdminRole)
+                                    {
+                                        <p class="soft-note mb-0">Le rôle Admin IT conserve un accès global. Les permissions affichées sont informatives et ne sont pas restreignables ici.</p>
+                                    }
+                                </div>
+                                <div class="permission-role-actions">
+                                    <button type="button" class="btn-modern btn-modern-secondary btn-sm" onclick="toggleAll('@roleId', true)" @(isAdminRole ? "disabled" : "")>
+                                        <i class="bi bi-check2-square"></i>
+                                        Tout activer
+                                    </button>
+                                    <button type="button" class="btn-modern btn-modern-danger btn-sm" onclick="toggleAll('@roleId', false)" @(isAdminRole ? "disabled" : "")>
+                                        <i class="bi bi-x-square"></i>
+                                        Tout bloquer
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-lg-4">
+                                    <div class="card-modern card-accent success h-100">
+                                        <div class="card-body-modern">
+                                            <span class="page-kicker">Autorisées</span>
+                                            <h3 class="mt-2 mb-1" data-role-summary-active="@roleId">@totalActif</h3>
+                                            <p class="mb-0">Vue(s) et action(s) accessibles pour ce rôle.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4">
+                                    <div class="card-modern card-accent warning h-100">
+                                        <div class="card-body-modern">
+                                            <span class="page-kicker">Bloquées</span>
+                                            <h3 class="mt-2 mb-1" data-role-summary-inactive="@roleId">@totalInactif</h3>
+                                            <p class="mb-0">Éléments masqués ou refusés à ce profil.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4">
+                                    <div class="card-modern card-accent info h-100">
+                                        <div class="card-body-modern">
+                                            <span class="page-kicker">Catégories</span>
+                                            <h3 class="mt-2 mb-1">@categoriesGroupees.Count</h3>
+                                            <p class="mb-0">Bloc(s) fonctionnel(s) couverts dans la matrice.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="permission-matrix">
+                                @foreach (var categorie in categoriesGroupees)
+                                {
+                                    var vuesCat = categorie.OrderBy(v => v.Ordre).ToList();
+                                    var actifsDansCat = vuesCat.Count(v => permissions.Any(p => p.Controleur == v.Controleur && p.Action == v.Action && p.EstActif));
+                                    var categoryKey = $"{roleId}_{categorie.Key}".Replace(" ", string.Empty);
+
+                                    <section class="permission-group" data-role-pane="@roleId">
+                                        <div class="permission-group-header">
+                                            <div>
+                                                <div class="permission-group-title">
+                                                    <i class="bi bi-folder2-open"></i>
+                                                    @categorie.Key
+                                                </div>
+                                                <div class="permission-group-subtitle">
+                                                    <span data-category-counter="@categoryKey">@actifsDansCat</span> / @vuesCat.Count accès actifs
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="permission-grid">
+                                            @foreach (var vue in vuesCat)
+                                            {
+                                                var permission = permissions.FirstOrDefault(p => p.Controleur == vue.Controleur && p.Action == vue.Action);
+                                                var isChecked = permission?.EstActif ?? false;
+                                                var checkboxId = $"perm_{roleId}_{vue.Controleur}_{vue.Action}";
+
+                                                <label class="permission-tile @(isChecked ? "is-active" : "is-inactive")"
+                                                       id="card_@checkboxId"
+                                                       data-role-pane="@roleId"
+                                                       data-category-key="@categoryKey"
+                                                       data-readonly="@(isAdminRole ? "true" : "false")">
+                                                    <input class="permission-checkbox"
+                                                           type="checkbox"
+                                                           id="@checkboxId"
+                                                           data-role="@((int)role)"
+                                                           data-controleur="@vue.Controleur"
+                                                           data-action="@vue.Action"
+                                                           data-card="card_@checkboxId"
+                                                           data-readonly="@(isAdminRole ? "true" : "false")"
+                                                           @(isAdminRole ? "disabled" : "")
+                                                           @(isChecked ? "checked" : "")
+                                                           onclick="event.stopPropagation()" />
+
+                                                    <div class="permission-tile-main">
+                                                        <div class="permission-tile-top">
+                                                            <div class="permission-tile-heading">
+                                                                <span class="permission-tile-icon">
+                                                                    <i class="bi @(vue.Icone ?? "bi-file-earmark")"></i>
+                                                                </span>
+                                                                <div>
+                                                                    <div class="permission-tile-title">@vue.NomAffichage</div>
+                                                                    <div class="permission-tile-route">@vue.Controleur / @vue.Action</div>
+                                                                </div>
+                                                            </div>
+                                                            <span class="permission-status-pill" data-status-pill>
+                                                                @(isChecked ? "Autorisé" : "Bloqué")
+                                                            </span>
+                                                        </div>
+
+                                                        <div class="permission-tile-body">
+                                                            @if (!string.IsNullOrWhiteSpace(permission?.Description))
+                                                            {
+                                                                <p>@permission!.Description</p>
+                                                            }
+                                                            else
+                                                            {
+                                                                <p>Permission appliquée à cette vue métier pour le rôle sélectionné.</p>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            }
+                                        </div>
+                                    </section>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-state-soft">
+                    <i class="bi bi-exclamation-circle"></i>
+                    <p>Aucune permission configurée pour le moment.</p>
+                    <form asp-action="InitialiserPermissions" method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn-modern btn-modern-primary">
+                            <i class="bi bi-arrow-clockwise"></i>
+                            Initialiser les permissions
+                        </button>
+                    </form>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        const saveStatus = document.getElementById('saveStatus');
+
+        function showStatus(message, isSuccess) {
+            saveStatus.textContent = message;
+            saveStatus.style.display = 'inline-flex';
+            saveStatus.classList.remove('ok', 'error');
+            saveStatus.classList.add(isSuccess ? 'ok' : 'error');
+
+            clearTimeout(saveStatus._timer);
+            saveStatus._timer = setTimeout(() => {
+                saveStatus.style.display = 'none';
+            }, 2600);
+        }
+
+        function refreshPermissionCard(cardEl, isActive) {
+            if (!cardEl) {
+                return;
+            }
+
+            cardEl.classList.toggle('is-active', isActive);
+            cardEl.classList.toggle('is-inactive', !isActive);
+
+            const pill = cardEl.querySelector('[data-status-pill]');
+            if (pill) {
+                pill.textContent = isActive ? 'Autorisé' : 'Bloqué';
+            }
+        }
+
+        function updateRoleCounters(roleId) {
+            const pane = document.getElementById(roleId);
+            if (!pane) {
+                return;
+            }
+
+            const checkboxes = pane.querySelectorAll('.permission-checkbox');
+            const activeCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+            const totalCount = checkboxes.length;
+            const inactiveCount = totalCount - activeCount;
+
+            const tabCounter = document.querySelector(`[data-role-counter="${roleId}"]`);
+            const summaryActive = document.querySelector(`[data-role-summary-active="${roleId}"]`);
+            const summaryInactive = document.querySelector(`[data-role-summary-inactive="${roleId}"]`);
+
+            if (tabCounter) {
+                tabCounter.textContent = activeCount;
+            }
+            if (summaryActive) {
+                summaryActive.textContent = activeCount;
+            }
+            if (summaryInactive) {
+                summaryInactive.textContent = inactiveCount;
+            }
+
+            pane.querySelectorAll('.permission-group').forEach(group => {
+                const categoryKey = group.querySelector('.permission-tile')?.dataset.categoryKey;
+                if (!categoryKey) {
+                    return;
+                }
+
+                const categoryBoxes = group.querySelectorAll('.permission-checkbox');
+                const categoryActive = Array.from(categoryBoxes).filter(cb => cb.checked).length;
+                const categoryCounter = document.querySelector(`[data-category-counter="${categoryKey}"]`);
+                if (categoryCounter) {
+                    categoryCounter.textContent = categoryActive;
+                }
+            });
+        }
+
+        function updatePermission(role, controleur, action, estActif, cardEl) {
+            refreshPermissionCard(cardEl, estActif);
+
+            fetch('@Url.Action("UpdatePermission", "Autorisations")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    __RequestVerificationToken: token,
+                    role: role,
+                    controleur: controleur,
+                    action: action,
+                    estActif: estActif
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateRoleCounters(cardEl.dataset.rolePane);
+                    showStatus('Sauvegardé', true);
+                } else {
+                    const checkbox = cardEl.querySelector('.permission-checkbox');
+                    if (checkbox) {
+                        checkbox.checked = !estActif;
+                    }
+                    refreshPermissionCard(cardEl, !estActif);
+                    updateRoleCounters(cardEl.dataset.rolePane);
+                    showStatus(data.message || 'Erreur de sauvegarde', false);
+                }
+            })
+            .catch(() => {
+                const checkbox = cardEl.querySelector('.permission-checkbox');
+                if (checkbox) {
+                    checkbox.checked = !estActif;
+                }
+                refreshPermissionCard(cardEl, !estActif);
+                updateRoleCounters(cardEl.dataset.rolePane);
+                showStatus('Erreur réseau', false);
+            });
+        }
+
+        function toggleAll(roleId, activate) {
+            const pane = document.getElementById(roleId);
+            if (!pane) {
+                return;
+            }
+
+            pane.querySelectorAll('.permission-checkbox').forEach(checkbox => {
+                if (checkbox.dataset.readonly === 'true' || checkbox.disabled) {
+                    return;
+                }
+                if (checkbox.checked !== activate) {
+                    checkbox.checked = activate;
+                    checkbox.dispatchEvent(new Event('change'));
+                }
+            });
+        }
+
+        document.querySelectorAll('.permission-tile').forEach(tile => {
+            tile.addEventListener('click', function (event) {
+                if (this.dataset.readonly === 'true') {
+                    return;
+                }
+
+                if (event.target.closest('.permission-checkbox')) {
+                    return;
+                }
+
+                const checkbox = this.querySelector('.permission-checkbox');
+                if (checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    checkbox.dispatchEvent(new Event('change'));
+                }
+            });
+        });
+
+        document.querySelectorAll('.permission-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function () {
+                if (this.dataset.readonly === 'true' || this.disabled) {
+                    return;
+                }
+                const card = document.getElementById(this.dataset.card);
+                updatePermission(this.dataset.role, this.dataset.controleur, this.dataset.action, this.checked, card);
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                if (pane.id) {
+                    updateRoleCounters(pane.id);
+                }
+            });
+        });
+    </script>
+}
+
+@functions {
+    private static string GetRoleIcon(RoleUtilisateur role) => role switch
+    {
+        RoleUtilisateur.DSI => "bi-shield-fill",
+        RoleUtilisateur.DirecteurMetier => "bi-person-badge",
+        RoleUtilisateur.ChefDeProjet => "bi-briefcase",
+        RoleUtilisateur.AdminIT => "bi-gear-fill",
+        RoleUtilisateur.ResponsableSolutionsIT => "bi-person-workspace",
+        RoleUtilisateur.Demandeur => "bi-person",
+        _ => "bi-person"
+    };
+
+    private static string GetRoleColor(RoleUtilisateur role) => role switch
+    {
+        RoleUtilisateur.AdminIT => "#162347",
+        RoleUtilisateur.DSI => "#1A72B8",
+        RoleUtilisateur.DirecteurMetier => "#C9A227",
+        RoleUtilisateur.ResponsableSolutionsIT => "#2E7D32",
+        RoleUtilisateur.ChefDeProjet => "#7B1FA2",
+        RoleUtilisateur.Demandeur => "#0277BD",
+        _ => "#546E7A"
+    };
+
+    private static string GetRoleLabel(RoleUtilisateur role) => role switch
+    {
+        RoleUtilisateur.DirecteurMetier => "Directeur métier",
+        RoleUtilisateur.ResponsableSolutionsIT => "Resp. Solutions IT",
+        RoleUtilisateur.ChefDeProjet => "Chef de projet",
+        RoleUtilisateur.AdminIT => "Admin IT",
+        _ => role.ToString()
+    };
+
+    private static string GetRoleDescription(RoleUtilisateur role) => role switch
+    {
+        RoleUtilisateur.AdminIT => "Pilotage complet des droits, du paramétrage et de la gouvernance d'accès.",
+        RoleUtilisateur.DSI => "Arbitrage global et supervision du portefeuille applicatif.",
+        RoleUtilisateur.DirecteurMetier => "Validation métier et consultation ciblée sur la direction concernée.",
+        RoleUtilisateur.ResponsableSolutionsIT => "Appui technique, visibilité transverse et délégation DSI.",
+        RoleUtilisateur.ChefDeProjet => "Exécution opérationnelle des phases, livrables et jalons projet.",
+        RoleUtilisateur.Demandeur => "Saisie, suivi et interaction sur les demandes de projet.",
+        _ => "Rôle applicatif."
+    };
+
+    private static int GetCategoryOrder(string category) => category switch
+    {
+        "Demandes" => 1,
+        "Validations" => 2,
+        "Projets" => 3,
+        "Administration" => 4,
+        "General" => 5,
+        _ => 999
+    };
+}

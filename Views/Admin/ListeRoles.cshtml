@@ -1,0 +1,292 @@
+@model List<GestionProjects.Domain.Models.Utilisateur>
+@using GestionProjects.Domain.Enums
+@using GestionProjects.Domain.Models
+
+@{
+    ViewData["Title"] = "Gestion des Rôles";
+    var allRoles        = (List<RoleUtilisateur>)ViewBag.AllRoles;
+    var recherche       = (string?)ViewBag.Recherche;
+    var directions      = ViewBag.Directions as IEnumerable<Direction> ?? Enumerable.Empty<Direction>();
+    var selectedDir     = ViewBag.SelectedDirectionId as Guid?;
+    var selectedRole    = ViewBag.SelectedRole as RoleUtilisateur?;
+    var totalCount      = ViewBag.TotalCount as int? ?? Model.Count;
+    var roleCounts      = ViewBag.RoleCounts as Dictionary<RoleUtilisateur, int> ?? new Dictionary<RoleUtilisateur, int>();
+}
+
+<div class="fade-in admin-page">
+    <div class="page-toolbar">
+        <div class="page-hero card-modern mb-0 flex-grow-1">
+            <div class="page-hero-main">
+                <span class="page-kicker">Administration</span>
+                <h1 class="page-hero-title">Gestion des rôles utilisateurs</h1>
+                <p class="page-hero-subtitle">
+                    Visualisez rapidement la répartition des rôles et ouvrez les profils pour ajuster les droits.
+                </p>
+                <div class="page-hero-meta">
+                    <span class="badge-modern badge-modern-info">@totalCount utilisateur(s)</span>
+                    <span class="badge-modern badge-modern-secondary">@allRoles.Count rôle(s)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @await Html.PartialAsync("_ValidationSummary")
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="success-banner mb-4">
+            <div class="success-banner-icon">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <div>
+                <div class="success-banner-title">Mise à jour effectuée</div>
+                <div>@TempData["Success"]</div>
+            </div>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="admin-inline-note warning mb-4">
+            <i class="bi bi-exclamation-triangle"></i>
+            <div>@TempData["Error"]</div>
+        </div>
+    }
+
+    <div class="card-modern mb-4">
+        <div class="card-body-modern">
+            <form method="get" asp-action="ListeRoles">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label-modern" for="recherche">Recherche</label>
+                        <input type="text" id="recherche" name="recherche" value="@recherche"
+                               class="form-control-modern" placeholder="Nom, prénom ou matricule..." />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label-modern" for="directionId">Direction</label>
+                        <select id="directionId" name="directionId" class="form-control-modern">
+                            <option value="">Toutes les directions</option>
+                            @foreach (var dir in directions)
+                            {
+                                <option value="@dir.Id" selected="@(selectedDir == dir.Id)">@dir.Libelle</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label-modern" for="role">Rôle</label>
+                        <select id="role" name="role" class="form-control-modern">
+                            <option value="">Tous les rôles</option>
+                            @foreach (var r in allRoles)
+                            {
+                                <option value="@((int)r)" selected="@(selectedRole == r)">@GetRoleLabel(r)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn-modern btn-modern-primary flex-fill">
+                            <i class="bi bi-search"></i> Filtrer
+                        </button>
+                        @if (!string.IsNullOrWhiteSpace(recherche) || selectedDir.HasValue || selectedRole.HasValue)
+                        {
+                            <a asp-action="ListeRoles" class="btn-modern btn-modern-secondary" title="Effacer les filtres">
+                                <i class="bi bi-x-circle"></i>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card-modern mb-4">
+        <div class="card-header-modern">
+            <h3 class="card-title-modern">
+                <i class="bi bi-tags"></i>
+                Légende des rôles
+            </h3>
+        </div>
+        <div class="card-body-modern">
+            <div class="d-flex flex-wrap gap-2">
+                @foreach (var role in allRoles)
+                {
+                    <span class="badge-modern @GetRoleBadgeClass(role)">
+                        <i class="bi @GetRoleIcon(role)"></i>
+                        @GetRoleLabel(role)
+                    </span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="card-modern">
+        <div class="card-header-modern">
+            <div class="page-toolbar w-100">
+                <div>
+                    <h3 class="card-title-modern mb-1">
+                        <i class="bi bi-table"></i>
+                        Utilisateurs et rôles
+                    </h3>
+                    <p class="soft-note mb-0">Accédez à la fiche de rôle de chaque utilisateur pour ajuster les droits.</p>
+                </div>
+                <span class="badge-modern badge-modern-info">@totalCount ligne(s)</span>
+            </div>
+        </div>
+        <div class="card-body-modern p-0">
+            <div class="table-responsive">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th>Matricule</th>
+                            <th>Utilisateur</th>
+                            <th>Direction</th>
+                            <th>Rôles actifs</th>
+                            <th class="text-center">Nb</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Any())
+                        {
+                            @foreach (var user in Model)
+                            {
+                                var rolesActifs = user.GetRolesActifs().ToList();
+                                <tr>
+                                    <td class="table-code">@user.Matricule</td>
+                                    <td>
+                                        <div class="table-person">
+                                            <span class="table-avatar primary">@GetInitiales(user.Nom, user.Prenoms)</span>
+                                            <div class="table-person-main">
+                                                <div class="table-person-title">@user.Nom @user.Prenoms</div>
+                                                <div class="table-person-subtitle">@user.Email</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (user.Direction != null)
+                                        {
+                                            <span class="badge-modern badge-modern-secondary">@user.Direction.Libelle</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="soft-note">Non assignée</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            @if (rolesActifs.Any())
+                                            {
+                                                @foreach (var role in rolesActifs)
+                                                {
+                                                    <span class="badge-modern @GetRoleBadgeClass(role)">
+                                                        <i class="bi @GetRoleIcon(role)"></i>
+                                                        @GetRoleLabel(role)
+                                                    </span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="soft-note">Aucun rôle</span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge-modern badge-modern-info">@rolesActifs.Count</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="table-actions justify-content-center">
+                                            <a asp-action="GererRoles"
+                                               asp-route-id="@user.Id"
+                                               class="btn-modern btn-modern-primary btn-icon"
+                                               title="Gérer les rôles"
+                                               aria-label="Gérer les rôles">
+                                                <i class="bi bi-shield-lock-fill"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-5">
+                                    <div class="empty-state-soft">
+                                        <i class="bi bi-search"></i>
+                                        <p>Aucun utilisateur trouvé.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-body-modern pt-0">
+            @await Html.PartialAsync("_Pagination")
+        </div>
+    </div>
+
+    <div class="row g-3 mt-1">
+        @foreach (var role in allRoles)
+        {
+            roleCounts.TryGetValue(role, out var count);
+            <div class="col-lg-4 col-md-6">
+                <div class="card-modern card-accent info h-100">
+                    <div class="card-body-modern">
+                        <span class="soft-kicker">@GetRoleLabel(role)</span>
+                        <h3 class="mt-2 mb-1">@count</h3>
+                        <p class="soft-note mb-0">@GetRoleDescription(role)</p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@functions {
+    private static string GetInitiales(string? nom, string? prenoms)
+    {
+        var initialNom = string.IsNullOrWhiteSpace(nom) ? "?" : nom.Trim()[0].ToString().ToUpperInvariant();
+        var initialPrenom = string.IsNullOrWhiteSpace(prenoms) ? string.Empty : prenoms.Trim()[0].ToString().ToUpperInvariant();
+        return $"{initialNom}{initialPrenom}";
+    }
+
+    private static string GetRoleBadgeClass(RoleUtilisateur role) => role switch
+    {
+        RoleUtilisateur.AdminIT => "badge-modern-dark",
+        RoleUtilisateur.DSI => "badge-modern-danger",
+        RoleUtilisateur.DirecteurMetier => "badge-modern-warning",
+        RoleUtilisateur.ResponsableSolutionsIT => "badge-modern-secondary",
+        RoleUtilisateur.ChefDeProjet => "badge-modern-info",
+        _ => "badge-modern-primary"
+    };
+
+    private static string GetRoleIcon(RoleUtilisateur role) => role switch
+    {
+        RoleUtilisateur.AdminIT => "bi-gear-fill",
+        RoleUtilisateur.DSI => "bi-shield-fill",
+        RoleUtilisateur.DirecteurMetier => "bi-person-badge",
+        RoleUtilisateur.ResponsableSolutionsIT => "bi-person-workspace",
+        RoleUtilisateur.ChefDeProjet => "bi-briefcase",
+        _ => "bi-person"
+    };
+
+    private static string GetRoleLabel(RoleUtilisateur role) => role switch
+    {
+        RoleUtilisateur.DirecteurMetier => "Directeur métier",
+        RoleUtilisateur.ResponsableSolutionsIT => "Resp. Solutions IT",
+        RoleUtilisateur.ChefDeProjet => "Chef de projet",
+        RoleUtilisateur.AdminIT => "Admin IT",
+        _ => role.ToString()
+    };
+
+    private static string GetRoleDescription(RoleUtilisateur role) => role switch
+    {
+        RoleUtilisateur.Demandeur => "Utilisateurs orientés saisie et suivi des demandes.",
+        RoleUtilisateur.DirecteurMetier => "Validation métier et sponsor des projets.",
+        RoleUtilisateur.DSI => "Arbitrage et pilotage global du portefeuille.",
+        RoleUtilisateur.ResponsableSolutionsIT => "Relais technique et délégation DSI.",
+        RoleUtilisateur.ChefDeProjet => "Conduite opérationnelle des phases projet.",
+        RoleUtilisateur.AdminIT => "Administration complète de l'application.",
+        _ => string.Empty
+    };
+}

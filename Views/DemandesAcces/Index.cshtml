@@ -1,0 +1,185 @@
+@model List<GestionProjects.Domain.Models.DemandeAccesAzureAd>
+@using GestionProjects.Domain.Enums
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    ViewData["Title"] = "Demandes d'accès Azure AD";
+    var directions      = ViewBag.Directions as IEnumerable<SelectListItem> ?? Enumerable.Empty<SelectListItem>();
+    var recherche       = ViewBag.Recherche as string ?? string.Empty;
+    var selectedStatut  = ViewBag.SelectedStatut as StatutDemandeAcces?;
+    var totalCount      = ViewBag.TotalCount as int? ?? Model.Count;
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="display-6 mb-0">
+                <i class="bi bi-person-plus" style="color: var(--primary-blue);"></i>
+                Demandes d'accès Azure AD
+            </h2>
+            <p class="text-muted mb-0">Validation Admin IT des premiers accès applicatifs.</p>
+        </div>
+        <span class="badge-modern badge-modern-info">@totalCount demande(s)</span>
+    </div>
+
+    <div class="card-modern mb-4">
+        <div class="card-body-modern">
+            <form method="get" asp-action="Index">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label-modern">Recherche</label>
+                        <input type="text" name="recherche" value="@recherche"
+                               class="form-control-modern" placeholder="Nom, prénom, e-mail ou matricule..." />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label-modern">Statut</label>
+                        <select name="statut" class="form-control-modern">
+                            <option value="">Tous les statuts</option>
+                            @foreach (StatutDemandeAcces s in Enum.GetValues(typeof(StatutDemandeAcces)))
+                            {
+                                <option value="@((int)s)" selected="@(selectedStatut == s)">@s</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex gap-2">
+                        <button type="submit" class="btn-modern btn-modern-primary flex-fill">
+                            <i class="bi bi-search"></i> Filtrer
+                        </button>
+                        @if (!string.IsNullOrWhiteSpace(recherche) || selectedStatut.HasValue)
+                        {
+                            <a asp-action="Index" class="btn-modern btn-modern-secondary">
+                                <i class="bi bi-x-circle"></i> Effacer
+                            </a>
+                        }
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (TempData["Success"] is string success)
+    {
+        <div class="alert alert-success">@success</div>
+    }
+    @if (TempData["Error"] is string error)
+    {
+        <div class="alert alert-danger">@error</div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="card-modern">
+            <div class="card-body-modern text-center" style="padding: var(--spacing-2xl);">
+                <i class="bi bi-inbox" style="font-size: 3rem; color: var(--gray-400);"></i>
+                <p class="mt-3 mb-0" style="color: var(--gray-500);">Aucune demande d'accès trouvée.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div style="display: grid; gap: var(--spacing-lg);">
+            @foreach (var demande in Model)
+            {
+                var badgeClass = demande.Statut switch
+                {
+                    GestionProjects.Domain.Enums.StatutDemandeAcces.Approuvee => "badge-modern-success",
+                    GestionProjects.Domain.Enums.StatutDemandeAcces.Rejetee => "badge-modern-danger",
+                    _ => "badge-modern-warning"
+                };
+
+                <div class="card-modern">
+                    <div class="card-body-modern">
+                        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                            <div>
+                                <h4 class="mb-1">@demande.Prenoms @demande.Nom</h4>
+                                <div class="text-muted">@demande.Email</div>
+                            </div>
+                            <span class="badge-modern @badgeClass">@demande.Statut</span>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <strong>Matricule</strong>
+                                <div>@demande.Matricule</div>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Departement Azure AD</strong>
+                                <div>@(string.IsNullOrWhiteSpace(demande.AzureDepartment) ? "Non remonte" : demande.AzureDepartment)</div>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Direction détectée</strong>
+                                <div>@(demande.DirectionDetectee?.Libelle ?? "Non determinee")</div>
+                            </div>
+                            <div class="col-12">
+                                <strong>Justification</strong>
+                                <div>@demande.Justification</div>
+                            </div>
+                            @if (demande.DateTraitement.HasValue)
+                            {
+                                <div class="col-md-6">
+                                    <strong>Date traitement</strong>
+                                    <div>@demande.DateTraitement.Value.ToString("dd/MM/yyyy HH:mm")</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Commentaire traitement</strong>
+                                    <div>@(string.IsNullOrWhiteSpace(demande.CommentaireTraitement) ? "Aucun" : demande.CommentaireTraitement)</div>
+                                </div>
+                            }
+                        </div>
+
+                        @if (demande.Statut == GestionProjects.Domain.Enums.StatutDemandeAcces.EnAttente)
+                        {
+                            <div class="row g-3">
+                                <div class="col-lg-6">
+                                    <form asp-action="Approuver" method="post" class="card-modern" style="border: 1px solid var(--gray-200);">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@demande.Id" />
+                                        <div class="card-body-modern">
+                                            <h5 class="mb-3"><i class="bi bi-check-circle"></i> Approuver</h5>
+                                            <div class="mb-3">
+                                                <label class="form-label">Direction a retenir</label>
+                                                <select class="form-select" name="directionId">
+                                                    <option value="">Utiliser la direction détectée</option>
+                                                    @foreach (var direction in directions)
+                                                    {
+                                                        var selected = direction.Value == demande.DirectionDetecteeId?.ToString();
+                                                        <option value="@direction.Value" selected="@selected">@direction.Text</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Commentaire (optionnel)</label>
+                                                <textarea class="form-control" name="commentaire" rows="3"></textarea>
+                                            </div>
+                                            <button type="submit" class="btn-modern btn-modern-primary w-100">
+                                                <i class="bi bi-check2"></i> Approuver et activer l'acces
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="col-lg-6">
+                                    <form asp-action="Rejeter" method="post" class="card-modern" style="border: 1px solid var(--gray-200);">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@demande.Id" />
+                                        <div class="card-body-modern">
+                                            <h5 class="mb-3"><i class="bi bi-x-circle"></i> Rejeter</h5>
+                                            <div class="mb-3">
+                                                <label class="form-label">Commentaire de rejet</label>
+                                                <textarea class="form-control" name="commentaire" rows="5" required></textarea>
+                                            </div>
+                                            <button type="submit" class="btn-modern btn-modern-danger w-100">
+                                                <i class="bi bi-x-lg"></i> Rejeter la demande
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @await Html.PartialAsync("_Pagination")
+</div>

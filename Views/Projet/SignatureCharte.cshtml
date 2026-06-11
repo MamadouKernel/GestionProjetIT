@@ -1,0 +1,198 @@
+@model GestionProjects.Domain.Models.CharteProjet
+
+@{
+    ViewData["Title"] = "Signature électronique — Charte projet";
+    var role = ViewBag.RoleSignataire as string ?? "CP";
+    var projetId = ViewBag.ProjetId as Guid? ?? Guid.Empty;
+    var nomSignataire = ViewBag.NomSignataire as string ?? User.FindFirst("Nom")?.Value + " " + User.FindFirst("Prenoms")?.Value;
+    var dejaSigneCP = !string.IsNullOrWhiteSpace(Model.SignatureImageCP);
+    var dejaSigneSponsor = !string.IsNullOrWhiteSpace(Model.SignatureImageSponsor);
+    var dejaSigneDSI = !string.IsNullOrWhiteSpace(Model.SignatureImageDSI);
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="display-6 mb-0">
+            <i class="bi bi-pen-fill" style="color: var(--primary-blue);"></i>
+            Signature électronique — Charte projet
+        </h2>
+        <a asp-controller="Projet" asp-action="Details" asp-route-id="@projetId" asp-route-tab="analyse" class="btn-modern btn-modern-secondary">
+            <i class="bi bi-arrow-left"></i> Retour au projet
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <!-- État des signatures -->
+        <div class="col-12">
+            <div class="card-modern">
+                <div class="card-header-modern">
+                    <h5 class="card-title-modern mb-0"><i class="bi bi-check2-all"></i> État des signatures</h5>
+                </div>
+                <div class="card-body-modern">
+                    <div class="row g-3">
+                        <div class="col-md-4 text-center">
+                            <div class="p-3 rounded" style="background: @(dejaSigneCP ? "var(--success-light, #d4edda)" : "var(--gray-100)");">
+                                <i class="bi @(dejaSigneCP ? "bi-check-circle-fill text-success" : "bi-clock text-muted")" style="font-size: 2rem;"></i>
+                                <p class="mt-2 mb-0 fw-semibold">Chef de Projet</p>
+                                @if (dejaSigneCP && Model.DateSignatureImageCP.HasValue)
+                                {
+                                    <small class="text-muted">Signé le @Model.DateSignatureImageCP.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                                }
+                                else
+                                {
+                                    <small class="text-muted">En attente</small>
+                                }
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="p-3 rounded" style="background: @(dejaSigneSponsor ? "var(--success-light, #d4edda)" : "var(--gray-100)");">
+                                <i class="bi @(dejaSigneSponsor ? "bi-check-circle-fill text-success" : "bi-clock text-muted")" style="font-size: 2rem;"></i>
+                                <p class="mt-2 mb-0 fw-semibold">Sponsor / Directeur métier</p>
+                                @if (dejaSigneSponsor && Model.DateSignatureImageSponsor.HasValue)
+                                {
+                                    <small class="text-muted">Signé le @Model.DateSignatureImageSponsor.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                                }
+                                else
+                                {
+                                    <small class="text-muted">En attente</small>
+                                }
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="p-3 rounded" style="background: @(dejaSigneDSI ? "var(--success-light, #d4edda)" : "var(--gray-100)");">
+                                <i class="bi @(dejaSigneDSI ? "bi-check-circle-fill text-success" : "bi-clock text-muted")" style="font-size: 2rem;"></i>
+                                <p class="mt-2 mb-0 fw-semibold">DSI</p>
+                                @if (dejaSigneDSI && Model.DateSignatureImageDSI.HasValue)
+                                {
+                                    <small class="text-muted">Signé le @Model.DateSignatureImageDSI.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                                }
+                                else
+                                {
+                                    <small class="text-muted">En attente</small>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pad de signature -->
+        <div class="col-12">
+            <div class="card-modern">
+                <div class="card-header-modern">
+                    <h5 class="card-title-modern mb-0">
+                        <i class="bi bi-vector-pen"></i>
+                        Votre signature — <strong>@nomSignataire</strong>
+                        <span class="badge-modern badge-modern-info ms-2">@(role == "CP" ? "Chef de Projet" : role == "Sponsor" ? "Sponsor / Directeur métier" : "DSI")</span>
+                    </h5>
+                </div>
+                <div class="card-body-modern">
+                    <p class="text-muted mb-3">
+                        Signez dans le cadre ci-dessous à l'aide de votre souris ou de votre doigt (tablette/mobile).
+                        Cliquez sur <strong>"Effacer"</strong> pour recommencer ou <strong>"Valider ma signature"</strong> pour enregistrer.
+                    </p>
+
+                    <div class="mb-3" style="border: 2px solid var(--primary-blue); border-radius: var(--radius-md); background: #fff; display: inline-block; width: 100%; max-width: 600px;">
+                        <canvas id="signaturePad" width="598" height="200" style="display: block; width: 100%; touch-action: none; cursor: crosshair;"></canvas>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-2 flex-wrap">
+                        <button type="button" class="btn-modern btn-modern-secondary" onclick="effacerSignature()">
+                            <i class="bi bi-eraser"></i> Effacer
+                        </button>
+                        <button type="button" class="btn-modern btn-modern-primary" onclick="validerSignature()">
+                            <i class="bi bi-check-circle"></i> Valider ma signature
+                        </button>
+                    </div>
+
+                    <form id="signatureForm" asp-controller="Projet" asp-action="EnregistrerSignature" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="charteId" value="@Model.Id" />
+                        <input type="hidden" name="projetId" value="@projetId" />
+                        <input type="hidden" name="role" value="@role" />
+                        <input type="hidden" id="signatureData" name="signatureData" />
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Aperçu signatures existantes -->
+        @if (dejaSigneCP || dejaSigneSponsor || dejaSigneDSI)
+        {
+            <div class="col-12">
+                <div class="card-modern">
+                    <div class="card-header-modern">
+                        <h5 class="card-title-modern mb-0"><i class="bi bi-images"></i> Aperçu des signatures enregistrées</h5>
+                    </div>
+                    <div class="card-body-modern">
+                        <div class="row g-3">
+                            @if (dejaSigneCP)
+                            {
+                                <div class="col-md-4 text-center">
+                                    <p class="fw-semibold mb-2">Chef de Projet</p>
+                                    <img src="@Model.SignatureImageCP" alt="Signature CP" class="img-fluid border rounded" style="max-height: 80px; background: white;" />
+                                </div>
+                            }
+                            @if (dejaSigneSponsor)
+                            {
+                                <div class="col-md-4 text-center">
+                                    <p class="fw-semibold mb-2">Sponsor / Directeur métier</p>
+                                    <img src="@Model.SignatureImageSponsor" alt="Signature Sponsor" class="img-fluid border rounded" style="max-height: 80px; background: white;" />
+                                </div>
+                            }
+                            @if (dejaSigneDSI)
+                            {
+                                <div class="col-md-4 text-center">
+                                    <p class="fw-semibold mb-2">DSI</p>
+                                    <img src="@Model.SignatureImageDSI" alt="Signature DSI" class="img-fluid border rounded" style="max-height: 80px; background: white;" />
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+    <script>
+        const canvas = document.getElementById('signaturePad');
+        const signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'rgb(255,255,255)',
+            penColor: 'rgb(0, 50, 120)',
+            minWidth: 1,
+            maxWidth: 3
+        });
+
+        // Redimensionner proprement le canvas
+        function resizeCanvas() {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width * ratio;
+            canvas.height = 200 * ratio;
+            canvas.getContext('2d').scale(ratio, ratio);
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = '200px';
+            signaturePad.clear();
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function effacerSignature() {
+            signaturePad.clear();
+        }
+
+        function validerSignature() {
+            if (signaturePad.isEmpty()) {
+                alert('Veuillez signer avant de valider.');
+                return;
+            }
+            const data = signaturePad.toDataURL('image/png');
+            document.getElementById('signatureData').value = data;
+            document.getElementById('signatureForm').submit();
+        }
+    </script>
+}

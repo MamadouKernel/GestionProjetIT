@@ -1,0 +1,338 @@
+@model IEnumerable<GestionProjects.Domain.Models.DemandeProjet>
+@inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
+
+@{
+    ViewData["Title"] = "Mes Demandes";
+    var canManageDemandes = await PermissionService.CurrentUserHasPermissionAsync("DemandeProjet", "ListeValidationDSI");
+    var canEditDemandes = await PermissionService.CurrentUserHasPermissionAsync("DemandeProjet", "Edit");
+    var canSubmitDemandes = await PermissionService.CurrentUserHasPermissionAsync("DemandeProjet", "Soumettre");
+    var canCreateDemandes = await PermissionService.CurrentUserHasPermissionAsync("DemandeProjet", "Create");
+}
+
+<div class="fade-in app-page">
+    @if (canManageDemandes)
+    {
+        <div class="card-modern mb-4">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern chart-card-title">
+                    <i class="bi bi-funnel"></i>
+                    Filtres de recherche
+                </h3>
+            </div>
+            <div class="card-body-modern">
+                <form method="get" asp-action="Index" id="filterForm">
+                    <div class="filter-grid">
+                        <div>
+                            <label class="form-label-modern">Direction</label>
+                            <select name="directionId" class="form-control-modern" id="directionSelect">
+                                <option value="">-- Toutes les directions --</option>
+                                @foreach (var direction in ViewBag.Directions as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>())
+                                {
+                                    <option value="@direction.Value" selected="@direction.Selected">@direction.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label-modern">Demandeur</label>
+                            <select name="demandeurId" class="form-control-modern" id="demandeurSelect">
+                                <option value="">-- Tous les demandeurs --</option>
+                                @foreach (var demandeur in ViewBag.Demandeurs as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>())
+                                {
+                                    <option value="@demandeur.Value" selected="@demandeur.Selected">@demandeur.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label-modern">Directeur Métier</label>
+                            <select name="directeurMetierId" class="form-control-modern" id="directeurMetierSelect">
+                                <option value="">-- Tous les directeurs métier --</option>
+                                @foreach (var dm in ViewBag.DirecteursMetier as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>())
+                                {
+                                    <option value="@dm.Value" selected="@dm.Selected">@dm.Text</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-actions mt-3">
+                        <button type="submit" class="btn-modern btn-modern-primary">
+                            <i class="bi bi-search"></i>
+                            Filtrer
+                        </button>
+                        <a asp-action="Index" class="btn-modern btn-modern-secondary">
+                            <i class="bi bi-x-circle"></i>
+                            Réinitialiser
+                        </a>
+                    </div>
+                </form>
+                <script>
+                    // Soumission automatique du formulaire lors du changement de filtre
+                    (function() {
+                        // Utiliser une fonction auto-exécutée pour éviter les conflits
+                        var filterInitialized = false;
+                        
+                        function initAutoSubmit() {
+                            if (filterInitialized) return;
+                            
+                            const directionSelect = document.getElementById('directionSelect');
+                            const demandeurSelect = document.getElementById('demandeurSelect');
+                            const directeurMetierSelect = document.getElementById('directeurMetierSelect');
+                            const filterForm = document.getElementById('filterForm');
+                            
+                            if (!filterForm) return;
+                            
+                            // Attacher les événements directement aux selects
+                            if (directionSelect) {
+                                directionSelect.addEventListener('change', function() {
+                                    filterForm.submit();
+                                });
+                            }
+                            
+                            if (demandeurSelect) {
+                                demandeurSelect.addEventListener('change', function() {
+                                    filterForm.submit();
+                                });
+                            }
+                            
+                            if (directeurMetierSelect) {
+                                directeurMetierSelect.addEventListener('change', function() {
+                                    filterForm.submit();
+                                });
+                            }
+                            
+                            filterInitialized = true;
+                        }
+                        
+                        // Initialiser après le chargement du DOM
+                        if (document.readyState === 'loading') {
+                            document.addEventListener('DOMContentLoaded', initAutoSubmit);
+                        } else {
+                            initAutoSubmit();
+                        }
+                    })();
+                </script>
+            </div>
+        </div>
+    }
+    
+    <section class="page-hero">
+        <div class="page-hero-main">
+            <span class="page-kicker">
+                <i class="bi bi-file-earmark-text"></i>
+                Workflow demande
+            </span>
+            <h1 class="page-hero-title">
+                @if (canManageDemandes)
+                {
+                    <text>Demandes de projets</text>
+                }
+                else
+                {
+                    <text>Mes demandes de projets</text>
+                }
+            </h1>
+            <p class="page-hero-subtitle">
+                Centralisez les demandes, suivez leur validation métier puis DSI, et gardez un accès direct à chaque dossier.
+            </p>
+        </div>
+        <div class="page-hero-meta">
+            @if (canCreateDemandes)
+            {
+                @if (canCreateDemandes)
+                {
+                <a asp-action="Create" class="btn-modern btn-modern-primary">
+                    <i class="bi bi-plus-circle"></i>
+                    Nouvelle demande
+                </a>
+                }
+            }
+        </div>
+    </section>
+
+    <div class="card-modern">
+        <div class="card-header-modern">
+            <h2 class="card-title-modern">
+                <i class="bi bi-file-earmark-text"></i>
+                @if (canManageDemandes)
+                {
+                    <text>Demandes de Projets</text>
+                }
+                else
+                {
+                    <text>Mes Demandes de Projets</text>
+                }
+            </h2>
+        </div>
+
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th>Titre</th>
+                            @if (canManageDemandes)
+                            {
+                                <th>Demandeur</th>
+                            }
+                            <th>Direction</th>
+                            @if (canManageDemandes)
+                            {
+                                <th>Directeur Métier</th>
+                            }
+                            <th>Statut</th>
+                            <th>Date Soumission</th>
+                            <th>Priorité</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var demande in Model)
+                        {
+                            <tr>
+                                <td><strong>@demande.Titre</strong></td>
+                                @if (canManageDemandes)
+                                {
+                                    <td>
+                                        <div class="table-person">
+                                            <div class="table-avatar primary">
+                                                @(demande.Demandeur?.Nom?.Substring(0, 1) ?? "?")@(demande.Demandeur?.Prenoms?.Substring(0, 1) ?? "")
+                                            </div>
+                                            <div class="table-person-main">
+                                                <div class="table-person-title">
+                                                    @(demande.Demandeur != null ? $"{demande.Demandeur.Nom} {demande.Demandeur.Prenoms}" : "N/A")
+                                                </div>
+                                                <small class="table-person-subtitle">
+                                                    @(demande.Demandeur?.Email ?? "")
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                }
+                                <td>@(demande.Direction?.Libelle ?? "N/A")</td>
+                                @if (canManageDemandes)
+                                {
+                                    <td>
+                                        @if (demande.DirecteurMetier != null)
+                                        {
+                                            <div class="table-person">
+                                                <div class="table-avatar gold">
+                                                    @(demande.DirecteurMetier.Nom?.Substring(0, 1) ?? "?")@(demande.DirecteurMetier.Prenoms?.Substring(0, 1) ?? "")
+                                                </div>
+                                                <div class="table-person-main">
+                                                    <div class="table-person-title">
+                                                        @demande.DirecteurMetier.Nom @demande.DirecteurMetier.Prenoms
+                                                    </div>
+                                                    <small class="table-person-subtitle">
+                                                        @demande.DirecteurMetier.Email
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted fst-italic" style="font-size: 0.85rem;">Non assigné</span>
+                                        }
+                                    </td>
+                                }
+                                <td>
+                                    <span class="badge-modern badge-modern-@GetBadgeClass(demande.StatutDemande)">
+                                        @demande.StatutWorkflowLabel
+                                    </span>
+                                </td>
+                                <td>@demande.DateSoumission.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    <div class="table-inline-stack column">
+                                        <span class="badge-modern badge-modern-@demande.PrioriteBadgeClass">
+                                            @demande.PrioriteCode
+                                        </span>
+                                        <small class="soft-note">
+                                            @demande.Urgence / @demande.Criticite
+                                        </small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="table-actions">
+                                        <a asp-action="Details" asp-route-id="@demande.Id" class="btn-modern btn-modern-secondary btn-icon" title="Consulter la demande" aria-label="Consulter la demande">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        @if (canEditDemandes && (demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.Brouillon ||
+                                             demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier ||
+                                             demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDemandeurParDSI))
+                                        {
+                                            <a asp-action="Edit" asp-route-id="@demande.Id" class="btn-modern btn-modern-gold btn-icon" title="Modifier la demande" aria-label="Modifier la demande">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        }
+                                        @if (canSubmitDemandes && demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.Brouillon)
+                                        {
+                                            <form asp-action="Soumettre" asp-route-id="@demande.Id" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn-modern btn-modern-success btn-icon" title="Soumettre la demande" aria-label="Soumettre la demande" onclick="return confirm('Êtes-vous sûr de vouloir soumettre cette demande ?');">
+                                                    <i class="bi bi-send"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state-modern">
+                <i class="bi bi-inbox"></i>
+                <p style="font-size: 1.1rem; margin-bottom: 0;">
+                    Aucune demande trouvée.
+                </p>
+                <a asp-action="Create" class="btn-modern btn-modern-primary">
+                    <i class="bi bi-plus-circle"></i>
+                    Créer une nouvelle demande
+                </a>
+            </div>
+        }
+    </div>
+    
+    @* Pagination *@
+    @await Html.PartialAsync("_Pagination")
+</div>
+
+@functions {
+    string GetBadgeClass(GestionProjects.Domain.Enums.StatutDemande statut)
+    {
+        return statut switch
+        {
+            GestionProjects.Domain.Enums.StatutDemande.Brouillon => "secondary",
+            GestionProjects.Domain.Enums.StatutDemande.EnAttenteValidationDirecteurMetier => "warning",
+            GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier => "info",
+            GestionProjects.Domain.Enums.StatutDemande.RejeteeParDirecteurMetier => "danger",
+            GestionProjects.Domain.Enums.StatutDemande.EnAttenteValidationDSI => "info",
+            GestionProjects.Domain.Enums.StatutDemande.ValideeParDSI => "success",
+            _ => "secondary"
+        };
+    }
+
+    string GetUrgenceClass(GestionProjects.Domain.Enums.UrgenceProjet urgence)
+    {
+        return urgence switch
+        {
+            GestionProjects.Domain.Enums.UrgenceProjet.Basse => "secondary",
+            GestionProjects.Domain.Enums.UrgenceProjet.Moyenne => "warning",
+            GestionProjects.Domain.Enums.UrgenceProjet.Haute => "danger",
+            _ => "secondary"
+        };
+    }
+
+    string GetCriticiteClass(GestionProjects.Domain.Enums.CriticiteProjet criticite)
+    {
+        return criticite switch
+        {
+            GestionProjects.Domain.Enums.CriticiteProjet.Faible => "secondary",
+            GestionProjects.Domain.Enums.CriticiteProjet.Moyenne => "warning",
+            GestionProjects.Domain.Enums.CriticiteProjet.Elevee => "danger",
+            _ => "secondary"
+        };
+    }
+}

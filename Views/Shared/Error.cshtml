@@ -1,0 +1,67 @@
+@model GestionProjects.Application.ViewModels.ErrorViewModel
+@{
+    ViewData["Title"] = $"Erreur {Model.StatusCode}";
+}
+
+<div class="fade-in error-experience-shell">
+    <section class="error-experience-card @Model.AccentClass">
+        <div class="error-experience-visual">
+            <div class="error-experience-orb is-blue"></div>
+            <div class="error-experience-orb is-gold"></div>
+            <div class="error-experience-code">@Model.StatusCode</div>
+            <div class="error-experience-icon">
+                <i class="bi @Model.IconClass"></i>
+            </div>
+        </div>
+
+        <div class="error-experience-content">
+            <p class="page-kicker mb-3">
+                <i class="bi bi-signpost-2"></i>
+                @Model.BadgeLabel
+            </p>
+
+            <h1 class="error-experience-title">@Model.Title</h1>
+            <p class="error-experience-heading">@Model.Heading</p>
+            <p class="error-experience-copy">@Model.Description</p>
+
+            @if (!string.IsNullOrWhiteSpace(Model.OriginalPath))
+            {
+                <div class="error-experience-meta">
+                    <span class="error-meta-label">Ressource concernée</span>
+                    <code class="error-meta-value">@Model.OriginalPath</code>
+                </div>
+            }
+
+            @if (Model.ShowRequestId)
+            {
+                <div class="error-experience-meta">
+                    <span class="error-meta-label">Identifiant technique</span>
+                    <code class="error-meta-value">@Model.RequestId</code>
+                </div>
+            }
+
+            @if (Model.ShowTechnicalDetails)
+            {
+                <details class="error-experience-details">
+                    <summary>Voir le détail technique</summary>
+                    <div>@Model.Detail</div>
+                </details>
+            }
+
+            <div class="error-experience-actions">
+                <a href="@Model.PrimaryActionUrl" class="btn-modern btn-modern-primary">
+                    <i class="bi bi-house-door"></i>
+                    @Model.PrimaryActionText
+                </a>
+                <button type="button" class="btn-modern btn-modern-secondary" onclick="window.history.back();">
+                    <i class="bi bi-arrow-left"></i>
+                    @Model.SecondaryActionText
+                </button>
+                <a asp-controller="Aide" asp-action="Index" class="btn-modern btn-modern-secondary">
+                    <i class="bi bi-question-circle"></i>
+                    Consulter l'aide
+                </a>
+            </div>
+        </div>
+    </section>
+</div>

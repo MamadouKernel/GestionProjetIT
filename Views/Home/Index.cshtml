@@ -1,0 +1,800 @@
+@using System.Globalization
+@model GestionProjects.Application.ViewModels.DashboardStatsViewModel
+@{
+    ViewData["Title"] = "Tableau de bord";
+    var roles = Model.UserRoles;
+    var isDSIOrAdmin = roles.Contains("DSI") || roles.Contains("AdminIT");
+    var isRSI = roles.Contains("ResponsableSolutionsIT");
+    var isDM = roles.Contains("DirecteurMetier");
+    var isCP = roles.Contains("ChefDeProjet");
+    var isDemandeur = roles.Contains("Demandeur");
+    var fr = CultureInfo.GetCultureInfo("fr-FR");
+    var totalProjects = Math.Max(Model.TotalProjets, 1);
+    var healthTotal = Math.Max(Model.ProjetsVerts + Model.ProjetsOranges + Model.ProjetsRouges, 1);
+}
+
+<div class="fade-in dashboard-shell">
+    <section class="page-hero">
+        <div class="page-hero-main">
+            <span class="page-kicker">
+                <i class="bi bi-speedometer2"></i>
+                Tableau de bord
+            </span>
+            <h1 class="page-hero-title">Pilotage des projets IT</h1>
+            <p class="page-hero-subtitle">
+                Une lecture plus claire du portefeuille, des validations en cours et des indicateurs essentiels selon votre rôle.
+            </p>
+        </div>
+        <div class="page-hero-meta">
+            @foreach (var role in roles.Take(3))
+            {
+                <span class="role-chip"><i class="bi bi-person-badge"></i> @role</span>
+            }
+        </div>
+    </section>
+
+    @if (isDSIOrAdmin)
+    {
+        <section class="admin-dashboard-shell">
+            <div class="dashboard-section-heading admin-dashboard-heading">
+                <div>
+                    <span class="dashboard-section-kicker">Cockpit portefeuille</span>
+                    <h2 class="dashboard-section-title"><i class="bi bi-grid-1x2-fill"></i> Vue de pilotage DSI / AdminIT</h2>
+                </div>
+                <div class="admin-dashboard-toolbar">
+                    <a href="@Url.Action("Portefeuille", "Projet")" class="btn-modern btn-modern-secondary">
+                        <i class="bi bi-collection"></i>
+                        Portefeuille
+                    </a>
+                    <a href="@Url.Action("Index", "Dashboard")" class="btn-modern btn-modern-secondary">
+                        <i class="bi bi-bar-chart"></i>
+                        Vue analytique
+                    </a>
+                    <a href="@Url.Action("Parametres", "Admin")" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-sliders"></i>
+                        Paramètres
+                    </a>
+                </div>
+            </div>
+
+            <div class="admin-dashboard-grid admin-dashboard-grid-top">
+                <article class="admin-metric-panel admin-metric-panel-blue">
+                    <div class="admin-metric-panel-title">Projets</div>
+                    <div class="admin-mini-kpi-grid">
+                        <div class="admin-mini-kpi">
+                            <span class="admin-mini-kpi-label">Total projets</span>
+                            <strong class="admin-mini-kpi-value">@Model.TotalProjets</strong>
+                            <span class="admin-mini-kpi-trend">@((Model.TotalProjets / (double)totalProjects).ToString("P0", fr)) du portefeuille</span>
+                        </div>
+                        <div class="admin-mini-kpi">
+                            <span class="admin-mini-kpi-label">En cours</span>
+                            <strong class="admin-mini-kpi-value">@Model.ProjetsEnCours</strong>
+                            <span class="admin-mini-kpi-trend">@((Model.ProjetsEnCours / (double)totalProjects).ToString("P1", fr)) actifs</span>
+                        </div>
+                        <div class="admin-mini-kpi">
+                            <span class="admin-mini-kpi-label">En attente capacité</span>
+                            <strong class="admin-mini-kpi-value text-warning">@Model.ProjetsAvecDepassementCharge</strong>
+                            <span class="admin-mini-kpi-trend">ressources sur sollicitées</span>
+                        </div>
+                        <div class="admin-mini-kpi">
+                            <span class="admin-mini-kpi-label">Clôturés</span>
+                            <strong class="admin-mini-kpi-value text-success">@Model.ProjetsClotures</strong>
+                            <span class="admin-mini-kpi-trend">@((Model.ProjetsClotures / (double)totalProjects).ToString("P1", fr)) du total</span>
+                        </div>
+                        <div class="admin-mini-kpi">
+                            <span class="admin-mini-kpi-label">Suspendus / abandonnés</span>
+                            <strong class="admin-mini-kpi-value text-danger">@Model.ProjetsSuspendus</strong>
+                            <span class="admin-mini-kpi-trend">nécessitent arbitrage</span>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="admin-metric-panel admin-metric-panel-green">
+                    <div class="admin-metric-panel-title">Santé du portefeuille</div>
+                    <div class="admin-mini-kpi-grid">
+                        <div class="admin-mini-kpi">
+                            <span class="admin-mini-kpi-label">Verts</span>
+                            <strong class="admin-mini-kpi-value text-success">@Model.ProjetsVerts</strong>
+                            <span class="admin-mini-kpi-trend">@((Model.ProjetsVerts / (double)healthTotal).ToString("P1", fr)) du portefeuille</span>
+                        </div>
+                        <div class="admin-mini-kpi">
+                            <span class="admin-mini-kpi-label">Oranges</span>
+                            <strong class="admin-mini-kpi-value text-warning">@Model.ProjetsOranges</strong>
+                            <span class="admin-mini-kpi-trend">@((Model.ProjetsOranges / (double)healthTotal).ToString("P1", fr)) sous surveillance</span>
+                        </div>
+                        <div class="admin-mini-kpi">
+                            <span class="admin-mini-kpi-label">Rouges</span>
+                            <strong class="admin-mini-kpi-value text-danger">@Model.ProjetsRouges</strong>
+                            <span class="admin-mini-kpi-trend">@((Model.ProjetsRouges / (double)healthTotal).ToString("P1", fr)) critiques</span>
+                        </div>
+                        <div class="admin-mini-kpi">
+                            <span class="admin-mini-kpi-label">Risques critiques</span>
+                            <strong class="admin-mini-kpi-value text-danger">@Model.RisquesCritiques</strong>
+                            <span class="admin-mini-kpi-trend">registre consolidé</span>
+                        </div>
+                        <div class="admin-mini-kpi">
+                            <span class="admin-mini-kpi-label">Anomalies ouvertes</span>
+                            <strong class="admin-mini-kpi-value text-danger">@Model.AnomaliesOuvertes</strong>
+                            <span class="admin-mini-kpi-trend">en UAT / MEP</span>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <div class="admin-dashboard-grid admin-dashboard-grid-middle">
+                <article class="admin-metric-panel">
+                    <div class="admin-metric-panel-title">Gouvernance</div>
+                    <div class="admin-mini-kpi-grid">
+                        <div class="admin-mini-kpi">
+                            <span class="admin-mini-kpi-label">Validations DM</span>
+                            <strong class="admin-mini-kpi-value">@Model.ValidationsDMEnAttente</strong>
+                            <span class="admin-mini-kpi-trend">file d'attente métier</span>
+                        </div>
+                        <div class="admin-mini-kpi">
+                            <span class="admin-mini-kpi-label">Validations DSI</span>
+                            <strong class="admin-mini-kpi-value">@Model.ValidationsDSIEnAttente</strong>
+                            <span class="admin-mini-kpi-trend">prise en charge IT</span>
+                        </div>
+                        <div class="admin-mini-kpi">
+                            <span class="admin-mini-kpi-label">Clôtures en attente</span>
+                            <strong class="admin-mini-kpi-value">@Model.CloturesEnAttente</strong>
+                            <span class="admin-mini-kpi-trend">validation finale DSI</span>
+                        </div>
+                        <div class="admin-mini-kpi">
+                            <span class="admin-mini-kpi-label">Chartes non validées</span>
+                            <strong class="admin-mini-kpi-value text-primary-blue">@Model.ChartesNonValidees</strong>
+                            <span class="admin-mini-kpi-trend">analyse non soldée</span>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="admin-metric-panel">
+                    <div class="admin-metric-panel-title">Ressources & capacité</div>
+                    <div class="admin-mini-kpi-grid">
+                        <div class="admin-mini-kpi">
+                            <span class="admin-mini-kpi-label">Ressources surchargées</span>
+                            <strong class="admin-mini-kpi-value text-danger">@Model.RessourcesSurchargees</strong>
+                            <span class="admin-mini-kpi-trend">charge > capacité</span>
+                        </div>
+                        <div class="admin-mini-kpi">
+                            <span class="admin-mini-kpi-label">Taux capacité DSI</span>
+                            <strong class="admin-mini-kpi-value">@Model.TauxUtilisationCapacite.ToString("N0", fr)%</strong>
+                            <span class="admin-mini-kpi-trend">sur la semaine en cours</span>
+                        </div>
+                        <div class="admin-mini-kpi">
+                            <span class="admin-mini-kpi-label">Ressources disponibles</span>
+                            <strong class="admin-mini-kpi-value text-success">@Model.RessourcesDisponibles</strong>
+                            <span class="admin-mini-kpi-trend">encore mobilisables</span>
+                        </div>
+                        <div class="admin-mini-kpi">
+                            <span class="admin-mini-kpi-label">Charge totale (semaine)</span>
+                            <strong class="admin-mini-kpi-value">@Model.ChargeTotaleSemaine.ToString("N0", fr) h</strong>
+                            <span class="admin-mini-kpi-trend">prévision consolidée</span>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="admin-metric-panel">
+                    <div class="admin-metric-panel-title">Financier</div>
+                    <div class="admin-mini-kpi-grid">
+                        <div class="admin-mini-kpi">
+                            <span class="admin-mini-kpi-label">Budget total portefeuille</span>
+                            <strong class="admin-mini-kpi-value text-success">@Model.BudgetTotalPortefeuille.ToString("N1", fr) FCFA</strong>
+                            <span class="admin-mini-kpi-trend">enveloppe prévisionnelle</span>
+                        </div>
+                        <div class="admin-mini-kpi">
+                            <span class="admin-mini-kpi-label">Budget consommé</span>
+                            <strong class="admin-mini-kpi-value text-success">@Model.BudgetConsommeTotal.ToString("N1", fr) FCFA</strong>
+                            <span class="admin-mini-kpi-trend">suivi budgétaire</span>
+                        </div>
+                        <div class="admin-mini-kpi">
+                            <span class="admin-mini-kpi-label">Dépassements budget</span>
+                            <strong class="admin-mini-kpi-value text-danger">@Model.ProjetsDepassementBudget</strong>
+                            <span class="admin-mini-kpi-trend">projets à arbitrer</span>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <div class="admin-dashboard-grid admin-dashboard-grid-focus">
+                <article class="card-modern admin-focus-card">
+                    <div class="card-header-modern">
+                        <h3 class="card-title-modern chart-card-title"><i class="bi bi-exclamation-diamond"></i> Projets critiques</h3>
+                        <a href="@Url.Action("Portefeuille", "Projet")" class="admin-inline-link">Voir le portefeuille <i class="bi bi-arrow-right"></i></a>
+                    </div>
+                    <div class="card-body-modern p-0">
+                        @if (Model.AdminCriticalProjects.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-modern admin-compact-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Projet</th>
+                                            <th>Phase</th>
+                                            <th>État</th>
+                                            <th>Retard</th>
+                                            <th>Risque</th>
+                                            <th>Chef de projet</th>
+                                            <th class="text-end">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in Model.AdminCriticalProjects)
+                                        {
+                                            var stateClass = item.Etat switch
+                                            {
+                                                "Vert" => "badge-modern-success",
+                                                "Orange" => "badge-modern-warning",
+                                                "Rouge" => "badge-modern-danger",
+                                                _ => "badge-modern-secondary"
+                                            };
+
+                                            <tr>
+                                                <td>
+                                                    <div class="admin-table-strong">@item.Projet</div>
+                                                </td>
+                                                <td>@item.Phase</td>
+                                                <td><span class="badge-modern @stateClass">@item.Etat</span></td>
+                                                <td>@item.Retard</td>
+                                                <td><span class="badge-modern @item.RisqueBadgeClass">@item.Risque</span></td>
+                                                <td>@item.ChefProjet</td>
+                                                <td class="text-end">
+                                                    <a href="@item.Url" class="btn-icon btn-modern btn-modern-secondary btn-sm" title="Ouvrir">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="empty-state-modern">
+                                <i class="bi bi-check2-circle"></i>
+                                <p>Aucun projet critique détecté pour le moment.</p>
+                            </div>
+                        }
+                    </div>
+                </article>
+
+                <article class="card-modern admin-focus-card">
+                    <div class="card-header-modern">
+                        <h3 class="card-title-modern chart-card-title"><i class="bi bi-hourglass-split"></i> Validations en attente</h3>
+                        <a href="@Url.Action("Index", "Autorisations")" class="admin-inline-link">Pilotage droits <i class="bi bi-arrow-right"></i></a>
+                    </div>
+                    <div class="card-body-modern p-0">
+                        @if (Model.AdminPendingValidations.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-modern admin-compact-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Type</th>
+                                            <th>Élément</th>
+                                            <th>Projet</th>
+                                            <th>Demandeur</th>
+                                            <th>Date</th>
+                                            <th class="text-end">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in Model.AdminPendingValidations)
+                                        {
+                                            <tr>
+                                                <td>@item.Type</td>
+                                                <td>@item.Element</td>
+                                                <td>
+                                                    <div class="admin-table-strong">@item.Projet</div>
+                                                </td>
+                                                <td>@item.Demandeur</td>
+                                                <td>@item.DateLabel</td>
+                                                <td class="text-end">
+                                                    <a href="@item.Url" class="btn-icon btn-modern btn-modern-secondary btn-sm" title="Ouvrir">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="empty-state-modern">
+                                <i class="bi bi-inboxes"></i>
+                                <p>Aucune validation en attente.</p>
+                            </div>
+                        }
+                    </div>
+                </article>
+            </div>
+
+            <div class="admin-dashboard-grid admin-dashboard-grid-charts">
+                <article class="card-modern admin-chart-card">
+                    <div class="card-header-modern">
+                        <h3 class="card-title-modern chart-card-title"><i class="bi bi-pie-chart"></i> Répartition des projets par phase</h3>
+                    </div>
+                    <div class="card-body-modern">
+                        <canvas id="adminPhaseChart" class="admin-chart-canvas"></canvas>
+                    </div>
+                </article>
+
+                <article class="card-modern admin-chart-card">
+                    <div class="card-header-modern">
+                        <h3 class="card-title-modern chart-card-title"><i class="bi bi-pie-chart-fill"></i> Répartition par état</h3>
+                    </div>
+                    <div class="card-body-modern">
+                        <canvas id="adminEtatChart" class="admin-chart-canvas"></canvas>
+                    </div>
+                </article>
+
+                <article class="card-modern admin-chart-card">
+                    <div class="card-header-modern">
+                        <h3 class="card-title-modern chart-card-title"><i class="bi bi-bar-chart-line"></i> Charge par équipe (semaine)</h3>
+                    </div>
+                    <div class="card-body-modern">
+                        <canvas id="adminChargeEquipeChart" class="admin-chart-canvas"></canvas>
+                    </div>
+                </article>
+
+                <article class="card-modern admin-chart-card">
+                    <div class="card-header-modern">
+                        <h3 class="card-title-modern chart-card-title"><i class="bi bi-graph-up-arrow"></i> Prévu vs réel (charges)</h3>
+                    </div>
+                    <div class="card-body-modern">
+                        <canvas id="adminChargeTrendChart" class="admin-chart-canvas"></canvas>
+                    </div>
+                </article>
+            </div>
+
+            <div class="admin-dashboard-grid admin-dashboard-grid-bottom">
+                <article class="card-modern admin-utility-card">
+                    <div class="card-header-modern">
+                        <h3 class="card-title-modern chart-card-title"><i class="bi bi-calendar-event"></i> Échéances importantes</h3>
+                    </div>
+                    <div class="card-body-modern">
+                        @if (Model.AdminMilestones.Any())
+                        {
+                            <div class="admin-list-stack">
+                                @foreach (var item in Model.AdminMilestones)
+                                {
+                                    <a href="@item.Url" class="admin-list-item">
+                                        <span class="admin-list-date">@item.DateLabel</span>
+                                        <span class="admin-list-main">
+                                            <strong>@item.Projet</strong>
+                                            <small>@item.Libelle</small>
+                                        </span>
+                                        <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="empty-state-modern">
+                                <i class="bi bi-calendar2-check"></i>
+                                <p>Aucune échéance proche.</p>
+                            </div>
+                        }
+                    </div>
+                </article>
+
+                <article class="card-modern admin-utility-card">
+                    <div class="card-header-modern">
+                        <h3 class="card-title-modern chart-card-title"><i class="bi bi-bell"></i> Alertes récentes</h3>
+                    </div>
+                    <div class="card-body-modern">
+                        @if (Model.AdminAlerts.Any())
+                        {
+                            <div class="admin-list-stack">
+                                @foreach (var item in Model.AdminAlerts)
+                                {
+                                    var alertClass = item.Niveau switch
+                                    {
+                                        "danger" => "danger",
+                                        "warning" => "warning",
+                                        _ => "info"
+                                    };
+
+                                    <a href="@item.Url" class="admin-alert-item @alertClass">
+                                        <i class="@item.IconClass"></i>
+                                        <span class="admin-alert-main">
+                                            <strong>@item.Message</strong>
+                                            <small>@item.DateLabel</small>
+                                        </span>
+                                        <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="empty-state-modern">
+                                <i class="bi bi-shield-check"></i>
+                                <p>Aucune alerte active.</p>
+                            </div>
+                        }
+                    </div>
+                </article>
+
+                <article class="card-modern admin-portfolio-card">
+                    <div class="card-header-modern">
+                        <h3 class="card-title-modern chart-card-title"><i class="bi bi-table"></i> Vue synthétique du portefeuille</h3>
+                        <a href="@Url.Action("Portefeuille", "Projet")" class="admin-inline-link">Voir tous les projets <i class="bi bi-arrow-right"></i></a>
+                    </div>
+                    <div class="card-body-modern p-0">
+                        @if (Model.AdminPortfolioRows.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-modern admin-compact-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Projet</th>
+                                            <th>Direction</th>
+                                            <th>Phase</th>
+                                            <th>État</th>
+                                            <th>Avancement</th>
+                                            <th>Budget (FCFA)</th>
+                                            <th>Charge</th>
+                                            <th>CP</th>
+                                            <th class="text-end">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in Model.AdminPortfolioRows)
+                                        {
+                                            var stateClass = item.Etat switch
+                                            {
+                                                "Vert" => "badge-modern-success",
+                                                "Orange" => "badge-modern-warning",
+                                                "Rouge" => "badge-modern-danger",
+                                                _ => "badge-modern-secondary"
+                                            };
+
+                                            <tr>
+                                                <td>
+                                                    <div class="admin-table-strong">@item.Projet</div>
+                                                </td>
+                                                <td>@item.Direction</td>
+                                                <td>@item.Phase</td>
+                                                <td><span class="badge-modern @stateClass">@item.Etat</span></td>
+                                                <td class="admin-progress-cell">
+                                                    <div class="admin-progress-meta">
+                                                        <span>@item.Avancement%</span>
+                                                    </div>
+                                                    <div class="progress">
+                                                        <div class="progress-bar" role="progressbar" style="width:@item.Avancement%;"></div>
+                                                    </div>
+                                                </td>
+                                                <td>@item.Budget</td>
+                                                <td>@item.Charge</td>
+                                                <td>@item.ChefProjet</td>
+                                                <td class="text-end">
+                                                    <a href="@item.Url" class="btn-icon btn-modern btn-modern-secondary btn-sm" title="Ouvrir">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="empty-state-modern">
+                                <i class="bi bi-kanban"></i>
+                                <p>Aucun projet à afficher.</p>
+                            </div>
+                        }
+                    </div>
+                </article>
+            </div>
+        </section>
+    }
+    else
+    {
+        @* ===== ResponsableSolutionsIT ===== *@
+        @if (isRSI)
+        {
+            <div class="dashboard-section-heading">
+                <div>
+                    <span class="dashboard-section-kicker">Supervision technique</span>
+                    <h2 class="dashboard-section-title"><i class="bi bi-gear-wide-connected"></i> Responsable Solutions IT</h2>
+                </div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card info"><div class="stat-header"><div><p class="stat-label">Total Projets</p><h3 class="stat-value">@Model.TotalProjets</h3></div><div class="stat-icon"><i class="bi bi-folder"></i></div></div></div>
+                <div class="stat-card success"><div class="stat-header"><div><p class="stat-label">Projets en Cours</p><h3 class="stat-value">@Model.ProjetsEnCours</h3></div><div class="stat-icon"><i class="bi bi-play-circle"></i></div></div></div>
+                <div class="stat-card danger"><div class="stat-header"><div><p class="stat-label">Risques Critiques</p><h3 class="stat-value">@Model.RisquesCritiques</h3></div><div class="stat-icon"><i class="bi bi-exclamation-triangle"></i></div></div></div>
+                <div class="stat-card warning"><div class="stat-header"><div><p class="stat-label">Anomalies Ouvertes</p><h3 class="stat-value">@Model.AnomaliesOuvertes</h3></div><div class="stat-icon"><i class="bi bi-bug"></i></div></div></div>
+                <div class="stat-card success"><div class="stat-header"><div><p class="stat-label">Taux Avancement</p><h3 class="stat-value">@Model.TauxAvancementMoyen.ToString("F1")%</h3></div><div class="stat-icon"><i class="bi bi-speedometer2"></i></div></div></div>
+            </div>
+            <div class="row g-4 mt-2 mb-4">
+                @if (Model.RSIProjetsParStatut?.Any() == true)
+                {
+                    <div class="col-md-6">
+                        <div class="card-modern"><div class="card-header-modern"><h3 class="card-title-modern chart-card-title"><i class="bi bi-pie-chart"></i> Projets par Statut</h3></div>
+                        <div class="card-body-modern"><canvas id="rsiProjetsStatutChart" style="max-height:300px;"></canvas></div></div>
+                    </div>
+                }
+                @if (Model.RSIProjetsParPhase?.Any() == true)
+                {
+                    <div class="col-md-6">
+                        <div class="card-modern"><div class="card-header-modern"><h3 class="card-title-modern chart-card-title"><i class="bi bi-diagram-3"></i> Projets par Phase</h3></div>
+                        <div class="card-body-modern"><canvas id="rsiProjetsPhaseChart" style="max-height:300px;"></canvas></div></div>
+                    </div>
+                }
+                @if (Model.RSIProjetsParDirection?.Any() == true)
+                {
+                    <div class="col-md-12">
+                        <div class="card-modern"><div class="card-header-modern"><h3 class="card-title-modern chart-card-title"><i class="bi bi-building"></i> Projets par Direction</h3></div>
+                        <div class="card-body-modern"><canvas id="rsiDirectionChart" style="max-height:250px;"></canvas></div></div>
+                    </div>
+                }
+            </div>
+        }
+
+        @* ===== DirecteurMetier ===== *@
+        @if (isDM)
+        {
+            <div class="dashboard-section-heading">
+                <div>
+                    <span class="dashboard-section-kicker">Décision métier</span>
+                    <h2 class="dashboard-section-title"><i class="bi bi-building"></i> Directeur métier</h2>
+                </div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card warning"><div class="stat-header"><div><p class="stat-label">Demandes à Valider</p><h3 class="stat-value">@Model.DemandesAValiderDM</h3></div><div class="stat-icon"><i class="bi bi-check-circle"></i></div></div></div>
+                <div class="stat-card success"><div class="stat-header"><div><p class="stat-label">Demandes Validées</p><h3 class="stat-value">@Model.DemandesValideesDM</h3></div><div class="stat-icon"><i class="bi bi-check2-all"></i></div></div></div>
+                <div class="stat-card danger"><div class="stat-header"><div><p class="stat-label">Demandes Rejetées</p><h3 class="stat-value">@Model.DemandesRejeteesParDM</h3></div><div class="stat-icon"><i class="bi bi-x-circle"></i></div></div></div>
+                <div class="stat-card info"><div class="stat-header"><div><p class="stat-label">Projets Ma Direction</p><h3 class="stat-value">@Model.ProjetsMaDirection</h3></div><div class="stat-icon"><i class="bi bi-building"></i></div></div></div>
+            </div>
+            <div class="row g-4 mt-2 mb-4">
+                @if (Model.DMDemandesParStatut?.Any() == true)
+                {
+                    <div class="col-md-6">
+                        <div class="card-modern"><div class="card-header-modern"><h3 class="card-title-modern chart-card-title"><i class="bi bi-bar-chart"></i> Demandes par Statut</h3></div>
+                        <div class="card-body-modern"><canvas id="dmDemandesStatutChart" style="max-height:300px;"></canvas></div></div>
+                    </div>
+                }
+                @if (Model.DMProjetsParStatut?.Any() == true)
+                {
+                    <div class="col-md-6">
+                        <div class="card-modern"><div class="card-header-modern"><h3 class="card-title-modern chart-card-title"><i class="bi bi-pie-chart"></i> Projets Direction par Statut</h3></div>
+                        <div class="card-body-modern"><canvas id="dmProjetsStatutChart" style="max-height:300px;"></canvas></div></div>
+                    </div>
+                }
+            </div>
+        }
+
+        @* ===== ChefDeProjet ===== *@
+        @if (isCP)
+        {
+            <div class="dashboard-section-heading">
+                <div>
+                    <span class="dashboard-section-kicker">Pilotage opérationnel</span>
+                    <h2 class="dashboard-section-title"><i class="bi bi-person-badge"></i> Chef de projet</h2>
+                </div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card info"><div class="stat-header"><div><p class="stat-label">Mes Projets Gérés</p><h3 class="stat-value">@Model.MesProjetsGeres</h3></div><div class="stat-icon"><i class="bi bi-folder-check"></i></div></div></div>
+                <div class="stat-card success"><div class="stat-header"><div><p class="stat-label">En Cours</p><h3 class="stat-value">@Model.MesProjetsGeresEnCours</h3></div><div class="stat-icon"><i class="bi bi-play-circle"></i></div></div></div>
+                <div class="stat-card warning"><div class="stat-header"><div><p class="stat-label">En Analyse</p><h3 class="stat-value">@Model.MesProjetsGeresEnAnalyse</h3></div><div class="stat-icon"><i class="bi bi-search"></i></div></div></div>
+                <div class="stat-card gold"><div class="stat-header"><div><p class="stat-label">En Planification</p><h3 class="stat-value">@Model.MesProjetsGeresEnPlanification</h3></div><div class="stat-icon"><i class="bi bi-calendar-check"></i></div></div></div>
+                <div class="stat-card info"><div class="stat-header"><div><p class="stat-label">En Exécution</p><h3 class="stat-value">@Model.MesProjetsGeresEnExecution</h3></div><div class="stat-icon"><i class="bi bi-gear"></i></div></div></div>
+                <div class="stat-card success"><div class="stat-header"><div><p class="stat-label">En UAT & MEP</p><h3 class="stat-value">@Model.MesProjetsGeresEnUAT</h3></div><div class="stat-icon"><i class="bi bi-check2-square"></i></div></div></div>
+                <div class="stat-card danger"><div class="stat-header"><div><p class="stat-label">Risques Critiques</p><h3 class="stat-value">@Model.RisquesCritiques</h3></div><div class="stat-icon"><i class="bi bi-exclamation-triangle"></i></div></div></div>
+                <div class="stat-card warning"><div class="stat-header"><div><p class="stat-label">Anomalies Ouvertes</p><h3 class="stat-value">@Model.AnomaliesOuvertes</h3></div><div class="stat-icon"><i class="bi bi-bug"></i></div></div></div>
+            </div>
+            <div class="row g-4 mt-2 mb-4">
+                @if (Model.CPProjetsParPhase?.Any() == true)
+                {
+                    <div class="col-md-6">
+                        <div class="card-modern"><div class="card-header-modern"><h3 class="card-title-modern chart-card-title"><i class="bi bi-diagram-3"></i> Mes Projets par Phase</h3></div>
+                        <div class="card-body-modern"><canvas id="cpProjetsPhaseChart" style="max-height:300px;"></canvas></div></div>
+                    </div>
+                }
+                @if (Model.CPProjetsParStatut?.Any() == true)
+                {
+                    <div class="col-md-6">
+                        <div class="card-modern"><div class="card-header-modern"><h3 class="card-title-modern chart-card-title"><i class="bi bi-pie-chart"></i> Mes Projets par Statut</h3></div>
+                        <div class="card-body-modern"><canvas id="cpProjetsStatutChart" style="max-height:300px;"></canvas></div></div>
+                    </div>
+                }
+            </div>
+        }
+
+        @* ===== Demandeur ===== *@
+        @if (isDemandeur)
+        {
+            <div class="dashboard-section-heading">
+                <div>
+                    <span class="dashboard-section-kicker">Suivi de vos dossiers</span>
+                    <h2 class="dashboard-section-title"><i class="bi bi-file-earmark-text"></i> Demandeur</h2>
+                </div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card info"><div class="stat-header"><div><p class="stat-label">Mes Demandes</p><h3 class="stat-value">@Model.MesDemandes</h3></div><div class="stat-icon"><i class="bi bi-file-earmark-text"></i></div></div></div>
+                <div class="stat-card warning"><div class="stat-header"><div><p class="stat-label">En Attente</p><h3 class="stat-value">@Model.MesDemandesEnAttente</h3></div><div class="stat-icon"><i class="bi bi-clock-history"></i></div></div></div>
+                <div class="stat-card success"><div class="stat-header"><div><p class="stat-label">Validées</p><h3 class="stat-value">@Model.MesDemandesValidees</h3></div><div class="stat-icon"><i class="bi bi-check-circle"></i></div></div></div>
+                <div class="stat-card danger"><div class="stat-header"><div><p class="stat-label">Rejetées</p><h3 class="stat-value">@Model.MesDemandesRejetees</h3></div><div class="stat-icon"><i class="bi bi-x-circle"></i></div></div></div>
+                <div class="stat-card gold"><div class="stat-header"><div><p class="stat-label">Projets Créés</p><h3 class="stat-value">@Model.MesProjetsCreesParDemande</h3></div><div class="stat-icon"><i class="bi bi-folder"></i></div></div></div>
+            </div>
+            @if (Model.DemandeurDemandesParStatut?.Any() == true)
+            {
+                <div class="row g-4 mt-2 mb-4">
+                    <div class="col-md-6">
+                        <div class="card-modern"><div class="card-header-modern"><h3 class="card-title-modern chart-card-title"><i class="bi bi-pie-chart"></i> Mes Demandes par Statut</h3></div>
+                        <div class="card-body-modern"><canvas id="demandeurDemandesChart" style="max-height:300px;"></canvas></div></div>
+                    </div>
+                </div>
+            }
+        }
+    }
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        var cc = ['#3481c0', '#dbb438', '#28a745', '#dc3545', '#17a2b8', '#6f42c1', '#fd7e14', '#20c997'];
+
+        @if (isDSIOrAdmin && Model.ProjetsParPhase?.Any() == true)
+        {
+            <text>
+            new Chart(document.getElementById('adminPhaseChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProjetsParPhase.Keys)),
+                    datasets: [{
+                        data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProjetsParPhase.Values)),
+                        backgroundColor: ['#2f6fb2', '#f0b52b', '#2f855a', '#ec7c3d', '#5689d4', '#7b61ff']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+            </text>
+        }
+
+        @if (isDSIOrAdmin && Model.ProjetsParEtat?.Any() == true)
+        {
+            <text>
+            new Chart(document.getElementById('adminEtatChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProjetsParEtat.Keys)),
+                    datasets: [{
+                        data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProjetsParEtat.Values)),
+                        backgroundColor: ['#2ea44f', '#f59e0b', '#dc2626']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+            </text>
+        }
+
+        @if (isDSIOrAdmin && Model.ChargeParEquipe?.Any() == true)
+        {
+            <text>
+            new Chart(document.getElementById('adminChargeEquipeChart'), {
+                type: 'bar',
+                data: {
+                    labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ChargeParEquipe.Keys)),
+                    datasets: [{
+                        label: 'Heures',
+                        data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ChargeParEquipe.Values)),
+                        backgroundColor: '#5f8fbe',
+                        borderRadius: 10,
+                        maxBarThickness: 36
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+            </text>
+        }
+
+        @if (isDSIOrAdmin && Model.ChargeTendanceLabels?.Any() == true)
+        {
+            <text>
+            new Chart(document.getElementById('adminChargeTrendChart'), {
+                type: 'line',
+                data: {
+                    labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ChargeTendanceLabels)),
+                    datasets: [{
+                        label: 'Prévu (h)',
+                        data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ChargeTendancePrevisionnelle)),
+                        borderColor: '#2f6fb2',
+                        backgroundColor: 'rgba(47, 111, 178, 0.12)',
+                        tension: 0.35,
+                        fill: false
+                    }, {
+                        label: 'Réel (h)',
+                        data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ChargeTendanceReelle)),
+                        borderColor: '#2ea44f',
+                        backgroundColor: 'rgba(46, 164, 79, 0.12)',
+                        tension: 0.35,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+            </text>
+        }
+
+        @if (!isDSIOrAdmin && isRSI && Model.RSIProjetsParStatut?.Any() == true)
+        {
+            <text>
+            new Chart(document.getElementById('rsiProjetsStatutChart'), { type:'doughnut', data:{ labels:@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RSIProjetsParStatut.Keys)), datasets:[{data:@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RSIProjetsParStatut.Values)), backgroundColor:cc}] }, options:{responsive:true, plugins:{legend:{position:'bottom'}}} });
+            </text>
+        }
+        @if (!isDSIOrAdmin && isRSI && Model.RSIProjetsParPhase?.Any() == true)
+        {
+            <text>
+            new Chart(document.getElementById('rsiProjetsPhaseChart'), { type:'doughnut', data:{ labels:@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RSIProjetsParPhase.Keys)), datasets:[{data:@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RSIProjetsParPhase.Values)), backgroundColor:cc}] }, options:{responsive:true, plugins:{legend:{position:'bottom'}}} });
+            </text>
+        }
+        @if (!isDSIOrAdmin && isRSI && Model.RSIProjetsParDirection?.Any() == true)
+        {
+            <text>
+            new Chart(document.getElementById('rsiDirectionChart'), { type:'bar', data:{ labels:@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RSIProjetsParDirection.Keys)), datasets:[{label:'Projets', data:@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RSIProjetsParDirection.Values)), backgroundColor:cc}] }, options:{responsive:true, indexAxis:'y', plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true, ticks:{stepSize:1}}}} });
+            </text>
+        }
+
+        @if (!isDSIOrAdmin && isDM && Model.DMDemandesParStatut?.Any() == true)
+        {
+            <text>
+            new Chart(document.getElementById('dmDemandesStatutChart'), { type:'bar', data:{ labels:@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DMDemandesParStatut.Keys)), datasets:[{label:'Demandes', data:@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DMDemandesParStatut.Values)), backgroundColor:cc}] }, options:{responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{stepSize:1}}}} });
+            </text>
+        }
+        @if (!isDSIOrAdmin && isDM && Model.DMProjetsParStatut?.Any() == true)
+        {
+            <text>
+            new Chart(document.getElementById('dmProjetsStatutChart'), { type:'doughnut', data:{ labels:@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DMProjetsParStatut.Keys)), datasets:[{data:@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DMProjetsParStatut.Values)), backgroundColor:cc}] }, options:{responsive:true, plugins:{legend:{position:'bottom'}}} });
+            </text>
+        }
+
+        @if (!isDSIOrAdmin && isCP && Model.CPProjetsParPhase?.Any() == true)
+        {
+            <text>
+            new Chart(document.getElementById('cpProjetsPhaseChart'), { type:'doughnut', data:{ labels:@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CPProjetsParPhase.Keys)), datasets:[{data:@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CPProjetsParPhase.Values)), backgroundColor:cc}] }, options:{responsive:true, plugins:{legend:{position:'bottom'}}} });
+            </text>
+        }
+        @if (!isDSIOrAdmin && isCP && Model.CPProjetsParStatut?.Any() == true)
+        {
+            <text>
+            new Chart(document.getElementById('cpProjetsStatutChart'), { type:'doughnut', data:{ labels:@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CPProjetsParStatut.Keys)), datasets:[{data:@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CPProjetsParStatut.Values)), backgroundColor:cc}] }, options:{responsive:true, plugins:{legend:{position:'bottom'}}} });
+            </text>
+        }
+
+        @if (!isDSIOrAdmin && isDemandeur && Model.DemandeurDemandesParStatut?.Any() == true)
+        {
+            <text>
+            new Chart(document.getElementById('demandeurDemandesChart'), { type:'doughnut', data:{ labels:@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DemandeurDemandesParStatut.Keys)), datasets:[{data:@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DemandeurDemandesParStatut.Values)), backgroundColor:cc}] }, options:{responsive:true, plugins:{legend:{position:'bottom'}}} });
+            </text>
+        }
+    </script>
+}

@@ -1,0 +1,204 @@
+@model GestionProjects.Domain.Models.Projet
+@inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
+
+@{
+    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, Model);
+    var charteExiste = Model.CharteProjet != null;
+    var charteSigneeLivrable = Model.Livrables?.FirstOrDefault(l => !l.EstSupprime && l.TypeLivrable == GestionProjects.Domain.Enums.TypeLivrable.CharteProjetSignee);
+    var charteSigneeComplete = charteSigneeLivrable != null && Model.CharteProjet?.SignatureSponsor == true && Model.CharteProjet?.SignatureChefProjet == true;
+    var charteValideeCompletement = Model.CharteValideeParDM && Model.CharteValideeParDSI;
+}
+
+<div class="card-modern workflow-banner mb-4">
+    <div class="card-header-modern">
+        <h3 class="card-title-modern">
+            <i class="bi bi-clipboard-check" style="color: var(--warning);"></i>
+            Validation de la Charte Projet
+        </h3>
+    </div>
+    <div class="card-body-modern">
+        @if (!charteExiste)
+        {
+            <div class="alert-modern alert-modern-warning">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <div>
+                    <strong>Charte non créée</strong>
+                    <p>La charte projet doit être créée avant de pouvoir être validée.</p>
+                    @if (ui.CanEditCharte)
+                    {
+                        <a asp-action="CharteProjet" asp-route-id="@Model.Id" class="btn-modern btn-modern-primary mt-2">
+                            <i class="bi bi-file-earmark-text"></i>
+                            Créer la Charte Projet
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert-modern @(charteSigneeComplete ? "alert-modern-success" : "alert-modern-warning") mb-4">
+                <i class="bi @(charteSigneeComplete ? "bi-check-circle-fill" : "bi-exclamation-triangle-fill")"></i>
+                <div>
+                    <strong>@(charteSigneeComplete ? "Charte signée prête pour validation" : "Charte signée incomplète")</strong>
+                    @if (charteSigneeLivrable != null)
+                    {
+                        <p class="mb-1">
+                            Dernière version déposée :
+                            <a asp-controller="Document"
+                               asp-action="PreviewProjetLivrable"
+                               asp-route-projetId="@Model.Id"
+                               asp-route-livrableId="@charteSigneeLivrable.Id"
+                               target="_blank"
+                               class="fw-semibold">@charteSigneeLivrable.NomDocument</a>
+                            le @charteSigneeLivrable.DateDepot.ToString("dd/MM/yyyy HH:mm")
+                        </p>
+                    }
+                    else
+                    {
+                        <p class="mb-1">Aucune version signée n'a encore été déposée.</p>
+                    }
+                    <p class="mb-0">
+                        Signature Sponsor :
+                        <strong>@(Model.CharteProjet?.SignatureSponsor == true ? "OK" : "manquante")</strong>
+                        |
+                        Signature Chef de Projet :
+                        <strong>@(Model.CharteProjet?.SignatureChefProjet == true ? "OK" : "manquante")</strong>
+                    </p>
+                </div>
+            </div>
+
+            <div class="workflow-split-grid mb-4">
+                <div class="workflow-card @(Model.CharteValideeParDM ? "workflow-state-success" : !string.IsNullOrWhiteSpace(Model.CommentaireRefusCharteDM) ? "workflow-state-danger" : "workflow-state-warning")">
+                    <div class="workflow-card-state">
+                        @if (Model.CharteValideeParDM)
+                        {
+                            <i class="bi bi-check-circle-fill"></i>
+                            <strong>Validée par le Directeur Métier</strong>
+                        }
+                        else
+                        {
+                            <i class="bi bi-clock"></i>
+                            <strong>En attente de validation DM</strong>
+                        }
+                    </div>
+
+                    @if (Model.CharteValideeParDM)
+                    {
+                        <div class="workflow-card-meta">
+                            <div>Validée le @Model.DateCharteValideeParDM?.ToString("dd/MM/yyyy HH:mm")</div>
+                            @if (Model.CharteValideeParDMUtilisateur != null)
+                            {
+                                <div>Par @Model.CharteValideeParDMUtilisateur.Nom @Model.CharteValideeParDMUtilisateur.Prenoms</div>
+                            }
+                        </div>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(Model.CommentaireRefusCharteDM))
+                    {
+                        <div class="alert-modern alert-modern-danger mt-3">
+                            <i class="bi bi-x-circle-fill"></i>
+                            <div>
+                                <strong>Refusée</strong>
+                                <p class="mb-0 mt-1">@Model.CommentaireRefusCharteDM</p>
+                            </div>
+                        </div>
+                    }
+                    else if (ui.CanValidateCharteDm && charteSigneeComplete)
+                    {
+                        <div class="workflow-card-actions">
+                            <form asp-action="ValiderCharteDM" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <button type="submit" class="btn-modern btn-modern-success w-100">
+                                    <i class="bi bi-check-circle"></i>
+                                    Valider
+                                </button>
+                            </form>
+                            <button type="button" class="btn-modern btn-modern-danger" data-bs-toggle="modal" data-bs-target="#refuserCharteDMModal">
+                                <i class="bi bi-x-circle"></i>
+                                Refuser
+                            </button>
+                        </div>
+                    }
+                    else if (ui.CanValidateCharteDm)
+                    {
+                        <div class="alert-modern alert-modern-warning mt-3">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <div>La charte signée par le Sponsor et le Chef de Projet doit être déposée avant votre validation.</div>
+                        </div>
+                    }
+                </div>
+
+                <div class="workflow-card @(Model.CharteValideeParDSI ? "workflow-state-success" : !string.IsNullOrWhiteSpace(Model.CommentaireRefusCharteDSI) ? "workflow-state-danger" : "workflow-state-warning")">
+                    <div class="workflow-card-state">
+                        @if (Model.CharteValideeParDSI)
+                        {
+                            <i class="bi bi-check-circle-fill"></i>
+                            <strong>Validée par la DSI</strong>
+                        }
+                        else
+                        {
+                            <i class="bi bi-clock"></i>
+                            <strong>En attente de validation DSI</strong>
+                        }
+                    </div>
+
+                    @if (Model.CharteValideeParDSI)
+                    {
+                        <div class="workflow-card-meta">
+                            <div>Validée le @Model.DateCharteValideeParDSI?.ToString("dd/MM/yyyy HH:mm")</div>
+                            @if (Model.CharteValideeParDSIUtilisateur != null)
+                            {
+                                <div>Par @Model.CharteValideeParDSIUtilisateur.Nom @Model.CharteValideeParDSIUtilisateur.Prenoms</div>
+                            }
+                        </div>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(Model.CommentaireRefusCharteDSI))
+                    {
+                        <div class="alert-modern alert-modern-danger mt-3">
+                            <i class="bi bi-x-circle-fill"></i>
+                            <div>
+                                <strong>Refusée</strong>
+                                <p class="mb-0 mt-1">@Model.CommentaireRefusCharteDSI</p>
+                            </div>
+                        </div>
+                    }
+                    else if (ui.CanValidateCharteDsi && Model.CharteValideeParDM && charteSigneeComplete)
+                    {
+                        <div class="workflow-card-actions">
+                            <form asp-action="ValiderCharteDSI" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <button type="submit" class="btn-modern btn-modern-success w-100">
+                                    <i class="bi bi-check-circle"></i>
+                                    Valider
+                                </button>
+                            </form>
+                            <button type="button" class="btn-modern btn-modern-danger" data-bs-toggle="modal" data-bs-target="#refuserCharteDSIModal">
+                                <i class="bi bi-x-circle"></i>
+                                Refuser
+                            </button>
+                        </div>
+                    }
+                    else if (ui.CanValidateCharteDsi && Model.CharteValideeParDM)
+                    {
+                        <div class="alert-modern alert-modern-warning mt-3">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <div>La charte signée complète doit être déposée avant la validation DSI.</div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @if (charteValideeCompletement)
+            {
+                <div class="alert-modern alert-modern-success">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <div>
+                        <strong>Charte validée</strong>
+                        <p>La charte projet a été validée par le Directeur Métier et la DSI. Le projet peut passer à la phase de planification.</p>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>

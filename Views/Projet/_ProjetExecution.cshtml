@@ -1,0 +1,426 @@
+@using Microsoft.AspNetCore.Html
+@using System.Net
+@using GestionProjects.Domain.Enums
+@using GestionProjects.Domain.Models
+@model GestionProjects.Domain.Models.Projet
+@inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
+
+@functions {
+    private static IHtmlContent RenderHelpPopover(string title, string purpose, string guidance)
+    {
+        var encodedTitle = WebUtility.HtmlEncode(title);
+        var encodedPurpose = WebUtility.HtmlEncode(purpose);
+        var encodedGuidance = WebUtility.HtmlEncode(guidance);
+
+        return new HtmlString($@"
+<div class=""form-help"">
+    <button type=""button"" class=""form-help-trigger"" aria-label=""Aide : {encodedTitle}"">
+        <i class=""bi bi-info-circle""></i>
+    </button>
+    <div class=""form-help-popover"" role=""tooltip"">
+        <strong>{encodedTitle}</strong>
+        <div class=""form-help-popover-section"">
+            <span>A quoi sert ce bloc ?</span>
+            <p>{encodedPurpose}</p>
+        </div>
+        <div class=""form-help-popover-section"">
+            <span>Comment le renseigner ?</span>
+            <p>{encodedGuidance}</p>
+        </div>
+    </div>
+</div>");
+    }
+}
+
+@{
+    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, Model);
+    var fiche = Model.FicheProjet ?? new FicheProjet();
+    var collaboration = ViewBag.Collaboration as CollaborationProjet;
+    var livrablesExec = Model.Livrables?.Where(l => l.Phase == PhaseProjet.ExecutionSuivi && !l.EstSupprime).ToList() ?? new List<LivrableProjet>();
+    var canEditExecution = ui.CanEditExecution && Model.PhaseActuelle == PhaseProjet.ExecutionSuivi;
+    var canPretUAT = canEditExecution;
+    var chargePrevue = Model.Charges?.Where(c => !c.EstSupprime).Sum(c => c.ChargePrevisionnelle) ?? 0m;
+    var chargeReelle = Model.Charges?.Where(c => !c.EstSupprime).Sum(c => c.ChargeReelle ?? 0m) ?? 0m;
+    var ecartCharge = chargeReelle - chargePrevue;
+    var budgetPrevu = fiche.BudgetPrevisionnel ?? 0m;
+    var budgetConsomme = fiche.BudgetConsomme ?? 0m;
+}
+
+<div class="phase-shell">
+    <section class="phase-hero">
+        <div class="phase-hero-top">
+            <div>
+                <div class="phase-eyebrow">
+                    <i class="bi bi-activity"></i>
+                    Execution
+                </div>
+                <h3 class="phase-title">Execution et suivi</h3>
+                <p class="phase-subtitle">
+                    Suivi du planning, des actions, du budget, des charges et des anomalies avant l'ouverture de la recette.
+                </p>
+            </div>
+            <div class="phase-action-row">
+                <span class="phase-chip is-info">
+                    <i class="bi bi-signpost"></i>
+                    @Model.PhaseWorkflowLabel
+                </span>
+                <span class="phase-chip">
+                    <i class="bi bi-bar-chart"></i>
+                    @Model.PourcentageAvancement%
+                </span>
+                <span class="phase-chip @(ecartCharge > 0 ? "is-warning" : "is-success")">
+                    <i class="bi bi-clock-history"></i>
+                    Ecart charge: @ecartCharge.ToString("N1") h
+                </span>
+            </div>
+        </div>
+    </section>
+
+    <div class="phase-grid phase-grid-3">
+        <article class="phase-panel">
+            <h4 class="phase-panel-title">Synthese projet</h4>
+            <div class="phase-summary-list">
+                <div class="phase-summary-item"><span>Phase</span><strong>@Model.PhaseWorkflowLabel</strong></div>
+                <div class="phase-summary-item"><span>Statut global</span><strong>@Model.StatutWorkflowLabel</strong></div>
+                <div class="phase-summary-item"><span>Avancement</span><strong>@Model.PourcentageAvancement%</strong></div>
+                <div class="phase-summary-item"><span>Etat</span><strong>@Model.EtatProjet</strong></div>
+            </div>
+        </article>
+        <article class="phase-panel">
+            <h4 class="phase-panel-title">Suivi planning</h4>
+            <div class="phase-summary-list">
+                <div class="phase-summary-item"><span>Debut reel</span><strong>@(fiche.DateDebutReelleExecution?.ToString("dd/MM/yyyy") ?? "Non renseigne")</strong></div>
+                <div class="phase-summary-item"><span>Fin prevue</span><strong>@(Model.DateFinPrevue?.ToString("dd/MM/yyyy") ?? "Non definie")</strong></div>
+                <div class="phase-summary-item"><span>Fin estimee</span><strong>@(fiche.DateFinEstimeeExecution?.ToString("dd/MM/yyyy") ?? "Non definie")</strong></div>
+                <div class="phase-summary-item"><span>Prochain jalon</span><strong>@(string.IsNullOrWhiteSpace(fiche.ProchainJalon) ? "A definir" : fiche.ProchainJalon)</strong></div>
+            </div>
+        </article>
+        <article class="phase-panel">
+            <h4 class="phase-panel-title">Budget & charges</h4>
+            <div class="phase-summary-list">
+                <div class="phase-summary-item"><span>Budget prevu</span><strong>@budgetPrevu.ToString("N0") FCFA</strong></div>
+                <div class="phase-summary-item"><span>Budget consomme</span><strong>@budgetConsomme.ToString("N0") FCFA</strong></div>
+                <div class="phase-summary-item"><span>Charge prevue</span><strong>@chargePrevue.ToString("N1") h</strong></div>
+                <div class="phase-summary-item"><span>Charge reelle</span><strong>@chargeReelle.ToString("N1") h</strong></div>
+            </div>
+        </article>
+    </div>
+
+    @if (canEditExecution)
+    {
+        <form asp-action="UpdateExecution" method="post" class="phase-shell">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+
+            <div class="phase-grid">
+                <section class="phase-panel">
+                    <div class="form-help-title-row">
+                        <h4 class="phase-panel-title">Pilotage d'avancement</h4>
+                        @RenderHelpPopover(
+                            "Pilotage d'avancement",
+                            "Ce bloc sert à renseigner les dates réelles, les glissements et le commentaire opérationnel de l'exécution.",
+                            "Renseignez les dates réelles, expliquez les retards et tenez le commentaire d'avancement à jour. Le pourcentage se calcule automatiquement à partir des tâches du planning.")
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Date debut reelle</label>
+                        <input name="DateDebutReelleExecution" type="date" class="form-control-modern" value="@(fiche.DateDebutReelleExecution?.ToString("yyyy-MM-dd") ?? string.Empty)" />
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Date fin previsionnelle mise a jour</label>
+                        <input name="dateFinPrevue" type="date" class="form-control-modern" value="@(Model.DateFinPrevue?.ToString("yyyy-MM-dd") ?? string.Empty)" />
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Date fin estimee</label>
+                        <input name="DateFinEstimeeExecution" type="date" class="form-control-modern" value="@(fiche.DateFinEstimeeExecution?.ToString("yyyy-MM-dd") ?? string.Empty)" />
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Justification de retard / glissement</label>
+                        <textarea name="JustificationRetardExecution" class="form-control-modern" rows="3">@fiche.JustificationRetardExecution</textarea>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">% avancement (calcul automatique)</label>
+                        <input type="text" class="form-control-modern" value="@Model.PourcentageAvancement%" disabled />
+                        <small class="app-modal-note">
+                            Calculé automatiquement depuis l'avancement des tâches du planning, puis ajusté selon l'état de la phase.
+                        </small>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Etat projet</label>
+                        <select name="etatProjet" class="form-control-modern">
+                            @foreach (var etat in Enum.GetValues<EtatProjet>())
+                            {
+                                if (etat == Model.EtatProjet)
+                                {
+                                    <option value="@etat" selected>@etat</option>
+                                }
+                                else
+                                {
+                                    <option value="@etat">@etat</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Commentaire d'avancement</label>
+                        <textarea name="CommentaireAvancementExecution" class="form-control-modern" rows="4">@fiche.CommentaireAvancementExecution</textarea>
+                    </div>
+                </section>
+
+                <section class="phase-panel">
+                    <div class="form-help-title-row">
+                        <h4 class="phase-panel-title">Actions, risques et decisions</h4>
+                        @RenderHelpPopover(
+                            "Actions, risques et décisions",
+                            "Ce bloc sert à journaliser ce qui a été fait, ce qui reste à faire et les décisions de pilotage prises en exécution.",
+                            "Renseignez des éléments courts et actionnables : réalisé, à venir, blocages, décisions, puis mettez à jour le prochain jalon.")
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Actions realisees</label>
+                        <textarea name="ActionsRealiseesExecution" class="form-control-modern" rows="3">@fiche.ActionsRealiseesExecution</textarea>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Actions a venir</label>
+                        <textarea name="ActionsAVenirExecution" class="form-control-modern" rows="3">@fiche.ActionsAVenirExecution</textarea>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Problemes / blocages</label>
+                        <textarea name="ProblemesBlocagesExecution" class="form-control-modern" rows="3">@fiche.ProblemesBlocagesExecution</textarea>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Decisions prises</label>
+                        <textarea name="DecisionsExecution" class="form-control-modern" rows="3">@fiche.DecisionsExecution</textarea>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Prochain jalon</label>
+                        <input name="prochainJalon" class="form-control-modern" value="@fiche.ProchainJalon" />
+                    </div>
+                </section>
+
+                <section class="phase-panel">
+                    <div class="form-help-title-row">
+                        <h4 class="phase-panel-title">Budget & charge</h4>
+                        @RenderHelpPopover(
+                            "Budget & charge",
+                            "Ce bloc consolide le consommé réel, les écarts et la synthèse de charge de la phase d'exécution.",
+                            "Renseignez le budget consommé, expliquez les écarts et décrivez le reste à faire en charge. Gardez des valeurs cohérentes avec le module Charges.")
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Budget consomme (FCFA)</label>
+                        <input name="BudgetConsomme" type="number" step="0.01" class="form-control-modern" value="@fiche.BudgetConsomme" />
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Justification budget</label>
+                        <textarea name="JustificationBudgetExecution" class="form-control-modern" rows="3">@fiche.JustificationBudgetExecution</textarea>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Synthese charges</label>
+                        <textarea name="SyntheseChargesExecution" class="form-control-modern" rows="4" placeholder="Charge prevue, charge consommee, reste a faire, ecarts...">@fiche.SyntheseChargesExecution</textarea>
+                    </div>
+                    <div class="phase-note is-info">Ecart charge actuel : @ecartCharge.ToString("N1") h</div>
+                </section>
+
+                <section class="phase-panel">
+                    <div class="form-help-title-row">
+                        <h4 class="phase-panel-title">Taches / actions projet</h4>
+                        @RenderHelpPopover(
+                            "Tâches / actions projet",
+                            "Ce bloc reflète les tâches structurées de l'exécution et alimente le calcul automatique de l'avancement.",
+                            "Mettez d'abord à jour les tâches dans le planning interactif. Leur avancement individuel sert de base au calcul global du projet.")
+                    </div>
+                    @if (collaboration?.Taches?.Any(t => !t.EstSupprime && t.Phase == PhaseProjet.ExecutionSuivi) == true)
+                    {
+                        <div class="record-stack">
+                            @foreach (var tache in collaboration.Taches.Where(t => !t.EstSupprime && t.Phase == PhaseProjet.ExecutionSuivi).OrderBy(t => t.DateEcheance))
+                            {
+                                <article class="record-card">
+                                    <div class="record-card-header">
+                                        <div>
+                                            <div class="record-card-title">@tache.Titre</div>
+                                            <div class="record-card-subtitle">@tache.Statut · @(tache.Assignee != null ? $"{tache.Assignee.Nom} {tache.Assignee.Prenoms}" : "Non assigne")</div>
+                                        </div>
+                                        <span class="phase-chip">@(tache.DateEcheance?.ToString("dd/MM") ?? "--")</span>
+                                    </div>
+                                </article>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="phase-empty">
+                            <i class="bi bi-kanban"></i>
+                            <p>Aucune tache structuree n'est encore synchronisee pour la phase Execution.</p>
+                        </div>
+                    }
+                </section>
+            </div>
+
+            <div class="phase-action-row">
+                <button type="submit" class="btn-modern btn-modern-primary">
+                    <i class="bi bi-save"></i>
+                    Enregistrer le suivi d'execution
+                </button>
+            </div>
+        </form>
+    }
+    else
+    {
+        <div class="phase-grid">
+            <section class="phase-panel">
+                <h4 class="phase-panel-title">Avancement</h4>
+                <div class="record-card-note">
+                    <strong>Commentaire :</strong><br />
+                    @(string.IsNullOrWhiteSpace(fiche.CommentaireAvancementExecution) ? "Non renseigne" : fiche.CommentaireAvancementExecution)
+                </div>
+                <div class="record-card-note">
+                    <strong>Justification retard :</strong><br />
+                    @(string.IsNullOrWhiteSpace(fiche.JustificationRetardExecution) ? "Non renseignee" : fiche.JustificationRetardExecution)
+                </div>
+            </section>
+            <section class="phase-panel">
+                <h4 class="phase-panel-title">Blocages & decisions</h4>
+                <div class="record-card-note">
+                    <strong>Blocages :</strong><br />
+                    @(string.IsNullOrWhiteSpace(fiche.ProblemesBlocagesExecution) ? "Aucun blocage renseigne" : fiche.ProblemesBlocagesExecution)
+                </div>
+                <div class="record-card-note">
+                    <strong>Decisions :</strong><br />
+                    @(string.IsNullOrWhiteSpace(fiche.DecisionsExecution) ? "Aucune decision renseignee" : fiche.DecisionsExecution)
+                </div>
+            </section>
+        </div>
+    }
+
+    <div class="phase-grid">
+        <section class="phase-panel">
+                <div class="phase-section-header">
+                    <div>
+                        <div class="form-help-title-row">
+                            <h4 class="phase-panel-title">Livrables d'execution</h4>
+                            @RenderHelpPopover(
+                                "Livrables d'exécution",
+                                "Ce bloc centralise les comptes rendus, rapports et pièces de suivi produits pendant l'exécution.",
+                                "Déposez ici les documents produits en phase Exécution : compte-rendu, rapport d'avancement, justificatif ou pièce de suivi.")
+                        </div>
+                        <div class="phase-record-meta">Comptes rendus, rapports et pieces de suivi de la phase.</div>
+                    </div>
+                @if (canEditExecution)
+                {
+                    <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#uploadLivrableModal" data-phase="ExecutionSuivi">
+                        <i class="bi bi-upload"></i>
+                        Ajouter
+                    </button>
+                }
+            </div>
+
+            @if (livrablesExec.Any())
+            {
+                <div class="record-stack">
+                    @foreach (var livrable in livrablesExec)
+                    {
+                        <article class="record-card">
+                            <div class="record-card-header">
+                                <div>
+                                    <div class="record-card-title">@livrable.NomDocument</div>
+                                    <div class="record-card-subtitle">@livrable.TypeLivrable · @livrable.DateDepot.ToString("dd/MM/yyyy")</div>
+                                </div>
+                                <div class="record-card-actions">
+                                    <a asp-controller="Document" asp-action="PreviewProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@livrable.Id" target="_blank" class="btn-modern btn-modern-primary" title="Visualiser">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a asp-controller="Document" asp-action="StreamProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@livrable.Id" asp-route-download="true" class="btn-modern btn-modern-secondary" title="Telecharger">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="phase-empty">
+                    <i class="bi bi-inbox"></i>
+                    <p>Aucun livrable d'execution pour le moment.</p>
+                </div>
+            }
+        </section>
+
+        <section class="phase-panel">
+                <div class="phase-section-header">
+                    <div>
+                        <div class="form-help-title-row">
+                            <h4 class="phase-panel-title">Anomalies</h4>
+                            @RenderHelpPopover(
+                                "Anomalies",
+                                "Ce bloc sert à suivre les incidents et dysfonctionnements détectés pendant l'exécution.",
+                                "Ajoutez une anomalie quand un défaut impacte la qualité, le délai ou la recette. Précisez priorité, statut et responsable de traitement.")
+                        </div>
+                        <div class="phase-record-meta">@((Model.Anomalies?.Count ?? 0)) anomalie(s) suivie(s) sur la phase.</div>
+                    </div>
+                @if (canEditExecution)
+                {
+                    <button type="button" class="btn-modern btn-modern-warning" data-bs-toggle="modal" data-bs-target="#ajouterAnomalieModal">
+                        <i class="bi bi-plus-circle"></i>
+                        Ajouter
+                    </button>
+                }
+            </div>
+
+            @if (Model.Anomalies != null && Model.Anomalies.Any())
+            {
+                <div class="record-stack">
+                    @foreach (var anomalie in Model.Anomalies.Take(10))
+                    {
+                        <article class="record-card" style="border-left: 4px solid @GetAnomalieColor(anomalie.Priorite);">
+                            <div class="record-card-title">@anomalie.Reference - @anomalie.Description</div>
+                            <div class="record-card-subtitle">Priorité : @anomalie.Priorite · Statut : @anomalie.Statut · Responsable : @anomalie.AssigneeA</div>
+                        </article>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="phase-empty">
+                    <i class="bi bi-check-circle"></i>
+                    <p>Aucune anomalie signalee.</p>
+                </div>
+            }
+        </section>
+    </div>
+
+    @if (canPretUAT)
+    {
+        <section class="phase-note is-success">
+            <div class="phase-section-header">
+                <div>
+                    <div class="phase-strong">Pret pour UAT / recette</div>
+                    <p style="margin: .6rem 0 0;">
+                        Le passage en UAT verifiera les livrables d'execution obligatoires avant d'ouvrir la phase suivante.
+                    </p>
+                </div>
+                <form asp-action="PretUAT" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <button type="submit" class="btn-modern btn-modern-success" onclick="return confirm('Passer le projet en UAT / Recette ?');">
+                        <i class="bi bi-arrow-right-circle"></i>
+                        Ouvrir la phase UAT
+                    </button>
+                </form>
+            </div>
+        </section>
+    }
+</div>
+
+@functions {
+    string GetAnomalieColor(PrioriteAnomalie priorite)
+    {
+        return priorite switch
+        {
+            PrioriteAnomalie.Critique => "var(--danger)",
+            PrioriteAnomalie.Haute => "var(--warning)",
+            PrioriteAnomalie.Moyenne => "var(--info)",
+            PrioriteAnomalie.Basse => "var(--gray-400)",
+            _ => "var(--gray-400)"
+        };
+    }
+}

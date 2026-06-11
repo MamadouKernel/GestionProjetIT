@@ -1,0 +1,230 @@
+@{
+    ViewData["Title"] = "Tableau de bord analytique";
+}
+
+<div class="analytics-shell fade-in">
+    <section class="analytics-hero">
+        <div class="phase-hero-top">
+            <div>
+                <div class="phase-eyebrow">
+                    <i class="bi bi-bar-chart-fill"></i>
+                    Analytics
+                </div>
+                <h2 class="phase-title">Tableau de bord analytique</h2>
+                <p class="phase-subtitle">
+                    Portefeuille, repartitions et tendances de pilotage pour la periode en cours.
+                </p>
+            </div>
+            <span class="phase-chip is-info">
+                <i class="bi bi-calendar3"></i>
+                @DateTime.Now.ToString("MMMM yyyy")
+            </span>
+        </div>
+    </section>
+
+    <section class="analytics-kpi-grid" id="kpiRow">
+        <article class="analytics-kpi-card is-primary"><div class="analytics-kpi-value" id="kpiTotal">—</div><div class="analytics-kpi-label">Projets total</div></article>
+        <article class="analytics-kpi-card is-success"><div class="analytics-kpi-value" id="kpiEnCours">—</div><div class="analytics-kpi-label">En cours</div></article>
+        <article class="analytics-kpi-card is-danger"><div class="analytics-kpi-value" id="kpiRouges">—</div><div class="analytics-kpi-label">Projets rouges</div></article>
+        <article class="analytics-kpi-card is-warning"><div class="analytics-kpi-value" id="kpiDemandes">—</div><div class="analytics-kpi-label">Demandes en attente</div></article>
+        <article class="analytics-kpi-card is-info"><div class="analytics-kpi-value" id="kpiAvancement">—</div><div class="analytics-kpi-label">Avancement moyen</div></article>
+        <article class="analytics-kpi-card is-success"><div class="analytics-kpi-value" id="kpiVerts">—</div><div class="analytics-kpi-label">Projets verts</div></article>
+        <article class="analytics-kpi-card is-warning"><div class="analytics-kpi-value" id="kpiOranges">—</div><div class="analytics-kpi-label">Projets oranges</div></article>
+        <article class="analytics-kpi-card is-accent"><div class="analytics-kpi-value" id="kpiClotureAnnee">—</div><div class="analytics-kpi-label">Clotures cette annee</div></article>
+        <article class="analytics-kpi-card is-danger"><div class="analytics-kpi-value" id="kpiEnRetard">—</div><div class="analytics-kpi-label">Projets en retard</div></article>
+        <article class="analytics-kpi-card is-warning"><div class="analytics-kpi-value" id="kpiDepassBudget">—</div><div class="analytics-kpi-label">Taux depassement budget</div></article>
+        <article class="analytics-kpi-card is-info"><div class="analytics-kpi-value" id="kpiUtilCapacite">—</div><div class="analytics-kpi-label">Utilisation capacite</div></article>
+    </section>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-6">
+            <div class="card-modern analytics-chart-card">
+                <div class="card-header-modern">
+                    <h5 class="card-title-modern mb-0"><i class="bi bi-pie-chart-fill"></i> Projets par phase</h5>
+                </div>
+                <div class="card-body-modern">
+                    <div id="chartPhase"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-6">
+            <div class="card-modern analytics-chart-card">
+                <div class="card-header-modern">
+                    <h5 class="card-title-modern mb-0"><i class="bi bi-traffic-light-fill"></i> Indicateurs RAG (projets actifs)</h5>
+                </div>
+                <div class="card-body-modern">
+                    <div id="chartRAG"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-7">
+            <div class="card-modern analytics-chart-card">
+                <div class="card-header-modern">
+                    <h5 class="card-title-modern mb-0"><i class="bi bi-graph-up"></i> Tendance de creation (12 derniers mois)</h5>
+                </div>
+                <div class="card-body-modern">
+                    <div id="chartTendance"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-5">
+            <div class="card-modern analytics-chart-card">
+                <div class="card-header-modern">
+                    <h5 class="card-title-modern mb-0"><i class="bi bi-building"></i> Projets par direction</h5>
+                </div>
+                <div class="card-body-modern">
+                    <div id="chartDirection"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-5">
+            <div class="card-modern analytics-chart-card">
+                <div class="card-header-modern">
+                    <h5 class="card-title-modern mb-0"><i class="bi bi-bar-chart-steps"></i> Repartition par statut</h5>
+                </div>
+                <div class="card-body-modern">
+                    <div id="chartStatuts"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-7">
+            <div class="card-modern analytics-chart-card">
+                <div class="card-header-modern">
+                    <h5 class="card-title-modern mb-0"><i class="bi bi-hourglass-split"></i> Duree moyenne par phase (jours)</h5>
+                </div>
+                <div class="card-body-modern">
+                    <div id="chartDuree"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.49.0/dist/apexcharts.min.js"
+        integrity="sha384-0WpKazeVNul84+yFi1B+OXYKpb8vyWrdPCZifK8nsjTvMriWoZ49feLMvvPuIYaX"
+        crossorigin="anonymous"></script>
+<script>
+const COULEURS_PHASE = ['#0D6EFD','#6610F2','#198754','#FFC107','#DC3545','#0DCAF0'];
+const COULEURS_RAG   = { Vert: '#198754', Orange: '#FD7E14', Rouge: '#DC3545' };
+
+async function fetchJson(url) {
+    const r = await fetch(url);
+    return r.json();
+}
+
+function phaseLabel(raw) {
+    const map = {
+        AnalyseClarification: 'Analyse',
+        PlanificationValidation: 'Planification',
+        ExecutionSuivi: 'Exécution',
+        UatMep: 'UAT / MEP',
+        ClotureLeconsApprises: 'Clôture',
+        Demande: 'Demande'
+    };
+    return map[raw] || raw;
+}
+
+function statutLabel(raw) {
+    const map = {
+        NonDemarre: 'Non démarré', EnCours: 'En cours', EnAttente: 'En attente',
+        Suspendu: 'Suspendu', Cloture: 'Clôturé', Rejete: 'Rejeté',
+        ClotureEnCours: 'Clôture en cours', Abandonne: 'Abandonné'
+    };
+    return map[raw] || raw;
+}
+
+fetchJson('@Url.Action("StatsKPIs", "Dashboard")').then(d => {
+    document.getElementById('kpiTotal').textContent       = d.totalProjets;
+    document.getElementById('kpiEnCours').textContent     = d.projetsEnCours;
+    document.getElementById('kpiRouges').textContent      = d.projetsRouges;
+    document.getElementById('kpiDemandes').textContent    = d.demandesEnAttente;
+    document.getElementById('kpiAvancement').textContent  = d.avancementMoyen + '%';
+    document.getElementById('kpiVerts').textContent       = d.projetsVerts;
+    document.getElementById('kpiOranges').textContent     = d.projetsOranges;
+    document.getElementById('kpiClotureAnnee').textContent = d.projetsCloturesThisYear;
+    if (document.getElementById('kpiEnRetard'))
+        document.getElementById('kpiEnRetard').textContent = d.projetsEnRetard ?? '—';
+    if (document.getElementById('kpiDepassBudget'))
+        document.getElementById('kpiDepassBudget').textContent = (d.tauxDepassementBudget ?? 0) + '%';
+    if (document.getElementById('kpiUtilCapacite'))
+        document.getElementById('kpiUtilCapacite').textContent = (d.tauxUtilisationCapacite ?? 0) + '%';
+});
+
+fetchJson('@Url.Action("StatsProjetsParPhase", "Dashboard")').then(data => {
+    new ApexCharts(document.getElementById('chartPhase'), {
+        chart: { type: 'donut', height: 300, fontFamily: 'inherit' },
+        series: data.map(d => d.count),
+        labels: data.map(d => phaseLabel(d.phase)),
+        colors: COULEURS_PHASE,
+        legend: { position: 'bottom' },
+        plotOptions: { pie: { donut: { size: '65%', labels: { show: true, total: { show: true, label: 'Total' } } } } }
+    }).render();
+});
+
+fetchJson('@Url.Action("StatsRAG", "Dashboard")').then(data => {
+    const colors = data.map(d => COULEURS_RAG[d.etat] || '#aaa');
+    new ApexCharts(document.getElementById('chartRAG'), {
+        chart: { type: 'pie', height: 300, fontFamily: 'inherit' },
+        series: data.map(d => d.count),
+        labels: data.map(d => d.etat),
+        colors: colors,
+        legend: { position: 'bottom' }
+    }).render();
+});
+
+fetchJson('@Url.Action("StatsTendanceMensuelle", "Dashboard")').then(data => {
+    new ApexCharts(document.getElementById('chartTendance'), {
+        chart: { type: 'area', height: 280, fontFamily: 'inherit', toolbar: { show: false } },
+        series: [{ name: 'Projets créés', data: data.map(d => d.count) }],
+        xaxis: { categories: data.map(d => d.periode) },
+        colors: ['#0D6EFD'],
+        fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05 } },
+        stroke: { curve: 'smooth', width: 2 },
+        dataLabels: { enabled: false },
+        tooltip: { x: { format: 'yyyy-MM' } }
+    }).render();
+});
+
+fetchJson('@Url.Action("StatsProjetsParDirection", "Dashboard")').then(data => {
+    new ApexCharts(document.getElementById('chartDirection'), {
+        chart: { type: 'bar', height: 280, fontFamily: 'inherit', toolbar: { show: false } },
+        plotOptions: { bar: { horizontal: true, borderRadius: 4 } },
+        series: [{ name: 'Projets', data: data.map(d => d.count) }],
+        xaxis: { categories: data.map(d => d.direction) },
+        colors: ['#6610F2'],
+        dataLabels: { enabled: true }
+    }).render();
+});
+
+fetchJson('@Url.Action("StatsProjetsParStatut", "Dashboard")').then(data => {
+    new ApexCharts(document.getElementById('chartStatuts'), {
+        chart: { type: 'bar', height: 280, fontFamily: 'inherit', toolbar: { show: false } },
+        plotOptions: { bar: { borderRadius: 4, columnWidth: '55%' } },
+        series: [{ name: 'Projets', data: data.map(d => d.count) }],
+        xaxis: { categories: data.map(d => statutLabel(d.statut)), labels: { rotate: -30, style: { fontSize: '11px' } } },
+        colors: ['#0DCAF0'],
+        dataLabels: { enabled: true }
+    }).render();
+});
+
+fetchJson('@Url.Action("StatsDureeParPhase", "Dashboard")').then(data => {
+    if (!data.length) {
+        document.getElementById('chartDuree').innerHTML =
+            '<p class="text-muted text-center py-4">Aucune donnée de durée disponible pour le moment.</p>';
+        return;
+    }
+    new ApexCharts(document.getElementById('chartDuree'), {
+        chart: { type: 'bar', height: 280, fontFamily: 'inherit', toolbar: { show: false } },
+        plotOptions: { bar: { borderRadius: 4, columnWidth: '50%' } },
+        series: [{ name: 'Jours moyens', data: data.map(d => d.dureeMoyenneJours) }],
+        xaxis: { categories: data.map(d => phaseLabel(d.phase)) },
+        colors: ['#198754'],
+        dataLabels: { enabled: true, formatter: v => v + 'j' },
+        yaxis: { title: { text: 'Jours' } }
+    }).render();
+});
+</script>
+}

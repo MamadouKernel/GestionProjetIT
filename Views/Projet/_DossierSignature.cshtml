@@ -1,0 +1,237 @@
+@model GestionProjects.Domain.Models.Projet
+@using GestionProjects.Domain.Enums
+@inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
+
+@{
+    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, Model);
+    var userId = ui.UserId;
+    var canEdit = ui.CanManageDossierSignature;
+    var dossiers = ViewBag.DossiersSignature as List<GestionProjects.Domain.Models.DossierSignatureProjet>
+                   ?? new List<GestionProjects.Domain.Models.DossierSignatureProjet>();
+    var dossierActif = dossiers.FirstOrDefault(d => d.Statut != StatutDossierSignature.Annule && d.Statut != StatutDossierSignature.Expire);
+}
+
+<div class="card-modern mb-4">
+    <div class="card-header-modern">
+        <div class="surface-action-row w-100 justify-content-between">
+            <div>
+                <h3 class="card-title-modern" style="font-size:1.05rem;">
+                    <i class="bi bi-pen"></i>
+                    Dossiers de signature électronique
+                </h3>
+                <div class="soft-note">Suivi des circuits de signature de la charte projet et des validations externes.</div>
+            </div>
+            @if (canEdit && dossierActif == null)
+            {
+                <button class="btn-modern btn-modern-primary"
+                        data-bs-toggle="modal" data-bs-target="#modalInitDossier">
+                    <i class="bi bi-plus-circle"></i> Nouveau dossier
+                </button>
+            }
+        </div>
+    </div>
+    <div class="card-body-modern">
+        @if (!dossiers.Any())
+        {
+            <div class="surface-empty">
+                <i class="bi bi-file-earmark-check"></i>
+                <h5>Aucun dossier de signature</h5>
+                <p>Initialisez un dossier pour collecter les signatures électroniques de la charte projet.</p>
+                @if (canEdit)
+                {
+                    <button class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#modalInitDossier">
+                        <i class="bi bi-pen"></i> Initialiser un dossier
+                    </button>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="record-stack">
+                @foreach (var d in dossiers)
+                {
+                    var statClass = d.Statut switch {
+                        StatutDossierSignature.Signe => "success",
+                        StatutDossierSignature.EnCoursSignature => "info",
+                        StatutDossierSignature.Envoye => "info",
+                        StatutDossierSignature.Refuse => "danger",
+                        StatutDossierSignature.Expire => "secondary",
+                        StatutDossierSignature.Annule => "secondary",
+                        StatutDossierSignature.Erreur => "danger",
+                        _ => "secondary"
+                    };
+
+                    <article class="record-card">
+                        <div class="record-card-header">
+                            <div>
+                                <div class="record-card-title">
+                                    @d.NomDocumentSource
+                                    <span class="badge-modern badge-modern-@statClass ms-2">@d.Statut</span>
+                                    <span class="soft-note ms-2">@d.Fournisseur</span>
+                                </div>
+                                <div class="record-card-subtitle">
+                                    Créé le @d.DateCreation.ToString("dd/MM/yyyy")
+                                    @if (d.DateExpiration.HasValue)
+                                    {
+                                        <span> · Expire le @d.DateExpiration.Value.ToString("dd/MM/yyyy")</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(d.MessageStatut))
+                        {
+                            <div class="record-card-note">
+                                <i class="bi bi-info-circle"></i>
+                                @d.MessageStatut
+                            </div>
+                        }
+
+                        <div class="surface-grid mt-3">
+                            <div class="surface-panel">
+                                <div class="surface-panel-title">Signataires</div>
+                                <div class="record-stack">
+                                    @foreach (var sig in d.Signataires.OrderBy(s => s.OrdreSignature))
+                                    {
+                                        var sigClass = sig.Statut switch {
+                                            StatutSignataireDossierSignature.Signe => "success",
+                                            StatutSignataireDossierSignature.Refuse => "danger",
+                                            _ => "secondary"
+                                        };
+
+                                        <div class="record-card" style="padding:.8rem .9rem;">
+                                            <div class="record-card-header mb-0">
+                                                <div>
+                                                    <div class="record-card-title" style="font-size:.95rem;">@sig.NomComplet</div>
+                                                    <div class="record-card-subtitle">@sig.Role · @sig.Email</div>
+                                                </div>
+                                                <div class="surface-action-row">
+                                                    <span class="badge-modern badge-modern-@sigClass">@sig.Statut</span>
+                                                    @if (sig.DateSignature.HasValue)
+                                                    {
+                                                        <span class="soft-note">@sig.DateSignature.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                                                    }
+                                                </div>
+                                            </div>
+
+                                            @if (d.Statut == StatutDossierSignature.EnCoursSignature && sig.Statut == StatutSignataireDossierSignature.EnAttente &&
+                                                 (ui.CanValidateCharteDsi || ui.CanValidateCharteDm || (ui.IsAssignedChefProjet && sig.Role == RoleSignataireProjet.ChefDeProjet)))
+                                            {
+                                                <div class="record-card-actions">
+                                                    <form asp-action="DecisionSignataire" method="post">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="projetId" value="@Model.Id" />
+                                                        <input type="hidden" name="dossierId" value="@d.Id" />
+                                                        <input type="hidden" name="signataireId" value="@sig.Id" />
+                                                        <input type="hidden" name="approuver" value="true" />
+                                                        <button type="submit" class="btn-modern btn-modern-success">
+                                                            <i class="bi bi-check"></i> Signer
+                                                        </button>
+                                                    </form>
+                                                    <form asp-action="DecisionSignataire" method="post">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="projetId" value="@Model.Id" />
+                                                        <input type="hidden" name="dossierId" value="@d.Id" />
+                                                        <input type="hidden" name="signataireId" value="@sig.Id" />
+                                                        <input type="hidden" name="approuver" value="false" />
+                                                        <button type="submit" class="btn-modern btn-modern-danger" onclick="return confirm('Refuser cette signature ?');">
+                                                            <i class="bi bi-x"></i> Refuser
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="surface-panel">
+                                <div class="surface-panel-title">Actions et accès</div>
+                                <div class="surface-pair-grid">
+                                    <div>Document source</div>
+                                    <div>@d.NomDocumentSource</div>
+
+                                    <div>Statut</div>
+                                    <div><span class="badge-modern badge-modern-@statClass">@d.Statut</span></div>
+
+                                    <div>Expiration</div>
+                                    <div>@(d.DateExpiration?.ToString("dd/MM/yyyy") ?? "Non définie")</div>
+                                </div>
+
+                                <div class="record-card-actions">
+                                    @if (canEdit && d.Statut == StatutDossierSignature.Brouillon)
+                                    {
+                                        <form asp-action="EnvoyerDossierSignature" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="projetId" value="@Model.Id" />
+                                            <input type="hidden" name="dossierId" value="@d.Id" />
+                                            <button type="submit" class="btn-modern btn-modern-primary">
+                                                <i class="bi bi-send"></i> Envoyer pour signature
+                                            </button>
+                                        </form>
+                                    }
+                                    @if (canEdit && d.Statut == StatutDossierSignature.Signe && !string.IsNullOrWhiteSpace(d.CheminDocumentSigne))
+                                    {
+                                        <a href="~/@d.CheminDocumentSigne" target="_blank" class="btn-modern btn-modern-success">
+                                            <i class="bi bi-download"></i> Télécharger document signé
+                                        </a>
+                                    }
+                                    @if (Model.CharteProjet != null)
+                                    {
+                                        <a asp-action="SignatureCharte" asp-route-id="@Model.Id" class="btn-modern btn-modern-secondary">
+                                            <i class="bi bi-pen"></i> Apposer ma signature
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@if (canEdit)
+{
+    <div class="modal fade" id="modalInitDossier" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-pen"></i> Nouveau dossier de signature</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form asp-action="InitialiserDossierSignature" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="projetId" value="@Model.Id" />
+                    <div class="modal-body">
+                        @if (Model.CharteProjet == null)
+                        {
+                            <div class="alert-modern alert-modern-warning">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <div>La charte projet n'a pas encore été générée. Générez-la d'abord depuis l'onglet d'analyse.</div>
+                            </div>
+                        }
+                        else
+                        {
+                            <p>Un dossier de signature sera créé pour la <strong>charte projet</strong>. Les signataires requis seront ajoutés automatiquement.</p>
+                        }
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Fournisseur de signature</label>
+                            <select name="fournisseur" class="form-control-modern">
+                                <option value="@FournisseurSignatureElectronique.Manuel">Manuel (suivi interne)</option>
+                                <option value="@FournisseurSignatureElectronique.DocuSign">DocuSign</option>
+                                <option value="@FournisseurSignatureElectronique.AdobeSign">Adobe Sign</option>
+                            </select>
+                            <small class="profile-muted-note">Pour DocuSign et Adobe Sign, une intégration API opérationnelle est requise.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn-modern btn-modern-primary">Initialiser</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}

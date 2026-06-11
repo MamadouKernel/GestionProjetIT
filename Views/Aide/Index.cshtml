@@ -1,0 +1,251 @@
+@{
+    ViewData["Title"] = "Guide de l'application";
+    var roles = ViewBag.UserRoles as List<GestionProjects.Domain.Enums.RoleUtilisateur> ?? new List<GestionProjects.Domain.Enums.RoleUtilisateur>();
+    var userName = ViewBag.UserName as string ?? "Utilisateur";
+    var userDirection = ViewBag.UserDirection as string ?? "Non assigne";
+}
+
+<div class="fade-in help-page">
+    <section class="page-hero card-modern">
+        <div class="page-hero-main">
+            <span class="page-kicker">
+                <i class="bi bi-book-half"></i>
+                Centre d'aide
+            </span>
+            <h1 class="page-hero-title">Guide de l'application de gestion des projets IT</h1>
+            <p class="page-hero-subtitle">
+                Bienvenue <strong>@userName</strong> (@userDirection). Ce guide synthese vos parcours, vos validations
+                et les regles importantes a respecter selon vos roles.
+            </p>
+            <div class="help-kpi-strip">
+                <span class="help-kpi"><i class="bi bi-person-badge"></i> @roles.Count role(s)</span>
+                <span class="help-kpi"><i class="bi bi-diagram-3"></i> Guides par profil</span>
+                <span class="help-kpi"><i class="bi bi-shield-check"></i> Contraintes & securite</span>
+                <span class="help-kpi"><i class="bi bi-question-circle"></i> FAQ operationnelle</span>
+            </div>
+        </div>
+    </section>
+
+    <div class="help-layout">
+        <aside class="help-sticky">
+            <div class="card help-sidebar-card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-person-badge me-2"></i>Vos roles</h5>
+                </div>
+                <div class="card-body">
+                    @if (roles.Any())
+                    {
+                        <ul class="list-unstyled mb-0">
+                            @foreach (var role in roles)
+                            {
+                                <li class="mb-2">
+                                    <span class="badge bg-primary-subtle text-primary fs-6">@role.ToString()</span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">Aucun role assigne</p>
+                    }
+                </div>
+            </div>
+
+            <div class="card help-sidebar-card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Navigation rapide</h5>
+                </div>
+                <div class="card-body p-2">
+                    <nav class="nav flex-column">
+                        <small class="text-muted px-3 py-1">Guides de vos roles</small>
+                        @if (roles.Contains(GestionProjects.Domain.Enums.RoleUtilisateur.Demandeur))
+                        {
+                            <a class="nav-link text-decoration-none py-2" href="#demandeur">
+                                <i class="bi bi-person-plus me-1"></i>Guide Demandeur
+                            </a>
+                        }
+                        @if (roles.Contains(GestionProjects.Domain.Enums.RoleUtilisateur.DirecteurMetier))
+                        {
+                            <a class="nav-link text-decoration-none py-2" href="#directeur-metier">
+                                <i class="bi bi-shield-check me-1"></i>Guide Directeur Metier
+                            </a>
+                        }
+                        @if (roles.Contains(GestionProjects.Domain.Enums.RoleUtilisateur.ChefDeProjet))
+                        {
+                            <a class="nav-link text-decoration-none py-2" href="#chef-projet">
+                                <i class="bi bi-person-workspace me-1"></i>Guide Chef de Projet
+                            </a>
+                        }
+                        @if (roles.Contains(GestionProjects.Domain.Enums.RoleUtilisateur.DSI))
+                        {
+                            <a class="nav-link text-decoration-none py-2" href="#dsi">
+                                <i class="bi bi-shield-fill-check me-1"></i>Guide DSI
+                            </a>
+                        }
+                        @if (roles.Contains(GestionProjects.Domain.Enums.RoleUtilisateur.AdminIT))
+                        {
+                            <a class="nav-link text-decoration-none py-2" href="#admin">
+                                <i class="bi bi-gear me-1"></i>Guide Admin IT
+                            </a>
+                        }
+                        @if (roles.Contains(GestionProjects.Domain.Enums.RoleUtilisateur.ResponsableSolutionsIT))
+                        {
+                            <a class="nav-link text-decoration-none py-2" href="#responsable-solutions">
+                                <i class="bi bi-person-check me-1"></i>Guide Responsable Solutions IT
+                            </a>
+                        }
+                        <hr class="my-1" />
+                        <a class="nav-link text-decoration-none py-2" href="#contraintes">
+                            <i class="bi bi-exclamation-triangle me-1"></i>Contraintes
+                        </a>
+                        <a class="nav-link text-decoration-none py-2" href="#faq">
+                            <i class="bi bi-question-circle me-1"></i>FAQ
+                        </a>
+                    </nav>
+                </div>
+            </div>
+        </aside>
+
+        <section>
+            @if (roles.Contains(GestionProjects.Domain.Enums.RoleUtilisateur.Demandeur))
+            {
+                @await Html.PartialAsync("_GuideDemandeur")
+            }
+
+            @if (roles.Contains(GestionProjects.Domain.Enums.RoleUtilisateur.DirecteurMetier))
+            {
+                @await Html.PartialAsync("_GuideDirecteurMetier")
+            }
+
+            @if (roles.Contains(GestionProjects.Domain.Enums.RoleUtilisateur.ChefDeProjet))
+            {
+                @await Html.PartialAsync("_GuideChefProjet")
+            }
+
+            @if (roles.Contains(GestionProjects.Domain.Enums.RoleUtilisateur.DSI))
+            {
+                @await Html.PartialAsync("_GuideDSI")
+            }
+
+            @if (roles.Contains(GestionProjects.Domain.Enums.RoleUtilisateur.AdminIT))
+            {
+                @await Html.PartialAsync("_GuideAdminIT")
+            }
+
+            @if (roles.Contains(GestionProjects.Domain.Enums.RoleUtilisateur.ResponsableSolutionsIT))
+            {
+                @await Html.PartialAsync("_GuideResponsableSolutionsIT")
+            }
+
+            <div class="card border-0 shadow-sm mb-4" id="contraintes">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Contraintes et regles importantes
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <h4 class="text-danger mb-3">Securite</h4>
+                    <div class="alert alert-danger">
+                        <ul class="mb-0">
+                            <li><strong>Authentification obligatoire :</strong> toutes les pages necessitent une connexion valide.</li>
+                            <li><strong>Droits d'acces :</strong> chaque profil voit uniquement les projets autorises par son role.</li>
+                            <li><strong>Audit trail :</strong> toutes les actions critiques sont historisees.</li>
+                            <li><strong>Session :</strong> deconnexion automatique apres inactivite.</li>
+                        </ul>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h4 class="text-danger mb-3 mt-4">Demandes</h4>
+                            <ul>
+                                <li>Le cahier des charges est obligatoire a la soumission.</li>
+                                <li>Les formats autorises sont limites aux documents et medias valides.</li>
+                                <li>Une demande validee n'est plus editable librement.</li>
+                                <li>Le demandeur ne modifie que ses propres demandes.</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h4 class="text-danger mb-3 mt-4">Projets</h4>
+                            <ul>
+                                <li>Le passage de phase peut etre bloque si des livrables obligatoires manquent.</li>
+                                <li>Les ecarts budget et charge doivent etre justifies.</li>
+                                <li>Le Chef de Projet ne pilote que ses projets.</li>
+                                <li>Le Directeur Metier ne voit que les projets de sa direction.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <h4 class="text-danger mb-3 mt-4">Validation et RAG</h4>
+                    <ul>
+                        <li><strong>Validation sequentielle :</strong> Directeur Metier puis DSI.</li>
+                        <li><strong>Validation DSI :</strong> creation automatique du projet.</li>
+                        <li><strong>Correction :</strong> la demande revient au bon acteur pour reprise.</li>
+                        <li><strong>RAG :</strong> l'indicateur final reprend le critere le plus defavorable entre budget, planning, risques et livrables.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-4" id="faq">
+                <div class="card-header bg-light">
+                    <h3 class="mb-0">
+                        <i class="bi bi-question-circle-fill me-2"></i>
+                        Questions frequentes
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="faqAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                    Comment changer mon mot de passe ?
+                                </button>
+                            </h2>
+                            <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Ouvrez <code>Mon Profil</code>, renseignez votre mot de passe actuel puis le nouveau mot de passe conforme a la politique en vigueur.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                    Pourquoi une action est-elle bloquee ?
+                                </button>
+                            </h2>
+                            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Soit votre role ne permet pas l'action, soit le projet n'est pas dans la bonne phase, soit un livrable ou une validation manque.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                    Que faire si je ne vois pas un projet ou un menu ?
+                                </button>
+                            </h2>
+                            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Verifiez d'abord votre role et votre rattachement. Si le besoin est legitime, contactez l'Admin IT pour ajuster les droits.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                                    Comment est calcule l'indicateur RAG ?
+                                </button>
+                            </h2>
+                            <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Le RAG consolide les ecarts de budget, les retards planning, les risques actifs et les livrables manquants pour retenir la situation la plus critique.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>

@@ -1,0 +1,74 @@
+@model IEnumerable<GestionProjects.Domain.Models.DemandeClotureProjet>
+
+@{
+    ViewData["Title"] = "Mes validations de clôture";
+}
+
+<div class="fade-in">
+    <div class="card-modern">
+        <div class="card-header-modern">
+            <h2 class="card-title-modern">
+                <i class="bi bi-flag-checkered"></i>
+                Mes validations de clôture
+            </h2>
+        </div>
+
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th>Projet</th>
+                            <th>Code Projet</th>
+                            <th>Direction</th>
+                            <th>Demande par</th>
+                            <th>Date Demande</th>
+                            <th>Date souhaitee</th>
+                            <th>Validation DM</th>
+                            <th>Validation DSI</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var demande in Model)
+                        {
+                            <tr>
+                                <td><strong>@demande.Projet.Titre</strong></td>
+                                <td><span style="color: var(--primary-blue); font-weight: 600;">@demande.Projet.CodeProjet</span></td>
+                                <td>@(demande.Projet.Direction?.Libelle ?? "N/A")</td>
+                                <td>@demande.DemandePar.Nom @demande.DemandePar.Prenoms</td>
+                                <td>@demande.DateDemande.ToString("dd/MM/yyyy")</td>
+                                <td>@(demande.DateSouhaiteeCloture?.ToString("dd/MM/yyyy") ?? "Non spécifiée")</td>
+                                <td>
+                                    <span class="badge-modern badge-modern-@(demande.StatutValidationDirecteurMetier == GestionProjects.Domain.Enums.StatutValidationCloture.Validee ? "success" : demande.StatutValidationDirecteurMetier == GestionProjects.Domain.Enums.StatutValidationCloture.Rejetee ? "danger" : "warning")">
+                                        @demande.StatutValidationDirecteurMetier
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge-modern badge-modern-@(demande.StatutValidationDSI == GestionProjects.Domain.Enums.StatutValidationCloture.Validee ? "success" : demande.StatutValidationDSI == GestionProjects.Domain.Enums.StatutValidationCloture.Rejetee ? "danger" : "warning")">
+                                        @demande.StatutValidationDSI
+                                    </span>
+                                </td>
+                                <td>
+                                    <a asp-action="Details" asp-controller="Projet" asp-route-id="@demande.ProjetId" asp-route-tab="cloture" class="btn-modern btn-modern-primary btn-icon" title="Consulter le dossier de clôture" aria-label="Consulter le dossier de clôture">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state-modern">
+                <i class="bi bi-inbox"></i>
+                <p style="font-size: 1.1rem;">
+                    Aucune demande de clôture en attente de votre validation.
+                </p>
+            </div>
+        }
+    </div>
+</div>

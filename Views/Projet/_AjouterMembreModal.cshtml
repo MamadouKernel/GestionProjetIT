@@ -1,0 +1,71 @@
+@model GestionProjects.Domain.Models.Projet
+
+<div class="modal fade" id="ajouterMembreModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
+            <form asp-action="AjouterMembreProjet" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="projetId" value="@Model.Id" />
+                <div class="modal-header" style="border-bottom: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <h5 class="modal-title" style="font-weight: 600; color: var(--gray-800); display: flex; align-items: center; gap: var(--spacing-sm);">
+                        <i class="bi bi-person-plus" style="color: var(--primary-blue);"></i>
+                        Ajouter un Membre à l'Équipe Projet
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: var(--spacing-lg);">
+                    <div class="alert-modern alert-modern-info mb-3" style="border-left: 4px solid var(--info);">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <div>
+                            <strong>Note:</strong> Vous pouvez ajouter des membres internes (CIT) ou externes au projet.
+                        </div>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Nom *</label>
+                        <input type="text" name="nom" class="form-control-modern" required placeholder="Nom du membre" />
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Prénom *</label>
+                        <input type="text" name="prenom" class="form-control-modern" required placeholder="Prénom du membre" />
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Fonction</label>
+                        <input type="text" name="fonction" class="form-control-modern" placeholder="Ex: Développeur Senior, Analyste Fonctionnel..." />
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Rôle dans le projet *</label>
+                        <input type="text" name="roleDansProjet" class="form-control-modern" required placeholder="Ex: Développeur, Analyste, Testeur, Chef de projet technique..." />
+                        <small style="color: var(--gray-500); font-size: 0.875rem;">
+                            <i class="bi bi-info-circle"></i> Rôle spécifique dans ce projet
+                        </small>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Direction</label>
+                        <input type="text" name="directionLibelle" class="form-control-modern" placeholder="Ex: DSI, Direction Financière, Externe..." />
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Email *</label>
+                        <input type="email" name="email" class="form-control-modern" required placeholder="email@example.com" />
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-plus-circle"></i>
+                        Ajouter le membre
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+

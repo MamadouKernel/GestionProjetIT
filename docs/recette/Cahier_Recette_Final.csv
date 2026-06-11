@@ -1,0 +1,797 @@
+Process;ID test;Module;Rôle;Point à vérifier;Étapes;Résultat attendu;Statut;Criticité;Commentaires;Test Unitaire;Test Fonctionnel;Procédure de réalisation
+Authentification;AUTH-01;Connexion;Tout rôle;Connexion avec un compte CIT valide (Azure AD);1. Ouvrir l'application 2. Cliquer sur Connexion 3. Saisir un compte CIT valide 4. Valider l'authentification;L'utilisateur est connecté à l'application et redirigé vers la page d'accueil. Le nom et le mail du compte sont reconnus;Non testé;Bloquante;Test critique - couverture complète requise;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Authentification;AUTH-02;Connexion;Utilisateur non référencé;Première connexion d'un utilisateur non enregistré dans l'application;1. Se connecter avec un compte CIT valide mais non présent dans la base des utilisateurs 2. Accéder à l'application;L'application affiche un message indiquant que l'utilisateur n'est pas référencé et propose un bouton Demander un accès. Une notification est envoyée à l'Admin IT;Non testé;Bloquante;Test critique - couverture complète requise;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Authentification;AUTH-03;Profil;Tout rôle;Récupération automatique des informations du compte (Nom / Email);1. Se connecter à l'application 2. Accéder à la page Profil utilisateur;Les champs suivants sont automatiquement remplis: Nom complet, Adresse email CIT, Identifiant utilisateur. Les champs ne sont pas modifiables;Non testé;Majeure;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Authentification;AUTH-04;Profil;Tout rôle;Détermination automatique de la direction métier;1. Se connecter à l'application 2. Ouvrir le formulaire de demande de projet 3. Vérifier le champ Direction métier;Le champ Direction métier est automatiquement renseigné selon les données de l'utilisateur;Non testé;Bloquante;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Sécurité;AUTH-05;Sécurité;Demandeur;Interdiction d'accès aux écrans d'administration;1. Se connecter avec un compte ayant le rôle Demandeur 2. Vérifier le menu principal 3. Tenter d'accéder à l'URL de la page Admin;Le menu Administration n'est pas visible. Toute tentative d'accès direct affiche Accès refusé;Non testé;Bloquante;Test de sécurité - validation unitaire et fonctionnelle requises;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Sécurité;AUTH-06;Sécurité;Directeur métier;Isolation des données entre directions;1. Se connecter avec un Directeur métier Direction A 2. Ouvrir la liste des projets 3. Rechercher des projets de Direction B;Les projets appartenant à la Direction B ne sont pas visibles;Non testé;Bloquante;Test de sécurité - validation unitaire et fonctionnelle requises;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Sécurité;AUTH-07;Sécurité;Chef de projet;Visibilité limitée aux projets dont il est responsable;1. Se connecter avec un Chef de Projet 2. Ouvrir la page Portefeuille de projets;Le Chef de projet voit uniquement les projets dont il est responsable;Non testé;Bloquante;Test de sécurité - validation unitaire et fonctionnelle requises;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Sécurité;AUTH-08;Sécurité;DSI;Accès global à tous les projets;1. Se connecter avec un compte DSI 2. Ouvrir le portefeuille projets;Tous les projets de toutes les directions sont visibles;Non testé;Bloquante;Test de sécurité - validation unitaire et fonctionnelle requises;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Sécurité;AUTH-09;Sécurité;Admin IT;Droits complets sur l'application;1. Se connecter avec un Admin IT 2. Ouvrir le menu Administration 3. Accéder aux paramètres;L'Admin IT voit tous les modules et peut modifier les paramètres;Non testé;Bloquante;Test de sécurité - validation unitaire et fonctionnelle requises;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Sécurité;AUTH-10;Sécurité;Tout rôle;Blocage de l'accès à une page non autorisée via URL directe;1. Copier l'URL d'une page Admin 2. Se connecter avec un utilisateur sans droit 3. Coller l'URL dans le navigateur;L'accès est refusé avec un message Accès non autorisé;Non testé;Bloquante;Test de sécurité - validation unitaire et fonctionnelle requises;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Administration;ADM-01;Référentiel Directions;Admin IT;Création d'une direction métier dans le référentiel;1. Se connecter avec un compte Admin IT 2. Ouvrir menu Administration 3. Accéder à Référentiels → Directions 4. Cliquer sur Ajouter 5. Renseigner: Nom direction, Code direction, Directeur associé 6. Enregistrer;La nouvelle direction est enregistrée et visible dans la liste des directions;Non testé;Majeure;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Administration;ADM-02;Référentiel Directions;Admin IT;Modification d'une direction existante;1. Se connecter Admin IT 2. Ouvrir Administration → Directions 3. Sélectionner une direction existante 4. Modifier un champ (ex: nom) 5. Enregistrer;La modification est enregistrée et visible immédiatement dans la liste;Non testé;Moyenne;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Administration;ADM-03;Référentiel Rôles;Admin IT;Création ou modification d'un rôle utilisateur;1. Ouvrir Administration → Rôles 2. Cliquer sur Ajouter 3. Renseigner: Nom rôle, description, permissions associées 4. Enregistrer;Le rôle est disponible dans la liste des rôles utilisateurs;Non testé;Majeure;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Administration;ADM-04;Référentiel Directeurs;Admin IT;Ajout d'un Directeur métier dans le référentiel;1. Ouvrir Administration → Directeurs métier 2. Cliquer Ajouter 3. Sélectionner utilisateur CIT 4. Associer direction 5. Enregistrer;Le Directeur métier est disponible dans les formulaires de demande de projet;Non testé;Bloquante;Test critique - couverture complète requise;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Administration;ADM-05;Référentiel Livrables;Admin IT;Paramétrage des types de livrables obligatoires;1. Ouvrir Administration → Livrables 2. Cliquer Ajouter type 3. Saisir: Nom livrable, phase associée, obligatoire Oui/Non 4. Enregistrer;Le type de livrable apparaît dans les phases projet correspondantes;Non testé;Majeure;Test standard;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Administration;ADM-06;Référentiel Statuts;Admin IT;Vérification des valeurs de statut projet;1. Ouvrir Administration → Statuts 2. Consulter la liste des statuts;Les statuts correspondent aux valeurs définies dans le CDC (ex: En analyse, En cours, En recette, Clôturé);Non testé;Majeure;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Administration;ADM-07;Référentiel Phases;Admin IT;Vérification des phases du cycle projet;1. Ouvrir Administration → Phases projet 2. Consulter la liste;Les phases correspondent au processus: Analyse, Planification, Exécution, Recette, Clôture;Non testé;Bloquante;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Administration;ADM-08;Référentiel État projet;Admin IT;Vérification des indicateurs d'état projet;1. Ouvrir Administration → État projet 2. Vérifier présence: Vert, Orange, Rouge;Les trois valeurs sont disponibles et utilisables dans le suivi projet;Non testé;Majeure;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Administration;ADM-09;Référentiel Urgence;Admin IT;Vérification des niveaux d'urgence;1. Ouvrir Administration → Urgence 2. Vérifier la liste;Les niveaux disponibles sont: Basse, Moyenne, Haute;Non testé;Majeure;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Administration;ADM-10;Référentiel Criticité;Admin IT;Vérification des catégories de criticité;1. Ouvrir Administration → Criticité 2. Vérifier les valeurs;Les valeurs disponibles sont: Opérationnelle, Stratégique, Réglementaire, Autre;Non testé;Majeure;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Administration;ADM-11;Sécurité Administration;Demandeur;Interdiction de modification des référentiels pour les non-admin;1. Se connecter avec un compte Demandeur 2. Tenter d'accéder au menu Administration;L'accès est refusé ou le menu Administration n'est pas visible;Non testé;Bloquante;Test de sécurité - validation unitaire et fonctionnelle requises;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Demande Projet;DEM-01;Formulaire Demande Projet;Demandeur;Présence du champ Titre du projet;1. Se connecter 2. Ouvrir le menu Nouvelle demande de projet 3. Vérifier le champ Titre du projet 4. Saisir un texte;Le champ est visible, obligatoire et accepte la saisie de texte;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Demande Projet;DEM-02;Formulaire Demande Projet;Demandeur;Champ Demandeur récupéré automatiquement;1. Se connecter 2. Ouvrir le formulaire de demande;Le champ Demandeur est automatiquement prérempli avec le nom du compte CIT connecté et n'est pas modifiable;Non testé;Bloquante;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Demande Projet;DEM-03;Formulaire Demande Projet;Demandeur;Champ Direction métier automatique;1. Ouvrir le formulaire 2. Vérifier le champ Direction métier;La direction métier est renseignée automatiquement selon l'utilisateur connecté;Non testé;Bloquante;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Demande Projet;DEM-04;Formulaire Demande Projet;Demandeur;Champ Description du besoin;1. Ouvrir formulaire 2. Vérifier présence zone texte 3. Saisir plusieurs lignes;Zone texte multilignes visible et saisissable;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Demande Projet;DEM-05;Formulaire Demande Projet;Demandeur;Champ Contexte / problème;1. Ouvrir formulaire 2. Vérifier champ 3. Saisir un texte;Zone texte visible et fonctionnelle;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Demande Projet;DEM-06;Formulaire Demande Projet;Demandeur;Champ Objectifs du projet;1. Ouvrir formulaire 2. Saisir des objectifs;Champ visible, multilignes et saisissable;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Demande Projet;DEM-07;Formulaire Demande Projet;Demandeur;Champ Avantages attendus;1. Ouvrir formulaire 2. Saisir les bénéfices attendus;Champ visible et saisissable;Non testé;Moyenne;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Demande Projet;DEM-08;Formulaire Demande Projet;Demandeur;Champ Urgence;1. Ouvrir la liste déroulante Urgence;Les valeurs suivantes sont disponibles: Basse / Moyenne / Haute;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Demande Projet;DEM-09;Formulaire Demande Projet;Demandeur;Champ Criticité;1. Ouvrir la liste Criticité;Les valeurs disponibles sont: Opérationnelle / Stratégique / Réglementaire / Autre;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Demande Projet;DEM-10;Formulaire Demande Projet;Demandeur;Champ Date de mise en œuvre souhaitée;1. Ouvrir sélecteur de date 2. Choisir une date;La date est sélectionnable et enregistrée correctement;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Demande Projet;DEM-11;Formulaire Demande Projet;Demandeur;Upload Cahier de charges;1. Cliquer sur Ajouter fichier 2. Importer un document;Le document est uploadé et visible dans le formulaire;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Demande Projet;DEM-12;Formulaire Demande Projet;Demandeur;Upload Annexes;1. Cliquer sur Ajouter annexe 2. Importer un fichier;Les annexes sont uploadées. Ce champ reste optionnel;Non testé;Moyenne;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Demande Projet;DEM-13;Formulaire Demande Projet;Demandeur;Champ Directeur métier;1. Ouvrir la liste déroulante;La liste contient les Directeurs métier paramétrés par Admin IT;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Demande Projet;DEM-14;Formulaire Demande Projet;Demandeur;Soumission sans Titre du projet;1. Ouvrir formulaire 2. Laisser le champ Titre vide 3. Cliquer sur Enregistrer;La soumission est bloquée et un message indique que le titre est obligatoire;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Demande Projet;DEM-15;Formulaire Demande Projet;Demandeur;Soumission sans Description du besoin;1. Laisser le champ vide 2. Cliquer sur enregistrer;Blocage de l'enregistrement + message d'erreur;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Demande Projet;DEM-16;Formulaire Demande Projet;Demandeur;Soumission sans Objectifs du projet;1. Laisser le champ vide 2. Enregistrer;Blocage de l'enregistrement;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Demande Projet;DEM-17;Formulaire Demande Projet;Demandeur;Soumission sans Urgence;1. Ne pas sélectionner la valeur 2. Enregistrer;Message indiquant que le champ est obligatoire;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Demande Projet;DEM-18;Formulaire Demande Projet;Demandeur;Soumission sans Criticité;1. Ne pas sélectionner la criticité;Blocage + message d'erreur;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Demande Projet;DEM-19;Formulaire Demande Projet;Demandeur;Soumission sans Date souhaitée;1. Laisser vide 2. Enregistrer;Comportement conforme à la règle définie (bloquant ou facultatif);Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Demande Projet;DEM-20;Formulaire Demande Projet;Demandeur;Soumission sans Cahier de charges;1. Ne pas joindre de fichier 2. Enregistrer;Blocage + message demandant d'ajouter le document;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Demande Projet;DEM-21;Formulaire Demande Projet;Demandeur;Soumission sans Directeur métier;1. Ne pas sélectionner de directeur métier;Blocage de la soumission;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Demande Projet;DEM-22;Formulaire Demande Projet;Demandeur;Longueur du titre;1. Saisir un titre très long 2. Enregistrer;Aucun bug technique. Le système gère correctement la longueur;Non testé;Moyenne;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Demande Projet;DEM-23;Formulaire Demande Projet;Demandeur;Caractères spéciaux;1. Saisir accents, apostrophes, slash;Les données sont enregistrées correctement;Non testé;Moyenne;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Demande Projet;DEM-24;Formulaire Demande Projet;Demandeur;Upload CDC PDF;1. Joindre fichier PDF 2. Enregistrer;Upload réussi et document visible;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Demande Projet;DEM-25;Formulaire Demande Projet;Demandeur;Upload Annexe DOCX;1. Joindre fichier DOCX;Upload réussi;Non testé;Moyenne;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Demande Projet;DEM-26;Formulaire Demande Projet;Demandeur;Ouverture pièce jointe;1. Ouvrir la demande créée 2. Cliquer sur le document;Le document est téléchargeable et consultable;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Demande Projet;DEM-27;Formulaire Demande Projet;Demandeur;Création demande valide;1. Remplir tous les champs 2. Soumettre la demande;La demande est créée dans le système;Non testé;Bloquante;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Demande Projet;DEM-28;Formulaire Demande Projet;Demandeur;Statut initial de la demande;1. Ouvrir la demande créée;Statut = En attente validation Directeur métier;Non testé;Bloquante;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Demande Projet;DEM-29;Portefeuille projets;Demandeur;Mise à jour du portefeuille;1. Créer une demande 2. Consulter portefeuille;La demande apparaît dans le portefeuille;Non testé;Bloquante;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Demande Projet;DEM-30;Notification;Directeur métier;Notification mail;1. Créer une demande 2. Vérifier la boîte mail du directeur métier;Un mail de notification est reçu;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Validation DM;VALM-01;Validation demandes;Directeur métier;Affichage de la liste des demandes;1. Se connecter en tant que Directeur métier 2. Ouvrir l'écran des demandes;Le directeur métier ne voit que les demandes de sa direction;Non testé;Bloquante;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Validation DM;VALM-02;Validation demandes;Directeur métier;Filtre statut demande;1. Ouvrir l'écran;Seules les demandes avec statut En attente validation Directeur métier sont visibles;Non testé;Bloquante;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Validation DM;VALM-03;Validation demandes;Directeur métier;Action Valider disponible;1. Ouvrir une demande 2. Cliquer sur Valider;Le statut devient En attente validation DSI;Non testé;Bloquante;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Validation DM;VALM-04;Portefeuille projets;Directeur métier;Synchronisation portefeuille;1. Valider une demande 2. Vérifier le portefeuille projets;Le portefeuille est mis à jour avec les nouvelles données;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Validation DM;VALM-05;Notification;Directeur métier;Notification à la DSI;1. Valider la demande 2. Vérifier mail DSI;Un email de notification est envoyé à la DSI;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Validation DM;VALM-06;Validation demandes;Directeur métier;Modification Titre du projet;1. Modifier le titre 2. Enregistrer;La modification est sauvegardée;Non testé;Majeure;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Validation DM;VALM-07;Validation demandes;Directeur métier;Modification Description;1. Modifier la description 2. Enregistrer;La modification est enregistrée;Non testé;Majeure;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Validation DM;VALM-08;Validation demandes;Directeur métier;Modification Objectifs;1. Modifier les objectifs 2. Enregistrer;Les modifications sont sauvegardées;Non testé;Majeure;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Validation DM;VALM-09;Historique;Directeur métier;Historique des modifications;1. Consulter l'historique de la demande;L'historique contient date / auteur / commentaire;Non testé;Bloquante;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Validation DM;VALM-10;Validation demandes;Directeur métier;Demande de correction avec commentaire;1. Cliquer Demander correction 2. Saisir commentaire;Statut = Correction demandée (Directeur métier);Non testé;Bloquante;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Validation DM;VALM-11;Validation demandes;Directeur métier;Demande de correction sans commentaire;1. Cliquer demander correction sans saisir texte;L'action est bloquée;Non testé;Bloquante;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Validation DM;VALM-12;Notification;Directeur métier;Notification au demandeur;1. Demander correction 2. Vérifier boîte mail demandeur;Le demandeur reçoit une notification;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Validation DM;VALM-13;Validation demandes;Directeur métier;Rejet avec commentaire;1. Cliquer rejeter 2. Ajouter commentaire;Statut = Rejeté (Directeur métier);Non testé;Bloquante;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Validation DM;VALM-14;Validation demandes;Directeur métier;Rejet sans commentaire;1. Rejeter sans commentaire;Blocage de l'action;Non testé;Bloquante;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Validation DM;VALM-15;Notification;Directeur métier;Notification après rejet;1. Rejeter demande 2. Vérifier mail demandeur;Un mail de notification est envoyé au demandeur;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Retour Demandeur;RET-01;Retour demandeur;Demandeur;Visibilité de la demande retournée;1. Se connecter en tant que demandeur 2. Ouvrir la liste des demandes;La demande retournée apparaît avec le statut Correction demandée (Directeur métier);Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Retour Demandeur;RET-02;Retour demandeur;Demandeur;Affichage du commentaire du Directeur métier;1. Ouvrir la demande retournée;Le commentaire du Directeur métier est visible dans la demande;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Retour Demandeur;RET-03;Correction;Demandeur;Modification des champs demandés;1. Modifier les champs indiqués par le directeur métier 2. Enregistrer;Les modifications sont enregistrées correctement;Non testé;Majeure;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Retour Demandeur;RET-04;Resoumission;Demandeur;Nouvelle soumission de la demande;1. Corriger les champs 2. Cliquer sur Resoumettre;La demande repart dans le workflow de validation;Non testé;Bloquante;Test critique - couverture complète requise;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Retour Demandeur;RET-05;Historique;Demandeur;Conservation de l'historique des corrections;1. Ouvrir l'historique de la demande;L'historique conserve la trace des corrections (date, auteur, commentaire);Non testé;Majeure;Test standard;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Validation DSI;VALD-01;Validation DSI;DSI;Liste des demandes à valider;1. Se connecter en tant que DSI 2. Ouvrir l'écran de validation DSI;La liste affiche uniquement les demandes En attente validation DSI;Non testé;Bloquante;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Validation DSI;VALD-02;Validation DSI;DSI;Validation de la prise en charge;1. Ouvrir une demande 2. Cliquer sur Valider;La validation est possible et déclenche la création du projet;Non testé;Bloquante;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Validation DSI;VALD-03;Création projet;DSI;Création automatique du projet;1. Valider la demande 2. Ouvrir la fiche projet associée;Le projet est créé automatiquement et lié à la demande;Non testé;Bloquante;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Validation DSI;VALD-04;Gestion projet;DSI;Statut initial du projet;1. Ouvrir le projet créé;Statut = Validé pour analyse;Non testé;Bloquante;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Validation DSI;VALD-05;Gestion projet;DSI;Affectation du Chef de Projet;1. Ouvrir la fiche projet 2. Vérifier le champ Chef de Projet;L'affectation d'un chef de projet est possible;Non testé;Majeure;Test standard;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Validation DSI;VALD-06;Validation DSI;DSI;Rejet avec commentaire;1. Cliquer Rejeter 2. Ajouter un commentaire;Statut = Rejeté (DSI);Non testé;Bloquante;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Validation DSI;VALD-07;Validation DSI;DSI;Rejet sans commentaire;1. Cliquer rejeter sans saisir de texte;L'action est bloquée;Non testé;Bloquante;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Validation DSI;VALD-08;Notification;DSI;Notification après rejet;1. Rejeter la demande 2. Vérifier les mails;Le demandeur et le directeur métier reçoivent une notification;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Validation DSI;VALD-09;Workflow;DSI;Retour vers demandeur;1. Cliquer Retour demandeur 2. Ajouter commentaire;Statut = Retour demandeur (DSI);Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Validation DSI;VALD-10;Workflow;DSI;Retour vers Directeur métier;1. Cliquer Retour Directeur métier;Statut = Retour Directeur métier (DSI);Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Validation DSI;VALD-11;Délégation;DSI;Activation de la délégation;1. Paramétrer une délégation avec période 2. Enregistrer;La délégation est enregistrée dans le système;Non testé;Majeure;Test de sécurité - validation unitaire et fonctionnelle requises;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Validation DSI;VALD-12;Délégation;Responsable Solutions IT & Projets;Validation par délégataire;1. Se connecter pendant la période de délégation 2. Ouvrir une demande;Le délégataire peut valider la demande;Non testé;Bloquante;Test de sécurité - validation unitaire et fonctionnelle requises;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Validation DSI;VALD-13;Délégation;Responsable Solutions IT & Projets;Fin de délégation;1. Tester validation hors période;L'action est refusée;Non testé;Bloquante;Test de sécurité - validation unitaire et fonctionnelle requises;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Portefeuille;PORT-01;Portefeuille;Utilisateur;Colonne Numéro de projet;1. Ouvrir le portefeuille projets;La colonne Numéro de projet est visible;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Portefeuille;PORT-02;Portefeuille;Utilisateur;Colonne Titre du projet;1. Ouvrir le portefeuille;La colonne Titre est visible;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Portefeuille;PORT-03;Portefeuille;Utilisateur;Colonne Direction métier;1. Ouvrir le portefeuille;La colonne Direction métier est visible;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Portefeuille;PORT-04;Portefeuille;Utilisateur;Colonne Demandeur;1. Ouvrir le portefeuille;La colonne Demandeur est visible;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Portefeuille;PORT-05;Portefeuille;Utilisateur;Colonne Sponsor;1. Ouvrir le portefeuille;La colonne Sponsor est visible;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Portefeuille;PORT-06;Portefeuille;Utilisateur;Colonne Chef de Projet DSI;1. Ouvrir le portefeuille;La colonne Chef de Projet est visible;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Portefeuille;PORT-07;Portefeuille;Utilisateur;Statut global du projet;1. Ouvrir la liste;Le statut du projet est visible et cohérent;Non testé;Bloquante;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Portefeuille;PORT-08;Portefeuille;Utilisateur;Phase en cours;1. Ouvrir portefeuille;La phase en cours est affichée correctement;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Portefeuille;PORT-09;Portefeuille;Utilisateur;% d'avancement;1. Ouvrir portefeuille;Le pourcentage d'avancement est visible et mis à jour;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Portefeuille;PORT-10;Portefeuille;Utilisateur;État projet;1. Vérifier la colonne État;Valeurs: Vert / Orange / Rouge;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Portefeuille;PORT-11;Portefeuille;Utilisateur;Dates projet;1. Vérifier les colonnes dates;Dates présentes: demande, validation, début, fin prévisionnelle, fin réelle;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Portefeuille;PORT-12;Portefeuille;Utilisateur;Filtre Direction métier;1. Appliquer filtre direction;Le filtrage fonctionne correctement;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Portefeuille;PORT-13;Portefeuille;Utilisateur;Filtre Chef de Projet;1. Filtrer par chef de projet;La liste se met à jour correctement;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Portefeuille;PORT-14;Portefeuille;Utilisateur;Filtre Statut projet;1. Filtrer par statut;Filtrage correct;Non testé;Majeure;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Portefeuille;PORT-15;Portefeuille;Utilisateur;Filtre Phase projet;1. Filtrer par phase;Filtrage correct;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Portefeuille;PORT-16;Portefeuille;Directeur métier;Visibilité par direction;1. Se connecter en Directeur métier 2. Ouvrir portefeuille;Le directeur métier ne voit que les projets de sa direction;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Portefeuille;PORT-17;Portefeuille;DSI;Visibilité DSI;1. Se connecter en DSI;Tous les projets sont visibles;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Portefeuille;PORT-18;Portefeuille;Admin IT;Visibilité Admin IT;1. Se connecter en Admin IT;Tous les projets sont visibles;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Analyse;ANA-01;Équipe projet;Chef de projet / DSI;Ajout membre – Nom;1. Ouvrir la section Équipe projet 2. Cliquer sur Ajouter membre 3. Saisir le nom;Le champ est présent et la donnée est sauvegardée;Non testé;Majeure;Test standard;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Analyse;ANA-02;Équipe projet;Chef de projet / DSI;Ajout membre – Rôle;1. Ajouter membre 2. Renseigner le rôle;Le rôle est enregistré correctement;Non testé;Majeure;Test standard;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Analyse;ANA-03;Équipe projet;Chef de projet / DSI;Ajout membre – Direction;1. Ajouter membre 2. Sélectionner la direction;La direction est sauvegardée;Non testé;Majeure;Test standard;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Analyse;ANA-04;Équipe projet;Chef de projet / DSI;Modification d'un membre;1. Ouvrir fiche membre 2. Modifier les informations;Les modifications sont enregistrées;Non testé;Majeure;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Analyse;ANA-05;Clarification;Chef de projet;Notes de clarification;1. Saisir un texte dans la zone notes 2. Enregistrer;La note est sauvegardée correctement;Non testé;Majeure;Test standard;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Analyse;ANA-06;Clarification;Chef de projet;Décisions prises;1. Saisir une décision;La décision est enregistrée;Non testé;Majeure;Test standard;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Analyse;ANA-07;Clarification;Chef de projet;Hypothèses projet;1. Saisir hypothèse;L'hypothèse est sauvegardée;Non testé;Majeure;Test standard;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Analyse;ANA-08;Documents;Chef de projet;Upload cahier d'analyse technique;1. Cliquer joindre fichier 2. Importer document;Upload réussi et fichier visible;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Analyse;ANA-09;Documents;Chef de projet;Upload note de cadrage;1. Joindre fichier;Upload réussi;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Analyse;ANA-10;Gestion des risques;Chef de projet;Champ Description du risque;1. Cliquer créer risque;Champ description disponible;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Analyse;ANA-11;Gestion des risques;Chef de projet;Champ Probabilité;1. Créer risque;Champ probabilité visible;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Analyse;ANA-12;Gestion des risques;Chef de projet;Champ Impact;1. Créer risque;Champ impact disponible;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Analyse;ANA-13;Gestion des risques;Chef de projet;Champ Plan de mitigation;1. Créer risque;Champ plan de mitigation visible;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Analyse;ANA-14;Gestion des risques;Chef de projet;Champ Responsable du risque;1. Créer risque;Champ responsable présent;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Analyse;ANA-15;Gestion des risques;Chef de projet;Champ Statut du risque;1. Créer risque;Champ statut disponible;Non testé;Majeure;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Analyse;ANA-16;Gestion des risques;Chef de projet;Création d'un risque complet;1. Remplir tous les champs 2. Enregistrer;Le risque est créé dans le registre des risques;Non testé;Majeure;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Analyse;ANA-17;Gestion des risques;Chef de projet;Modification d'un risque;1. Modifier un risque existant 2. Enregistrer;La mise à jour est correcte;Non testé;Majeure;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Charte Projet;CHR-01;Formulaire charte;Chef de projet;Champ Objectifs;1. Ouvrir la fiche projet 2. Accéder à la section Charte;Le champ Objectifs est visible et modifiable;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Charte Projet;CHR-02;Formulaire charte;Chef de projet;Champ Périmètre;1. Ouvrir le formulaire charte;Le champ Périmètre est visible;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Charte Projet;CHR-03;Formulaire charte;Chef de projet;Champ Contraintes;1. Ouvrir le formulaire charte;Le champ Contraintes est visible;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Charte Projet;CHR-04;Formulaire charte;Chef de projet;Champ Risques initiaux;1. Ouvrir formulaire charte;Le champ Risques initiaux est visible;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Charte Projet;CHR-05;Saisie;Chef de projet;Enregistrement des données de charte;1. Remplir les champs 2. Cliquer Enregistrer;Les données sont sauvegardées;Non testé;Bloquante;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Charte Projet;CHR-06;PDF;Chef de projet;Génération de la charte en PDF;1. Cliquer Générer PDF;Le document PDF est généré;Non testé;Bloquante;Test critique - couverture complète requise;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Charte Projet;CHR-07;PDF;Chef de projet;Exactitude du contenu PDF;1. Ouvrir le PDF généré;Les informations correspondent aux données saisies;Non testé;Bloquante;Test critique - couverture complète requise;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Charte Projet;CHR-08;Archivage;Chef de projet;PDF archivé dans le projet;1. Accéder à la section Documents;Le PDF est disponible dans le projet;Non testé;Majeure;Test standard;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Charte Projet;CHR-09;Notifications;Chef de projet;Envoi mail Directeur métier / DSI;1. Activer l'option notification 2. Générer charte;Mail envoyé automatiquement;Non testé;Moyenne;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Charte Projet;CHR-10;Signature;Chef de projet;Upload charte signée;1. Cliquer joindre document 2. Importer PDF signé;Upload réussi;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Charte Projet;CHR-11;Statut projet;Chef de projet;Champ Charte validée;1. Consulter le projet;Le champ indique Oui;Non testé;Bloquante;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Charte Projet;CHR-12;Workflow projet;Chef de projet;Passage vers phase planification;1. Consulter le projet;Statut: Charte validée – prêt pour planification;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Planification;PLAN-01;Livrables de planification;Chef de projet;Zone upload WBS;1. Ouvrir la phase Planification;La zone d'upload WBS est visible;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Planification;PLAN-02;Livrables de planification;Chef de projet;Zone upload Planning détaillé;1. Ouvrir la phase Planification;La zone d'upload Planning est visible;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Planification;PLAN-03;Livrables de planification;Chef de projet;Zone upload Matrice RACI;1. Ouvrir la phase Planification;La zone d'upload RACI est visible;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Planification;PLAN-04;Livrables de planification;Chef de projet;Zone upload Schéma de communication;1. Ouvrir la phase Planification;La zone d'upload Schéma communication est visible;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Planification;PLAN-05;Livrables de planification;Chef de projet;Champ Budget prévisionnel;1. Ouvrir la phase Planification;Champ budget visible et saisissable;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Planification;PLAN-06;Livrables de planification;Chef de projet;Zone upload PV Kick-off;1. Ouvrir la phase Planification;Zone d'upload visible;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Planification;PLAN-07;Documents;Chef de projet;Upload WBS;1. Joindre document WBS;Upload réussi;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Planification;PLAN-08;Documents;Chef de projet;Upload Planning détaillé;1. Joindre document Planning;Upload réussi;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Planification;PLAN-09;Documents;Chef de projet;Upload Matrice RACI;1. Joindre document RACI;Upload réussi;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Planification;PLAN-10;Documents;Chef de projet;Upload Schéma communication;1. Joindre document;Upload réussi;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Planification;PLAN-11;Budget;Chef de projet;Upload ou saisie Budget prévisionnel;1. Joindre document budget ou saisir montant;Enregistrement correct;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Planification;PLAN-12;Documents;Chef de projet;Upload PV Kick-off;1. Joindre PV Kick-off;Upload réussi;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Planification;PLAN-13;Validation;DSI;Champ Planning validé par DSI;1. Ouvrir la fiche projet;Champ Oui / Non visible avec date et utilisateur;Non testé;Bloquante;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Planification;PLAN-14;Validation;Directeur métier;Champ Planning validé par Directeur métier;1. Ouvrir la fiche projet;Champ Oui / Non visible avec date et utilisateur;Non testé;Bloquante;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Planification;PLAN-15;Validation;DSI;Validation du planning;1. Cocher valider;Validation enregistrée avec date et utilisateur;Non testé;Bloquante;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Planification;PLAN-16;Validation;Directeur métier;Validation du planning;1. Cocher valider;Validation enregistrée avec date et utilisateur;Non testé;Bloquante;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Planification;PLAN-17;Contrôle workflow;Système;Validation unique insuffisante;1. Valider uniquement côté DSI ou métier;Le projet reste en phase Planification;Non testé;Bloquante;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Planification;PLAN-18;Transition workflow;Système;Double validation requise;1. Valider côté DSI et métier;Statut = En exécution ; Phase = Exécution et suivi;Non testé;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Exécution;EXEC-01;Documents;Chef de projet;Upload compte-rendu de réunion;1. Accéder à la phase Exécution 2. Joindre un fichier;Upload réussi et document visible dans le projet;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Exécution;EXEC-02;Documents;Chef de projet;Upload rapport d'avancement;1. Joindre fichier rapport;Upload réussi;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Exécution;EXEC-03;Commentaires;Chef de projet;Champ commentaire d'avancement;1. Ouvrir la phase Exécution;Champ commentaire visible et modifiable;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Exécution;EXEC-04;Avancement;Chef de projet;Champ % d'avancement;1. Ouvrir la phase Exécution;Champ visible et modifiable;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Exécution;EXEC-05;Avancement;Chef de projet;Saisie 0 %;1. Entrer 0 dans le champ avancement;Valeur acceptée;Non testé;Majeure;Test standard;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Exécution;EXEC-06;Avancement;Chef de projet;Saisie 50 %;1. Entrer 50;Valeur acceptée;Non testé;Majeure;Test standard;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Exécution;EXEC-07;Avancement;Chef de projet;Saisie 100 %;1. Entrer 100;Valeur acceptée;Non testé;Majeure;Test standard;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Exécution;EXEC-08;Avancement;Système;Saisie >100 %;1. Entrer 150;Blocage de la saisie;Non testé;Bloquante;Test critique - couverture complète requise;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Exécution;EXEC-09;Avancement;Système;Saisie négative;1. Entrer -1;Blocage de la saisie;Non testé;Bloquante;Test critique - couverture complète requise;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Exécution;EXEC-10;État projet;Chef de projet;Champ statut Vert / Orange / Rouge;1. Ouvrir la phase Exécution;Champ statut visible;Non testé;Majeure;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Exécution;EXEC-11;Risques;Chef de projet;Mise à jour du registre des risques;1. Modifier un risque existant;Mise à jour enregistrée;Non testé;Majeure;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Exécution;EXEC-12;Go / No-Go;Chef de projet;Champ Prêt pour UAT / Recette;1. Ouvrir la phase Exécution;Champ Oui / Non visible;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Exécution;EXEC-13;Go / No-Go;Chef de projet;Validation Prêt pour UAT;1. Cocher Oui;Valeur enregistrée;Non testé;Bloquante;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+Exécution;EXEC-14;Transition;Système;Passage automatique vers UAT;1. Valider la transition;Projet passe en phase UAT;Non testé;Bloquante;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+UAT;UAT-01;Documents UAT;Chef de projet / Testeurs;Zone upload Cahier de tests;1. Ouvrir la phase UAT;Zone d'upload visible;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+UAT;UAT-02;Documents UAT;Chef de projet / Testeurs;Zone upload Feuille d'anomalies;1. Ouvrir la phase UAT;Zone visible;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+UAT;UAT-03;Documents UAT;Chef de projet;Zone upload PV de recette;1. Ouvrir la phase UAT;Zone visible;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+UAT;UAT-04;Mise en production;Chef de projet / Infra;Zone upload Dossier MEP;1. Ouvrir la phase UAT;Zone visible;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+UAT;UAT-05;Mise en production;Chef de projet / Infra;Zone upload PV de MEP;1. Ouvrir la phase UAT;Zone visible;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+UAT;UAT-06;Hypercare;Chef de projet;Zone upload Rapport hypercare;1. Ouvrir la phase UAT;Zone visible;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+UAT;UAT-07;Statut recette;Chef de projet;Champ Recette validée ?;1. Ouvrir la phase;Champ Oui / Non visible;Non testé;Bloquante;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+UAT;UAT-08;Statut MEP;Chef de projet;Champ MEP effectuée ?;1. Ouvrir la phase;Champ Oui / Non visible;Non testé;Bloquante;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+UAT;UAT-09;Documents;Chef de projet;Upload Cahier de tests;1. Joindre fichier;Upload réussi;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+UAT;UAT-10;Documents;Chef de projet;Upload Feuille d'anomalies;1. Joindre fichier;Upload réussi;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+UAT;UAT-11;Documents;Chef de projet;Upload PV recette;1. Joindre fichier;Upload réussi;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+UAT;UAT-12;Documents;Chef de projet;Upload Dossier MEP;1. Joindre fichier;Upload réussi;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+UAT;UAT-13;Documents;Chef de projet;Upload PV MEP;1. Joindre fichier;Upload réussi;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+UAT;UAT-14;Documents;Chef de projet;Upload Rapport hypercare;1. Joindre fichier;Upload réussi;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+UAT;UAT-15;Validation recette;Chef de projet;Recette validée = Oui;1. Cocher Oui;Valeur enregistrée;Non testé;Bloquante;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+UAT;UAT-16;Validation MEP;Chef de projet;MEP effectuée = Oui;1. Cocher Oui;Valeur enregistrée;Non testé;Bloquante;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+UAT;UAT-17;Contrôle cohérence;Système;MEP sans PV de MEP;1. Simuler cas négatif;Blocage ou message d'alerte;Non testé;Majeure;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+UAT;UAT-18;Contrôle cohérence;Système;Recette validée sans PV recette;1. Simuler cas négatif;Blocage ou message cohérent;Non testé;Majeure;Test unitaire de logique métier;Oui;Non;"1. Exécuter le test unitaire correspondant
+2. Vérifier les assertions
+3. Valider la couverture de code
+4. Tester les cas d'erreur"
+UAT;UAT-19;Transition;Système;Fin hypercare;1. Finaliser la phase;Statut = Prêt pour clôture;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Clôture;CLOT-01;Bilan projet;Chef de projet;Champ Périmètre réalisé;1. Ouvrir la phase Clôture;Champ visible et modifiable;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Clôture;CLOT-02;Bilan projet;Chef de projet;Champ Planning réalisé;1. Ouvrir la phase Clôture;Champ visible;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Clôture;CLOT-03;Bilan projet;Chef de projet;Champ Budget réalisé;1. Ouvrir la phase Clôture;Champ visible;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Clôture;CLOT-04;Bilan projet;Chef de projet;Champ Difficultés rencontrées;1. Ouvrir la phase Clôture;Champ visible;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Clôture;CLOT-05;Bilan projet;Chef de projet;Champ Réussites du projet;1. Ouvrir la phase Clôture;Champ visible;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Clôture;CLOT-06;Leçons apprises;Chef de projet;Champ Ce qui a bien marché;1. Ouvrir la phase Clôture;Champ visible;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Clôture;CLOT-07;Leçons apprises;Chef de projet;Champ Ce qui n'a pas marché;1. Ouvrir la phase Clôture;Champ visible;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Clôture;CLOT-08;Leçons apprises;Chef de projet;Champ Recommandations;1. Ouvrir la phase Clôture;Champ visible;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Clôture;CLOT-09;Documents;Chef de projet;Upload rapport de clôture;1. Joindre fichier;Upload réussi;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Clôture;CLOT-10;Documents;Chef de projet;Upload PV de clôture;1. Joindre fichier;Upload réussi;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Clôture;CLOT-11;Documents;Chef de projet / RUN;Upload dossier d'exploitation / RUN;1. Joindre fichier;Upload réussi;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Clôture;CLOT-12;Workflow;Chef de projet;Initier demande de clôture;1. Cliquer Initier clôture;Statut = Clôture en validation;Non testé;Bloquante;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"
+Clôture;CLOT-13;Workflow;Demandeur / Chef de projet;Validation demandeur;1. Valider côté demandeur;Étape validée;Non testé;Bloquante;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Clôture;CLOT-14;Workflow;Directeur métier;Validation métier;1. Valider côté Directeur métier;Étape validée;Non testé;Bloquante;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Clôture;CLOT-15;Workflow;DSI;Validation finale DSI;1. Valider côté DSI;Statut projet = Clôturé;Non testé;Bloquante;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Clôture;CLOT-16;Contrôle workflow;Système;Chaîne de validation incomplète;1. Omettre une validation;Projet non clôturé;Non testé;Bloquante;Test mixte - logique métier et interface utilisateur;Oui;Oui;"1. Exécuter les tests unitaires pour valider la logique métier
+2. Exécuter les tests fonctionnels UI
+3. Vérifier le résultat attendu
+4. Valider les cas limites"
+Clôture;CLOT-17;Portefeuille projets;PMO / DSI;Projet clôturé visible dans portefeuille;1. Consulter le portefeuille projets;Projet visible avec statut Clôturé;Non testé;Majeure;Test fonctionnel UI uniquement;Non;Oui;"1. Lancer l'application
+2. Exécuter le scénario de test fonctionnel
+3. Vérifier le résultat attendu dans l'interface
+4. Documenter les observations"

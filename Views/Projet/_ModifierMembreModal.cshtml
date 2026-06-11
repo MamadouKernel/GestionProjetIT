@@ -1,0 +1,73 @@
+@model GestionProjects.Domain.Models.Projet
+
+<div class="modal fade" id="modifierMembreModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
+            <form asp-action="ModifierMembreProjet" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="projetId" value="@Model.Id" />
+                <input type="hidden" name="membreId" id="modifierMembreId" />
+                <div class="modal-header" style="border-bottom: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <h5 class="modal-title" style="font-weight: 600; color: var(--gray-800); display: flex; align-items: center; gap: var(--spacing-sm);">
+                        <i class="bi bi-pencil" style="color: var(--primary-blue);"></i>
+                        Modifier un Membre
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: var(--spacing-lg);">
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Nom *</label>
+                        <input type="text" name="nom" id="modifierMembreNom" class="form-control-modern" required />
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Prénom *</label>
+                        <input type="text" name="prenom" id="modifierMembrePrenom" class="form-control-modern" required />
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Rôle dans le projet *</label>
+                        <input type="text" name="roleDansProjet" id="modifierMembreRole" class="form-control-modern" required />
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Direction</label>
+                        <input type="text" name="directionLibelle" id="modifierMembreDirection" class="form-control-modern" />
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Email *</label>
+                        <input type="email" name="email" id="modifierMembreEmail" class="form-control-modern" required />
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-save"></i>
+                        Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var modifierMembreModal = document.getElementById('modifierMembreModal');
+        if (modifierMembreModal) {
+            modifierMembreModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                document.getElementById('modifierMembreId').value = button.getAttribute('data-membre-id');
+                document.getElementById('modifierMembreNom').value = button.getAttribute('data-membre-nom');
+                document.getElementById('modifierMembrePrenom').value = button.getAttribute('data-membre-prenom');
+                document.getElementById('modifierMembreRole').value = button.getAttribute('data-membre-role');
+                document.getElementById('modifierMembreDirection').value = button.getAttribute('data-membre-direction') || '';
+                document.getElementById('modifierMembreEmail').value = button.getAttribute('data-membre-email');
+            });
+        }
+    });
+</script>

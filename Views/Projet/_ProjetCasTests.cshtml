@@ -1,0 +1,339 @@
+@model GestionProjects.Domain.Models.Projet
+@using GestionProjects.Domain.Enums
+@inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
+
+@{
+    var isReadOnly = ViewBag.IsReadOnly as bool? ?? false;
+    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, Model, isReadOnly);
+    var canEdit = ui.CanEditUat && !isReadOnly;
+
+    var casTests = ViewBag.CasTests as List<GestionProjects.Domain.Models.CasTestProjet> ?? new List<GestionProjects.Domain.Models.CasTestProjet>();
+    var campagnes = ViewBag.Campagnes as List<GestionProjects.Domain.Models.CampagneTestProjet> ?? new List<GestionProjects.Domain.Models.CampagneTestProjet>();
+
+    int total = casTests.Count;
+    int reussie = casTests.Count(c => c.Executions.Any() && c.Executions.OrderByDescending(e => e.DateExecution).First().Statut == StatutExecutionTest.Reussie);
+    int echec = casTests.Count(c => c.Executions.Any() && c.Executions.OrderByDescending(e => e.DateExecution).First().Statut == StatutExecutionTest.EnEchec);
+    int aExec = casTests.Count(c => !c.Executions.Any());
+}
+
+<div class="phase-shell">
+    <div class="phase-grid phase-grid-3">
+        <article class="phase-panel">
+            <h4 class="phase-panel-title">Total cas</h4>
+            <div class="phase-summary-item"><strong>@total</strong></div>
+        </article>
+        <article class="phase-panel">
+            <h4 class="phase-panel-title">Reussis</h4>
+            <div class="phase-summary-item"><strong>@reussie</strong></div>
+        </article>
+        <article class="phase-panel">
+            <h4 class="phase-panel-title">En echec</h4>
+            <div class="phase-summary-item"><strong>@echec</strong></div>
+        </article>
+        <article class="phase-panel">
+            <h4 class="phase-panel-title">A executer</h4>
+            <div class="phase-summary-item"><strong>@aExec</strong></div>
+        </article>
+    </div>
+
+    <section class="phase-panel">
+        <div class="phase-section-header">
+            <div>
+                <h3 class="phase-panel-title">Campagnes de test</h3>
+                <div class="phase-record-meta">Decoupage des executions par environnement, statut et date de lancement.</div>
+            </div>
+            @if (canEdit)
+            {
+                <button class="btn-modern btn-modern-secondary" data-bs-toggle="modal" data-bs-target="#modalCampagne">
+                    <i class="bi bi-plus-circle"></i>
+                    Nouvelle campagne
+                </button>
+            }
+        </div>
+
+        @if (!campagnes.Any())
+        {
+            <div class="phase-empty">
+                <i class="bi bi-inbox"></i>
+                <p>Aucune campagne de test.</p>
+            </div>
+        }
+        else
+        {
+            <div class="record-stack">
+                @foreach (var campagne in campagnes)
+                {
+                    var campagneBadge = campagne.Statut == StatutCampagneTest.Cloturee ? "is-success" : campagne.Statut == StatutCampagneTest.EnCours ? "is-warning" : "is-info";
+                    <article class="record-card">
+                        <div class="record-card-header">
+                            <div>
+                                <div class="record-card-title">@campagne.Nom</div>
+                                <div class="record-card-subtitle">@(string.IsNullOrWhiteSpace(campagne.Description) ? "Aucune description" : campagne.Description)</div>
+                            </div>
+                            <span class="phase-chip @campagneBadge">@campagne.Statut</span>
+                        </div>
+                        <div class="record-card-meta">
+                            <span class="record-card-meta-label">Environnement</span>
+                            <span class="record-card-meta-value">@campagne.Environnement</span>
+                            <span class="record-card-meta-label">Lancement</span>
+                            <span class="record-card-meta-value">@campagne.DateLancement.ToString("dd/MM/yyyy")</span>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </section>
+
+    <section class="phase-panel">
+        <div class="phase-section-header">
+            <div>
+                <h3 class="phase-panel-title">Cas de test</h3>
+                <div class="phase-record-meta">Pilotage des scenarios, priorites, executions et resultats attendus.</div>
+            </div>
+            @if (canEdit)
+            {
+                <button class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#modalCasTest">
+                    <i class="bi bi-plus-circle"></i>
+                    Ajouter un cas
+                </button>
+            }
+        </div>
+
+        @if (!casTests.Any())
+        {
+            <div class="phase-empty">
+                <i class="bi bi-inbox"></i>
+                <p>Aucun cas de test. Commencez par en creer un.</p>
+            </div>
+        }
+        else
+        {
+            <div class="record-stack">
+                @foreach (var ct in casTests)
+                {
+                    var derniereExec = ct.Executions.OrderByDescending(e => e.DateExecution).FirstOrDefault();
+                    var prioriteClass = ct.Priorite == PrioriteAnomalie.Critique ? "is-danger" : ct.Priorite == PrioriteAnomalie.Haute ? "is-warning" : "is-info";
+                    var resultatClass = "is-info";
+                    var resultatLabel = "A executer";
+
+                    if (derniereExec != null)
+                    {
+                        resultatClass = derniereExec.Statut switch
+                        {
+                            StatutExecutionTest.Reussie => "is-success",
+                            StatutExecutionTest.EnEchec => "is-danger",
+                            StatutExecutionTest.Bloquee => "is-warning",
+                            _ => "is-info"
+                        };
+                        resultatLabel = derniereExec.Statut.ToString();
+                    }
+
+                    <article class="record-card">
+                        <div class="record-card-header">
+                            <div>
+                                <div class="record-card-title">@ct.Reference - @ct.Titre</div>
+                                <div class="record-card-subtitle">@ct.ResultatAttendu</div>
+                            </div>
+                            <div class="record-card-actions">
+                                @if (!isReadOnly)
+                                {
+                                    <button class="btn-modern btn-modern-secondary"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalExecTest"
+                                            data-castest-id="@ct.Id"
+                                            data-castest-titre="@ct.Titre"
+                                            data-campagne-id="@ct.CampagneTestProjetId"
+                                            title="Executer"
+                                            aria-label="Executer">
+                                        <i class="bi bi-play"></i>
+                                    </button>
+                                    @if (canEdit)
+                                    {
+                                        <form asp-action="SupprimerCasTest" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="projetId" value="@Model.Id" />
+                                            <input type="hidden" name="casTestId" value="@ct.Id" />
+                                            <button type="submit"
+                                                    class="btn-modern btn-modern-danger"
+                                                    title="Supprimer"
+                                                    aria-label="Supprimer"
+                                                    onclick="return confirm('Supprimer ce cas de test ?');">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                }
+                            </div>
+                        </div>
+                        <div class="record-card-meta">
+                            <span class="record-card-meta-label">Priorite</span>
+                            <span class="record-card-meta-value"><span class="phase-chip @prioriteClass">@ct.Priorite</span></span>
+                            <span class="record-card-meta-label">Obligatoire</span>
+                            <span class="record-card-meta-value">@(ct.EstObligatoire ? "Oui" : "Non")</span>
+                            <span class="record-card-meta-label">Derniere execution</span>
+                            <span class="record-card-meta-value">@(derniereExec?.DateExecution.ToString("dd/MM/yyyy HH:mm") ?? "-")</span>
+                            <span class="record-card-meta-label">Resultat</span>
+                            <span class="record-card-meta-value"><span class="phase-chip @resultatClass">@resultatLabel</span></span>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </section>
+</div>
+
+@if (canEdit)
+{
+    <div class="modal fade" id="modalCampagne" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-collection"></i> Nouvelle campagne de test</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form asp-action="AjouterCampagneTest" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="projetId" value="@Model.Id" />
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Nom *</label>
+                            <input name="nom" type="text" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Description</label>
+                            <textarea name="descriptionCampagne" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Environnement *</label>
+                            <select name="environnement" class="form-select" required>
+                                @foreach (var env in Enum.GetValues<Environnement>())
+                                {
+                                    <option value="@env">@env</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Date de lancement *</label>
+                            <input name="dateLancement" type="date" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn-modern btn-modern-primary">Creer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalCasTest" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Ajouter un cas de test</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form asp-action="AjouterCasTest" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="projetId" value="@Model.Id" />
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label fw-semibold">Titre *</label>
+                                <input name="titre" type="text" class="form-control" required />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Priorite *</label>
+                                <select name="priorite" class="form-select" required>
+                                    @foreach (var p in Enum.GetValues<PrioriteAnomalie>())
+                                    {
+                                        <option value="@p">@p</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Description</label>
+                                <textarea name="description" class="form-control" rows="2"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Resultat attendu *</label>
+                                <textarea name="resultAttendu" class="form-control" rows="2" required></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Campagne (optionnel)</label>
+                                <select name="campagneId" class="form-select">
+                                    <option value="">- Aucune campagne -</option>
+                                    @foreach (var camp in campagnes)
+                                    {
+                                        <option value="@camp.Id">@camp.Nom</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6 d-flex align-items-end">
+                                <div class="form-check">
+                                    <input type="checkbox" name="estObligatoire" value="true" class="form-check-input" id="chkObligatoire" />
+                                    <label class="form-check-label" for="chkObligatoire">Cas obligatoire</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn-modern btn-modern-primary">Ajouter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="modal fade" id="modalExecTest" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-play-circle"></i> Enregistrer une execution</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="ExecuterCasTest" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="projetId" value="@Model.Id" />
+                <input type="hidden" name="casTestId" id="execCasTestId" />
+                <input type="hidden" name="campagneId" id="execCampagneId" />
+                <div class="modal-body">
+                    <p class="mb-3">Cas de test : <strong id="execCasTestTitre"></strong></p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Resultat *</label>
+                        <select name="statut" class="form-select" required>
+                            @foreach (var s in Enum.GetValues<StatutExecutionTest>())
+                            {
+                                <option value="@s">@s</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Commentaire</label>
+                        <textarea name="commentaire" class="form-control" rows="3" placeholder="Observations, reproduction du bug..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn-modern btn-modern-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var modalExec = document.getElementById('modalExecTest');
+    if (modalExec) {
+        modalExec.addEventListener('show.bs.modal', function(e) {
+            var btn = e.relatedTarget;
+            document.getElementById('execCasTestId').value = btn.dataset.castestId;
+            document.getElementById('execCasTestTitre').textContent = btn.dataset.castestTitre;
+            document.getElementById('execCampagneId').value = btn.dataset.campagneId || '';
+        });
+    }
+});
+</script>

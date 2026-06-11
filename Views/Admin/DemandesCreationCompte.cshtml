@@ -1,0 +1,469 @@
+@model IEnumerable<GestionProjects.Domain.Models.DemandeCreationCompte>
+@using GestionProjects.Domain.Enums
+@inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
+@{
+    ViewData["Title"] = "Demandes de création de compte";
+    var canValidateDmWorkflow = await PermissionService.CurrentUserHasPermissionAsync("Admin", "ValiderDemandeCreationCompteDM");
+    var canValidateDsiWorkflow = await PermissionService.CurrentUserHasPermissionAsync("Admin", "ValiderDemandeCreationCompteDSI");
+    var isDmQueue = canValidateDmWorkflow && !canValidateDsiWorkflow;
+
+    var demandes = Model.ToList();
+    var enAttente = demandes.Where(d => d.Statut == StatutDemandeCompte.EnAttenteValidationDM).ToList();
+    var valideeDM = demandes.Where(d => d.Statut == StatutDemandeCompte.ValideeParDM).ToList();
+    var autres = demandes.Where(d => d.Statut != StatutDemandeCompte.EnAttenteValidationDM && d.Statut != StatutDemandeCompte.ValideeParDM).ToList();
+    var intro = isDmQueue
+        ? "Vous pilotez les demandes de collaborateurs de votre direction avant passage au circuit DSI."
+        : "Vous arbitrez la dernière étape du parcours de création de compte et tracez les décisions prises.";
+}
+
+<div class="fade-in review-shell">
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert-modern alert-modern-success mb-4" role="alert">
+            <i class="bi bi-check-circle-fill"></i>
+            <div>@TempData["Success"]</div>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert-modern alert-modern-danger mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <div>@TempData["Error"]</div>
+        </div>
+    }
+
+    <div class="review-toolbar mb-4">
+        <div class="review-hero flex-grow-1">
+            <span class="badge-modern badge-modern-info mb-3">Administration</span>
+            <h1 class="review-hero-title">Demandes de création de compte</h1>
+            <p class="review-hero-copy">@intro</p>
+            <div class="document-hero-badges">
+                <span class="badge-modern badge-modern-secondary">@demandes.Count demande(s)</span>
+                <span class="badge-modern badge-modern-warning">@enAttente.Count attente DM</span>
+                @if (canValidateDsiWorkflow)
+                {
+                    <span class="badge-modern badge-modern-info">@valideeDM.Count à traiter DSI</span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="review-kpi-grid mb-4">
+        <section class="review-kpi-card review-kpi-card-primary">
+            <span class="review-kpi-label">Couverture</span>
+            <span class="review-kpi-value">@demandes.Count</span>
+            <p class="review-kpi-copy">Demandes visibles dans votre périmètre de validation actuel.</p>
+        </section>
+        <section class="review-kpi-card review-kpi-card-warning">
+            <span class="review-kpi-label">File active</span>
+            <span class="review-kpi-value">@(isDmQueue ? enAttente.Count : valideeDM.Count)</span>
+            <p class="review-kpi-copy">Dossiers nécessitant une action prioritaire de votre part.</p>
+        </section>
+        <section class="review-kpi-card review-kpi-card-success">
+            <span class="review-kpi-label">Historique</span>
+            <span class="review-kpi-value">@autres.Count</span>
+            <p class="review-kpi-copy">Demandes déjà arbitrées, créées ou refusées dans le circuit.</p>
+        </section>
+    </div>
+
+    <div class="review-filter-bar mb-4">
+        <button type="button" class="filter-pill active" data-filter-button data-filter="all">
+            Toutes
+            <span>@demandes.Count</span>
+        </button>
+        @if (enAttente.Any())
+        {
+            <button type="button" class="filter-pill" data-filter-button data-filter="attente">
+                Attente DM
+                <span>@enAttente.Count</span>
+            </button>
+        }
+        @if (canValidateDsiWorkflow && valideeDM.Any())
+        {
+            <button type="button" class="filter-pill" data-filter-button data-filter="validee">
+                Validées DM
+                <span>@valideeDM.Count</span>
+            </button>
+        }
+        @if (autres.Any())
+        {
+            <button type="button" class="filter-pill" data-filter-button data-filter="autres">
+                Traitées
+                <span>@autres.Count</span>
+            </button>
+        }
+    </div>
+
+    @if (!demandes.Any())
+    {
+        <div class="empty-state-modern">
+            <i class="bi bi-inbox"></i>
+            <h3>Aucune demande à traiter</h3>
+            <p>Les prochaines demandes de création de compte apparaîtront ici avec leur niveau d'urgence et leur statut de validation.</p>
+        </div>
+    }
+    else
+    {
+        <div class="review-card-list" id="demandesList">
+            @foreach (var d in demandes)
+            {
+                var rowFilter = d.Statut == StatutDemandeCompte.EnAttenteValidationDM ? "attente"
+                    : d.Statut == StatutDemandeCompte.ValideeParDM ? "validee"
+                    : "autres";
+
+                var statusClass = d.Statut switch
+                {
+                    StatutDemandeCompte.EnAttenteValidationDM => "review-card-status-warning",
+                    StatutDemandeCompte.ValideeParDM => "review-card-status-info",
+                    StatutDemandeCompte.CompteCree => "review-card-status-success",
+                    _ => "review-card-status-danger"
+                };
+
+                var statusIcon = d.Statut switch
+                {
+                    StatutDemandeCompte.EnAttenteValidationDM => "bi-hourglass-split",
+                    StatutDemandeCompte.ValideeParDM => "bi-check-circle",
+                    StatutDemandeCompte.CompteCree => "bi-person-check",
+                    StatutDemandeCompte.RefuseeParDSI => "bi-x-octagon",
+                    _ => "bi-x-circle"
+                };
+
+                var statusLabel = d.Statut switch
+                {
+                    StatutDemandeCompte.EnAttenteValidationDM => "Attente DM",
+                    StatutDemandeCompte.ValideeParDM => "Validée DM",
+                    StatutDemandeCompte.CompteCree => "Compte créé",
+                    StatutDemandeCompte.RefuseeParDSI => "Refusée DSI",
+                    _ => "Refusée DM"
+                };
+
+                var initialesNom = string.IsNullOrWhiteSpace(d.Nom) ? "?" : d.Nom.Trim()[0].ToString().ToUpperInvariant();
+                var initialesPrenoms = string.IsNullOrWhiteSpace(d.Prenoms) ? string.Empty : d.Prenoms.Trim()[0].ToString().ToUpperInvariant();
+                var commentaire = !string.IsNullOrWhiteSpace(d.CommentaireDSI)
+                    ? d.CommentaireDSI
+                    : !string.IsNullOrWhiteSpace(d.CommentaireDM)
+                        ? d.CommentaireDM
+                        : null;
+
+                <article class="review-card" data-filter="@rowFilter">
+                    <div class="review-card-body">
+                        <div class="review-card-head">
+                            <div class="review-card-person">
+                                <div class="review-card-avatar">@initialesNom@initialesPrenoms</div>
+                                <div>
+                                    <div class="review-card-title">@d.Nom @d.Prenoms</div>
+                                    <div class="review-card-subtitle">
+                                        @(d.DirecteurMetier != null
+                                            ? $"Validation métier portée par {d.DirecteurMetier.Nom} {d.DirecteurMetier.Prenoms}"
+                                            : "Directeur métier non renseigné")
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="review-card-status @statusClass">
+                                <i class="bi @statusIcon"></i>
+                                @statusLabel
+                            </span>
+                        </div>
+
+                        <div class="review-card-grid">
+                            <div class="review-card-metric">
+                                <span class="review-card-metric-label">Email</span>
+                                <span class="review-card-metric-value">
+                                    <a href="mailto:@d.Email" class="text-decoration-none">@d.Email</a>
+                                </span>
+                            </div>
+                            <div class="review-card-metric">
+                                <span class="review-card-metric-label">Direction</span>
+                                <span class="review-card-metric-value">@(d.Direction?.Libelle ?? "Non renseignée")</span>
+                            </div>
+                            <div class="review-card-metric">
+                                <span class="review-card-metric-label">Service</span>
+                                <span class="review-card-metric-value">@(string.IsNullOrWhiteSpace(d.Service) ? "Non renseigné" : d.Service)</span>
+                            </div>
+                            <div class="review-card-metric">
+                                <span class="review-card-metric-label">Soumise le</span>
+                                <span class="review-card-metric-value">@d.DateSoumission.ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+                        </div>
+
+                        <div class="review-card-commentary">
+                            @if (!string.IsNullOrWhiteSpace(commentaire))
+                            {
+                                <div class="review-card-note">
+                                    <strong>Commentaire :</strong> @commentaire
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="review-card-empty">
+                                    <i class="bi bi-chat-left-text"></i>
+                                    Aucun commentaire métier ou DSI n'a encore été enregistré sur cette demande.
+                                </div>
+                            }
+                        </div>
+
+                        <div class="review-card-actions">
+                            @if (canValidateDmWorkflow)
+                            {
+                                if (d.Statut == StatutDemandeCompte.EnAttenteValidationDM)
+                                {
+                                    <button type="button"
+                                            class="btn-modern btn-modern-primary"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalValiderDM"
+                                            data-id="@d.Id"
+                                            data-nom="@d.Nom @d.Prenoms">
+                                        <i class="bi bi-check-lg"></i>
+                                        Valider
+                                    </button>
+                                    <button type="button"
+                                            class="btn-modern btn-modern-danger"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalRefuserDM"
+                                            data-id="@d.Id"
+                                            data-nom="@d.Nom @d.Prenoms">
+                                        <i class="bi bi-x-lg"></i>
+                                        Refuser
+                                    </button>
+                                }
+                                else
+                                {
+                                    <span class="review-card-empty">
+                                        <i class="bi bi-check2-circle"></i>
+                                        Aucune action DM disponible
+                                    </span>
+                                }
+                            }
+
+                            @if (canValidateDsiWorkflow)
+                            {
+                                if (d.Statut == StatutDemandeCompte.ValideeParDM)
+                                {
+                                    <button type="button"
+                                            class="btn-modern btn-modern-primary"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalCreerCompte"
+                                            data-id="@d.Id"
+                                            data-nom="@d.Nom @d.Prenoms">
+                                        <i class="bi bi-person-plus-fill"></i>
+                                        Créer le compte
+                                    </button>
+                                    <button type="button"
+                                            class="btn-modern btn-modern-danger"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalRefuserDSI"
+                                            data-id="@d.Id"
+                                            data-nom="@d.Nom @d.Prenoms">
+                                        <i class="bi bi-x-lg"></i>
+                                        Refuser
+                                    </button>
+                                }
+                                else if (d.Statut == StatutDemandeCompte.EnAttenteValidationDM)
+                                {
+                                    <span class="review-card-empty">
+                                        <i class="bi bi-hourglass-split"></i>
+                                        En attente de validation Directeur Métier
+                                    </span>
+                                }
+                                else if (!canValidateDmWorkflow)
+                                {
+                                    <span class="review-card-empty">
+                                        <i class="bi bi-check2-circle"></i>
+                                        Aucune action DSI disponible
+                                    </span>
+                                }
+                            }
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</div>
+
+@if (canValidateDmWorkflow)
+{
+    <div class="modal fade" id="modalValiderDM" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow-lg">
+                <form method="post" asp-controller="Admin" asp-action="ValiderDemandeCreationCompteDM">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="validerDM_id" />
+                    <div class="modal-header document-accent-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                            Valider la demande
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="review-card-note mb-3">
+                            <strong id="validerDM_nom"></strong> sera transmis au circuit DSI pour création de compte.
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Commentaire <span class="text-muted">(optionnel)</span></label>
+                            <textarea name="commentaire" class="form-control-modern" rows="3" placeholder="Remarques pour l'équipe DSI..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0 px-4 pb-4">
+                        <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn-modern btn-modern-primary">
+                            <i class="bi bi-check-lg"></i>
+                            Confirmer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalRefuserDM" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow-lg">
+                <form method="post" asp-controller="Admin" asp-action="RefuserDemandeCreationCompteDM">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="refuserDM_id" />
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-x-circle-fill me-2"></i>
+                            Refuser la demande
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="review-card-note mb-3">
+                            Vous refusez la demande de <strong id="refuserDM_nom"></strong>. Le demandeur sera notifié avec le motif saisi.
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Motif du refus <span class="text-danger">*</span></label>
+                            <textarea name="commentaire" class="form-control-modern" rows="3" required placeholder="Expliquez le motif du refus..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0 px-4 pb-4">
+                        <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn-modern btn-modern-danger">
+                            <i class="bi bi-x-lg"></i>
+                            Refuser
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@if (canValidateDsiWorkflow)
+{
+    <div class="modal fade" id="modalCreerCompte" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <form method="post" asp-controller="Admin" asp-action="ValiderDemandeCreationCompteDSI">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="creer_id" />
+                    <div class="modal-header document-accent-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-person-plus-fill me-2"></i>
+                            Créer le compte utilisateur
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="review-card-note mb-3">
+                            Création du compte pour <strong id="creer_nom"></strong>. Un matricule et un mot de passe temporaire seront générés, puis envoyés automatiquement.
+                        </div>
+                        <div class="form-group-modern mb-3">
+                            <label class="form-label-modern">Rôle à attribuer <span class="text-danger">*</span></label>
+                            <select name="role" class="form-control-modern" required>
+                                <option value="Demandeur">Demandeur</option>
+                                <option value="ChefDeProjet">Chef de Projet</option>
+                                <option value="DirecteurMetier">Directeur Métier</option>
+                                <option value="ResponsableSolutionsIT">Responsable Solutions IT</option>
+                                <option value="DSI">DSI</option>
+                                <option value="AdminIT">Administrateur IT</option>
+                            </select>
+                            <small class="profile-muted-note">Le rôle détermine le périmètre fonctionnel visible dans l'application.</small>
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Commentaire <span class="text-muted">(optionnel)</span></label>
+                            <textarea name="commentaire" class="form-control-modern" rows="2" placeholder="Notes à destination de l'équipe..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0 px-4 pb-4">
+                        <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn-modern btn-modern-primary">
+                            <i class="bi bi-person-check-fill"></i>
+                            Créer le compte
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalRefuserDSI" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow-lg">
+                <form method="post" asp-controller="Admin" asp-action="RefuserDemandeCreationCompteDSI">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="refuserDSI_id" />
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-x-octagon-fill me-2"></i>
+                            Refuser la demande
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="review-card-note mb-3">
+                            Vous refusez définitivement la demande de <strong id="refuserDSI_nom"></strong>. Le demandeur et le Directeur Métier seront notifiés.
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Motif du refus <span class="text-danger">*</span></label>
+                            <textarea name="commentaire" class="form-control-modern" rows="3" required placeholder="Expliquez le motif du refus..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0 px-4 pb-4">
+                        <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn-modern btn-modern-danger">
+                            <i class="bi bi-x-lg"></i>
+                            Refuser définitivement
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const wire = (modalId, idField, nomField) => {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+            modal.addEventListener('show.bs.modal', e => {
+                const btn = e.relatedTarget;
+                document.getElementById(idField).value = btn.dataset.id;
+                document.getElementById(nomField).textContent = btn.dataset.nom;
+            });
+        };
+
+        wire('modalValiderDM', 'validerDM_id', 'validerDM_nom');
+        wire('modalRefuserDM', 'refuserDM_id', 'refuserDM_nom');
+        wire('modalCreerCompte', 'creer_id', 'creer_nom');
+        wire('modalRefuserDSI', 'refuserDSI_id', 'refuserDSI_nom');
+
+        document.querySelectorAll('[data-filter-button]').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('[data-filter-button]').forEach(item => item.classList.remove('active'));
+                button.classList.add('active');
+                const filter = button.dataset.filter;
+
+                document.querySelectorAll('#demandesList .review-card').forEach(card => {
+                    card.style.display = filter === 'all' || card.dataset.filter === filter ? '' : 'none';
+                });
+            });
+        });
+    });
+</script>
+}

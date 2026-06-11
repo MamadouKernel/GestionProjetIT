@@ -1,0 +1,40 @@
+@model GestionProjects.Domain.Models.DemandeProjet
+
+<div class="modal fade" id="rejeterDSIModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
+            <form asp-action="RejeterDSI" asp-route-id="@Model.Id" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header" style="border-bottom: 1px solid var(--gray-200); padding: var(--spacing-lg); background: #fee2e2;">
+                    <h5 class="modal-title" style="font-weight: 600; color: #991b1b; display: flex; align-items: center; gap: var(--spacing-sm);">
+                        <i class="bi bi-x-circle-fill" style="color: var(--danger);"></i>
+                        Rejeter la demande
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: var(--spacing-lg);">
+                    <div class="alert-modern alert-modern-danger" style="margin-bottom: var(--spacing-lg);">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <div>
+                            <strong>Attention :</strong> Cette action rejettera définitivement la demande. Le demandeur et le Directeur Métier seront notifiés.
+                        </div>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Motif du rejet *</label>
+                        <textarea name="commentaire" class="form-control-modern" rows="4" required placeholder="Expliquez les raisons du rejet..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-danger">
+                        <i class="bi bi-x-circle"></i>
+                        Rejeter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

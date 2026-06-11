@@ -1,0 +1,228 @@
+@model IEnumerable<GestionProjects.Domain.Models.AuditLog>
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Historique des actions DM";
+    var demandes = ViewBag.Demandes as Dictionary<Guid, GestionProjects.Domain.Models.DemandeProjet> ?? new();
+    var page = (int)ViewBag.Page;
+    var totalPages = (int)ViewBag.TotalPages;
+    var total = (int)ViewBag.Total;
+}
+
+<div class="phase-shell">
+    <section class="phase-hero">
+        <div class="phase-hero-top">
+            <div>
+                <div class="phase-eyebrow">
+                    <i class="bi bi-journal-text"></i>
+                    Historique metier
+                </div>
+                <h2 class="phase-title">Historique des actions Directeur Metier</h2>
+                <p class="phase-subtitle">
+                    Visualisez les validations, rejets, demandes de correction et les champs modifies avant validation sur l'ensemble des demandes.
+                </p>
+            </div>
+            <div class="phase-action-row">
+                <span class="phase-chip is-info">
+                    <i class="bi bi-list-check"></i>
+                    @total action(s)
+                </span>
+            </div>
+        </div>
+    </section>
+
+    <section class="phase-note is-info">
+        <div class="phase-strong">Lecture de la trace</div>
+        <p style="margin: .6rem 0 0;">
+            Chaque entree expose la decision prise, le contexte demandeur / direction, le commentaire saisi et, lorsque disponible, le diff avant / apres des champs touches.
+        </p>
+    </section>
+
+    @if (!Model.Any())
+    {
+        <div class="phase-empty">
+            <i class="bi bi-inbox"></i>
+            <p>Aucune action enregistree.</p>
+        </div>
+    }
+    else
+    {
+        <div class="timeline-list">
+            @foreach (var log in Model)
+            {
+                var demandeId = Guid.TryParse(log.EntiteId, out var did) ? did : Guid.Empty;
+                var demande = demandeId != Guid.Empty && demandes.TryGetValue(demandeId, out var d) ? d : null;
+
+                var (badgeClass, icon, libelle) = log.TypeAction switch
+                {
+                    "VALIDATION_DM" => ("success", "bi-check-circle-fill", "Validation DM"),
+                    "REJET_DM" => ("danger", "bi-x-circle-fill", "Rejet DM"),
+                    "CORRECTION_DM" => ("warning", "bi-arrow-return-left", "Correction demandee"),
+                    _ => ("info", "bi-info-circle", log.TypeAction)
+                };
+
+                var avant = TryParseJson(log.AnciennesValeurs);
+                var apres = TryParseJson(log.NouvellesValeurs);
+
+                <div class="timeline-entry">
+                    <div class="timeline-entry-dot"></div>
+                    <article class="timeline-card @badgeClass">
+                        <div class="timeline-card-head">
+                            <div>
+                                <div class="timeline-card-title">
+                                    <i class="bi @icon me-2"></i>
+                                    @libelle
+                                </div>
+                                @if (demande != null)
+                                {
+                                    <div class="timeline-card-desc">
+                                        <a asp-action="Details" asp-route-id="@demande.Id" class="text-decoration-none fw-semibold">
+                                            @demande.Titre
+                                        </a>
+                                        <span class="text-muted ms-2">- @(demande.Direction?.Libelle ?? "-")</span>
+                                    </div>
+                                    <div class="timeline-card-author">
+                                        Demandeur : @(demande.Demandeur != null ? $"{demande.Demandeur.Nom} {demande.Demandeur.Prenoms}" : "-")
+                                    </div>
+                                }
+                            </div>
+                            <div class="text-end">
+                                <div class="timeline-card-author">
+                                    @(log.Utilisateur != null ? $"{log.Utilisateur.Nom} {log.Utilisateur.Prenoms}" : "-")
+                                </div>
+                                <div class="timeline-card-author">@log.DateAction.ToString("dd/MM/yyyy a HH:mm")</div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(log.Commentaire))
+                        {
+                            <div class="record-card-note">
+                                <strong>Commentaire :</strong><br />
+                                @log.Commentaire
+                            </div>
+                        }
+
+                        @if (avant != null || apres != null)
+                        {
+                            <div class="phase-grid mt-3">
+                                <section class="phase-panel">
+                                    <h4 class="phase-panel-title">Avant</h4>
+                                    @if (avant != null && avant.Any())
+                                    {
+                                        <div class="record-stack">
+                                            @foreach (var kvp in avant)
+                                            {
+                                                <article class="record-card">
+                                                    <div class="record-card-meta">
+                                                        <span class="record-card-meta-label">@kvp.Key</span>
+                                                        <span class="record-card-meta-value">@TruncateStr(kvp.Value, 200)</span>
+                                                    </div>
+                                                </article>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="phase-empty">
+                                            <i class="bi bi-dash-circle"></i>
+                                            <p>Aucune valeur precedente exploitable.</p>
+                                        </div>
+                                    }
+                                </section>
+
+                                <section class="phase-panel">
+                                    <h4 class="phase-panel-title">Apres</h4>
+                                    @if (apres != null && apres.Any())
+                                    {
+                                        <div class="record-stack">
+                                            @foreach (var kvp in apres)
+                                            {
+                                                var changed = avant != null && avant.TryGetValue(kvp.Key, out var old) && old != kvp.Value;
+                                                <article class="record-card">
+                                                    <div class="record-card-header">
+                                                        <div class="record-card-title">@kvp.Key</div>
+                                                        @if (changed)
+                                                        {
+                                                            <span class="phase-chip is-warning">Modifie</span>
+                                                        }
+                                                    </div>
+                                                    <div class="record-card-note">@TruncateStr(kvp.Value, 200)</div>
+                                                </article>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="phase-empty">
+                                            <i class="bi bi-dash-circle"></i>
+                                            <p>Aucune nouvelle valeur exploitable.</p>
+                                        </div>
+                                    }
+                                </section>
+                            </div>
+                        }
+
+                        @if (demande != null)
+                        {
+                            <div class="record-card-actions mt-3">
+                                <a asp-action="Details"
+                                   asp-route-id="@demande.Id"
+                                   class="btn-modern btn-modern-primary"
+                                   title="Consulter la demande"
+                                   aria-label="Consulter la demande">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </div>
+                        }
+                    </article>
+                </div>
+            }
+        </div>
+
+        @if (totalPages > 1)
+        {
+            <nav class="d-flex justify-content-center mt-4">
+                <ul class="pagination">
+                    <li class="page-item @(page <= 1 ? "disabled" : "")">
+                        <a class="page-link" asp-action="HistoriqueActionsDM" asp-route-page="@(page - 1)">‹</a>
+                    </li>
+                    @for (int p = Math.Max(1, page - 2); p <= Math.Min(totalPages, page + 2); p++)
+                    {
+                        <li class="page-item @(p == page ? "active" : "")">
+                            <a class="page-link" asp-action="HistoriqueActionsDM" asp-route-page="@p">@p</a>
+                        </li>
+                    }
+                    <li class="page-item @(page >= totalPages ? "disabled" : "")">
+                        <a class="page-link" asp-action="HistoriqueActionsDM" asp-route-page="@(page + 1)">›</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    }
+</div>
+
+@functions {
+    Dictionary<string, string>? TryParseJson(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return null;
+        try
+        {
+            var doc = JsonDocument.Parse(json);
+            var dict = new Dictionary<string, string>();
+            foreach (var prop in doc.RootElement.EnumerateObject())
+            {
+                dict[prop.Name] = prop.Value.ToString();
+            }
+            return dict;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    string TruncateStr(string? s, int max)
+    {
+        if (string.IsNullOrEmpty(s)) return "-";
+        return s.Length <= max ? s : s[..max] + "...";
+    }
+}

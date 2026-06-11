@@ -1,0 +1,76 @@
+@{
+    var pageNumber = ViewBag.PageNumber as int? ?? 1;
+    var totalPages = ViewBag.TotalPages as int? ?? 1;
+    var totalCount = ViewBag.TotalCount as int? ?? 0;
+    var pageSize = ViewBag.PageSize as int? ?? 20;
+    
+    // Récupérer les paramètres de requête pour les préserver dans la pagination
+    var queryParams = Context.Request.Query.ToDictionary(q => q.Key, q => q.Value.ToString());
+    queryParams.Remove("page"); // Retirer le paramètre page actuel
+}
+
+@if (totalPages > 1)
+{
+    <nav aria-label="Pagination" class="mt-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="text-muted">
+                Affichage de <strong>@((pageNumber - 1) * pageSize + 1)</strong> à <strong>@(Math.Min(pageNumber * pageSize, totalCount))</strong> sur <strong>@totalCount</strong> résultat(s)
+            </div>
+            <ul class="pagination mb-0">
+                @* Bouton Précédent *@
+                <li class="page-item @(pageNumber == 1 ? "disabled" : "")">
+                    <a class="page-link" href="?@string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))&page=@(pageNumber - 1)" aria-label="Précédent">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+
+                @* Pages numérotées *@
+                @{
+                    int startPage = Math.Max(1, pageNumber - 2);
+                    int endPage = Math.Min(totalPages, pageNumber + 2);
+                }
+
+                @if (startPage > 1)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="?@string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))&page=1">1</a>
+                    </li>
+                    @if (startPage > 2)
+                    {
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    }
+                }
+
+                @for (int i = startPage; i <= endPage; i++)
+                {
+                    <li class="page-item @(i == pageNumber ? "active" : "")">
+                        <a class="page-link" href="?@string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))&page=@i">@i</a>
+                    </li>
+                }
+
+                @if (endPage < totalPages)
+                {
+                    @if (endPage < totalPages - 1)
+                    {
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    }
+                    <li class="page-item">
+                        <a class="page-link" href="?@string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))&page=@totalPages">@totalPages</a>
+                    </li>
+                }
+
+                @* Bouton Suivant *@
+                <li class="page-item @(pageNumber >= totalPages ? "disabled" : "")">
+                    <a class="page-link" href="?@string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))&page=@(pageNumber + 1)" aria-label="Suivant">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+}
+

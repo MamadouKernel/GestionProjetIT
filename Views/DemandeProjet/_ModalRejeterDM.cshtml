@@ -1,0 +1,40 @@
+@model GestionProjects.Domain.Models.DemandeProjet
+
+<div class="modal fade" id="rejeterDMModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content app-modal-content">
+            <form asp-action="RejeterDM" asp-route-id="@Model.Id" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header app-modal-header is-danger">
+                    <h5 class="modal-title app-modal-title">
+                        <i class="bi bi-x-circle-fill"></i>
+                        Rejeter la demande
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body app-modal-body">
+                    <div class="alert-modern alert-modern-danger document-alert-tight">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <div>
+                            <strong>Attention :</strong> Cette action rejettera définitivement la demande. Le demandeur sera notifié.
+                        </div>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Motif du rejet *</label>
+                        <textarea name="commentaire" class="form-control-modern" rows="4" required placeholder="Expliquez les raisons du rejet..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer app-modal-footer">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-danger">
+                        <i class="bi bi-x-circle"></i>
+                        Rejeter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

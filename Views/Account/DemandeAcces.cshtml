@@ -1,0 +1,143 @@
+﻿@{
+    ViewData["Title"] = "Demander un accès";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Demander un accès - Z&eacute;&iuml;nab</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+</head>
+<body>
+    <div class="auth-shell">
+        <section class="auth-visual">
+            <div class="auth-orb auth-orb-blue"></div>
+            <div class="auth-orb auth-orb-gold"></div>
+
+            <div class="auth-brand-card">
+                <div class="auth-brand-badge">ZE</div>
+                <div class="auth-brand-copy">
+                    <span class="auth-brand-title">Z&eacute;&iuml;nab</span>
+                    <span class="auth-brand-caption">DSI Côte d'Ivoire Terminal</span>
+                </div>
+            </div>
+
+            <span class="auth-side-kicker">
+                <i class="bi bi-person-plus"></i>
+                Accès applicatif
+            </span>
+            <h1 class="auth-side-title">Demandez un acc&egrave;s propre, rapide et tra&ccedil;able.</h1>
+            <p class="auth-side-copy">
+                Cette demande est transmise à l'Admin IT pour validation et création de votre accès.
+                Les informations saisies permettent de vous rattacher au bon rôle et à la bonne organisation.
+            </p>
+
+            <div class="auth-feature-list">
+                <div class="auth-feature-item">
+                    <div class="auth-feature-icon"><i class="bi bi-shield-check"></i></div>
+                    <div>
+                        <span class="auth-feature-title">Validation maîtrisée</span>
+                        <span class="auth-feature-copy">Le cycle d'accès reste gouverné par l'administration IT.</span>
+                    </div>
+                </div>
+                <div class="auth-feature-item">
+                    <div class="auth-feature-icon"><i class="bi bi-diagram-3"></i></div>
+                    <div>
+                        <span class="auth-feature-title">Rattachement organisationnel</span>
+                        <span class="auth-feature-copy">Direction, rôle et contexte sont pris en compte dès la demande.</span>
+                    </div>
+                </div>
+                <div class="auth-feature-item">
+                    <div class="auth-feature-icon"><i class="bi bi-envelope-paper"></i></div>
+                    <div>
+                        <span class="auth-feature-title">Tra&ccedil;abilit&eacute; compl&egrave;te</span>
+                        <span class="auth-feature-copy">Chaque demande d'accès reste historisée et exploitable.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="auth-panel">
+            <div class="auth-card">
+                <div class="auth-card-header">
+                    <div>
+                        <h1 class="auth-card-title">Demander un accès</h1>
+                        <p class="auth-card-subtitle">
+                            Renseignez votre identité et le rôle souhaité. L'équipe IT traitera ensuite la demande.
+                        </p>
+                    </div>
+                    <div class="auth-card-badge">
+                        <i class="bi bi-key-fill"></i>
+                    </div>
+                </div>
+
+                @if (TempData["Error"] != null)
+                {
+                    <div class="auth-alert auth-alert-danger">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <div>@TempData["Error"]</div>
+                    </div>
+                }
+
+                <form method="post" asp-action="DemandeAcces" asp-controller="Account">
+                    @Html.AntiForgeryToken()
+
+                    <div class="auth-form-grid">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Nom <span class="text-danger">*</span></label>
+                            <input type="text" name="nom" class="form-control-modern" required maxlength="100" />
+                        </div>
+                        <div class="form-group-modern">
+                                <label class="form-label-modern">Prénom(s) <span class="text-danger">*</span></label>
+                            <input type="text" name="prenoms" class="form-control-modern" required maxlength="100" />
+                        </div>
+
+                        <div class="form-group-modern auth-form-grid-full">
+                            <label class="form-label-modern">Matricule <span class="text-danger">*</span></label>
+                            <input type="text" name="matricule" class="form-control-modern" required maxlength="50" placeholder="Votre matricule CIT" />
+                        </div>
+
+                        <div class="form-group-modern auth-form-grid-full">
+                            <label class="form-label-modern">Adresse email professionnelle <span class="text-danger">*</span></label>
+                            <input type="email" name="email" class="form-control-modern" required maxlength="200" placeholder="prenom.nom@cit.ci" />
+                        </div>
+
+                        <div class="form-group-modern auth-form-grid-full">
+                            <label class="form-label-modern">Rôle souhaité <span class="text-danger">*</span></label>
+                            <select name="rolesSouhaites" class="form-control-modern" required>
+                                <option value="">Sélectionner</option>
+                                <option value="Demandeur">Demandeur</option>
+                                <option value="DirecteurMetier">Directeur Métier</option>
+                                <option value="ChefDeProjet">Chef de projet</option>
+                                <option value="ResponsableSolutionsIT">Responsable Solutions IT</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group-modern auth-form-grid-full">
+                            <label class="form-label-modern">Message complémentaire</label>
+                            <textarea name="message" class="form-control-modern" rows="4" maxlength="500" placeholder="Contexte, besoin, précision de rattachement..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="auth-actions auth-actions-end">
+                        <button type="submit" class="btn-modern btn-modern-primary">
+                            <i class="bi bi-send"></i>
+                            Envoyer la demande
+                        </button>
+                    </div>
+                </form>
+
+                <div class="auth-link-row">
+                    <a asp-action="Login" asp-controller="Account">Retour à la connexion</a>
+                </div>
+            </div>
+        </section>
+    </div>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+</body>
+</html>
+

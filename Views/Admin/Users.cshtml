@@ -1,0 +1,882 @@
+@model IEnumerable<GestionProjects.Domain.Models.Utilisateur>
+@using GestionProjects.Domain.Enums
+@using GestionProjects.Domain.Models
+
+@{
+    ViewData["Title"] = "Gestion des Utilisateurs";
+
+    var directions        = ViewBag.Directions as IEnumerable<Direction> ?? Enumerable.Empty<Direction>();
+    var allRoles          = ViewBag.AllRoles as IEnumerable<RoleUtilisateur> ?? Enum.GetValues(typeof(RoleUtilisateur)).Cast<RoleUtilisateur>();
+    var totalCount        = ViewBag.TotalCount as int? ?? Model.Count();
+    var adminCount        = Model.Count(u => u.GetRolesActifs().Contains(RoleUtilisateur.AdminIT));
+    var chefProjetCount   = Model.Count(u => u.GetRolesActifs().Contains(RoleUtilisateur.ChefDeProjet));
+    var sansDirectionCount = Model.Count(u => u.Direction == null);
+    var recherche         = ViewBag.Recherche as string ?? string.Empty;
+    var selectedDir       = ViewBag.SelectedDirectionId as Guid?;
+    var selectedRole      = ViewBag.SelectedRole as RoleUtilisateur?;
+    var pageSize          = ViewBag.PageSize as int? ?? 5;
+    var filtreActif       = !string.IsNullOrWhiteSpace(recherche) || selectedDir.HasValue || selectedRole.HasValue;
+}
+
+<div class="fade-in admin-page">
+    <div class="page-toolbar">
+        <div class="page-hero card-modern mb-0 flex-grow-1">
+            <div class="page-hero-main">
+                <span class="page-kicker">Administration</span>
+                <h1 class="page-hero-title">Gestion des utilisateurs</h1>
+                <p class="page-hero-subtitle">
+                    Pilotez les comptes, les accès, les rôles et les capacités ressources depuis un espace unifié.
+                </p>
+                <div class="page-hero-meta">
+                    <span class="badge-modern badge-modern-info">@totalCount compte(s)</span>
+                    <span class="badge-modern badge-modern-success">@adminCount admin(s)</span>
+                    <span class="badge-modern badge-modern-warning">@sansDirectionCount sans direction</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-hero-actions">
+            <button type="button"
+                    class="btn-modern btn-modern-primary"
+                    data-bs-toggle="modal"
+                    data-bs-target="#createUserModal"
+                    onclick="resetForm()">
+                <i class="bi bi-person-plus"></i>
+                Nouvel utilisateur
+            </button>
+            <a asp-action="ImportUsers" class="btn-modern btn-modern-secondary">
+                <i class="bi bi-file-earmark-excel"></i>
+                Import Excel
+            </a>
+            <a asp-action="ListeRoles" class="btn-modern btn-modern-gold">
+                <i class="bi bi-shield-check"></i>
+                Vue rôles
+            </a>
+        </div>
+    </div>
+
+    @await Html.PartialAsync("_ValidationSummary")
+
+    <div class="admin-tabset nav nav-pills mb-4">
+        <a asp-action="Users" class="nav-link active">Utilisateurs</a>
+        <a asp-action="ListeRoles" class="nav-link">Rôles</a>
+        <a asp-action="Directions" class="nav-link">Directions</a>
+        <a asp-action="Services" class="nav-link">Services</a>
+        <a asp-action="Delegations" class="nav-link">Délégations</a>
+        <a asp-action="Parametres" class="nav-link">Paramètres</a>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-lg-4">
+            <div class="card-modern card-accent info h-100">
+                <div class="card-body-modern">
+                    <span class="soft-kicker">Population</span>
+                    <h3 class="mt-2 mb-1">@totalCount</h3>
+                    <p class="soft-note mb-0">Comptes visibles dans le référentiel actif.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card-modern card-accent gold h-100">
+                <div class="card-body-modern">
+                    <span class="soft-kicker">Pilotage projet</span>
+                    <h3 class="mt-2 mb-1">@chefProjetCount</h3>
+                    <p class="soft-note mb-0">Utilisateur(s) avec le rôle Chef de Projet.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card-modern card-accent warning h-100">
+                <div class="card-body-modern">
+                    <span class="soft-kicker">Qualité du référentiel</span>
+                    <h3 class="mt-2 mb-1">@sansDirectionCount</h3>
+                    <p class="soft-note mb-0">Compte(s) encore sans direction métier associée.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-modern mb-4">
+        <div class="card-body-modern">
+            <form method="get" asp-action="Users">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label-modern" for="recherche">Recherche</label>
+                        <input type="text" id="recherche" name="recherche" value="@recherche"
+                               class="form-control-modern" placeholder="Nom, prénom, matricule ou e-mail..." />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label-modern" for="directionId">Direction</label>
+                        <select id="directionId" name="directionId" class="form-control-modern">
+                            <option value="">Toutes les directions</option>
+                            @foreach (var dir in directions)
+                            {
+                                <option value="@dir.Id" selected="@(selectedDir == dir.Id)">@dir.Libelle</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label-modern" for="role">Rôle</label>
+                        <select id="role" name="role" class="form-control-modern">
+                            <option value="">Tous les rôles</option>
+                            @foreach (var r in allRoles)
+                            {
+                                <option value="@((int)r)" selected="@(selectedRole == r)">@GetRoleLabel(r)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label-modern" for="pageSize">Lignes / page</label>
+                        <select id="pageSize" name="pageSize" class="form-control-modern">
+                            @foreach (var ps in new[] { 5, 10, 15, 20, 25, 50 })
+                            {
+                                <option value="@ps" selected="@(pageSize == ps)">@ps par page</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn-modern btn-modern-primary flex-fill">
+                            <i class="bi bi-search"></i> Filtrer
+                        </button>
+                        @if (filtreActif)
+                        {
+                            <a asp-action="Users" class="btn-modern btn-modern-secondary" title="Effacer les filtres">
+                                <i class="bi bi-x-circle"></i>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card-modern">
+        <div class="card-header-modern">
+            <div class="page-toolbar w-100">
+                <div>
+                    <h3 class="card-title-modern mb-1">
+                        <i class="bi bi-people"></i>
+                        Référentiel des utilisateurs
+                    </h3>
+                    <p class="soft-note mb-0">Vue synthétique des comptes, rôles et dernières connexions.</p>
+                </div>
+                <span class="badge-modern badge-modern-info">@totalCount entrée(s)</span>
+            </div>
+        </div>
+        @if (Model.Any())
+        {
+            <div class="card-body-modern p-0">
+                <div class="table-responsive">
+                    <table class="table-modern">
+                        <thead>
+                            <tr>
+                                <th>Utilisateur</th>
+                                <th>Contact</th>
+                                <th>Direction</th>
+                                <th>Rôles</th>
+                                <th>Dernière connexion</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var user in Model)
+                            {
+                                var rolesActifs = user.GetRolesActifs().ToList();
+                                <tr>
+                                    <td>
+                                        <div class="table-person">
+                                            <span class="table-avatar @GetAvatarTone(rolesActifs)">@GetInitiales(user.Nom, user.Prenoms)</span>
+                                            <div class="table-person-main">
+                                                <div class="table-person-title">@user.Nom @user.Prenoms</div>
+                                                <div class="table-person-subtitle">
+                                                    <span class="table-code">@user.Matricule</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="table-inline-stack column">
+                                            <a href="mailto:@user.Email" class="text-decoration-none">@user.Email</a>
+                                            @if (user.PeutCreerDemandeProjet)
+                                            {
+                                                <span class="soft-note">Peut créer des demandes de projet</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="soft-note">Création de demande désactivée</span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (user.Direction != null)
+                                        {
+                                            <span class="badge-modern badge-modern-secondary">@user.Direction.Libelle</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="soft-note">Non assignée</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            @if (rolesActifs.Any())
+                                            {
+                                                @foreach (var role in rolesActifs)
+                                                {
+                                                    <span class="badge-modern @GetRoleBadgeClass(role)">
+                                                        <i class="bi @GetRoleIcon(role)"></i>
+                                                        @GetRoleLabel(role)
+                                                    </span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="soft-note">Aucun rôle actif</span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (user.DateDerniereConnexion.HasValue)
+                                        {
+                                            <div class="table-inline-stack column">
+                                                <span>@user.DateDerniereConnexion.Value.ToString("dd/MM/yyyy")</span>
+                                                <span class="soft-note">@user.DateDerniereConnexion.Value.ToString("HH:mm")</span>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="soft-note">Jamais connecté</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="table-actions justify-content-center">
+                                            <button type="button"
+                                                    class="btn-modern btn-modern-gold btn-icon btn-edit-user"
+                                                    data-id="@user.Id"
+                                                    title="Modifier l'utilisateur"
+                                                    aria-label="Modifier l'utilisateur">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                            <a asp-action="GererRoles"
+                                               asp-route-id="@user.Id"
+                                               class="btn-modern btn-modern-primary btn-icon"
+                                               title="Gérer les rôles"
+                                               aria-label="Gérer les rôles">
+                                                <i class="bi bi-shield-check"></i>
+                                            </a>
+                                            <form asp-action="DeleteUser"
+                                                  asp-route-id="@user.Id"
+                                                  method="post"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('Êtes-vous sûr de vouloir désactiver cet utilisateur ?');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit"
+                                                        class="btn-modern btn-modern-danger btn-icon"
+                                                        title="Désactiver l'utilisateur"
+                                                        aria-label="Désactiver l'utilisateur">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                            <button type="button"
+                                                    class="btn-modern btn-modern-secondary btn-icon"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#resetPasswordModal"
+                                                    data-user-id="@user.Id"
+                                                    data-user-name="@user.Nom @user.Prenoms"
+                                                    title="Réinitialiser le mot de passe"
+                                                    aria-label="Réinitialiser le mot de passe">
+                                                <i class="bi bi-key"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-body-modern pt-0">
+                @await Html.PartialAsync("_Pagination")
+            </div>
+        }
+        else
+        {
+            <div class="card-body-modern empty-state-soft">
+                <i class="bi bi-inbox"></i>
+                <p>Aucun utilisateur trouvé.</p>
+                <button type="button"
+                        class="btn-modern btn-modern-primary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#createUserModal"
+                        onclick="resetForm()">
+                    <i class="bi bi-plus-circle"></i>
+                    Créer le premier utilisateur
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content admin-modal-content">
+            <form id="userForm" method="post" action="@Url.Action("CreateUser")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="userId" value="" />
+                <input type="hidden" name="Roles" id="rolesHidden" value="1" />
+
+                <div class="modal-header admin-modal-header">
+                    <h5 class="modal-title" id="createUserModalLabel">
+                        <i class="bi bi-person-plus"></i>
+                        <span id="modalTitle">Nouvel utilisateur</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body admin-modal-body">
+                    <div class="stack-sections">
+                        <div class="admin-form-section">
+                            <h6 class="admin-form-section-title">
+                                <i class="bi bi-person-vcard"></i>
+                                Informations personnelles
+                            </h6>
+                            <div class="detail-grid">
+                                <div class="form-group-modern">
+                                    <label class="form-label-modern" for="matricule">Matricule *</label>
+                                    <input type="text" name="Matricule" id="matricule" class="form-control-modern" required maxlength="50" placeholder="Ex : MAT001" />
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="Matricule" data-valmsg-replace="true"></span>
+                                </div>
+                                <div class="form-group-modern">
+                                    <label class="form-label-modern" for="email">Email *</label>
+                                    <input type="email" name="Email" id="email" class="form-control-modern" required maxlength="200" placeholder="prenom.nom@entreprise.ci" />
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="Email" data-valmsg-replace="true"></span>
+                                </div>
+                                <div class="form-group-modern">
+                                    <label class="form-label-modern" for="nom">Nom *</label>
+                                    <input type="text" name="Nom" id="nom" class="form-control-modern" required maxlength="100" />
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="Nom" data-valmsg-replace="true"></span>
+                                </div>
+                                <div class="form-group-modern">
+                                    <label class="form-label-modern" for="prenoms">Prénoms *</label>
+                                    <input type="text" name="Prenoms" id="prenoms" class="form-control-modern" required maxlength="100" />
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="Prenoms" data-valmsg-replace="true"></span>
+                                </div>
+                                <div class="form-group-modern">
+                                    <label class="form-label-modern" for="directionId">Direction</label>
+                                    <select name="DirectionId" id="directionId" class="form-control-modern">
+                                        <option value="">-- Sélectionner une direction --</option>
+                                        @foreach (var dir in directions)
+                                        {
+                                            <option value="@dir.Id">@dir.Libelle</option>
+                                        }
+                                    </select>
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="DirectionId" data-valmsg-replace="true"></span>
+                                </div>
+                                <div class="form-group-modern">
+                                    <label class="form-label-modern" for="capaciteHebdomadaire">Capacité hebdomadaire (heures)</label>
+                                    <input type="number" name="CapaciteHebdomadaire" id="capaciteHebdomadaire" class="form-control-modern" min="1" max="168" step="0.5" placeholder="40" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="admin-form-section">
+                            <h6 class="admin-form-section-title">
+                                <i class="bi bi-shield-lock"></i>
+                                Sécurité
+                            </h6>
+                            <div id="passwordFieldsContainer" class="detail-grid">
+                                <div id="passwordField"></div>
+                                <div id="confirmPasswordField"></div>
+                            </div>
+                        </div>
+
+                        <div class="admin-form-section">
+                            <h6 class="admin-form-section-title">
+                                <i class="bi bi-people-fill"></i>
+                                Rôles et périmètre
+                            </h6>
+                            <div class="admin-inline-note">
+                                <i class="bi bi-info-circle"></i>
+                                <div>
+                                    L'admin peut affecter plusieurs rôles dès la création du compte. Le rôle <strong>Admin IT</strong> est exclusif : s'il est sélectionné, tous les autres sont retirés automatiquement.
+                                </div>
+                            </div>
+                            <div class="admin-role-grid mt-3">
+                                @foreach (var role in allRoles)
+                                {
+                                    <label class="admin-role-card">
+                                        <input type="checkbox" class="form-check-input role-checkbox" value="@((int)role)" @(role == RoleUtilisateur.Demandeur ? "checked" : null) />
+                                        <span>
+                                            <strong class="d-block">@GetRoleLabel(role)</strong>
+                                            <small class="d-block text-muted">@GetRoleDescription(role)</small>
+                                        </span>
+                                    </label>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="detail-grid">
+                            <div class="admin-form-section">
+                                <h6 class="admin-form-section-title">
+                                    <i class="bi bi-sliders"></i>
+                                    Permissions
+                                </h6>
+                                <div class="admin-permission-card">
+                                    <input type="checkbox" name="PeutCreerDemandeProjet" id="peutCreerDemandeProjet" value="true" class="form-check-input" checked />
+                                    <input type="hidden" name="PeutCreerDemandeProjet" value="false" />
+                                    <label class="form-check-label m-0" for="peutCreerDemandeProjet">
+                                        <strong>Peut créer des demandes de projet</strong>
+                                        <small class="d-block text-muted">Désactivez cette option pour les comptes purement administratifs ou techniques.</small>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="admin-form-section">
+                                <h6 class="admin-form-section-title">
+                                    <i class="bi bi-person-gear"></i>
+                                    Profil ressource
+                                </h6>
+                                <div class="form-group-modern mb-0">
+                                    <label class="form-label-modern" for="profilRessource">Profil / compétence</label>
+                                    <select name="ProfilRessource" id="profilRessource" class="form-control-modern">
+                                        <option value="">-- Non défini --</option>
+                                        <option value="1">Développement</option>
+                                        <option value="2">Infrastructure</option>
+                                        <option value="3">Support</option>
+                                        <option value="4">DBA</option>
+                                        <option value="5">Chef de Projet</option>
+                                        <option value="6">Architecte</option>
+                                        <option value="7">Analyste</option>
+                                        <option value="99">Autre</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer admin-modal-footer">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-check-circle"></i>
+                        <span id="submitBtnText">Enregistrer</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content admin-modal-content">
+            <form asp-action="ResetPassword" method="post" id="resetPasswordForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="resetPasswordUserId" value="" />
+                <div class="modal-header admin-modal-header warning">
+                    <h5 class="modal-title">
+                        <i class="bi bi-key-fill"></i>
+                        Réinitialiser le mot de passe
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body admin-modal-body">
+                    <div class="admin-inline-note warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <div>
+                            Nouveau mot de passe pour <strong id="resetPasswordUserName"></strong>.
+                        </div>
+                    </div>
+                    <div class="form-group-modern mt-3">
+                        <label class="form-label-modern" for="nouveauMotDePasse">Nouveau mot de passe *</label>
+                        <input type="password" name="nouveauMotDePasse" id="nouveauMotDePasse" class="form-control-modern" required minlength="12" />
+                        <small class="text-muted">Minimum 12 caractères, avec au moins une majuscule et un chiffre.</small>
+                    </div>
+                </div>
+                <div class="modal-footer admin-modal-footer">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-warning">
+                        <i class="bi bi-key"></i>
+                        Réinitialiser
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function updateRolesHidden() {
+            const hiddenField = document.getElementById('rolesHidden');
+            if (!hiddenField) {
+                return;
+            }
+
+            const checkedRoles = Array.from(document.querySelectorAll('.role-checkbox:checked'))
+                .map(checkbox => checkbox.value)
+                .filter(Boolean)
+                .join(',');
+
+            hiddenField.value = checkedRoles;
+        }
+
+        const ADMIN_ROLE_VALUE = '@((int)RoleUtilisateur.AdminIT)';
+
+        function applyAdminExclusivity(changedCheckbox) {
+            const adminCheckbox = document.querySelector(`.role-checkbox[value="${ADMIN_ROLE_VALUE}"]`);
+            if (!adminCheckbox) return;
+
+            if (changedCheckbox.value === ADMIN_ROLE_VALUE && changedCheckbox.checked) {
+                // AdminIT coché → décocher et désactiver tous les autres
+                document.querySelectorAll('.role-checkbox').forEach(cb => {
+                    if (cb.value !== ADMIN_ROLE_VALUE) {
+                        cb.checked = false;
+                        cb.disabled = true;
+                        cb.closest('label')?.classList.add('is-disabled');
+                    }
+                });
+            } else if (changedCheckbox.value === ADMIN_ROLE_VALUE && !changedCheckbox.checked) {
+                // AdminIT décoché → réactiver tous les autres
+                document.querySelectorAll('.role-checkbox').forEach(cb => {
+                    if (cb.value !== ADMIN_ROLE_VALUE) {
+                        cb.disabled = false;
+                        cb.closest('label')?.classList.remove('is-disabled');
+                    }
+                });
+            } else if (adminCheckbox.checked) {
+                // Un autre rôle coché alors qu'AdminIT est actif → bloquer
+                changedCheckbox.checked = false;
+            }
+        }
+
+        function initAdminExclusivityState() {
+            const adminCheckbox = document.querySelector(`.role-checkbox[value="${ADMIN_ROLE_VALUE}"]`);
+            if (adminCheckbox && adminCheckbox.checked) {
+                document.querySelectorAll('.role-checkbox').forEach(cb => {
+                    if (cb.value !== ADMIN_ROLE_VALUE) {
+                        cb.disabled = true;
+                        cb.closest('label')?.classList.add('is-disabled');
+                    }
+                });
+            } else {
+                document.querySelectorAll('.role-checkbox').forEach(cb => {
+                    cb.disabled = false;
+                    cb.closest('label')?.classList.remove('is-disabled');
+                });
+            }
+        }
+
+        function setSelectedRoles(roleIds) {
+            const normalizedRoles = (roleIds || []).map(roleId => String(roleId));
+
+            document.querySelectorAll('.role-checkbox').forEach(checkbox => {
+                checkbox.checked = normalizedRoles.includes(checkbox.value);
+                checkbox.disabled = false;
+                checkbox.closest('label')?.classList.remove('is-disabled');
+            });
+
+            if (!document.querySelector('.role-checkbox:checked')) {
+                const demandeurCheckbox = document.querySelector('.role-checkbox[value="1"]');
+                if (demandeurCheckbox) {
+                    demandeurCheckbox.checked = true;
+                }
+            }
+
+            initAdminExclusivityState();
+            updateRolesHidden();
+        }
+
+        function generateRandomPassword() {
+            const length = 12;
+            const specialChars = "!@@#$%^&*";
+            const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' + specialChars;
+            let password = "";
+
+            password += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[Math.floor(Math.random() * 26)];
+            password += "abcdefghijklmnopqrstuvwxyz"[Math.floor(Math.random() * 26)];
+            password += "0123456789"[Math.floor(Math.random() * 10)];
+            password += specialChars[Math.floor(Math.random() * specialChars.length)];
+
+            for (let i = password.length; i < length; i++) {
+                password += charset[Math.floor(Math.random() * charset.length)];
+            }
+
+            return password.split('').sort(() => Math.random() - 0.5).join('');
+        }
+
+        function validatePasswordMatch() {
+            const createPassword = document.getElementById('motDePasse');
+            const createConfirm = document.getElementById('confirmMotDePasse');
+            const editPassword = document.getElementById('nouveauMotDePasseEdition');
+            const editConfirm = document.getElementById('confirmNouveauMotDePasse');
+
+            if (createPassword && createConfirm) {
+                if (createConfirm.value.length > 0 && createPassword.value !== createConfirm.value) {
+                    createConfirm.setCustomValidity('Les mots de passe ne correspondent pas');
+                    createConfirm.classList.add('is-invalid');
+                } else {
+                    createConfirm.setCustomValidity('');
+                    createConfirm.classList.remove('is-invalid');
+                }
+            }
+
+            if (editPassword && editConfirm) {
+                if (editConfirm.value.length > 0 && editPassword.value !== editConfirm.value) {
+                    editConfirm.setCustomValidity('Les mots de passe ne correspondent pas');
+                    editConfirm.classList.add('is-invalid');
+                } else {
+                    editConfirm.setCustomValidity('');
+                    editConfirm.classList.remove('is-invalid');
+                }
+            }
+        }
+
+        function bindPasswordValidation() {
+            document.getElementById('motDePasse')?.addEventListener('input', validatePasswordMatch);
+            document.getElementById('confirmMotDePasse')?.addEventListener('input', validatePasswordMatch);
+            document.getElementById('nouveauMotDePasseEdition')?.addEventListener('input', validatePasswordMatch);
+            document.getElementById('confirmNouveauMotDePasse')?.addEventListener('input', validatePasswordMatch);
+        }
+
+        function bindGeneratePasswordButton() {
+            const generateButton = document.getElementById('generatePasswordBtn');
+            if (!generateButton) {
+                return;
+            }
+
+            generateButton.addEventListener('click', function () {
+                const passwordField = document.getElementById('motDePasse');
+                const confirmField = document.getElementById('confirmMotDePasse');
+
+                if (!passwordField || !confirmField) {
+                    return;
+                }
+
+                const generatedPassword = generateRandomPassword();
+                passwordField.value = generatedPassword;
+                confirmField.value = generatedPassword;
+                validatePasswordMatch();
+            });
+        }
+
+        function renderCreatePasswordFields() {
+            const passwordField = document.getElementById('passwordField');
+            const confirmPasswordField = document.getElementById('confirmPasswordField');
+
+            passwordField.innerHTML = `
+                <div class="form-group-modern">
+                    <label class="form-label-modern" for="motDePasse">Mot de passe *</label>
+                    <div class="input-group">
+                        <input type="password" name="motDePasse" id="motDePasse" class="form-control-modern" required minlength="12" placeholder="Minimum 12 caractères" />
+                        <button type="button" class="btn-modern btn-modern-secondary" id="generatePasswordBtn" title="Générer un mot de passe" aria-label="Générer un mot de passe">
+                            <i class="bi bi-shuffle"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted">Minimum 12 caractères, avec au moins une majuscule et un chiffre.</small>
+                    <span class="text-danger field-validation-valid" data-valmsg-for="motDePasse" data-valmsg-replace="true"></span>
+                </div>
+            `;
+
+            confirmPasswordField.innerHTML = `
+                <div class="form-group-modern">
+                    <label class="form-label-modern" for="confirmMotDePasse">Confirmer le mot de passe *</label>
+                    <input type="password" name="confirmMotDePasse" id="confirmMotDePasse" class="form-control-modern" required minlength="12" placeholder="Répétez le mot de passe" />
+                    <small class="text-muted">Les deux champs doivent correspondre.</small>
+                    <span class="text-danger field-validation-valid" data-valmsg-for="confirmMotDePasse" data-valmsg-replace="true"></span>
+                </div>
+            `;
+
+            bindPasswordValidation();
+            bindGeneratePasswordButton();
+        }
+
+        function renderEditPasswordFields() {
+            const passwordField = document.getElementById('passwordField');
+            const confirmPasswordField = document.getElementById('confirmPasswordField');
+
+            passwordField.innerHTML = `
+                <div class="form-group-modern">
+                    <label class="form-label-modern" for="nouveauMotDePasseEdition">Nouveau mot de passe</label>
+                    <input type="password" name="nouveauMotDePasse" id="nouveauMotDePasseEdition" class="form-control-modern" minlength="12" placeholder="Laisser vide pour conserver l'actuel" />
+                    <small class="text-muted">Minimum 12 caractères, avec au moins une majuscule et un chiffre.</small>
+                    <span class="text-danger field-validation-valid" data-valmsg-for="nouveauMotDePasse" data-valmsg-replace="true"></span>
+                </div>
+            `;
+
+            confirmPasswordField.innerHTML = `
+                <div class="form-group-modern">
+                    <label class="form-label-modern" for="confirmNouveauMotDePasse">Confirmer le nouveau mot de passe</label>
+                    <input type="password" name="confirmNouveauMotDePasse" id="confirmNouveauMotDePasse" class="form-control-modern" minlength="12" placeholder="Répétez le nouveau mot de passe" />
+                    <small class="text-muted">Renseignez la confirmation uniquement si vous changez le mot de passe.</small>
+                    <span class="text-danger field-validation-valid" data-valmsg-for="confirmNouveauMotDePasse" data-valmsg-replace="true"></span>
+                </div>
+            `;
+
+            bindPasswordValidation();
+        }
+
+        function resetForm() {
+            document.getElementById('userForm').reset();
+            document.getElementById('userId').value = '';
+            document.getElementById('userForm').action = '@Url.Action("CreateUser")';
+            document.getElementById('modalTitle').textContent = 'Nouvel utilisateur';
+            document.getElementById('submitBtnText').textContent = 'Enregistrer';
+            document.getElementById('profilRessource').value = '';
+            setSelectedRoles([1]);
+            renderCreatePasswordFields();
+        }
+
+        async function editUser(userId) {
+            try {
+                const modal = new bootstrap.Modal(document.getElementById('createUserModal'));
+                modal.show();
+
+                document.getElementById('modalTitle').textContent = 'Modifier l\'utilisateur';
+                document.getElementById('submitBtnText').textContent = 'Mettre à jour';
+                document.getElementById('userId').value = userId;
+                document.getElementById('userForm').action = '@Url.Action("UpdateUser")';
+
+                const response = await fetch('@Url.Action("GetUser")?id=' + userId);
+                if (!response.ok) {
+                    throw new Error('Erreur lors du chargement des données');
+                }
+
+                const user = await response.json();
+
+                document.getElementById('matricule').value = user.matricule || '';
+                document.getElementById('nom').value = user.nom || '';
+                document.getElementById('prenoms').value = user.prenoms || '';
+                document.getElementById('email').value = user.email || '';
+                document.getElementById('directionId').value = user.directionId || '';
+                document.getElementById('peutCreerDemandeProjet').checked = user.peutCreerDemandeProjet !== undefined ? user.peutCreerDemandeProjet : true;
+                document.getElementById('profilRessource').value = user.profilRessource !== undefined && user.profilRessource !== null ? user.profilRessource : '';
+                document.getElementById('capaciteHebdomadaire').value = user.capaciteHebdomadaire || '';
+                setSelectedRoles(Array.isArray(user.roles) && user.roles.length ? user.roles : [1]);
+
+                renderEditPasswordFields();
+            } catch (error) {
+                console.error(error);
+                alert('Erreur lors du chargement des données de l\'utilisateur.');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.role-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    applyAdminExclusivity(this);
+                    updateRolesHidden();
+                });
+            });
+
+            document.querySelectorAll('.btn-edit-user').forEach(button => {
+                button.addEventListener('click', function () {
+                    editUser(this.getAttribute('data-id'));
+                });
+            });
+
+            setSelectedRoles([1]);
+            renderCreatePasswordFields();
+
+            const resetPasswordModal = document.getElementById('resetPasswordModal');
+            if (resetPasswordModal) {
+                resetPasswordModal.addEventListener('show.bs.modal', function (event) {
+                    const button = event.relatedTarget;
+                    if (!button) {
+                        return;
+                    }
+
+                    document.getElementById('resetPasswordUserId').value = button.getAttribute('data-user-id');
+                    document.getElementById('resetPasswordUserName').textContent = button.getAttribute('data-user-name');
+                    document.getElementById('nouveauMotDePasse').value = '';
+                });
+            }
+
+            document.getElementById('createUserModal')?.addEventListener('hidden.bs.modal', function () {
+                resetForm();
+            });
+
+            document.getElementById('userForm')?.addEventListener('submit', function () {
+                updateRolesHidden();
+                const rolesHidden = document.getElementById('rolesHidden');
+                if (rolesHidden && (!rolesHidden.value || rolesHidden.value.trim() === '')) {
+                    rolesHidden.value = '1';
+                }
+
+                if (!this.action.includes('UpdateUser')) {
+                    this.action = '@Url.Action("CreateUser")';
+                }
+            });
+        });
+    </script>
+}
+
+@functions {
+    private static string GetInitiales(string? nom, string? prenoms)
+    {
+        var initialNom = string.IsNullOrWhiteSpace(nom) ? "?" : nom.Trim()[0].ToString().ToUpperInvariant();
+        var initialPrenom = string.IsNullOrWhiteSpace(prenoms) ? string.Empty : prenoms.Trim()[0].ToString().ToUpperInvariant();
+        return $"{initialNom}{initialPrenom}";
+    }
+
+    private static string GetAvatarTone(IReadOnlyCollection<RoleUtilisateur> roles)
+    {
+        if (roles.Contains(RoleUtilisateur.AdminIT))
+        {
+            return "navy";
+        }
+
+        if (roles.Contains(RoleUtilisateur.DSI))
+        {
+            return "gold";
+        }
+
+        return "primary";
+    }
+
+    private static string GetRoleBadgeClass(RoleUtilisateur role) => role switch
+    {
+        RoleUtilisateur.AdminIT => "badge-modern-dark",
+        RoleUtilisateur.DSI => "badge-modern-danger",
+        RoleUtilisateur.DirecteurMetier => "badge-modern-warning",
+        RoleUtilisateur.ResponsableSolutionsIT => "badge-modern-secondary",
+        RoleUtilisateur.ChefDeProjet => "badge-modern-info",
+        _ => "badge-modern-primary"
+    };
+
+    private static string GetRoleIcon(RoleUtilisateur role) => role switch
+    {
+        RoleUtilisateur.AdminIT => "bi-gear-fill",
+        RoleUtilisateur.DSI => "bi-shield-fill",
+        RoleUtilisateur.DirecteurMetier => "bi-person-badge",
+        RoleUtilisateur.ResponsableSolutionsIT => "bi-person-workspace",
+        RoleUtilisateur.ChefDeProjet => "bi-briefcase",
+        _ => "bi-person"
+    };
+
+    private static string GetRoleLabel(RoleUtilisateur role) => role switch
+    {
+        RoleUtilisateur.DirecteurMetier => "Directeur métier",
+        RoleUtilisateur.ResponsableSolutionsIT => "Resp. Solutions IT",
+        RoleUtilisateur.ChefDeProjet => "Chef de projet",
+        RoleUtilisateur.AdminIT => "Admin IT",
+        _ => role.ToString()
+    };
+
+    private static string GetRoleDescription(RoleUtilisateur role) => role switch
+    {
+        RoleUtilisateur.Demandeur => "Soumission et suivi des demandes.",
+        RoleUtilisateur.DirecteurMetier => "Validation métier et sponsor de projet.",
+        RoleUtilisateur.DSI => "Pilotage DSI et arbitrage global.",
+        RoleUtilisateur.ResponsableSolutionsIT => "Appui technique et délégation DSI.",
+        RoleUtilisateur.ChefDeProjet => "Pilotage opérationnel des phases.",
+        RoleUtilisateur.AdminIT => "Administration complète de l'application.",
+        _ => string.Empty
+    };
+}

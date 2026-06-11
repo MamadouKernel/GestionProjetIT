@@ -1,0 +1,468 @@
+@using System.Globalization
+@using GestionProjects.Domain.Enums
+@model GestionProjects.Application.ViewModels.ProjetChargesViewModel
+
+@{
+    ViewData["Title"] = $"Charges - {Model.CodeProjet}";
+    var fr = CultureInfo.GetCultureInfo("fr-FR");
+}
+
+<div class="fade-in project-charges-shell">
+    <section class="page-hero">
+        <div class="page-hero-main">
+            <span class="page-kicker">
+                <i class="bi bi-clock-history"></i>
+                Charges & capacité
+            </span>
+            <h1 class="page-hero-title">@Model.CodeProjet · @Model.Titre</h1>
+            <p class="page-hero-subtitle">
+                Saisie hebdomadaire des charges, suivi prévu vs réel, détail des activités et validation par le chef de projet.
+            </p>
+            <div class="project-charge-meta">
+                <span class="role-chip"><i class="bi bi-diagram-3"></i> @Model.Phase</span>
+                <span class="role-chip"><i class="bi bi-kanban"></i> @Model.Statut</span>
+                <span class="role-chip"><i class="bi bi-building"></i> @Model.Direction</span>
+                <span class="role-chip"><i class="bi bi-person-badge"></i> CP: @Model.ChefProjet</span>
+            </div>
+        </div>
+        <div class="project-charge-actions">
+            <a asp-action="Details" asp-route-id="@Model.ProjetId" class="btn-modern btn-modern-secondary">
+                <i class="bi bi-arrow-left"></i>
+                Retour au projet
+            </a>
+            @if (Model.CanExport)
+            {
+                <a asp-action="ExportChargesCsv" asp-route-id="@Model.ProjetId" class="btn-modern btn-modern-primary">
+                    <i class="bi bi-download"></i>
+                    Export Excel (CSV)
+                </a>
+            }
+        </div>
+    </section>
+
+    <div class="admin-dashboard-grid admin-dashboard-grid-middle">
+        <article class="admin-metric-panel">
+            <div class="admin-metric-panel-title">Informations projet</div>
+            <div class="charge-summary-list">
+                <div><span>Sponsor</span><strong>@Model.Sponsor</strong></div>
+                <div><span>Avancement</span><strong>@Model.Avancement%</strong></div>
+                <div><span>État projet</span><strong>@Model.Etat</strong></div>
+                <div><span>Prochain jalon</span><strong>@Model.ProchainJalon</strong></div>
+            </div>
+        </article>
+
+        <article class="admin-metric-panel">
+            <div class="admin-metric-panel-title">KPI charges</div>
+            <div class="admin-mini-kpi-grid">
+                <div class="admin-mini-kpi">
+                    <span class="admin-mini-kpi-label">Charge prévisionnelle totale</span>
+                    <strong class="admin-mini-kpi-value">@Model.ChargePrevisionnelleTotale.ToString("N1", fr) h</strong>
+                    <span class="admin-mini-kpi-trend">planifiée</span>
+                </div>
+                <div class="admin-mini-kpi">
+                    <span class="admin-mini-kpi-label">Charge réelle totale</span>
+                    <strong class="admin-mini-kpi-value">@Model.ChargeReelleTotale.ToString("N1", fr) h</strong>
+                    <span class="admin-mini-kpi-trend">consommée</span>
+                </div>
+                <div class="admin-mini-kpi">
+                    <span class="admin-mini-kpi-label">Écart charge</span>
+                    <strong class="admin-mini-kpi-value @(Model.ChargeEcartTotale > 0 ? "text-danger" : "text-success")">@Model.ChargeEcartTotale.ToString("N1", fr) h</strong>
+                    <span class="admin-mini-kpi-trend">@Model.TauxConsommation.ToString("N1", fr)% consommé</span>
+                </div>
+            </div>
+        </article>
+
+        <article class="admin-metric-panel">
+            <div class="admin-metric-panel-title">Capacité & validation</div>
+            <div class="admin-mini-kpi-grid">
+                <div class="admin-mini-kpi">
+                    <span class="admin-mini-kpi-label">Capacité totale</span>
+                    <strong class="admin-mini-kpi-value">@Model.CapaciteTotale.ToString("N1", fr) h</strong>
+                    <span class="admin-mini-kpi-trend">@Model.NombreRessources ressource(s)</span>
+                </div>
+                <div class="admin-mini-kpi">
+                    <span class="admin-mini-kpi-label">Taux capacité utilisé</span>
+                    <strong class="admin-mini-kpi-value">@Model.TauxCapaciteUtilise.ToString("N1", fr)%</strong>
+                    <span class="admin-mini-kpi-trend">@Model.RessourcesSurchargees surcharge(s)</span>
+                </div>
+                <div class="admin-mini-kpi">
+                    <span class="admin-mini-kpi-label">Charges à valider</span>
+                    <strong class="admin-mini-kpi-value">@Model.ChargesEnAttenteValidation</strong>
+                    <span class="admin-mini-kpi-trend">workflow hebdomadaire</span>
+                </div>
+            </div>
+        </article>
+    </div>
+
+    @if (Model.Alerts.Any())
+    {
+        <div class="charge-alerts-grid">
+            @foreach (var alert in Model.Alerts)
+            {
+                <div class="admin-alert-item @alert.Level">
+                    <i class="@alert.IconClass"></i>
+                    <span class="admin-alert-main">
+                        <strong>@alert.Message</strong>
+                    </span>
+                </div>
+            }
+        </div>
+    }
+
+    <article class="card-modern">
+        <div class="card-header-modern">
+            <h3 class="card-title-modern chart-card-title"><i class="bi bi-table"></i> Saisie hebdomadaire des charges</h3>
+            <span class="soft-note">Prévu, réel, allocation, type d'activité, commentaire et validation hebdomadaire.</span>
+        </div>
+        <div class="card-body-modern p-0">
+            <form id="chargeAntiForgeryForm" method="post">
+                @Html.AntiForgeryToken()
+            </form>
+
+            @if (!Model.Resources.Any())
+            {
+                <div class="empty-state-modern">
+                    <i class="bi bi-people"></i>
+                    <p>Aucune ressource n'est encore reliée à ce projet.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-modern charge-matrix-table">
+                        <thead>
+                            <tr>
+                                <th>Ressource</th>
+                                <th>Capacité</th>
+                                @foreach (var week in Model.Weeks)
+                                {
+                                    <th class="text-center @(week.IsCurrent ? "charge-week-current" : string.Empty)">
+                                        <div>@week.Label</div>
+                                        <small>@week.Subtitle</small>
+                                    </th>
+                                }
+                                <th>Total</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in Model.Resources)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="admin-table-strong">@row.FullName</div>
+                                        <div class="soft-note">@row.Email</div>
+                                        <span class="badge-modern badge-modern-info">@row.RoleLabel</span>
+                                    </td>
+                                    <td>
+                                        <div class="admin-table-strong">@row.WeeklyCapacity.ToString("N1", fr) h</div>
+                                        <div class="soft-note">@row.CapacityTotal.ToString("N1", fr) h sur la période</div>
+                                    </td>
+                                    @foreach (var cell in row.Cells)
+                                    {
+                                        var week = Model.Weeks.First(w => w.StartDate == cell.WeekStart);
+                                        <td class="charge-cell-column">
+                                            <div class="charge-cell-card @(week.IsCurrent ? "current" : string.Empty)">
+                                                <label class="charge-input-label">Prévu</label>
+                                                <input type="number"
+                                                       class="form-control-modern charge-input"
+                                                       step="0.5"
+                                                       min="0"
+                                                       value="@cell.PlannedHours.ToString("F1", CultureInfo.InvariantCulture)"
+                                                       data-projet-id="@Model.ProjetId"
+                                                       data-ressource-id="@row.ResourceId"
+                                                       data-semaine="@cell.WeekStart.ToString("yyyy-MM-dd")"
+                                                       data-field="planned"
+                                                       @(cell.CanEditForecast ? null : "disabled") />
+
+                                                <label class="charge-input-label">Réel</label>
+                                                <input type="number"
+                                                       class="form-control-modern charge-input"
+                                                       step="0.5"
+                                                       min="0"
+                                                       value="@(cell.ActualHours?.ToString("F1", CultureInfo.InvariantCulture) ?? string.Empty)"
+                                                       data-projet-id="@Model.ProjetId"
+                                                       data-ressource-id="@row.ResourceId"
+                                                       data-semaine="@cell.WeekStart.ToString("yyyy-MM-dd")"
+                                                       data-field="actual"
+                                                       @(cell.CanEditActual ? null : "disabled") />
+
+                                                <label class="charge-input-label">Type activité</label>
+                                                <input type="text"
+                                                       class="form-control-modern charge-meta-input"
+                                                       value="@cell.TypeActivite"
+                                                       data-projet-id="@Model.ProjetId"
+                                                       data-ressource-id="@row.ResourceId"
+                                                       data-semaine="@cell.WeekStart.ToString("yyyy-MM-dd")"
+                                                       data-field="typeActivite"
+                                                       @(cell.CanEditActual ? null : "disabled") />
+
+                                                <label class="charge-input-label">Activité</label>
+                                                <textarea class="form-control-modern charge-meta-input"
+                                                          rows="2"
+                                                          data-projet-id="@Model.ProjetId"
+                                                          data-ressource-id="@row.ResourceId"
+                                                          data-semaine="@cell.WeekStart.ToString("yyyy-MM-dd")"
+                                                          data-field="activite"
+                                                          @(cell.CanEditActual ? null : "disabled")>@cell.Activite</textarea>
+
+                                                <label class="charge-input-label">Commentaire</label>
+                                                <textarea class="form-control-modern charge-comment-input"
+                                                          rows="2"
+                                                          data-projet-id="@Model.ProjetId"
+                                                          data-ressource-id="@row.ResourceId"
+                                                          data-semaine="@cell.WeekStart.ToString("yyyy-MM-dd")"
+                                                          data-field="comment"
+                                                          @(cell.CanEditActual ? null : "disabled")>@cell.Comment</textarea>
+
+                                                <div class="charge-cell-meta">
+                                                    <span class="badge-modern @cell.CapacityStatusClass">@cell.CapacityStatus</span>
+                                                    <span class="soft-note">Allocation @cell.AllocationPercentage.ToString("N1", fr)%</span>
+                                                    <span class="soft-note">Écart @cell.VarianceHours.ToString("N1", fr) h</span>
+                                                </div>
+                                                <div class="charge-cell-meta">
+                                                    <span class="badge-modern @cell.ValidationStatusClass">@cell.ValidationStatusLabel</span>
+                                                    @if (!string.IsNullOrWhiteSpace(cell.ValidationComment))
+                                                    {
+                                                        <span class="soft-note">@cell.ValidationComment</span>
+                                                    }
+                                                </div>
+
+                                                <div class="charge-action-row">
+                                                    @if (cell.CanSubmit)
+                                                    {
+                                                        <button type="button"
+                                                                class="btn-modern btn-modern-secondary charge-submit-btn"
+                                                                data-projet-id="@Model.ProjetId"
+                                                                data-ressource-id="@row.ResourceId"
+                                                                data-semaine="@cell.WeekStart.ToString("yyyy-MM-dd")">
+                                                            <i class="bi bi-send"></i>
+                                                        </button>
+                                                    }
+                                                    @if (cell.CanReview)
+                                                    {
+                                                        <button type="button"
+                                                                class="btn-modern btn-modern-success charge-review-btn"
+                                                                data-projet-id="@Model.ProjetId"
+                                                                data-ressource-id="@row.ResourceId"
+                                                                data-semaine="@cell.WeekStart.ToString("yyyy-MM-dd")"
+                                                                data-status="Validee">
+                                                            <i class="bi bi-check-circle"></i>
+                                                        </button>
+                                                        <button type="button"
+                                                                class="btn-modern btn-modern-info charge-review-btn"
+                                                                data-projet-id="@Model.ProjetId"
+                                                                data-ressource-id="@row.ResourceId"
+                                                                data-semaine="@cell.WeekStart.ToString("yyyy-MM-dd")"
+                                                                data-status="Commentee">
+                                                            <i class="bi bi-chat-left-text"></i>
+                                                        </button>
+                                                        <button type="button"
+                                                                class="btn-modern btn-modern-danger charge-review-btn"
+                                                                data-projet-id="@Model.ProjetId"
+                                                                data-ressource-id="@row.ResourceId"
+                                                                data-semaine="@cell.WeekStart.ToString("yyyy-MM-dd")"
+                                                                data-status="Rejetee">
+                                                            <i class="bi bi-x-circle"></i>
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </td>
+                                    }
+                                    <td>
+                                        <div class="admin-table-strong">Prév. @row.PlannedTotal.ToString("N1", fr) h</div>
+                                        <div class="soft-note">Réel @row.ActualTotal.ToString("N1", fr) h</div>
+                                        <div class="soft-note">Écart @row.VarianceTotal.ToString("N1", fr) h</div>
+                                    </td>
+                                    <td>
+                                        <div class="admin-table-strong">@row.UtilizationRate.ToString("N1", fr)%</div>
+                                        <span class="badge-modern @row.CapacityStatusClass">@row.CapacityStatus</span>
+                                        <div class="soft-note">Disponible @row.RemainingCapacity.ToString("N1", fr) h</div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </article>
+
+    <div class="admin-dashboard-grid admin-dashboard-grid-focus">
+        <article class="card-modern admin-focus-card">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern chart-card-title"><i class="bi bi-calendar-week"></i> Statut hebdomadaire</h3>
+            </div>
+            <div class="card-body-modern">
+                <div class="admin-list-stack">
+                    @foreach (var week in Model.WeeklySummaries)
+                    {
+                        <div class="admin-list-item">
+                            <span class="admin-list-date">@week.Label</span>
+                            <span class="admin-list-main">
+                                <strong>Prév. @week.PlannedTotal.ToString("N1", fr) h · Réel @week.ActualTotal.ToString("N1", fr) h</strong>
+                                <small>Capacité @week.CapacityTotal.ToString("N1", fr) h · @week.MissingEntries saisie(s) manquante(s) · @week.PendingValidations validation(s)</small>
+                            </span>
+                            <span class="badge-modern @week.StatusClass">@week.Status</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </article>
+
+        <article class="card-modern admin-focus-card">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern chart-card-title"><i class="bi bi-journal-text"></i> Activités saisies</h3>
+            </div>
+            <div class="card-body-modern">
+                @if (Model.Activities.Any())
+                {
+                    <div class="admin-list-stack">
+                        @foreach (var activity in Model.Activities)
+                        {
+                            <div class="admin-list-item">
+                                <span class="admin-list-date">@activity.DateLabel</span>
+                                <span class="admin-list-main">
+                                    <strong>@activity.Resource · @activity.Hours.ToString("N1", fr) h</strong>
+                                    <small>@activity.Phase · @activity.TypeActivite · @activity.Activite</small>
+                                    <small>@activity.Comment</small>
+                                </span>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state-modern">
+                        <i class="bi bi-chat-left-text"></i>
+                        <p>Aucune activité détaillée n'a encore été saisie.</p>
+                    </div>
+                }
+            </div>
+        </article>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function getChargePayload(element) {
+            const container = element.closest('.charge-cell-card');
+            return {
+                projetId: element.dataset.projetId,
+                ressourceId: element.dataset.ressourceId,
+                semaine: element.dataset.semaine,
+                planned: container.querySelector('[data-field="planned"]')?.value ?? '',
+                actual: container.querySelector('[data-field="actual"]')?.value ?? '',
+                typeActivite: container.querySelector('[data-field="typeActivite"]')?.value ?? '',
+                activite: container.querySelector('[data-field="activite"]')?.value ?? '',
+                comment: container.querySelector('[data-field="comment"]')?.value ?? ''
+            };
+        }
+
+        async function postForm(url, payload) {
+            const token = document.querySelector('#chargeAntiForgeryForm input[name="__RequestVerificationToken"]')?.value;
+            const body = new URLSearchParams();
+            body.append('__RequestVerificationToken', token ?? '');
+            Object.entries(payload).forEach(([key, value]) => body.append(key, value ?? ''));
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                body: body.toString()
+            });
+
+            if (!response.ok) {
+                throw new Error('Erreur serveur');
+            }
+
+            return response.json();
+        }
+
+        async function saveChargeEntry(element) {
+            const payload = getChargePayload(element);
+            const container = element.closest('.charge-cell-card');
+            container.classList.add('is-saving');
+
+            try {
+                await postForm('@Url.Action("SaisirCharge", "Projet")', {
+                    projetId: payload.projetId,
+                    ressourceId: payload.ressourceId,
+                    semaineDebut: payload.semaine,
+                    chargePrevisionnelle: payload.planned,
+                    chargeReelle: payload.actual,
+                    commentaire: payload.comment,
+                    typeActivite: payload.typeActivite,
+                    activite: payload.activite
+                });
+
+                container.classList.remove('is-saving');
+                container.classList.add('is-saved');
+                window.setTimeout(() => container.classList.remove('is-saved'), 1200);
+            } catch {
+                container.classList.remove('is-saving');
+                container.classList.add('is-error');
+                window.setTimeout(() => container.classList.remove('is-error'), 2000);
+            }
+        }
+
+        async function submitCharge(button) {
+            const container = button.closest('.charge-cell-card');
+            const payload = getChargePayload(button);
+
+            await saveChargeEntry(button);
+
+            try {
+                await postForm('@Url.Action("SoumettreCharge", "Projet")', {
+                    projetId: payload.projetId,
+                    ressourceId: payload.ressourceId,
+                    semaineDebut: payload.semaine
+                });
+                container.classList.add('is-saved');
+                window.location.reload();
+            } catch {
+                container.classList.add('is-error');
+            }
+        }
+
+        async function reviewCharge(button) {
+            const container = button.closest('.charge-cell-card');
+            const payload = getChargePayload(button);
+            const status = button.dataset.status;
+            const comment = window.prompt('Commentaire de validation / retour :', '');
+            if (comment === null && status !== 'Validee') {
+                return;
+            }
+
+            try {
+                await postForm('@Url.Action("MettreAJourValidationCharge", "Projet")', {
+                    projetId: payload.projetId,
+                    ressourceId: payload.ressourceId,
+                    semaineDebut: payload.semaine,
+                    statut: status,
+                    commentaireValidation: comment ?? ''
+                });
+                container.classList.add('is-saved');
+                window.location.reload();
+            } catch {
+                container.classList.add('is-error');
+            }
+        }
+
+        document.querySelectorAll('.charge-input, .charge-meta-input').forEach(input => {
+            input.addEventListener('change', () => saveChargeEntry(input));
+        });
+
+        document.querySelectorAll('.charge-comment-input').forEach(input => {
+            input.addEventListener('blur', () => saveChargeEntry(input));
+        });
+
+        document.querySelectorAll('.charge-submit-btn').forEach(button => {
+            button.addEventListener('click', () => submitCharge(button));
+        });
+
+        document.querySelectorAll('.charge-review-btn').forEach(button => {
+            button.addEventListener('click', () => reviewCharge(button));
+        });
+    </script>
+}

@@ -1,0 +1,23 @@
+# Résultats de tests
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# Binaires
+bin/
+obj/
+
+# Fichiers utilisateur
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Couverture de code
+coverage/
+CoverageReport/
+*.cobertura.xml
+
+# Logs
+*.log

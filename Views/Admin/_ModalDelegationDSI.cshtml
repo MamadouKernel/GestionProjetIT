@@ -1,0 +1,120 @@
+<!-- Modal Délégation DSI -->
+<div class="modal fade" id="createDelegationDSIModal" tabindex="-1" aria-labelledby="createDelegationDSIModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content admin-modal-content">
+            <form id="delegationDSIForm" method="post" asp-action="CreateDelegation">
+                @Html.AntiForgeryToken()
+                <div class="modal-header admin-modal-header">
+                    <h5 class="modal-title" id="createDelegationDSIModalLabel">
+                        <i class="bi bi-person-check"></i>
+                        <span id="modalDSITitle">Nouvelle délégation DSI</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body admin-modal-body">
+                    <input type="hidden" name="Id" id="delegationDSIId" />
+                    <div class="stack-sections">
+                        <div class="admin-form-section">
+                            <h6 class="admin-form-section-title">
+                                <i class="bi bi-people"></i>
+                                Affectation
+                            </h6>
+                            <div class="detail-grid">
+                                <div class="form-group-modern">
+                                    <label class="form-label-modern" for="dsiId">DSI *</label>
+                                    <select name="DSIId" id="dsiId" class="form-control-modern" required>
+                                        <option value="">-- Sélectionner un DSI --</option>
+                                        @if (ViewBag.DSIs != null)
+                                        {
+                                            @foreach (var dsi in (IEnumerable<GestionProjects.Domain.Models.Utilisateur>)ViewBag.DSIs)
+                                            {
+                                                <option value="@dsi.Id">@dsi.Nom @dsi.Prenoms</option>
+                                            }
+                                        }
+                                    </select>
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="DSIId" data-valmsg-replace="true"></span>
+                                </div>
+                                <div class="form-group-modern">
+                                    <label class="form-label-modern" for="delegueDSIId">Délégué *</label>
+                                    <select name="DelegueId" id="delegueDSIId" class="form-control-modern" required>
+                                        <option value="">-- Sélectionner un délégué --</option>
+                                        @if (ViewBag.DeleguesDSI != null)
+                                        {
+                                            @foreach (var delegue in (IEnumerable<GestionProjects.Domain.Models.Utilisateur>)ViewBag.DeleguesDSI)
+                                            {
+                                                <option value="@delegue.Id">@delegue.Nom @delegue.Prenoms</option>
+                                            }
+                                        }
+                                    </select>
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="DelegueId" data-valmsg-replace="true"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="admin-form-section">
+                            <h6 class="admin-form-section-title">
+                                <i class="bi bi-calendar-range"></i>
+                                Fenêtre d'activation
+                            </h6>
+                            <div class="detail-grid">
+                                <div class="form-group-modern">
+                                    <label class="form-label-modern" for="dateDebutDSI">Date début *</label>
+                                    <input type="date" name="DateDebut" id="dateDebutDSI" class="form-control-modern" required />
+                                    <small class="text-muted">Date de début de la délégation.</small>
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="DateDebut" data-valmsg-replace="true"></span>
+                                </div>
+                                <div class="form-group-modern">
+                                    <label class="form-label-modern" for="dateFinDSI">Date fin *</label>
+                                    <input type="date" name="DateFin" id="dateFinDSI" class="form-control-modern" required />
+                                    <small class="text-muted">Date de fin de la délégation.</small>
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="DateFin" data-valmsg-replace="true"></span>
+                                </div>
+                            </div>
+                            <div class="admin-permission-card mt-3">
+                                <input type="checkbox" name="EstActive" id="estActiveDSI" class="form-check-input" checked />
+                                <label class="form-check-label m-0" for="estActiveDSI">
+                                    <strong>Délégation active</strong>
+                                    <small class="d-block text-muted">Activez-la immédiatement pour ouvrir les validations DSI au délégué.</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer admin-modal-footer">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-save"></i>
+                        Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateFinDSI = document.getElementById('dateFinDSI');
+        if (dateFinDSI) {
+            dateFinDSI.addEventListener('change', function() {
+                const dateDebut = document.getElementById('dateDebutDSI').value;
+                const dateFin = this.value;
+
+                if (dateDebut && dateFin && new Date(dateFin) < new Date(dateDebut)) {
+                    alert('La date de fin doit être postérieure à la date de début');
+                    this.value = '';
+                }
+            });
+        }
+
+        const modal = document.getElementById('createDelegationDSIModal');
+        if (modal) {
+            modal.addEventListener('hidden.bs.modal', function () {
+                resetDSIForm();
+            });
+        }
+    });
+</script>

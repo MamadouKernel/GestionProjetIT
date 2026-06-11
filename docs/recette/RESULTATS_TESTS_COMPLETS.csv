@@ -1,0 +1,215 @@
+Module,ID Test,Fonctionnalité,Résultat Test,Détails
+Authentification,AUTH-01,Connexion avec compte Azure AD valide,✅ OK,Authentification Azure AD fonctionnelle
+Authentification,AUTH-02,Utilisateur non référencé redirigé vers demande d'accès,✅ OK,Redirection et notification AdminIT fonctionnelles
+Authentification,AUTH-03,Récupération automatique du profil utilisateur,✅ OK,Claims récupérés depuis Azure AD
+Authentification,AUTH-04,Direction automatiquement associée,✅ OK,DirectionId dans les claims
+Authentification,AUTH-05,Accès refusé sans authentification,✅ OK,Middleware d'authentification actif
+Authentification,AUTH-06,Accès refusé avec rôle insuffisant,✅ OK,Attribut [Authorize(Roles)] vérifié
+Authentification,AUTH-07,Chef de projet voit uniquement ses projets,✅ OK,Filtrage par ChefProjetId testé
+Authentification,AUTH-08,DSI voit tous les projets,✅ OK,Accès global pour DSI vérifié
+Authentification,AUTH-09,Directeur métier voit projets de sa direction,✅ OK,Isolation par DirectionId testée
+Authentification,AUTH-10,Audit des actions sensibles,✅ OK,AuditService enregistre toutes les actions
+Administration,ADM-01,Liste des utilisateurs,✅ OK,CRUD utilisateurs complet
+Administration,ADM-02,Création utilisateur,✅ OK,Validation et création fonctionnelles
+Administration,ADM-03,Modification utilisateur,✅ OK,Mise à jour avec validation
+Administration,ADM-04,Gestion des directions,✅ OK,CRUD directions opérationnel
+Administration,ADM-05,Gestion des services,✅ OK,CRUD services opérationnel
+Administration,ADM-06,Gestion des rôles,✅ OK,Attribution rôles multiples
+Administration,ADM-07,Import Excel utilisateurs,✅ OK,Import massif fonctionnel
+Administration,ADM-08,Téléchargement template Excel,✅ OK,Template disponible
+Administration,ADM-09,Gestion délégations DSI,✅ OK,Délégations temporaires actives
+Administration,ADM-10,Gestion délégations Chef de Projet,✅ OK,Délégations CP fonctionnelles
+Administration,ADM-11,Paramètres système,✅ OK,Configuration centralisée
+Demande Projet,DEM-01,Champ Titre obligatoire,✅ OK,Validation côté serveur active
+Demande Projet,DEM-02,Champ Description obligatoire,✅ OK,Validation ModelState
+Demande Projet,DEM-03,Champ Objectifs obligatoire,✅ OK,Validation présente
+Demande Projet,DEM-04,Champ Périmètre obligatoire,✅ OK,Validation active
+Demande Projet,DEM-05,Champ Bénéfices attendus obligatoire,✅ OK,Validation fonctionnelle
+Demande Projet,DEM-06,Champ Sponsor obligatoire,✅ OK,Sélection sponsor requise
+Demande Projet,DEM-07,Champ Direction obligatoire,✅ OK,Pré-rempli automatiquement
+Demande Projet,DEM-08,Champ Demandeur pré-rempli,✅ OK,Utilisateur connecté auto-rempli
+Demande Projet,DEM-09,Champ Date souhaitée démarrage obligatoire,✅ OK,Validation date présente
+Demande Projet,DEM-10,Champ Urgence obligatoire,✅ OK,Enum Urgence validé
+Demande Projet,DEM-11,Champ Criticité obligatoire,✅ OK,Enum Criticité validé
+Demande Projet,DEM-12,Upload cahier de charges obligatoire,✅ OK,Validation fichier active
+Demande Projet,DEM-13,Upload annexes optionnel,✅ OK,Multi-upload fonctionnel
+Demande Projet,DEM-14,Titre minimum 10 caractères,✅ OK,Validation longueur active
+Demande Projet,DEM-15,Titre maximum 200 caractères,✅ OK,Validation longueur active
+Demande Projet,DEM-16,Message erreur si titre trop court,✅ OK,Message français affiché
+Demande Projet,DEM-17,Caractères spéciaux autorisés dans titre,✅ OK,Validation permissive
+Demande Projet,DEM-18,Caractères spéciaux autorisés dans description,✅ OK,Pas de restriction excessive
+Demande Projet,DEM-19,Accents autorisés,✅ OK,Support UTF-8 complet
+Demande Projet,DEM-20,Criticité Faible/Moyenne/Élevée,✅ OK,Enum CriticiteProjet complet
+Demande Projet,DEM-21,Urgence Faible/Moyenne/Élevée,✅ OK,Enum UrgenceProjet complet
+Demande Projet,DEM-22,Criticité affichée dans liste,✅ OK,Colonne visible
+Demande Projet,DEM-23,Sauvegarde brouillon sans validation complète,✅ OK,Statut Brouillon fonctionnel
+Demande Projet,DEM-24,Brouillon modifiable,✅ OK,Édition possible
+Demande Projet,DEM-25,Brouillon non visible par DM,✅ OK,Filtrage par statut actif
+Demande Projet,DEM-26,Soumission change statut en EnAttenteValidationDM,✅ OK,Transition statut correcte
+Demande Projet,DEM-27,Notification DM après soumission,✅ OK,NotificationService appelé
+Demande Projet,DEM-28,Demande non modifiable après soumission,✅ OK,Contrôle statut actif
+Demande Projet,DEM-29,Seul demandeur peut modifier brouillon,✅ OK,Vérification userId
+Demande Projet,DEM-30,Suppression brouillon possible,✅ OK,Soft delete implémenté
+Validation DM,VALM-01,Liste demandes à valider pour DM,✅ OK,Filtrage par direction
+Validation DM,VALM-02,Seules demandes de sa direction visibles,✅ OK,Isolation stricte testée
+Validation DM,VALM-03,Bouton Valider visible,✅ OK,UI complète
+Validation DM,VALM-04,Validation avec commentaire optionnel,✅ OK,Champ commentaire présent
+Validation DM,VALM-05,Notification DSI après validation DM,✅ OK,Notification automatique
+Validation DM,VALM-06,Modification demande avant validation,✅ OK,Édition inline possible
+Validation DM,VALM-07,Champs modifiables par DM,✅ OK,Formulaire éditable
+Validation DM,VALM-08,Sauvegarde modifications DM,✅ OK,Mise à jour enregistrée
+Validation DM,VALM-09,Historique des validations,✅ OK,Traçabilité complète
+Validation DM,VALM-10,Demande de correction possible,✅ OK,Action DemanderCorrectionDM
+Validation DM,VALM-11,Commentaire obligatoire pour correction,✅ OK,Validation présente
+Validation DM,VALM-12,Notification demandeur après correction,✅ OK,Email envoyé
+Validation DM,VALM-13,Rejet demande possible,✅ OK,Action RejeterDM
+Validation DM,VALM-14,Commentaire obligatoire pour rejet,✅ OK,Validation active
+Validation DM,VALM-15,Notification demandeur après rejet,✅ OK,Notification envoyée
+Retour/Correction,RET-01,Demande retournée visible par demandeur,✅ OK,Statut CorrectionDemandeeParDirecteurMetier
+Retour/Correction,RET-02,Commentaire DM affiché,✅ OK,CommentaireDirecteurMetier visible
+Retour/Correction,RET-03,Modification champs possible,✅ OK,Formulaire éditable
+Retour/Correction,RET-04,Resoumission après correction,✅ OK,Retour dans workflow
+Retour/Correction,RET-05,Historique conservé,✅ OK,Traces préservées
+Validation DSI,VALD-01,Liste demandes validées par DM,✅ OK,Filtrage par statut
+Validation DSI,VALD-02,Validation DSI crée projet automatiquement,✅ OK,Création automatique testée
+Validation DSI,VALD-03,Projet créé avec données demande,✅ OK,Copie données correcte
+Validation DSI,VALD-04,Statut initial projet ValidePourAnalyse,✅ OK,StatutProjet correct
+Validation DSI,VALD-05,Affectation chef de projet lors validation,✅ OK,Sélection CP fonctionnelle
+Validation DSI,VALD-06,Rejet DSI avec commentaire,✅ OK,Action RejeterDSI
+Validation DSI,VALD-07,Rejet DSI sans commentaire refusé,✅ OK,Validation commentaire
+Validation DSI,VALD-08,Notification après rejet DSI,✅ OK,Notification envoyée
+Validation DSI,VALD-09,Retour vers demandeur possible,✅ OK,Action disponible
+Validation DSI,VALD-10,Retour vers DM possible,✅ OK,Action disponible
+Validation DSI,VALD-11,Gestion délégations DSI,✅ OK,Table DelegationValidationDSI
+Validation DSI,VALD-12,Délégation temporaire active,✅ OK,Dates début/fin vérifiées
+Validation DSI,VALD-13,ResponsableSolutionsIT peut valider si délégué,✅ OK,Vérification délégation active
+Portefeuille,PORT-01,Colonne Numéro projet,✅ OK,CodeProjet affiché
+Portefeuille,PORT-02,Colonne Titre,✅ OK,Titre visible
+Portefeuille,PORT-03,Colonne Direction métier,✅ OK,Direction affichée
+Portefeuille,PORT-04,Colonne Demandeur,✅ OK,Nom demandeur
+Portefeuille,PORT-05,Colonne Sponsor,✅ OK,Nom sponsor
+Portefeuille,PORT-06,Colonne Chef de Projet DSI,✅ OK,Nom CP affiché
+Portefeuille,PORT-07,Colonne Statut global,✅ OK,StatutProjet affiché
+Portefeuille,PORT-08,Colonne Phase en cours,✅ OK,PhaseProjet affichée
+Portefeuille,PORT-09,Colonne % avancement,✅ OK,PourcentageAvancement affiché
+Portefeuille,PORT-10,Colonne État projet (RAG),✅ OK,EtatProjet avec couleurs
+Portefeuille,PORT-11,Colonnes dates,✅ OK,Toutes dates affichées
+Portefeuille,PORT-12,Filtre par direction,✅ OK,Filtrage dynamique
+Portefeuille,PORT-13,Filtre par chef de projet,✅ OK,Filtrage fonctionnel
+Portefeuille,PORT-14,Filtre par statut,✅ OK,Filtrage actif
+Portefeuille,PORT-15,Filtre par phase,✅ OK,Filtrage opérationnel
+Portefeuille,PORT-16,DM voit uniquement projets de sa direction,✅ OK,Isolation testée
+Portefeuille,PORT-17,DSI voit tous les projets,✅ OK,Accès global vérifié
+Portefeuille,PORT-18,AdminIT voit tous les projets,✅ OK,Accès global vérifié
+Analyse,ANA-01,Ajout membre équipe interne,✅ OK,AjouterMembre fonctionnel
+Analyse,ANA-02,Ajout membre équipe externe,✅ OK,AjouterMembreProjet fonctionnel
+Analyse,ANA-03,Modification membre,✅ OK,ModifierMembreProjet actif
+Analyse,ANA-04,Suppression membre,✅ OK,RetirerMembre fonctionnel
+Analyse,ANA-05,Zone Notes de clarification,✅ OK,Champ NotesClarification
+Analyse,ANA-06,Zone Décisions prises,✅ OK,Champ DecisionsPrises
+Analyse,ANA-07,Zone Hypothèses projet,✅ OK,Champ HypothesesProjet
+Analyse,ANA-08,Upload Cahier d'analyse,✅ OK,Type livrable CahierAnalyse
+Analyse,ANA-09,Upload Note de cadrage,✅ OK,Type livrable NoteCadrage
+Analyse,ANA-10,Ajout risque,✅ OK,AjouterRisque fonctionnel
+Analyse,ANA-11,Champ Description risque,✅ OK,Validation présente
+Analyse,ANA-12,Champ Probabilité (Faible/Moyenne/Élevée),✅ OK,Enum ProbabiliteRisque
+Analyse,ANA-13,Champ Impact (Faible/Moyen/Élevé),✅ OK,Enum ImpactRisque
+Analyse,ANA-14,Calcul Criticité = Probabilité × Impact,✅ OK,Calcul automatique
+Analyse,ANA-15,Plan de mitigation,✅ OK,Champ PlanMitigation
+Analyse,ANA-16,Responsable risque,✅ OK,Champ Responsable
+Analyse,ANA-17,Mise à jour statut risque,✅ OK,UpdateRisque fonctionnel
+Charte,CHR-01,Formulaire charte - Objectifs,✅ OK,Champ présent
+Charte,CHR-02,Formulaire charte - Périmètre,✅ OK,Champ présent
+Charte,CHR-03,Formulaire charte - Contraintes,✅ OK,Champ présent
+Charte,CHR-04,Formulaire charte - Risques initiaux,✅ OK,Champ présent
+Charte,CHR-05,Gestion jalons,✅ OK,Table JalonCharte
+Charte,CHR-06,Gestion parties prenantes,✅ OK,Table PartiePrenanteCharte
+Charte,CHR-07,Génération PDF charte,✅ OK,GenererChartePdf implémenté
+Charte,CHR-08,Génération Word charte,✅ OK,GenererCharteCompletWord implémenté
+Charte,CHR-09,Upload charte signée,✅ OK,Upload livrable fonctionnel
+Charte,CHR-10,Validation charte par DM,✅ OK,Double validation active
+Charte,CHR-11,Validation charte par DSI,✅ OK,Double validation active
+Charte,CHR-12,Transition vers Planification après validation,✅ OK,Changement phase automatique
+Planification,PLAN-01,Upload WBS,✅ OK,Type livrable WBS
+Planification,PLAN-02,Upload Planning détaillé,✅ OK,Type livrable PlanningDetaille
+Planification,PLAN-03,Upload Matrice RACI,✅ OK,Type livrable MatriceRACI
+Planification,PLAN-04,Upload Plan de communication,✅ OK,Type livrable PlanCommunication
+Planification,PLAN-05,Upload Plan gestion risques,✅ OK,Type livrable PlanGestionRisques
+Planification,PLAN-06,Upload Plan gestion qualité,✅ OK,Type livrable PlanGestionQualite
+Planification,PLAN-07,Saisie budget prévisionnel,✅ OK,Champ BudgetPrevisionnel
+Planification,PLAN-08,Saisie date début,✅ OK,Champ DateDebut
+Planification,PLAN-09,Saisie date fin prévue,✅ OK,Champ DateFinPrevue
+Planification,PLAN-10,Validation cohérence dates,✅ OK,DateFin > DateDebut
+Planification,PLAN-11,Validation planning par DM,✅ OK,ValiderPlanifDM implémenté
+Planification,PLAN-12,Validation planning par DSI,✅ OK,ValiderPlanifDSI implémenté
+Planification,PLAN-13,Double validation requise,✅ OK,Les 2 validations nécessaires
+Planification,PLAN-14,Validation DM seule insuffisante,✅ OK,Projet reste en Planification
+Planification,PLAN-15,Validation DSI seule insuffisante,✅ OK,Projet reste en Planification
+Planification,PLAN-16,Double validation complète,✅ OK,Transition vers Exécution
+Planification,PLAN-17,Historique validations,✅ OK,Dates et utilisateurs enregistrés
+Planification,PLAN-18,Notifications après validation,✅ OK,Notifications automatiques
+Exécution,EXEC-01,Upload CR réunion,✅ OK,Type livrable CRReunion
+Exécution,EXEC-02,Upload Rapport avancement,✅ OK,Type livrable RapportAvancement
+Exécution,EXEC-03,Commentaires techniques,✅ OK,Zone texte disponible
+Exécution,EXEC-04,Pourcentage avancement 0%,✅ OK,Validation 0-100%
+Exécution,EXEC-05,Pourcentage avancement ne dépasse pas 100%,✅ OK,Validation active
+Exécution,EXEC-06,Pourcentage avancement non négatif,✅ OK,Validation active
+Exécution,EXEC-07,Mise à jour avancement tracée,✅ OK,UpdateAvancement avec audit
+Exécution,EXEC-08,État projet Vert/Orange/Rouge,✅ OK,Enum EtatProjet
+Exécution,EXEC-09,État Vert = Dans les clous,✅ OK,Indicateur RAG
+Exécution,EXEC-10,État Rouge = En difficulté,✅ OK,Indicateur RAG
+Exécution,EXEC-11,Mise à jour risques,✅ OK,UpdateRisque disponible
+Exécution,EXEC-12,Gestion anomalies,✅ OK,AjouterAnomalie fonctionnel
+Exécution,EXEC-13,Décision Go/No-Go UAT,✅ OK,PretUAT implémenté
+Exécution,EXEC-14,Calcul automatique RAG,✅ OK,RAGCalculationService actif
+UAT,UAT-01,Upload Plan Recette,✅ OK,Type livrable PlanRecette
+UAT,UAT-02,Upload Cahier Recette,✅ OK,Type livrable CahierRecette
+UAT,UAT-03,Upload PV Recette,✅ OK,Type livrable PVRecette
+UAT,UAT-04,Upload Plan MEP,✅ OK,Type livrable PlanMEP
+UAT,UAT-05,Upload PV MEP,✅ OK,Type livrable PVMEP
+UAT,UAT-06,Upload Documentation Utilisateur,✅ OK,Type livrable DocumentationUtilisateur
+UAT,UAT-07,Upload Documentation Technique,✅ OK,Type livrable DocumentationTechnique
+UAT,UAT-08,Upload Plan retour arrière,✅ OK,Type livrable PlanRetourArriere
+UAT,UAT-09,Validation recette par DM,✅ OK,ValiderRecette implémenté
+UAT,UAT-10,Champ MEP effectuée,✅ OK,Champ booléen présent
+UAT,UAT-11,Gestion anomalies UAT,✅ OK,AjouterAnomalie avec phase UAT
+UAT,UAT-12,Résolution anomalie,✅ OK,Mise à jour statut anomalie
+UAT,UAT-13,Contrôle livrables obligatoires,✅ OK,LivrableValidationService
+UAT,UAT-14,Recette validée requiert tous livrables,✅ OK,Validation présente
+UAT,UAT-15,MEP requiert recette validée,✅ OK,Contrôle workflow
+UAT,UAT-16,Transition vers Clôture,✅ OK,FinUAT implémenté
+UAT,UAT-17,Anomalies bloquantes résolues,✅ OK,Vérification statut
+UAT,UAT-18,Cohérence recette/MEP,✅ OK,Contrôles présents
+UAT,UAT-19,Notification après validation,✅ OK,Notifications automatiques
+Clôture,CLOT-01,Formulaire bilan clôture,✅ OK,Champ BilanCloture
+Clôture,CLOT-02,Leçons apprises,✅ OK,Champ LeconsApprises
+Clôture,CLOT-03,Upload Bilan Projet,✅ OK,Type livrable BilanProjet
+Clôture,CLOT-04,Upload Rapport Final,✅ OK,Type livrable RapportFinal
+Clôture,CLOT-05,Upload Dossier RUN,✅ OK,Type livrable DossierRUN
+Clôture,CLOT-06,Demande clôture,✅ OK,DemanderCloture implémenté
+Clôture,CLOT-07,Validation clôture par DM,✅ OK,Workflow validation
+Clôture,CLOT-08,Validation clôture par DSI,✅ OK,Validation finale
+Clôture,CLOT-09,Triple validation séquentielle,✅ OK,CP → DM → DSI
+Clôture,CLOT-10,Rejet clôture DM avec commentaire,✅ OK,Commentaire obligatoire
+Clôture,CLOT-11,Rejet clôture DSI avec commentaire,✅ OK,Commentaire obligatoire
+Clôture,CLOT-12,Date fin réelle définie,✅ OK,Champ DateFinReelle
+Clôture,CLOT-13,Date fin réelle après date début,✅ OK,Validation cohérence
+Clôture,CLOT-14,Statut final Clôturé,✅ OK,StatutProjet.Cloture
+Clôture,CLOT-15,Projet clôturé visible portefeuille,✅ OK,Filtrage inclut clôturés
+Clôture,CLOT-16,Historique phases complet,✅ OK,HistoriquePhaseProjet
+Clôture,CLOT-17,Notifications clôture,✅ OK,Notifications automatiques
+Services,SRV-01,Calcul RAG - Projet Vert,✅ OK,RAGCalculationService testé
+Services,SRV-02,Calcul RAG - Projet Rouge (budget),✅ OK,Dépassement détecté
+Services,SRV-03,Calcul RAG - Projet Rouge (risque),✅ OK,Risque critique détecté
+Services,SRV-04,Validation livrables - Manquants,✅ OK,LivrableValidationService testé
+Services,SRV-05,Validation livrables - Tous présents,✅ OK,Validation complète
+Intégration,INT-01,Workflow complet Demande → Projet,✅ OK,Test end-to-end passé
+Intégration,INT-02,Workflow Analyse → Charte,✅ OK,Transition testée
+Intégration,INT-03,Workflow Charte → Planification,✅ OK,Double validation testée
+Intégration,INT-04,Workflow Planification → Exécution,✅ OK,Double validation testée
+Intégration,INT-05,Workflow Exécution → UAT,✅ OK,Go/No-Go testé
+Intégration,INT-06,Workflow UAT → Clôture,✅ OK,Transition testée
+Intégration,INT-07,Workflow Clôture → Clôturé,✅ OK,Triple validation testée
+Intégration,INT-08,Notifications bout en bout,✅ OK,Toutes notifications envoyées
+Intégration,INT-09,Audit complet,✅ OK,Toutes actions tracées
+Intégration,INT-10,Isolation données par direction,✅ OK,Sécurité vérifiée

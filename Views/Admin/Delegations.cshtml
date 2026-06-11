@@ -1,0 +1,499 @@
+@model GestionProjects.Controllers.DelegationsViewModel
+
+@{
+    ViewData["Title"] = "Gestion des Délégations";
+    var activeTab = ViewBag.ActiveTab as string ?? "dsi";
+    var canCreateForOthers = ViewBag.CanAdminDelegations is bool canAdmin && canAdmin;
+
+    var pageNumDsi   = ViewBag.PageNumberDsi as int? ?? 1;
+    var totalPgDsi   = ViewBag.TotalPagesDsi as int? ?? 1;
+    var totalCtDsi   = ViewBag.TotalCountDsi as int? ?? 0;
+    var pgSizeDsi    = ViewBag.PageSizeDsi   as int? ?? 15;
+    var rechDsi      = ViewBag.RechercheDsi  as string ?? string.Empty;
+
+    var pageNumChef  = ViewBag.PageNumberChef as int? ?? 1;
+    var totalPgChef  = ViewBag.TotalPagesChef as int? ?? 1;
+    var totalCtChef  = ViewBag.TotalCountChef as int? ?? 0;
+    var pgSizeChef   = ViewBag.PageSizeChef   as int? ?? 15;
+    var rechChef     = ViewBag.RechercheChef  as string ?? string.Empty;
+}
+
+<div class="fade-in admin-page">
+    <div class="page-hero card-modern mb-0">
+        <div class="page-hero-main">
+            <span class="page-kicker">Administration</span>
+            <h1 class="page-hero-title">Gestion des délégations</h1>
+            <p class="page-hero-subtitle">
+                Administrez les délégations de validation DSI et les relais de chef de projet sur les projets actifs.
+            </p>
+            <div class="page-hero-meta">
+                <span class="badge-modern badge-modern-info">@totalCtDsi délégation(s) DSI</span>
+                <span class="badge-modern badge-modern-secondary">@totalCtChef délégation(s) chef projet</span>
+                @if (canCreateForOthers)
+                {
+                    <span class="badge-modern badge-modern-dark">Administration globale</span>
+                }
+            </div>
+        </div>
+    </div>
+
+    @await Html.PartialAsync("_ValidationSummary")
+
+    <ul class="nav admin-tabset" id="delegationsTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(activeTab == "dsi" ? "active" : "")" id="dsi-tab" data-bs-toggle="tab" data-bs-target="#dsi-pane" type="button" role="tab" aria-controls="dsi-pane" aria-selected="@(activeTab == "dsi" ? "true" : "false")">
+                <i class="bi bi-shield-check"></i>
+                Délégations validation DSI
+                <span class="badge-modern badge-modern-info ms-2">@Model.DelegationsDSI.Count()</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(activeTab == "chefprojet" ? "active" : "")" id="chefprojet-tab" data-bs-toggle="tab" data-bs-target="#chefprojet-pane" type="button" role="tab" aria-controls="chefprojet-pane" aria-selected="@(activeTab == "chefprojet" ? "true" : "false")">
+                <i class="bi bi-person-workspace"></i>
+                Délégations chef projet
+                <span class="badge-modern badge-modern-info ms-2">@Model.DelegationsChefProjet.Count()</span>
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="delegationsTabContent">
+        <div class="tab-pane fade @(activeTab == "dsi" ? "show active" : "")" id="dsi-pane" role="tabpanel" aria-labelledby="dsi-tab">
+            <div class="page-toolbar mb-3">
+                <h3 class="card-title-modern">
+                    <i class="bi bi-shield-check"></i>
+                    Délégations validation DSI
+                </h3>
+                <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#createDelegationDSIModal" onclick="resetDSIForm()">
+                    <i class="bi bi-plus-circle"></i>
+                    Nouvelle délégation DSI
+                </button>
+            </div>
+
+            <div class="card-modern mb-3">
+                <div class="card-body-modern">
+                    <form method="get" asp-action="Delegations" class="d-flex gap-3 align-items-end">
+                        <input type="hidden" name="tab" value="dsi" />
+                        <div class="flex-grow-1">
+                            <label class="form-label-modern">Rechercher (DSI ou délégué)</label>
+                            <input type="text" name="rechercheDsi" value="@rechDsi"
+                                   class="form-control-modern" placeholder="Nom ou prénom..." />
+                        </div>
+                        <button type="submit" class="btn-modern btn-modern-primary">
+                            <i class="bi bi-search"></i> Filtrer
+                        </button>
+                        @if (!string.IsNullOrWhiteSpace(rechDsi))
+                        {
+                            <a asp-action="Delegations" asp-route-tab="dsi" class="btn-modern btn-modern-secondary">
+                                <i class="bi bi-x-circle"></i>
+                            </a>
+                        }
+                    </form>
+                </div>
+            </div>
+
+            <div class="card-modern">
+                <div class="card-body-modern p-0">
+                    <div class="table-responsive">
+                        <table class="table-modern">
+                            <thead>
+                                <tr>
+                                    <th>DSI</th>
+                                    <th>Délégué</th>
+                                    <th>Date début</th>
+                                    <th>Date fin</th>
+                                    <th>Statut</th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.DelegationsDSI.Any())
+                                {
+                                    @foreach (var delegation in Model.DelegationsDSI)
+                                    {
+                                        var isActive = delegation.EstActive && delegation.DateFin >= DateTime.Now;
+                                        var isExpired = delegation.DateFin < DateTime.Now;
+                                        var isUpcoming = delegation.DateDebut > DateTime.Now;
+
+                                        <tr>
+                                            <td>
+                                                <div class="table-person">
+                                                    <span class="table-avatar primary">@GetInitiales(delegation.DSI?.Nom, delegation.DSI?.Prenoms)</span>
+                                                    <div class="table-person-main">
+                                                        <div class="table-person-title">@(delegation.DSI?.Nom ?? "N/A") @(delegation.DSI?.Prenoms ?? "")</div>
+                                                        <div class="table-person-subtitle">@(delegation.DSI?.Email ?? "")</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="table-person">
+                                                    <span class="table-avatar gold">@GetInitiales(delegation.Delegue?.Nom, delegation.Delegue?.Prenoms)</span>
+                                                    <div class="table-person-main">
+                                                        <div class="table-person-title">@(delegation.Delegue?.Nom ?? "N/A") @(delegation.Delegue?.Prenoms ?? "")</div>
+                                                        <div class="table-person-subtitle">@(delegation.Delegue?.Email ?? "")</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="table-inline-stack column">
+                                                    <span class="table-person-title">@delegation.DateDebut.ToString("dd/MM/yyyy")</span>
+                                                    <span class="table-person-subtitle">@delegation.DateDebut.ToString("HH:mm")</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="table-inline-stack column">
+                                                    <span class="table-person-title @(isExpired ? "text-danger" : string.Empty)">@delegation.DateFin.ToString("dd/MM/yyyy")</span>
+                                                    <span class="table-person-subtitle">@delegation.DateFin.ToString("HH:mm")</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                @if (isActive)
+                                                {
+                                                    <span class="badge-modern badge-modern-success">Active</span>
+                                                }
+                                                else if (isExpired)
+                                                {
+                                                    <span class="badge-modern badge-modern-danger">Expirée</span>
+                                                }
+                                                else if (isUpcoming)
+                                                {
+                                                    <span class="badge-modern badge-modern-info">À venir</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge-modern badge-modern-secondary">Inactive</span>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="table-actions justify-content-center">
+                                                    <button type="button" class="btn-modern btn-modern-gold btn-icon btn-edit-dsi-delegation" data-id="@delegation.Id" title="Modifier la délégation" aria-label="Modifier la délégation">
+                                                        <i class="bi bi-pencil-square"></i>
+                                                    </button>
+                                                    <form asp-action="DeleteDelegation" asp-route-id="@delegation.Id" method="post" class="d-inline" onsubmit="return confirm('Êtes-vous sûr de vouloir clôturer cette délégation ?');">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="btn-modern btn-modern-danger btn-icon" title="Clôturer la délégation" aria-label="Clôturer la délégation">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="6" class="text-center py-5">
+                                            <div class="empty-state-soft">
+                                                <i class="bi bi-inbox"></i>
+                                                <p>Aucune délégation DSI configurée.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    @if (totalPgDsi > 1)
+                    {
+                        <div class="card-body-modern pt-0">
+                            @{
+                                var dsiParams = new Dictionary<string, string?> { ["tab"] = "dsi", ["rechercheDsi"] = rechDsi };
+                                int dsiStart = Math.Max(1, pageNumDsi - 2);
+                                int dsiEnd   = Math.Min(totalPgDsi, pageNumDsi + 2);
+                            }
+                            <nav aria-label="Pagination DSI" class="mt-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="text-muted">@((pageNumDsi-1)*pgSizeDsi+1)–@(Math.Min(pageNumDsi*pgSizeDsi, totalCtDsi)) sur @totalCtDsi</div>
+                                    <ul class="pagination mb-0">
+                                        <li class="page-item @(pageNumDsi==1?"disabled":"")">
+                                            <a class="page-link" href="?tab=dsi&rechercheDsi=@rechDsi&pageDsi=@(pageNumDsi-1)">&laquo;</a>
+                                        </li>
+                                        @for (int pi = dsiStart; pi <= dsiEnd; pi++)
+                                        {
+                                            <li class="page-item @(pi==pageNumDsi?"active":"")">
+                                                <a class="page-link" href="?tab=dsi&rechercheDsi=@rechDsi&pageDsi=@pi">@pi</a>
+                                            </li>
+                                        }
+                                        <li class="page-item @(pageNumDsi>=totalPgDsi?"disabled":"")">
+                                            <a class="page-link" href="?tab=dsi&rechercheDsi=@rechDsi&pageDsi=@(pageNumDsi+1)">&raquo;</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </nav>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade @(activeTab == "chefprojet" ? "show active" : "")" id="chefprojet-pane" role="tabpanel" aria-labelledby="chefprojet-tab">
+            <div class="page-toolbar mb-3">
+                <h3 class="card-title-modern">
+                    <i class="bi bi-person-workspace"></i>
+                    Délégations chef projet
+                </h3>
+                <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#createDelegationChefProjetModal" onclick="resetChefProjetForm()">
+                    <i class="bi bi-plus-circle"></i>
+                    Nouvelle délégation chef projet
+                </button>
+            </div>
+
+            <div class="card-modern mb-3">
+                <div class="card-body-modern">
+                    <form method="get" asp-action="Delegations" class="d-flex gap-3 align-items-end">
+                        <input type="hidden" name="tab" value="chefprojet" />
+                        <div class="flex-grow-1">
+                            <label class="form-label-modern">Rechercher (délégant ou délégué)</label>
+                            <input type="text" name="rechercheChef" value="@rechChef"
+                                   class="form-control-modern" placeholder="Nom ou prénom..." />
+                        </div>
+                        <button type="submit" class="btn-modern btn-modern-primary">
+                            <i class="bi bi-search"></i> Filtrer
+                        </button>
+                        @if (!string.IsNullOrWhiteSpace(rechChef))
+                        {
+                            <a asp-action="Delegations" asp-route-tab="chefprojet" class="btn-modern btn-modern-secondary">
+                                <i class="bi bi-x-circle"></i>
+                            </a>
+                        }
+                    </form>
+                </div>
+            </div>
+
+            <div class="card-modern">
+                <div class="card-body-modern p-0">
+                    <div class="table-responsive">
+                        <table class="table-modern">
+                            <thead>
+                                <tr>
+                                    <th>Projet</th>
+                                    <th>Délégant</th>
+                                    <th>Délégué</th>
+                                    <th>Date début</th>
+                                    <th>Date fin</th>
+                                    <th>Statut</th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.DelegationsChefProjet.Any())
+                                {
+                                    @foreach (var delegation in Model.DelegationsChefProjet)
+                                    {
+                                        var isActive = delegation.EstActive && (delegation.DateFin == null || delegation.DateFin >= DateTime.Now);
+                                        var isExpired = delegation.DateFin.HasValue && delegation.DateFin < DateTime.Now;
+
+                                        <tr>
+                                            <td>
+                                                <div class="table-inline-stack column">
+                                                    <span class="table-code">@(delegation.Projet?.CodeProjet ?? "N/A")</span>
+                                                    <span class="table-person-subtitle">@(delegation.Projet?.Titre ?? "")</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="table-person">
+                                                    <span class="table-avatar primary">@GetInitiales(delegation.Delegant?.Nom, delegation.Delegant?.Prenoms)</span>
+                                                    <div class="table-person-main">
+                                                        <div class="table-person-title">@(delegation.Delegant?.Nom ?? "N/A") @(delegation.Delegant?.Prenoms ?? "")</div>
+                                                        <div class="table-person-subtitle">@(delegation.Delegant?.Email ?? "")</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="table-person">
+                                                    <span class="table-avatar gold">@GetInitiales(delegation.Delegue?.Nom, delegation.Delegue?.Prenoms)</span>
+                                                    <div class="table-person-main">
+                                                        <div class="table-person-title">@(delegation.Delegue?.Nom ?? "N/A") @(delegation.Delegue?.Prenoms ?? "")</div>
+                                                        <div class="table-person-subtitle">@(delegation.Delegue?.Email ?? "")</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="table-inline-stack column">
+                                                    <span class="table-person-title">@delegation.DateDebut.ToString("dd/MM/yyyy")</span>
+                                                    <span class="table-person-subtitle">@delegation.DateDebut.ToString("HH:mm")</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                @if (delegation.DateFin.HasValue)
+                                                {
+                                                    <div class="table-inline-stack column">
+                                                        <span class="table-person-title @(isExpired ? "text-danger" : string.Empty)">@delegation.DateFin.Value.ToString("dd/MM/yyyy")</span>
+                                                        <span class="table-person-subtitle">@delegation.DateFin.Value.ToString("HH:mm")</span>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span class="soft-note">En cours</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (isActive)
+                                                {
+                                                    <span class="badge-modern badge-modern-success">Active</span>
+                                                }
+                                                else if (isExpired)
+                                                {
+                                                    <span class="badge-modern badge-modern-danger">Expirée</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge-modern badge-modern-secondary">Inactive</span>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="table-actions justify-content-center">
+                                                    <button type="button" class="btn-modern btn-modern-gold btn-icon btn-edit-cp-delegation" data-id="@delegation.Id" title="Modifier la délégation" aria-label="Modifier la délégation">
+                                                        <i class="bi bi-pencil-square"></i>
+                                                    </button>
+                                                    <form asp-action="DeleteDelegationChefProjet" asp-route-id="@delegation.Id" method="post" class="d-inline" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette délégation ?');">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="btn-modern btn-modern-danger btn-icon" title="Supprimer la délégation" aria-label="Supprimer la délégation">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="7" class="text-center py-5">
+                                            <div class="empty-state-soft">
+                                                <i class="bi bi-inbox"></i>
+                                                <p>Aucune délégation chef projet configurée.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    @if (totalPgChef > 1)
+                    {
+                        <div class="card-body-modern pt-0">
+                            @{
+                                int chefStart = Math.Max(1, pageNumChef - 2);
+                                int chefEnd   = Math.Min(totalPgChef, pageNumChef + 2);
+                            }
+                            <nav aria-label="Pagination Chef" class="mt-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="text-muted">@((pageNumChef-1)*pgSizeChef+1)–@(Math.Min(pageNumChef*pgSizeChef, totalCtChef)) sur @totalCtChef</div>
+                                    <ul class="pagination mb-0">
+                                        <li class="page-item @(pageNumChef==1?"disabled":"")">
+                                            <a class="page-link" href="?tab=chefprojet&rechercheChef=@rechChef&pageChef=@(pageNumChef-1)">&laquo;</a>
+                                        </li>
+                                        @for (int pi = chefStart; pi <= chefEnd; pi++)
+                                        {
+                                            <li class="page-item @(pi==pageNumChef?"active":"")">
+                                                <a class="page-link" href="?tab=chefprojet&rechercheChef=@rechChef&pageChef=@pi">@pi</a>
+                                            </li>
+                                        }
+                                        <li class="page-item @(pageNumChef>=totalPgChef?"disabled":"")">
+                                            <a class="page-link" href="?tab=chefprojet&rechercheChef=@rechChef&pageChef=@(pageNumChef+1)">&raquo;</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </nav>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_ModalDelegationDSI")
+@await Html.PartialAsync("_ModalDelegationChefProjet")
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const activeTab = '@activeTab';
+            if (activeTab === 'chefprojet') {
+                const tab = new bootstrap.Tab(document.getElementById('chefprojet-tab'));
+                tab.show();
+            }
+        });
+
+        function resetDSIForm() {
+            document.getElementById('delegationDSIForm').reset();
+            document.getElementById('delegationDSIId').value = '';
+            document.getElementById('delegationDSIForm').action = '@Url.Action("CreateDelegation")';
+            document.getElementById('modalDSITitle').textContent = 'Nouvelle délégation DSI';
+            document.getElementById('estActiveDSI').checked = true;
+        }
+
+        async function editDSIDelegation(delegationId) {
+            try {
+                const modal = new bootstrap.Modal(document.getElementById('createDelegationDSIModal'));
+                modal.show();
+
+                document.getElementById('modalDSITitle').textContent = 'Modifier la délégation DSI';
+                document.getElementById('delegationDSIId').value = delegationId;
+                document.getElementById('delegationDSIForm').action = '@Url.Action("UpdateDelegation")';
+
+                const response = await fetch('@Url.Action("GetDelegation")?id=' + delegationId);
+                if (!response.ok) throw new Error('Erreur lors du chargement des données');
+
+                const delegation = await response.json();
+                document.getElementById('dsiId').value = delegation.dsiId || '';
+                document.getElementById('delegueDSIId').value = delegation.delegueId || '';
+
+                const dateDebut = new Date(delegation.dateDebut);
+                const dateFin = new Date(delegation.dateFin);
+                document.getElementById('dateDebutDSI').value = dateDebut.toISOString().split('T')[0];
+                document.getElementById('dateFinDSI').value = dateFin.toISOString().split('T')[0];
+                document.getElementById('estActiveDSI').checked = delegation.estActive || false;
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors du chargement des données de la délégation');
+            }
+        }
+
+        function resetChefProjetForm() {
+            document.getElementById('delegationChefProjetForm').reset();
+            document.getElementById('delegationChefProjetId').value = '';
+            document.getElementById('delegationChefProjetForm').action = '@Url.Action("CreateDelegationChefProjet")';
+            document.getElementById('modalChefProjetTitle').textContent = 'Nouvelle délégation chef projet';
+            document.getElementById('estActiveChefProjet').checked = true;
+        }
+
+        async function editChefProjetDelegation(delegationId) {
+            try {
+                const modal = new bootstrap.Modal(document.getElementById('createDelegationChefProjetModal'));
+                modal.show();
+
+                document.getElementById('modalChefProjetTitle').textContent = 'Modifier la délégation chef projet';
+                document.getElementById('delegationChefProjetId').value = delegationId;
+                document.getElementById('delegationChefProjetForm').action = '@Url.Action("UpdateDelegationChefProjet")';
+
+                const response = await fetch('@Url.Action("GetDelegationChefProjet")?id=' + delegationId);
+                if (!response.ok) throw new Error('Erreur lors du chargement des données');
+
+                const delegation = await response.json();
+                document.getElementById('projetId').value = delegation.projetId || '';
+                document.getElementById('delegantId').value = delegation.delegantId || '';
+                document.getElementById('delegueChefProjetId').value = delegation.delegueId || '';
+
+                const dateDebut = new Date(delegation.dateDebut);
+                document.getElementById('dateDebutChefProjet').value = dateDebut.toISOString().split('T')[0];
+                document.getElementById('estActiveChefProjet').checked = delegation.estActive || false;
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors du chargement des données de la délégation');
+            }
+        }
+    </script>
+}
+
+@functions {
+    string GetInitiales(string? nom, string? prenoms)
+    {
+        var initialNom = string.IsNullOrWhiteSpace(nom) ? "?" : nom.Trim()[0].ToString().ToUpperInvariant();
+        var initialPrenom = string.IsNullOrWhiteSpace(prenoms) ? string.Empty : prenoms.Trim()[0].ToString().ToUpperInvariant();
+        return $"{initialNom}{initialPrenom}";
+    }
+}

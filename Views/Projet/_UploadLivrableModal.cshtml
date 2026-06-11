@@ -1,0 +1,94 @@
+@{
+    var projetId = ViewBag.ProjetId ?? Model?.Id;
+    var phase = ViewBag.Phase ?? Model?.PhaseActuelle;
+}
+
+<div class="modal fade" id="uploadLivrableModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content app-modal-content">
+            <form asp-action="UploadLivrable" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="projetId" value="@projetId" />
+                <input type="hidden" name="phase" value="@phase" />
+                <div class="modal-header app-modal-header">
+                    <h5 class="modal-title app-modal-title">
+                        <i class="bi bi-upload"></i>
+                        Upload Livrable
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body app-modal-body">
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Type de livrable *</label>
+                        <select name="typeLivrable" id="typeLivrableSelect" class="form-control-modern" asp-items="Html.GetEnumSelectList<GestionProjects.Domain.Enums.TypeLivrable>()" required></select>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Fichier *</label>
+                        <input type="file" name="fichier" class="form-control-modern" required accept=".pdf,.doc,.docx,.xls,.xlsx,.pptx,.zip" />
+                        <small class="app-modal-note">Formats acceptés: PDF, DOC, DOCX, XLS, XLSX, PPTX, ZIP</small>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Version (optionnel)</label>
+                        <input type="text" name="version" class="form-control-modern" placeholder="Ex: 1.0, 2.1, etc." />
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Commentaire (optionnel)</label>
+                        <textarea name="commentaire" class="form-control-modern" rows="3" placeholder="Ajoutez un commentaire..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer app-modal-footer">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-upload"></i>
+                        Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('uploadLivrableModal');
+        if (modal) {
+            modal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const phase = button.getAttribute('data-phase');
+                const typeLivrable = button.getAttribute('data-type-livrable');
+                
+                if (phase) {
+                    const phaseInput = modal.querySelector('input[name="phase"]');
+                    if (phaseInput) {
+                        phaseInput.value = phase;
+                    }
+                }
+                
+                // Pré-sélectionner le type de livrable si spécifié
+                if (typeLivrable) {
+                    const typeLivrableSelect = modal.querySelector('#typeLivrableSelect');
+                    if (typeLivrableSelect) {
+                        // Chercher l'option correspondante par texte
+                        for (let option of typeLivrableSelect.options) {
+                            if (option.text === typeLivrable || option.value === typeLivrable) {
+                                option.selected = true;
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    // Réinitialiser la sélection si pas de type spécifié
+                    const typeLivrableSelect = modal.querySelector('#typeLivrableSelect');
+                    if (typeLivrableSelect) {
+                        typeLivrableSelect.selectedIndex = 0;
+                    }
+                }
+            });
+        }
+    });
+</script>
+
+

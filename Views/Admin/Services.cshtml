@@ -1,0 +1,283 @@
+@model IEnumerable<GestionProjects.Domain.Models.Service>
+
+@{
+    ViewData["Title"] = "Gestion des Services";
+    var directions = ViewBag.Directions as IEnumerable<GestionProjects.Domain.Models.Direction> ?? Enumerable.Empty<GestionProjects.Domain.Models.Direction>();
+    var activeCount = Model.Count(s => !s.EstSupprime && s.EstActive);
+}
+
+<div class="fade-in admin-page">
+    <div class="page-toolbar">
+        <div class="page-hero card-modern mb-0 flex-grow-1">
+            <div class="page-hero-main">
+                <span class="page-kicker">Administration</span>
+                <h1 class="page-hero-title">Gestion des services</h1>
+                <p class="page-hero-subtitle">
+                    Structurez les services rattachés aux directions métier et gardez un référentiel propre pour les affectations.
+                </p>
+                <div class="page-hero-meta">
+                    <span class="badge-modern badge-modern-info">@Model.Count() service(s)</span>
+                    <span class="badge-modern badge-modern-success">@activeCount actif(s)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-hero-actions">
+            <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#createServiceModal" onclick="resetServiceForm()">
+                <i class="bi bi-plus-circle"></i>
+                Nouveau service
+            </button>
+        </div>
+    </div>
+
+    @await Html.PartialAsync("_ValidationSummary")
+
+    <div class="admin-tabset nav nav-pills mb-4">
+        <a asp-action="Users" class="nav-link">Utilisateurs</a>
+        <a asp-action="ListeRoles" class="nav-link">Rôles</a>
+        <a asp-action="Directions" class="nav-link">Directions</a>
+        <a asp-action="Services" class="nav-link active">Services</a>
+        <a asp-action="Delegations" class="nav-link">Délégations</a>
+        <a asp-action="Parametres" class="nav-link">Paramètres</a>
+    </div>
+
+    <div class="card-modern">
+        <div class="card-header-modern">
+            <div class="page-toolbar w-100">
+                <div>
+                    <h3 class="card-title-modern mb-1">
+                        <i class="bi bi-boxes"></i>
+                        Référentiel des services
+                    </h3>
+                    <p class="soft-note mb-0">Chaque service peut être activé, édité et rattaché à une direction.</p>
+                </div>
+                <span class="badge-modern badge-modern-info">@activeCount actif(s)</span>
+            </div>
+        </div>
+
+        @if (Model.Any(s => !s.EstSupprime))
+        {
+            <div class="card-body-modern p-0">
+                <div class="table-responsive">
+                    <table class="table-modern">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Service</th>
+                                <th>Direction</th>
+                                <th>Statut</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var service in Model.Where(s => !s.EstSupprime))
+                            {
+                                <tr>
+                                    <td class="table-code">@service.Code</td>
+                                    <td>
+                                        <div class="table-inline-stack column">
+                                            <span class="table-person-title">@service.Libelle</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (service.Direction != null)
+                                        {
+                                            <span class="badge-modern badge-modern-secondary">@service.Direction.Libelle</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="soft-note">Non définie</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (service.EstActive)
+                                        {
+                                            <span class="badge-modern badge-modern-success">Actif</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge-modern badge-modern-secondary">Inactif</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="table-actions justify-content-center">
+                                            <button type="button"
+                                                    class="btn-modern btn-modern-gold btn-icon"
+                                                    data-id="@service.Id"
+                                                    data-code="@service.Code"
+                                                    data-libelle="@service.Libelle"
+                                                    data-direction="@service.DirectionId"
+                                                    data-active="@service.EstActive.ToString().ToLowerInvariant()"
+                                                    onclick="editServiceFromBtn(this)"
+                                                    title="Modifier le service"
+                                                    aria-label="Modifier le service">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <form asp-action="DeleteService" asp-route-id="@service.Id" method="post" class="d-inline" onsubmit="return confirm('Supprimer ce service ?');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn-modern btn-modern-danger btn-icon" title="Supprimer le service" aria-label="Supprimer le service">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card-body-modern empty-state-soft">
+                <i class="bi bi-inbox"></i>
+                <p>Aucun service enregistré.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="modal fade" id="createServiceModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content admin-modal-content">
+            <form id="serviceForm" method="post" action="@Url.Action("CreateService")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" id="serviceId" value="" />
+                <div class="modal-header admin-modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-boxes"></i>
+                        <span id="modalTitle">Nouveau service</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body admin-modal-body">
+                    <div class="admin-form-section">
+                        <h6 class="admin-form-section-title">
+                            <i class="bi bi-card-text"></i>
+                            Informations du service
+                        </h6>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern" for="directionId">Direction *</label>
+                            <select name="DirectionId" id="directionId" class="form-control-modern" required>
+                                <option value="">-- Sélectionner une direction --</option>
+                                @foreach (var dir in directions)
+                                {
+                                    <option value="@dir.Id" data-code="@dir.Code">@dir.Libelle</option>
+                                }
+                            </select>
+                            <span class="text-danger field-validation-valid" data-valmsg-for="DirectionId" data-valmsg-replace="true"></span>
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern" for="libelle">Libellé *</label>
+                            <input type="text" name="Libelle" id="libelle" class="form-control-modern" required maxlength="200" value="" />
+                            <small class="text-muted">Le code est généré automatiquement à partir de la direction et du libellé.</small>
+                            <span class="text-danger field-validation-valid" data-valmsg-for="Libelle" data-valmsg-replace="true"></span>
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern" for="code">Code *</label>
+                            <input type="text" name="Code" id="code" class="form-control-modern" required maxlength="50" value="" readonly />
+                            <small class="text-muted">Le code reste modifiable côté back-office si nécessaire.</small>
+                            <span class="text-danger field-validation-valid" data-valmsg-for="Code" data-valmsg-replace="true"></span>
+                        </div>
+                        <div class="admin-permission-card">
+                            <input type="checkbox" name="EstActive" id="estActive" value="true" class="form-check-input" checked />
+                            <input type="hidden" name="EstActive" value="false" />
+                            <label class="form-check-label m-0" for="estActive">
+                                <strong>Service actif</strong>
+                                <small class="d-block text-muted">Un service actif est proposé dans les formulaires et référentiels de l'application.</small>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer admin-modal-footer">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-save"></i>
+                        Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function generateInitialesFromLibelle(libelle) {
+        if (!libelle || libelle.trim() === '') {
+            return '';
+        }
+
+        const motsIgnorer = ['de', 'des', 'du', "d'", 'le', 'la', 'les', 'un', 'une',
+            'et', 'ou', 'à', 'au', 'aux', 'en', 'pour', 'par', 'avec',
+            'sans', 'sous', 'sur', 'dans', 'entre', 'vers'];
+
+        const mots = libelle
+            .replace(/'/g, ' ')
+            .replace(/-/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .split(' ')
+            .filter(mot => mot.trim() !== '');
+
+        let initiales = '';
+        for (const mot of mots) {
+            if (mot.length >= 2 && !motsIgnorer.includes(mot.toLowerCase())) {
+                initiales += mot[0].toUpperCase();
+            }
+        }
+
+        return initiales;
+    }
+
+    function generateServiceCode() {
+        const serviceId = document.getElementById('serviceId').value;
+        const directionSelect = document.getElementById('directionId');
+        const libelleInput = document.getElementById('libelle');
+        const codeInput = document.getElementById('code');
+
+        if (!serviceId && directionSelect && libelleInput && codeInput) {
+            const selectedOption = directionSelect.options[directionSelect.selectedIndex];
+            const directionCode = selectedOption ? selectedOption.getAttribute('data-code') : '';
+            const libelle = libelleInput.value || '';
+
+            if (directionCode && libelle) {
+                const initialesService = generateInitialesFromLibelle(libelle);
+                if (initialesService) {
+                    codeInput.value = directionCode + '-' + initialesService;
+                }
+            }
+        }
+    }
+
+    function resetServiceForm() {
+        document.getElementById('serviceForm').reset();
+        document.getElementById('serviceId').value = '';
+        document.getElementById('serviceForm').action = '@Url.Action("CreateService")';
+        document.getElementById('modalTitle').textContent = 'Nouveau service';
+        document.getElementById('code').value = '';
+        document.getElementById('estActive').checked = true;
+    }
+
+    function editServiceFromBtn(button) {
+        document.getElementById('serviceId').value = button.dataset.id || '';
+        document.getElementById('directionId').value = button.dataset.direction || '';
+        document.getElementById('libelle').value = button.dataset.libelle || '';
+        document.getElementById('code').value = button.dataset.code || '';
+        document.getElementById('estActive').checked = button.dataset.active === 'true';
+        document.getElementById('serviceForm').action = '@Url.Action("UpdateService")';
+        document.getElementById('modalTitle').textContent = 'Modifier le service';
+
+        const modal = new bootstrap.Modal(document.getElementById('createServiceModal'));
+        modal.show();
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('directionId')?.addEventListener('change', generateServiceCode);
+        document.getElementById('libelle')?.addEventListener('input', generateServiceCode);
+        document.getElementById('createServiceModal')?.addEventListener('hidden.bs.modal', resetServiceForm);
+    });
+</script>

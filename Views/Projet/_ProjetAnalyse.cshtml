@@ -1,0 +1,555 @@
+@using Microsoft.AspNetCore.Html
+@using System.Net
+@model GestionProjects.Domain.Models.Projet
+@inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
+
+@functions {
+    private static IHtmlContent RenderHelpPopover(string title, string purpose, string guidance)
+    {
+        var encodedTitle = WebUtility.HtmlEncode(title);
+        var encodedPurpose = WebUtility.HtmlEncode(purpose);
+        var encodedGuidance = WebUtility.HtmlEncode(guidance);
+
+        return new HtmlString($@"
+<div class=""form-help"">
+    <button type=""button"" class=""form-help-trigger"" aria-label=""Aide : {encodedTitle}"">
+        <i class=""bi bi-info-circle""></i>
+    </button>
+    <div class=""form-help-popover"" role=""tooltip"">
+        <strong>{encodedTitle}</strong>
+        <div class=""form-help-popover-section"">
+            <span>A quoi sert ce bloc ?</span>
+            <p>{encodedPurpose}</p>
+        </div>
+        <div class=""form-help-popover-section"">
+            <span>Comment le renseigner ?</span>
+            <p>{encodedGuidance}</p>
+        </div>
+    </div>
+</div>");
+    }
+}
+
+@{
+    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, Model);
+    var canEditAnalyse = ui.CanEditAnalyse && Model.PhaseActuelle == GestionProjects.Domain.Enums.PhaseProjet.AnalyseClarification;
+    var canSeeTechnicalComment = ui.HasPortfolioAccess || ui.CanValidateCharteDsi;
+    var charteValideeCompletement = Model.CharteValideeParDM && Model.CharteValideeParDSI;
+    var livrablesAnalyse = Model.Livrables?.Where(l => l.Phase == GestionProjects.Domain.Enums.PhaseProjet.AnalyseClarification).ToList() ?? new List<GestionProjects.Domain.Models.LivrableProjet>();
+    var charteSigneePresente = livrablesAnalyse.Any(l => !l.EstSupprime && l.TypeLivrable == GestionProjects.Domain.Enums.TypeLivrable.CharteProjetSignee);
+    var charteSigneeComplete = charteSigneePresente && Model.CharteProjet?.SignatureSponsor == true && Model.CharteProjet?.SignatureChefProjet == true;
+    var canValiderPhaseAnalyse = ui.CanValidateAnalysePhase &&
+        Model.PhaseActuelle == GestionProjects.Domain.Enums.PhaseProjet.AnalyseClarification &&
+        charteValideeCompletement &&
+        charteSigneeComplete;
+    var cahierAnalyse = livrablesAnalyse.FirstOrDefault(l => l.TypeLivrable == GestionProjects.Domain.Enums.TypeLivrable.CahierAnalyseTechnique);
+    var noteCadrage = livrablesAnalyse.FirstOrDefault(l => l.TypeLivrable == GestionProjects.Domain.Enums.TypeLivrable.NoteCadrage);
+    var autresLivrablesAnalyse = livrablesAnalyse.Where(l =>
+        l.TypeLivrable != GestionProjects.Domain.Enums.TypeLivrable.CahierAnalyseTechnique &&
+        l.TypeLivrable != GestionProjects.Domain.Enums.TypeLivrable.NoteCadrage).ToList();
+}
+
+<div class="phase-shell">
+    <section class="phase-hero">
+        <div class="phase-hero-top">
+            <div>
+                <div class="phase-eyebrow">
+                    <i class="bi bi-search"></i>
+                    Analyse
+                </div>
+                <h3 class="phase-title">Phase Analyse & Clarification</h3>
+                <p class="phase-subtitle">
+                    Cadrez le besoin, consolidez la charte, structurez l'equipe projet et documentez les premiers risques avant le passage en planification.
+                </p>
+            </div>
+            @if (canEditAnalyse)
+            {
+                <div class="phase-action-row">
+                    <a asp-action="CharteProjet" asp-route-id="@Model.Id" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-file-earmark-text"></i>
+                        Editer Charte Projet
+                    </a>
+                    <form asp-action="GenererChartePdf" method="post" target="_blank">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <button type="submit" class="btn-modern btn-modern-primary">
+                            <i class="bi bi-file-earmark-pdf"></i>
+                            Generer PDF Charte
+                        </button>
+                    </form>
+                    <form asp-action="ValiderPhaseAnalyse" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        @if (canValiderPhaseAnalyse)
+                        {
+                            <button type="submit" class="btn-modern btn-modern-success" onclick="return confirm('Valider la phase Analyse ? Cette action passera le projet en phase Planification.');">
+                                <i class="bi bi-check-circle"></i>
+                                Valider la phase Analyse
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn-modern btn-modern-secondary" disabled title="La charte doit etre validee par le Directeur Metier et la DSI, et la version signee doit etre deposee avant de pouvoir valider la phase Analyse.">
+                                <i class="bi bi-check-circle"></i>
+                                Valider la phase Analyse
+                            </button>
+                        }
+                    </form>
+                </div>
+            }
+        </div>
+
+        <div class="phase-chip-row">
+            <span class="phase-chip @(Model.CharteValideeParDM ? "is-success" : "is-warning")">
+                <i class="bi @(Model.CharteValideeParDM ? "bi-check-circle" : "bi-clock")"></i>
+                @(Model.CharteValideeParDM ? $"DM valide le {Model.DateCharteValideeParDM?.ToString("dd/MM/yyyy")}" : "Charte en attente de validation DM")
+            </span>
+            <span class="phase-chip @(Model.CharteValideeParDSI ? "is-success" : "is-warning")">
+                <i class="bi @(Model.CharteValideeParDSI ? "bi-check-circle" : "bi-clock")"></i>
+                @(Model.CharteValideeParDSI ? $"DSI valide le {Model.DateCharteValideeParDSI?.ToString("dd/MM/yyyy")}" : "Charte en attente de validation DSI")
+            </span>
+            <span class="phase-chip @(charteSigneeComplete ? "is-success" : "is-warning")">
+                <i class="bi @(charteSigneeComplete ? "bi-file-earmark-check" : "bi-file-earmark-x")"></i>
+                @(charteSigneeComplete ? "Charte signee deposee" : "Charte signee manquante ou incomplete")
+            </span>
+        </div>
+
+        @if (!canValiderPhaseAnalyse && canEditAnalyse)
+        {
+            <div class="phase-note is-warning" style="margin-top: 1rem;">
+                La charte doit etre validee par le DM et la DSI, et la version signee doit etre deposee avant de valider la phase Analyse.
+            </div>
+        }
+    </section>
+
+    <div class="phase-grid">
+        <section class="phase-panel">
+            <h4 class="phase-panel-title">Contexte</h4>
+            <div class="record-card-note">@(Model.DemandeProjet?.Contexte ?? "N/A")</div>
+        </section>
+        <section class="phase-panel">
+            <h4 class="phase-panel-title">Objectifs</h4>
+            <div class="record-card-note">@(Model.DemandeProjet?.Objectifs ?? "N/A")</div>
+        </section>
+    </div>
+
+    @if (canEditAnalyse)
+    {
+        <section class="phase-panel">
+            <div class="phase-section-header">
+                <div>
+                    <div class="form-help-title-row">
+                        <h4 class="phase-panel-title">Documents d'analyse obligatoires</h4>
+                        @RenderHelpPopover(
+                            "Documents d'analyse obligatoires",
+                            "Ce bloc sert à déposer les deux pièces minimales de cadrage attendues avant la validation de la charte.",
+                            "Déposez un cahier d'analyse technique et une note de cadrage à jour. Remplacez-les dès qu'une nouvelle version officielle est disponible.")
+                    </div>
+                    <div class="phase-record-meta">Cahier d'analyse technique et note de cadrage.</div>
+                </div>
+            </div>
+
+            <div class="phase-upload-grid">
+                <article class="phase-upload-card">
+                    <div class="phase-upload-card-header">
+                        <i class="bi bi-file-earmark-code"></i>
+                        <div>
+                            <div class="phase-strong">Cahier d'analyse technique</div>
+                            <div class="phase-record-meta">Livrable obligatoire ANA-08</div>
+                        </div>
+                    </div>
+                    @if (cahierAnalyse != null)
+                    {
+                        <div class="record-card">
+                            <div class="record-card-header">
+                                <div>
+                                    <a asp-controller="Document" asp-action="PreviewProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@cahierAnalyse.Id" target="_blank" class="phase-link">
+                                        @cahierAnalyse.NomDocument
+                                    </a>
+                                    <div class="record-card-subtitle">Depose le @cahierAnalyse.DateDepot.ToString("dd/MM/yyyy")</div>
+                                </div>
+                                <div class="record-card-actions">
+                                    <a asp-controller="Document" asp-action="PreviewProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@cahierAnalyse.Id" target="_blank" class="btn-modern btn-modern-primary" title="Visualiser">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a asp-controller="Document" asp-action="StreamProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@cahierAnalyse.Id" asp-route-download="true" class="btn-modern btn-modern-secondary" title="Telecharger">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    <button type="button" class="btn-modern btn-modern-primary w-100 mt-3" data-bs-toggle="modal" data-bs-target="#uploadLivrableModal" data-phase="AnalyseClarification" data-type-livrable="CahierAnalyseTechnique">
+                        <i class="bi bi-upload"></i>
+                        @(cahierAnalyse != null ? "Remplacer le document" : "Uploader le cahier d'analyse")
+                    </button>
+                </article>
+
+                <article class="phase-upload-card">
+                    <div class="phase-upload-card-header">
+                        <i class="bi bi-file-earmark-text"></i>
+                        <div>
+                            <div class="phase-strong">Note de cadrage</div>
+                            <div class="phase-record-meta">Livrable obligatoire ANA-09</div>
+                        </div>
+                    </div>
+                    @if (noteCadrage != null)
+                    {
+                        <div class="record-card">
+                            <div class="record-card-header">
+                                <div>
+                                    <a asp-controller="Document" asp-action="PreviewProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@noteCadrage.Id" target="_blank" class="phase-link">
+                                        @noteCadrage.NomDocument
+                                    </a>
+                                    <div class="record-card-subtitle">Depose le @noteCadrage.DateDepot.ToString("dd/MM/yyyy")</div>
+                                </div>
+                                <div class="record-card-actions">
+                                    <a asp-controller="Document" asp-action="PreviewProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@noteCadrage.Id" target="_blank" class="btn-modern btn-modern-primary" title="Visualiser">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a asp-controller="Document" asp-action="StreamProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@noteCadrage.Id" asp-route-download="true" class="btn-modern btn-modern-secondary" title="Telecharger">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    <button type="button" class="btn-modern btn-modern-primary w-100 mt-3" data-bs-toggle="modal" data-bs-target="#uploadLivrableModal" data-phase="AnalyseClarification" data-type-livrable="NoteCadrage">
+                        <i class="bi bi-upload"></i>
+                        @(noteCadrage != null ? "Remplacer le document" : "Uploader la note de cadrage")
+                    </button>
+                </article>
+            </div>
+        </section>
+    }
+
+    <section class="phase-panel">
+        <div class="phase-section-header">
+            <div>
+                <div class="form-help-title-row">
+                    <h4 class="phase-panel-title">Autres livrables d'analyse</h4>
+                    @RenderHelpPopover(
+                        "Autres livrables d'analyse",
+                        "Ce bloc accueille les pièces complémentaires de cadrage qui n'entrent pas dans les deux documents obligatoires.",
+                        "Déposez ici les comptes rendus, études, schémas ou annexes utiles à la compréhension et à la validation du dossier.")
+                </div>
+                <div class="phase-record-meta">Pieces complementaires de cadrage, d'etude et de clarification.</div>
+            </div>
+            @if (canEditAnalyse)
+            {
+                <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#uploadLivrableModal" data-phase="AnalyseClarification">
+                    <i class="bi bi-upload"></i>
+                    Uploader un livrable
+                </button>
+            }
+        </div>
+
+        @if (autresLivrablesAnalyse.Any())
+        {
+            <div class="record-stack">
+                @foreach (var livrable in autresLivrablesAnalyse)
+                {
+                    <article class="record-card">
+                        <div class="record-card-header">
+                            <div>
+                                <div class="record-card-title">@livrable.NomDocument</div>
+                                <div class="record-card-subtitle">Type: @livrable.TypeLivrable | Depose le @livrable.DateDepot.ToString("dd/MM/yyyy")</div>
+                            </div>
+                            <div class="record-card-actions">
+                                <a asp-controller="Document" asp-action="PreviewProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@livrable.Id" target="_blank" class="btn-modern btn-modern-primary" title="Visualiser">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a asp-controller="Document" asp-action="StreamProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@livrable.Id" asp-route-download="true" class="btn-modern btn-modern-secondary" title="Telecharger">
+                                    <i class="bi bi-download"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="phase-empty">
+                <i class="bi bi-inbox"></i>
+                <p>Aucun autre livrable d'analyse pour le moment.</p>
+            </div>
+        }
+    </section>
+
+    @if (canSeeTechnicalComment)
+    {
+        <section class="phase-panel">
+            <div class="phase-section-header">
+                <div>
+                    <div class="form-help-title-row">
+                        <h4 class="phase-panel-title">Analyse technique continue</h4>
+                        @RenderHelpPopover(
+                            "Analyse technique continue",
+                            "Ce bloc sert au dialogue RSI / DSI sur les points techniques sensibles du projet pendant l'analyse.",
+                            "Renseignez des observations techniques, risques, arbitrages ou recommandations exploitables avant la validation de la charte.")
+                    </div>
+                    <div class="phase-record-meta">Observations et recommandations techniques partagees entre RSI et DSI.</div>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.CommentaireTechnique))
+            {
+                <div class="record-card-note">
+                    <div class="phase-strong">Commentaire technique</div>
+                    @if (Model.DernierCommentaireTechniquePar != null)
+                    {
+                        <div class="phase-record-meta" style="margin-top: .35rem;">
+                            Par @Model.DernierCommentaireTechniquePar.Nom @Model.DernierCommentaireTechniquePar.Prenoms
+                            @if (Model.DateDernierCommentaireTechnique.HasValue)
+                            {
+                                <span>le @Model.DateDernierCommentaireTechnique.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                            }
+                        </div>
+                    }
+                    <p style="margin: .75rem 0 0; white-space: pre-wrap;">@Model.CommentaireTechnique</p>
+                </div>
+            }
+            else
+            {
+                <div class="phase-empty">
+                    <i class="bi bi-chat-dots"></i>
+                    <p>Aucun commentaire technique pour le moment.</p>
+                </div>
+            }
+
+            @if (ui.CanEditTechnicalComment)
+            {
+                <form asp-action="AjouterCommentaireTechnique" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Ajouter / Modifier un commentaire technique</label>
+                        <textarea name="commentaireTechnique" class="form-control-modern" rows="6" placeholder="Ajoutez vos observations techniques, risques identifies, recommandations...">@Model.CommentaireTechnique</textarea>
+                        <small style="color: var(--gray-500); font-size: 0.875rem;">
+                            <i class="bi bi-info-circle"></i> Ces commentaires sont visibles par la DSI et le Responsable Solutions IT.
+                        </small>
+                    </div>
+                    <div class="phase-action-row" style="justify-content: flex-end;">
+                        <button type="submit" class="btn-modern btn-modern-primary">
+                            <i class="bi bi-save"></i>
+                            Enregistrer le commentaire
+                        </button>
+                    </div>
+                </form>
+            }
+        </section>
+    }
+
+    @if (canEditAnalyse)
+    {
+        <section class="phase-panel">
+            <div class="phase-section-header">
+                <div>
+                    <h4 class="phase-panel-title">Equipe du projet</h4>
+                    <div class="phase-record-meta">Mobilisation des contributeurs cles pour la phase d'analyse.</div>
+                </div>
+                <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#ajouterMembreModal">
+                    <i class="bi bi-plus-circle"></i>
+                    Ajouter un membre
+                </button>
+            </div>
+
+            @if (Model.Membres != null && Model.Membres.Where(m => m.EstActif && !m.EstSupprime).Any())
+            {
+                <div class="phase-table-wrap">
+                    <div class="table-modern">
+                        <table style="width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Prenom</th>
+                                    <th>Role dans le projet</th>
+                                    <th>Direction</th>
+                                    <th>Email</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var membre in Model.Membres.Where(m => m.EstActif && !m.EstSupprime))
+                                {
+                                    <tr>
+                                        <td>@membre.Nom</td>
+                                        <td>@membre.Prenom</td>
+                                        <td>@membre.RoleDansProjet</td>
+                                        <td>@(membre.DirectionLibelle ?? "N/A")</td>
+                                        <td>@membre.Email</td>
+                                        <td>
+                                            <div class="phase-inline-actions">
+                                                <button type="button" class="btn-modern btn-modern-secondary" data-bs-toggle="modal" data-bs-target="#modifierMembreModal"
+                                                        data-membre-id="@membre.Id"
+                                                        data-membre-nom="@membre.Nom"
+                                                        data-membre-prenom="@membre.Prenom"
+                                                        data-membre-role="@membre.RoleDansProjet"
+                                                        data-membre-direction="@membre.DirectionLibelle"
+                                                        data-membre-email="@membre.Email"
+                                                        title="Modifier">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <form asp-action="RetirerMembre" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@Model.Id" />
+                                                    <input type="hidden" name="membreId" value="@membre.Id" />
+                                                    <button type="submit" class="btn-modern btn-modern-danger" onclick="return confirm('Retirer @membre.Nom @membre.Prenom de l''equipe projet ?');" title="Retirer">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="phase-empty">
+                    <i class="bi bi-people"></i>
+                    <p>Aucun membre dans l'equipe projet pour le moment.</p>
+                    <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#ajouterMembreModal">
+                        <i class="bi bi-plus-circle"></i>
+                        Ajouter le premier membre
+                    </button>
+                </div>
+            }
+        </section>
+
+        <section class="phase-panel">
+            <h4 class="phase-panel-title">Notes de clarification</h4>
+            <form asp-action="SauvegarderClarification" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+
+                <div class="form-group-modern mb-3">
+                    <label class="form-label-modern">Notes de clarification</label>
+                    <textarea name="notesClarification" class="form-control-modern" rows="4" placeholder="Saisir les notes de clarification du besoin...">@(Model.FicheProjet?.NotesClarification ?? "")</textarea>
+                    <small style="color: var(--gray-500); font-size: 0.875rem;">
+                        <i class="bi bi-info-circle"></i> Details supplementaires sur le besoin apres echanges avec le demandeur.
+                    </small>
+                </div>
+
+                <div class="form-group-modern mb-3">
+                    <label class="form-label-modern">Decisions prises</label>
+                    <textarea name="decisionsPrises" class="form-control-modern" rows="4" placeholder="Saisir les decisions prises lors des reunions de clarification...">@(Model.FicheProjet?.DecisionsPrises ?? "")</textarea>
+                    <small style="color: var(--gray-500); font-size: 0.875rem;">
+                        <i class="bi bi-info-circle"></i> Decisions importantes prises pendant la phase d'analyse.
+                    </small>
+                </div>
+
+                <div class="form-group-modern mb-3">
+                    <label class="form-label-modern">Hypotheses du projet</label>
+                    <textarea name="hypothesesProjet" class="form-control-modern" rows="4" placeholder="Saisir les hypotheses et contraintes du projet...">@(Model.FicheProjet?.HypothesesProjet ?? "")</textarea>
+                    <small style="color: var(--gray-500); font-size: 0.875rem;">
+                        <i class="bi bi-info-circle"></i> Hypotheses de travail et contraintes identifiees.
+                    </small>
+                </div>
+
+                <div class="phase-action-row" style="justify-content: flex-end;">
+                    <button type="submit" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-save"></i>
+                        Enregistrer les notes
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <section class="phase-panel">
+            <div class="phase-section-header">
+                <div>
+                    <h4 class="phase-panel-title">Registre des risques</h4>
+                    <div class="phase-record-meta">Identification et mise a jour des risques initiaux du projet.</div>
+                </div>
+                <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#ajouterRisqueModal">
+                    <i class="bi bi-plus-circle"></i>
+                    Ajouter un risque
+                </button>
+            </div>
+
+            @if (Model.Risques != null && Model.Risques.Any())
+            {
+                <div class="phase-table-wrap">
+                    <div class="table-modern">
+                        <table style="width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th>Probabilite</th>
+                                    <th>Impact</th>
+                                    <th>Statut</th>
+                                    <th>Responsable</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var risque in Model.Risques.OrderByDescending(r => r.DateCreationRisque))
+                                {
+                                    <tr>
+                                        <td>
+                                            <div style="max-width: 320px;">
+                                                <strong>@risque.Description</strong>
+                                                @if (!string.IsNullOrWhiteSpace(risque.PlanMitigation))
+                                                {
+                                                    <div class="phase-record-meta" style="margin-top: .35rem;">
+                                                        <i class="bi bi-shield-check"></i> @risque.PlanMitigation
+                                                    </div>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge-modern badge-modern-@(risque.Probabilite == GestionProjects.Domain.Enums.ProbabiliteRisque.Elevee ? "danger" : risque.Probabilite == GestionProjects.Domain.Enums.ProbabiliteRisque.Moyenne ? "warning" : "info")">
+                                                @risque.Probabilite
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge-modern badge-modern-@(risque.Impact == GestionProjects.Domain.Enums.ImpactRisque.Critique ? "danger" : risque.Impact == GestionProjects.Domain.Enums.ImpactRisque.Eleve ? "warning" : "info")">
+                                                @risque.Impact
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge-modern badge-modern-@(risque.Statut == GestionProjects.Domain.Enums.StatutRisque.Clos ? "success" : risque.Statut == GestionProjects.Domain.Enums.StatutRisque.Maitrise ? "info" : "warning")">
+                                                @risque.Statut
+                                            </span>
+                                        </td>
+                                        <td>@(risque.Responsable ?? "N/A")</td>
+                                        <td>
+                                            <button type="button" class="btn-modern btn-modern-secondary"
+                                                    data-bs-toggle="modal" data-bs-target="#modifierRisqueModal"
+                                                    data-risque-id="@risque.Id"
+                                                    data-risque-description="@risque.Description"
+                                                    data-risque-probabilite="@((int)risque.Probabilite)"
+                                                    data-risque-impact="@((int)risque.Impact)"
+                                                    data-risque-statut="@((int)risque.Statut)"
+                                                    data-risque-plan="@risque.PlanMitigation"
+                                                    data-risque-responsable="@risque.Responsable"
+                                                    title="Modifier">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="phase-empty">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <p>Aucun risque identifie pour le moment.</p>
+                    <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#ajouterRisqueModal">
+                        <i class="bi bi-plus-circle"></i>
+                        Identifier le premier risque
+                    </button>
+                </div>
+            }
+        </section>
+    }
+</div>

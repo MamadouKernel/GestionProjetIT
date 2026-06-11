@@ -1,0 +1,599 @@
+@model GestionProjects.Domain.Models.DemandeProjet
+
+@{
+    ViewData["Title"] = "Détails de la demande";
+    var canActAsDemandeur = ViewBag.CanActAsDemandeur is bool canDemandeur && canDemandeur;
+    var canEditAsDemandeur = ViewBag.CanEditAsDemandeur is bool canEditDemandeur && canEditDemandeur;
+    var canSubmitDemande = ViewBag.CanSubmitDemande is bool canSoumettre && canSoumettre;
+    var canAddDocuments = ViewBag.CanAddDocuments is bool canAjouterDocs && canAjouterDocs;
+    var canDuplicateDemande = ViewBag.CanDuplicateDemande is bool canDupliquer && canDupliquer;
+    var canActAsDm = ViewBag.CanActAsDm is bool canDm && canDm;
+    var canActAsDsi = ViewBag.CanActAsDsi is bool canDsi && canDsi;
+    var backLinkAction = ViewBag.BackLinkAction as string;
+    var cahierDocument = Model.CahierChargesDocument;
+    var annexes = Model.DocumentsAnnexes.ToList();
+}
+
+<div class="fade-in app-page">
+    <div class="card-modern mb-0">
+        <div class="card-header-modern page-hero">
+            <div class="page-hero-main">
+                <span class="page-kicker">Demande de projet</span>
+                <h1 class="page-hero-title">@Model.Titre</h1>
+                <p class="page-hero-subtitle">
+                    Dossier soumis par @(Model.Demandeur != null ? $"{Model.Demandeur.Nom} {Model.Demandeur.Prenoms}" : "N/A")
+                    pour la direction @(Model.Direction?.Libelle ?? "N/A").
+                </p>
+                <div class="page-hero-meta">
+                    <span class="badge-modern badge-modern-@GetBadgeClass(Model.StatutDemande)">@Model.StatutWorkflowLabel</span>
+                    <span class="badge-modern badge-modern-@Model.PrioriteBadgeClass">Priorité @Model.PrioriteCode</span>
+                    <span class="badge-modern badge-modern-@GetUrgenceClass(Model.Urgence)">Urgence @Model.Urgence</span>
+                    <span class="badge-modern badge-modern-@GetCriticiteClass(Model.Criticite)">Criticité @Model.Criticite</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-xl-8">
+            <div class="card-modern">
+                <div class="card-header-modern">
+                    <h3 class="card-title-modern">
+                        <i class="bi bi-info-circle"></i>
+                        Fiche signalétique
+                    </h3>
+                </div>
+                <div class="card-body-modern">
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">Direction</span>
+                            <div class="detail-value">@(Model.Direction?.Libelle ?? "N/A")</div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Demandeur</span>
+                            <div class="detail-value">@(Model.Demandeur != null ? $"{Model.Demandeur.Nom} {Model.Demandeur.Prenoms}" : "N/A")</div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Directeur métier</span>
+                            <div class="detail-value">@(Model.DirecteurMetier != null ? $"{Model.DirecteurMetier.Nom} {Model.DirecteurMetier.Prenoms}" : "N/A")</div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Priorité calculée</span>
+                            <div class="detail-value">@Model.PrioriteCode - @Model.PrioriteLibelle</div>
+                            <div class="detail-value muted">Score @Model.PrioriteScore/7</div>
+                        </div>
+                        @if (Model.AutreSponsor != null)
+                        {
+                            <div class="detail-item">
+                                <span class="detail-label">Autre sponsor (CODIR)</span>
+                                <div class="detail-value">@Model.AutreSponsor.Nom @Model.AutreSponsor.Prenoms</div>
+                            </div>
+                        }
+                        <div class="detail-item">
+                            <span class="detail-label">Date de soumission</span>
+                            <div class="detail-value">@Model.DateSoumission.ToString("dd/MM/yyyy HH:mm")</div>
+                        </div>
+                    </div>
+
+                    <div class="stack-sections mt-4">
+                        <div class="prose-card">
+                            <h4 class="prose-card-title">Description</h4>
+                            <p class="prose-card-body">@Model.Description</p>
+                        </div>
+                        <div class="prose-card">
+                            <h4 class="prose-card-title">Contexte</h4>
+                            <p class="prose-card-body">@Model.Contexte</p>
+                        </div>
+                        <div class="prose-card">
+                            <h4 class="prose-card-title">Objectifs</h4>
+                            <p class="prose-card-body">@Model.Objectifs</p>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.AvantagesAttendus))
+                        {
+                            <div class="prose-card">
+                                <h4 class="prose-card-title">Avantages attendus</h4>
+                                <p class="prose-card-body">@Model.AvantagesAttendus</p>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.Perimetre))
+                        {
+                            <div class="prose-card">
+                                <h4 class="prose-card-title">Périmètre</h4>
+                                <p class="prose-card-body">@Model.Perimetre</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.CommentaireDirecteurMetier) || !string.IsNullOrEmpty(Model.CommentaireDSI) ||
+                 Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier ||
+                 Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RejeteeParDirecteurMetier ||
+                 Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDemandeurParDSI ||
+                 Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RejeteeParDSI)
+            {
+                <div class="card-modern">
+                    <div class="card-header-modern">
+                        <h3 class="card-title-modern">
+                            <i class="bi bi-chat-dots"></i>
+                            Retours et commentaires
+                        </h3>
+                    </div>
+                    <div class="card-body-modern">
+                        <div class="feedback-list">
+                            @if (!string.IsNullOrEmpty(Model.CommentaireDirecteurMetier))
+                            {
+                                var statutDM = "";
+                                var badgeDM = "badge-modern-info";
+                                if (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier)
+                                {
+                                    statutDM = "Correction demandée";
+                                    badgeDM = "badge-modern-warning";
+                                }
+                                else if (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RejeteeParDirecteurMetier)
+                                {
+                                    statutDM = "Rejetée";
+                                    badgeDM = "badge-modern-danger";
+                                }
+                                else if (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.EnAttenteValidationDSI)
+                                {
+                                    statutDM = "Validée";
+                                    badgeDM = "badge-modern-success";
+                                }
+
+                                <article class="feedback-card info">
+                                    <div class="feedback-head">
+                                        <i class="bi bi-person-badge"></i>
+                                        <h4 class="feedback-title">Directeur métier</h4>
+                                        @if (!string.IsNullOrEmpty(statutDM))
+                                        {
+                                            <span class="badge-modern @badgeDM">@statutDM</span>
+                                        }
+                                        @if (Model.DateValidationDM.HasValue)
+                                        {
+                                            <span class="feedback-meta meta-spacer">
+                                                <i class="bi bi-calendar3"></i>
+                                                @Model.DateValidationDM.Value.ToString("dd/MM/yyyy HH:mm")
+                                            </span>
+                                        }
+                                    </div>
+                                    <p class="feedback-body">@Model.CommentaireDirecteurMetier</p>
+                                </article>
+                            }
+
+                            @if (!string.IsNullOrEmpty(Model.CommentaireDSI))
+                            {
+                                var statutDSI = "";
+                                var badgeDSI = "badge-modern-info";
+                                if (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDemandeurParDSI)
+                                {
+                                    statutDSI = "Retournée au demandeur";
+                                    badgeDSI = "badge-modern-warning";
+                                }
+                                else if (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RejeteeParDSI)
+                                {
+                                    statutDSI = "Rejetée";
+                                    badgeDSI = "badge-modern-danger";
+                                }
+                                else if (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.ValideeParDSI)
+                                {
+                                    statutDSI = "Validée";
+                                    badgeDSI = "badge-modern-success";
+                                }
+                                else if (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDirecteurMetierParDSI)
+                                {
+                                    statutDSI = "Retournée au Directeur métier";
+                                    badgeDSI = "badge-modern-info";
+                                }
+
+                                <article class="feedback-card primary">
+                                    <div class="feedback-head">
+                                        <i class="bi bi-shield-check"></i>
+                                        <h4 class="feedback-title">DSI</h4>
+                                        @if (!string.IsNullOrEmpty(statutDSI))
+                                        {
+                                            <span class="badge-modern @badgeDSI">@statutDSI</span>
+                                        }
+                                        @if (Model.DateValidationDSI.HasValue)
+                                        {
+                                            <span class="feedback-meta meta-spacer">
+                                                <i class="bi bi-calendar3"></i>
+                                                @Model.DateValidationDSI.Value.ToString("dd/MM/yyyy HH:mm")
+                                            </span>
+                                        }
+                                    </div>
+                                    <p class="feedback-body">@Model.CommentaireDSI</p>
+                                </article>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (cahierDocument != null || !string.IsNullOrEmpty(Model.CahierChargesPath))
+            {
+                <div class="card-modern">
+                    <div class="card-header-modern">
+                        <h3 class="card-title-modern">
+                            <i class="bi bi-file-earmark-pdf"></i>
+                            Cahier des charges
+                        </h3>
+                    </div>
+                    <div class="card-body-modern">
+                        <div class="document-list">
+                            <article class="document-item">
+                                <div class="document-item-main">
+                                    <div class="document-icon">
+                                        <i class="bi bi-file-earmark-pdf-fill"></i>
+                                    </div>
+                                    <div class="document-copy">
+                                        <div class="document-name">
+                                            <a asp-controller="Document"
+                                               asp-action="PreviewDemandeCahier"
+                                               asp-route-demandeId="@Model.Id"
+                                               target="_blank">
+                                                @(cahierDocument?.NomFichier ?? System.IO.Path.GetFileName(Model.CahierChargesPath))
+                                            </a>
+                                        </div>
+                                        <div class="document-meta">Document principal de cadrage de la demande.</div>
+                                    </div>
+                                </div>
+                                <div class="document-actions">
+                                    <a asp-controller="Document"
+                                       asp-action="PreviewDemandeCahier"
+                                       asp-route-demandeId="@Model.Id"
+                                       target="_blank"
+                                       class="btn-modern btn-modern-primary btn-icon"
+                                       title="Aperçu du cahier des charges"
+                                       aria-label="Aperçu du cahier des charges">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a asp-controller="Document"
+                                       asp-action="StreamDemandeCahier"
+                                       asp-route-demandeId="@Model.Id"
+                                       asp-route-download="true"
+                                       class="btn-modern btn-modern-secondary btn-icon"
+                                       title="Télécharger le cahier des charges"
+                                       aria-label="Télécharger le cahier des charges">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <div class="card-modern">
+                <div class="card-header-modern">
+                    <div class="page-toolbar w-100">
+                        <h3 class="card-title-modern">
+                            <i class="bi bi-paperclip"></i>
+                            Annexes (@annexes.Count)
+                        </h3>
+                        @if (canAddDocuments &&
+                             (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier ||
+                              Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDemandeurParDSI))
+                        {
+                            <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#ajouterDocumentsModal">
+                                <i class="bi bi-plus-circle"></i>
+                                Ajouter des documents
+                            </button>
+                        }
+                    </div>
+                </div>
+                <div class="card-body-modern">
+                    @if (annexes.Any())
+                    {
+                        <div class="document-list">
+                            @foreach (var annexe in annexes)
+                            {
+                                <article class="document-item">
+                                    <div class="document-item-main">
+                                        <div class="document-icon alt">
+                                            <i class="bi bi-file-earmark"></i>
+                                        </div>
+                                        <div class="document-copy">
+                                            <div class="document-name">
+                                                <a asp-controller="Document"
+                                                   asp-action="PreviewDemandeAnnexe"
+                                                   asp-route-demandeId="@Model.Id"
+                                                   asp-route-documentId="@annexe.Id"
+                                                   target="_blank">
+                                                    @annexe.NomFichier
+                                                </a>
+                                            </div>
+                                            <div class="document-meta">Déposé le @annexe.DateDepot.ToString("dd/MM/yyyy")</div>
+                                        </div>
+                                    </div>
+                                    <div class="document-actions">
+                                        <a asp-controller="Document"
+                                           asp-action="PreviewDemandeAnnexe"
+                                           asp-route-demandeId="@Model.Id"
+                                           asp-route-documentId="@annexe.Id"
+                                           target="_blank"
+                                           class="btn-modern btn-modern-primary btn-icon"
+                                           title="Aperçu du document"
+                                           aria-label="Aperçu du document">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a asp-controller="Document"
+                                           asp-action="StreamDemandeAnnexe"
+                                           asp-route-demandeId="@Model.Id"
+                                           asp-route-documentId="@annexe.Id"
+                                           asp-route-download="true"
+                                           class="btn-modern btn-modern-secondary btn-icon"
+                                           title="Télécharger le document"
+                                           aria-label="Télécharger le document">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                    </div>
+                                </article>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state-soft">
+                            <i class="bi bi-file-earmark"></i>
+                            <p>Aucun document joint pour le moment.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @if (Model.Projet != null)
+            {
+                <div class="card-modern card-accent success">
+                    <div class="card-body-modern success-banner">
+                        <span class="success-banner-icon">
+                            <i class="bi bi-check-circle-fill"></i>
+                        </span>
+                        <h3 class="success-banner-title">Projet créé avec succès</h3>
+                        <p>La demande a été transformée en projet et reste traçable dans le portefeuille DSI.</p>
+                        <a asp-controller="Projet"
+                           asp-action="Details"
+                           asp-route-id="@Model.Projet.Id"
+                           class="btn-modern btn-modern-secondary mt-3">
+                            <i class="bi bi-folder"></i>
+                            Ouvrir le projet @Model.Projet.CodeProjet
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="col-xl-4">
+            <div class="card-modern sticky-card">
+                <div class="card-header-modern">
+                    <h3 class="card-title-modern">
+                        <i class="bi bi-lightning-charge"></i>
+                        Actions
+                    </h3>
+                </div>
+                <div class="card-body-modern">
+                    <div class="action-stack">
+                        @if (canActAsDemandeur)
+                        {
+                            @if (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.Brouillon)
+                            {
+                                @if (canEditAsDemandeur)
+                                {
+                                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-modern btn-modern-gold w-100">
+                                        <i class="bi bi-pencil"></i>
+                                        Modifier
+                                    </a>
+                                }
+                                @if (canSubmitDemande)
+                                {
+                                    <form asp-action="Soumettre" asp-route-id="@Model.Id" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn-modern btn-modern-success w-100" onclick="return confirm('Soumettre cette demande ?');">
+                                            <i class="bi bi-send"></i>
+                                            Soumettre
+                                        </button>
+                                    </form>
+                                }
+                            }
+                            @if (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier ||
+                                 Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDemandeurParDSI)
+                            {
+                                @if (canEditAsDemandeur)
+                                {
+                                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-modern btn-modern-warning w-100">
+                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                        Corriger la demande
+                                    </a>
+                                }
+                            }
+                        }
+
+                        @if (canActAsDm &&
+                             (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.EnAttenteValidationDirecteurMetier ||
+                              Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDirecteurMetierParDSI))
+                        {
+                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-modern btn-modern-gold w-100">
+                                <i class="bi bi-pencil"></i>
+                                Modifier avant validation
+                            </a>
+                            <button type="button" class="btn-modern btn-modern-success w-100" data-bs-toggle="modal" data-bs-target="#validerDMModal">
+                                <i class="bi bi-check-circle"></i>
+                                Valider
+                            </button>
+                            <button type="button" class="btn-modern btn-modern-danger w-100" data-bs-toggle="modal" data-bs-target="#rejeterDMModal">
+                                <i class="bi bi-x-circle"></i>
+                                Rejeter
+                            </button>
+                            <button type="button" class="btn-modern btn-modern-warning w-100" data-bs-toggle="modal" data-bs-target="#correctionDMModal">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                Demander correction
+                            </button>
+                        }
+
+                        @if (canActAsDsi && Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.EnAttenteValidationDSI)
+                        {
+                            <button type="button" class="btn-modern btn-modern-success w-100" data-bs-toggle="modal" data-bs-target="#validerDSIModal">
+                                <i class="bi bi-check-circle"></i>
+                                Valider
+                            </button>
+                            <button type="button" class="btn-modern btn-modern-danger w-100" data-bs-toggle="modal" data-bs-target="#rejeterDSIModal">
+                                <i class="bi bi-x-circle"></i>
+                                Rejeter
+                            </button>
+                            <button type="button" class="btn-modern btn-modern-warning w-100" data-bs-toggle="modal" data-bs-target="#renvoyerDemandeurModal">
+                                <i class="bi bi-arrow-left"></i>
+                                Renvoyer au demandeur
+                            </button>
+                            <button type="button" class="btn-modern btn-modern-info w-100" data-bs-toggle="modal" data-bs-target="#renvoyerDMModal">
+                                <i class="bi bi-arrow-left"></i>
+                                Renvoyer au DM
+                            </button>
+                        }
+
+                        <div class="action-divider"></div>
+
+                        @if (canActAsDemandeur)
+                        {
+                            @if (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RejeteeParDirecteurMetier ||
+                                 Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RejeteeParDSI)
+                            {
+                                @if (canDuplicateDemande)
+                                {
+                                    <form asp-action="DupliquerDemande" asp-route-id="@Model.Id" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn-modern btn-modern-info w-100" onclick="return confirm('Voulez-vous créer une nouvelle demande basée sur celle-ci ?');">
+                                        <i class="bi bi-files"></i>
+                                        Dupliquer / Relancer la demande
+                                    </button>
+                                    </form>
+                                }
+                            }
+                            <a asp-action="Index" class="btn-modern btn-modern-secondary w-100">
+                                <i class="bi bi-arrow-left"></i>
+                                Retour
+                            </a>
+                        }
+                        else if (canActAsDm)
+                        {
+                            <a asp-action="ListeValidationDM" class="btn-modern btn-modern-secondary w-100">
+                                <i class="bi bi-arrow-left"></i>
+                                Retour
+                            </a>
+                        }
+                        else if (canActAsDsi)
+                        {
+                            <a asp-action="ListeValidationDSI" class="btn-modern btn-modern-secondary w-100">
+                                <i class="bi bi-arrow-left"></i>
+                                Retour
+                            </a>
+                        }
+                        else
+                        {
+                            <a asp-controller="Home" asp-action="Index" class="btn-modern btn-modern-secondary w-100">
+                                <i class="bi bi-arrow-left"></i>
+                                Retour
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (canActAsDm)
+{
+    @await Html.PartialAsync("_ModalValiderDM", Model)
+    @await Html.PartialAsync("_ModalRejeterDM", Model)
+    @await Html.PartialAsync("_ModalCorrectionDM", Model)
+}
+
+@if (canActAsDsi)
+{
+    @await Html.PartialAsync("_ModalValiderDSI", Model)
+    @await Html.PartialAsync("_ModalRejeterDSI", Model)
+    @await Html.PartialAsync("_ModalRenvoyerDemandeur", Model)
+    @await Html.PartialAsync("_ModalRenvoyerDM", Model)
+}
+
+@if (canAddDocuments &&
+     (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier ||
+      Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDemandeurParDSI))
+{
+    <div class="modal fade" id="ajouterDocumentsModal" tabindex="-1" aria-labelledby="ajouterDocumentsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ajouterDocumentsModalLabel">
+                        <i class="bi bi-file-earmark-plus"></i>
+                        Ajouter des documents complémentaires
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form asp-action="AjouterDocumentsComplementaires" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="modal-body">
+                        <div class="alert-modern alert-modern-info">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <div>
+                                <strong>Information :</strong> Vous pouvez ajouter des documents complémentaires pour enrichir votre demande. Formats acceptés : PDF, DOC, DOCX, XLS, XLSX, JPG, PNG.
+                            </div>
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Documents</label>
+                            <input type="file" name="documents" class="form-control-modern" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png" required />
+                            <small class="text-muted" style="font-size: 0.75rem; color: var(--gray-500);">Vous pouvez sélectionner plusieurs fichiers.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn-modern btn-modern-primary">
+                            <i class="bi bi-upload"></i>
+                            Ajouter les documents
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@functions {
+    string GetBadgeClass(GestionProjects.Domain.Enums.StatutDemande statut)
+    {
+        return statut switch
+        {
+            GestionProjects.Domain.Enums.StatutDemande.Brouillon => "secondary",
+            GestionProjects.Domain.Enums.StatutDemande.EnAttenteValidationDirecteurMetier => "warning",
+            GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier => "info",
+            GestionProjects.Domain.Enums.StatutDemande.RejeteeParDirecteurMetier => "danger",
+            GestionProjects.Domain.Enums.StatutDemande.EnAttenteValidationDSI => "info",
+            GestionProjects.Domain.Enums.StatutDemande.ValideeParDSI => "success",
+            _ => "secondary"
+        };
+    }
+
+    string GetUrgenceClass(GestionProjects.Domain.Enums.UrgenceProjet urgence)
+    {
+        return urgence switch
+        {
+            GestionProjects.Domain.Enums.UrgenceProjet.Basse => "secondary",
+            GestionProjects.Domain.Enums.UrgenceProjet.Moyenne => "warning",
+            GestionProjects.Domain.Enums.UrgenceProjet.Haute => "danger",
+            _ => "secondary"
+        };
+    }
+
+    string GetCriticiteClass(GestionProjects.Domain.Enums.CriticiteProjet criticite)
+    {
+        return criticite switch
+        {
+            GestionProjects.Domain.Enums.CriticiteProjet.Faible => "secondary",
+            GestionProjects.Domain.Enums.CriticiteProjet.Moyenne => "warning",
+            GestionProjects.Domain.Enums.CriticiteProjet.Elevee => "danger",
+            GestionProjects.Domain.Enums.CriticiteProjet.Critique => "danger",
+            _ => "secondary"
+        };
+    }
+}

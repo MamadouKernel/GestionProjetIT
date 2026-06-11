@@ -1,0 +1,331 @@
+@model IEnumerable<GestionProjects.Domain.Models.ParametreSysteme>
+
+@{
+    ViewData["Title"] = "Paramètres Système";
+
+    var dsiPrincipalId = ViewBag.DSIPrincipalId as string ?? string.Empty;
+    var dsiDelegueId = ViewBag.DSIDelegueId as string ?? string.Empty;
+    var delaiInactiviteSessionMinutes = ViewBag.DelaiInactiviteSessionMinutes as string ?? "30";
+    var repertoireStockageRacine = ViewBag.RepertoireStockageRacine as string ?? string.Empty;
+    var typesLivrables = ViewBag.TypesLivrables as string ?? string.Empty;
+    var utilisateursDsi = ViewBag.UtilisateursDsi as IEnumerable<GestionProjects.Domain.Models.Utilisateur>
+        ?? Enumerable.Empty<GestionProjects.Domain.Models.Utilisateur>();
+    var teamsParam = Model.FirstOrDefault(p => p.Cle == "TeamsWebhookUrl");
+    var teamsWebhookUrl = teamsParam?.Valeur ?? string.Empty;
+    var teamsParamId = teamsParam?.Id;
+}
+
+<div class="fade-in admin-page">
+    <div class="page-toolbar">
+        <div class="page-hero card-modern mb-0 flex-grow-1">
+            <div class="page-hero-main">
+                <span class="page-kicker">Administration</span>
+                <h1 class="page-hero-title">Paramètres système</h1>
+                <p class="page-hero-subtitle">
+                    Centralisez les réglages de workflow, de sécurité, de stockage et d’intégration.
+                </p>
+                <div class="page-hero-meta">
+                    <span class="badge-modern badge-modern-info">@Model.Count() paramètre(s)</span>
+                    @if (!string.IsNullOrWhiteSpace(teamsWebhookUrl))
+                    {
+                        <span class="badge-modern badge-modern-success">Webhook Teams configuré</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-hero-actions">
+            <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#createParametreModal" onclick="resetForm()">
+                <i class="bi bi-plus-circle"></i>
+                Nouveau paramètre
+            </button>
+        </div>
+    </div>
+
+    @await Html.PartialAsync("_ValidationSummary")
+
+    <div class="card-modern">
+        <div class="card-header-modern">
+            <h3 class="card-title-modern">
+                <i class="bi bi-diagram-3"></i>
+                Paramètres workflow DSI
+            </h3>
+        </div>
+        <div class="card-body-modern">
+            <form asp-controller="Admin" asp-action="EnregistrerParametresWorkflow" method="post">
+                @Html.AntiForgeryToken()
+                <div class="detail-grid">
+                    <div class="form-group-modern">
+                        <label class="form-label-modern" for="dsiPrincipalId">DSI principal</label>
+                        <select class="form-control-modern" id="dsiPrincipalId" name="dsiPrincipalId">
+                            <option value="">-- Sélectionner un DSI --</option>
+                            @foreach (var utilisateur in utilisateursDsi)
+                            {
+                                if (dsiPrincipalId == utilisateur.Id.ToString())
+                                {
+                                    <option value="@utilisateur.Id" selected="selected">@utilisateur.Nom @utilisateur.Prenoms</option>
+                                }
+                                else
+                                {
+                                    <option value="@utilisateur.Id">@utilisateur.Nom @utilisateur.Prenoms</option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label class="form-label-modern" for="dsiDelegueId">DSI délégué</label>
+                        <select class="form-control-modern" id="dsiDelegueId" name="dsiDelegueId">
+                            <option value="">-- Aucun délégué actif --</option>
+                            @foreach (var utilisateur in utilisateursDsi)
+                            {
+                                if (dsiDelegueId == utilisateur.Id.ToString())
+                                {
+                                    <option value="@utilisateur.Id" selected="selected">@utilisateur.Nom @utilisateur.Prenoms</option>
+                                }
+                                else
+                                {
+                                    <option value="@utilisateur.Id">@utilisateur.Nom @utilisateur.Prenoms</option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label class="form-label-modern" for="delaiInactiviteSessionMinutes">Délai d'inactivité session (minutes)</label>
+                        <input type="number" class="form-control-modern" id="delaiInactiviteSessionMinutes" name="delaiInactiviteSessionMinutes" min="1" value="@delaiInactiviteSessionMinutes" />
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label class="form-label-modern" for="repertoireStockageRacine">Répertoire racine de stockage</label>
+                        <input type="text" class="form-control-modern" id="repertoireStockageRacine" name="repertoireStockageRacine" value="@repertoireStockageRacine" placeholder="Ex: C:\Stockage\GestionProjetIT" />
+                    </div>
+                </div>
+
+                <div class="form-group-modern mt-3">
+                    <label class="form-label-modern" for="typesLivrables">Types de livrables obligatoires</label>
+                    <textarea class="form-control-modern" id="typesLivrables" name="typesLivrables" rows="3" placeholder="Ex: Charte Projet, WBS, RACI, PV Kick-off, PV Recette, PV MEP">@typesLivrables</textarea>
+                    <small class="text-muted">Séparez les types de livrables par virgule.</small>
+                </div>
+
+                <div class="d-flex justify-content-end mt-3">
+                    <button type="submit" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-save"></i>
+                        Enregistrer les paramètres workflow
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card-modern">
+        <div class="card-header-modern">
+            <h3 class="card-title-modern">
+                <i class="bi bi-microsoft-teams"></i>
+                Intégration Microsoft Teams
+            </h3>
+        </div>
+        <div class="card-body-modern">
+            <div class="admin-inline-note mb-3">
+                <i class="bi bi-info-circle"></i>
+                <div>
+                    Configurez ici le webhook entrant Teams pour recevoir les notifications de l’application dans un canal dédié.
+                </div>
+            </div>
+            <form asp-controller="Admin" asp-action="SaveTeamsWebhook" method="post">
+                @Html.AntiForgeryToken()
+                @if (teamsParamId.HasValue)
+                {
+                    <input type="hidden" name="parametreId" value="@teamsParamId" />
+                }
+                <div class="row g-3 align-items-end">
+                    <div class="col-lg-9">
+                        <label class="form-label-modern">URL du webhook Teams</label>
+                        <input type="url" class="form-control-modern" name="webhookUrl" value="@teamsWebhookUrl" placeholder="https://xxx.webhook.office.com/webhookb2/..." />
+                    </div>
+                    <div class="col-lg-3">
+                        <button type="submit" class="btn-modern btn-modern-primary w-100">
+                            <i class="bi bi-save"></i>
+                            Enregistrer
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card-modern">
+        <div class="card-header-modern">
+            <div class="page-toolbar w-100">
+                <h3 class="card-title-modern">
+                    <i class="bi bi-list-ul"></i>
+                    Liste des paramètres
+                </h3>
+                <span class="badge-modern badge-modern-info">@Model.Count() paramètre(s)</span>
+            </div>
+        </div>
+        <div class="card-body-modern p-0">
+            <div class="table-responsive">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th>Clé</th>
+                            <th>Valeur</th>
+                            <th>Description</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Any())
+                        {
+                            @foreach (var param in Model)
+                            {
+                                <tr>
+                                    <td class="table-code">@param.Cle</td>
+                                    <td><code>@param.Valeur</code></td>
+                                    <td>
+                                        @if (!string.IsNullOrWhiteSpace(param.Description))
+                                        {
+                                            <span>@param.Description</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="soft-note">Aucune description</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="table-actions justify-content-center">
+                                            <button type="button"
+                                                    class="btn-modern btn-modern-gold btn-icon btn-edit-parametre"
+                                                    data-id="@param.Id"
+                                                    title="Modifier le paramètre"
+                                                    aria-label="Modifier le paramètre">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                            <form asp-action="DeleteParametre" asp-route-id="@param.Id" method="post" class="d-inline" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce paramètre ?');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn-modern btn-modern-danger btn-icon" title="Supprimer le paramètre" aria-label="Supprimer le paramètre">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center py-5">
+                                    <div class="empty-state-soft">
+                                        <i class="bi bi-inbox"></i>
+                                        <p>Aucun paramètre configuré.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="createParametreModal" tabindex="-1" aria-labelledby="createParametreModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content admin-modal-content">
+            <form id="parametreForm" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header admin-modal-header">
+                    <h5 class="modal-title" id="createParametreModalLabel">
+                        <i class="bi bi-gear"></i>
+                        <span id="modalTitle">Nouveau paramètre</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body admin-modal-body">
+                    <input type="hidden" name="Id" id="parametreId" />
+                    <div class="admin-form-section">
+                        <h6 class="admin-form-section-title">
+                            <i class="bi bi-sliders"></i>
+                            Définition du paramètre
+                        </h6>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern" for="cle">Clé *</label>
+                            <input type="text" name="Cle" id="cle" class="form-control-modern" required maxlength="100" placeholder="Ex: MAX_FILE_SIZE" />
+                            <small class="text-muted">Identifiant unique, idéalement en majuscules sans espaces.</small>
+                            <span class="text-danger field-validation-valid" data-valmsg-for="Cle" data-valmsg-replace="true"></span>
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern" for="valeur">Valeur *</label>
+                            <input type="text" name="Valeur" id="valeur" class="form-control-modern" required maxlength="500" placeholder="Ex: 10485760" />
+                            <small class="text-muted">Valeur portée par le paramètre.</small>
+                            <span class="text-danger field-validation-valid" data-valmsg-for="Valeur" data-valmsg-replace="true"></span>
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern" for="description">Description</label>
+                            <textarea name="Description" id="description" class="form-control-modern" rows="3" maxlength="500" placeholder="Description détaillée du paramètre..."></textarea>
+                            <small class="text-muted">Optionnel, mais recommandé pour la maintenance.</small>
+                            <span class="text-danger field-validation-valid" data-valmsg-for="Description" data-valmsg-replace="true"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer admin-modal-footer">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-save"></i> Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function resetForm() {
+            document.getElementById('parametreForm').reset();
+            document.getElementById('parametreId').value = '';
+            document.getElementById('parametreForm').action = '@Url.Action("CreateParametre")';
+            document.getElementById('modalTitle').textContent = 'Nouveau paramètre';
+            document.getElementById('cle').setAttribute('required', 'required');
+        }
+
+        async function editParametre(parametreId) {
+            try {
+                const modal = new bootstrap.Modal(document.getElementById('createParametreModal'));
+                modal.show();
+
+                document.getElementById('modalTitle').textContent = 'Modifier le paramètre';
+                document.getElementById('parametreId').value = parametreId;
+                document.getElementById('parametreForm').action = '@Url.Action("UpdateParametre")';
+
+                const response = await fetch('@Url.Action("GetParametre")?id=' + parametreId);
+                if (!response.ok) {
+                    throw new Error('Erreur lors du chargement des données');
+                }
+
+                const parametre = await response.json();
+                document.getElementById('cle').value = parametre.cle || '';
+                document.getElementById('valeur').value = parametre.valeur || '';
+                document.getElementById('description').value = parametre.description || '';
+                document.getElementById('cle').removeAttribute('required');
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors du chargement des données du paramètre');
+            }
+        }
+
+        document.getElementById('createParametreModal').addEventListener('hidden.bs.modal', function () {
+            resetForm();
+        });
+
+        document.getElementById('parametreForm').addEventListener('submit', function() {
+            if (!this.action.includes('UpdateParametre')) {
+                this.action = '@Url.Action("CreateParametre")';
+            }
+        });
+    </script>
+}

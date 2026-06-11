@@ -1,0 +1,100 @@
+@model IEnumerable<GestionProjects.Domain.Models.DemandeProjet>
+
+@{
+    ViewData["Title"] = "Demandes à valider (DM)";
+}
+
+<div class="fade-in app-page">
+    <section class="page-hero">
+        <div class="page-hero-main">
+            <span class="page-kicker"><i class="bi bi-check-circle"></i> Validation métier</span>
+            <h1 class="page-hero-title">Demandes à valider - Directeur métier</h1>
+            <p class="page-hero-subtitle">Accédez aux demandes qui requièrent votre validation, correction ou rejet avant passage à la DSI.</p>
+        </div>
+    </section>
+    <div class="card-modern">
+        <div class="card-header-modern">
+            <h2 class="card-title-modern">
+                <i class="bi bi-check-circle"></i>
+                Demandes à valider - Directeur Métier
+            </h2>
+        </div>
+
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th>Titre</th>
+                            <th>Demandeur</th>
+                            <th>Direction</th>
+                            <th>Date Soumission</th>
+                            <th>Priorité</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var demande in Model)
+                        {
+                            <tr>
+                                <td><strong>@demande.Titre</strong></td>
+                                <td>@demande.Demandeur?.Nom @demande.Demandeur?.Prenoms</td>
+                                <td>@(demande.Direction?.Libelle ?? "N/A")</td>
+                                <td>@demande.DateSoumission.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    <div class="table-inline-stack column">
+                                        <span class="badge-modern badge-modern-@demande.PrioriteBadgeClass">
+                                            @demande.PrioriteCode
+                                        </span>
+                                        <small class="soft-note">
+                                            @demande.Urgence / @demande.Criticite
+                                        </small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@demande.Id" class="btn-modern btn-modern-primary btn-icon" title="Consulter la demande" aria-label="Consulter la demande">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state-modern">
+                <i class="bi bi-inbox"></i>
+                <p style="font-size: 1.1rem;">
+                    Aucune demande en attente de validation.
+                </p>
+            </div>
+        }
+    </div>
+</div>
+
+@functions {
+    string GetUrgenceClass(GestionProjects.Domain.Enums.UrgenceProjet urgence)
+    {
+        return urgence switch
+        {
+            GestionProjects.Domain.Enums.UrgenceProjet.Basse => "secondary",
+            GestionProjects.Domain.Enums.UrgenceProjet.Moyenne => "warning",
+            GestionProjects.Domain.Enums.UrgenceProjet.Haute => "danger",
+            _ => "secondary"
+        };
+    }
+
+    string GetCriticiteClass(GestionProjects.Domain.Enums.CriticiteProjet criticite)
+    {
+        return criticite switch
+        {
+            GestionProjects.Domain.Enums.CriticiteProjet.Faible => "secondary",
+            GestionProjects.Domain.Enums.CriticiteProjet.Moyenne => "warning",
+            GestionProjects.Domain.Enums.CriticiteProjet.Elevee => "danger",
+            _ => "secondary"
+        };
+    }
+}

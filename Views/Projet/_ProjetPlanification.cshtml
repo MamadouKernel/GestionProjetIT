@@ -1,0 +1,1057 @@
+@using GestionProjects.Domain.Enums
+@using GestionProjects.Domain.Models
+@using Microsoft.AspNetCore.Html
+@using System.Net
+@model GestionProjects.Domain.Models.Projet
+@inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
+
+@functions {
+    private static IHtmlContent RenderHelpPopover(string title, string purpose, string guidance)
+    {
+        var encodedTitle = WebUtility.HtmlEncode(title);
+        var encodedPurpose = WebUtility.HtmlEncode(purpose);
+        var encodedGuidance = WebUtility.HtmlEncode(guidance);
+
+        return new HtmlString($@"
+<div class=""form-help"">
+    <button type=""button"" class=""form-help-trigger"" aria-label=""Aide : {encodedTitle}"">
+        <i class=""bi bi-info-circle""></i>
+    </button>
+    <div class=""form-help-popover"" role=""tooltip"">
+        <strong>{encodedTitle}</strong>
+        <div class=""form-help-popover-section"">
+            <span>À quoi sert ce bloc ?</span>
+            <p>{encodedPurpose}</p>
+        </div>
+        <div class=""form-help-popover-section"">
+            <span>Comment le renseigner ?</span>
+            <p>{encodedGuidance}</p>
+        </div>
+    </div>
+</div>");
+    }
+}
+
+@{
+    var isReadOnly = ViewBag.IsReadOnly as bool? ?? false;
+    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, Model, isReadOnly);
+    var fiche = Model.FicheProjet ?? new FicheProjet();
+    var livrablesPlanif = Model.Livrables?.Where(l => l.Phase == PhaseProjet.PlanificationValidation && !l.EstSupprime).OrderByDescending(l => l.DateDepot).ToList() ?? new List<LivrableProjet>();
+    var planningTasks = Model.TachesPlanning?.Where(t => !t.EstSupprime).OrderBy(t => t.Ordre).ThenBy(t => t.DateDebutPrevue).ToList() ?? new List<TachePlanningProjet>();
+    var raciLines = Model.LignesRaci?.Where(l => !l.EstSupprime).OrderBy(l => l.Ordre).ToList() ?? new List<LigneRaciProjet>();
+    var communicationLines = Model.LignesCommunication?.Where(l => !l.EstSupprime).OrderBy(l => l.Ordre).ToList() ?? new List<LigneCommunicationProjet>();
+    var budgetLines = Model.LignesBudgetPlanification?.Where(l => !l.EstSupprime).OrderBy(l => l.Ordre).ToList() ?? new List<LigneBudgetPlanificationProjet>();
+    var kickOff = Model.PvKickOff != null && !Model.PvKickOff.EstSupprime ? Model.PvKickOff : new PvKickOffProjet();
+    var budgetTotal = budgetLines.Sum(l => l.Montant);
+    var canEditPlanification = ui.CanEditPlanification && Model.PhaseActuelle == PhaseProjet.PlanificationValidation;
+    var canValiderDM = ui.CanValidatePlanificationDm && Model.PhaseActuelle == PhaseProjet.PlanificationValidation && !Model.PlanningValideParDM;
+    var canValiderDSI = ui.CanValidatePlanificationDsi && Model.PhaseActuelle == PhaseProjet.PlanificationValidation && Model.PlanningValideParDM && !Model.PlanningValideParDSI;
+
+    bool HasLivrable(TypeLivrable type) => livrablesPlanif.Any(l => l.TypeLivrable == type);
+
+    var ganttStart = planningTasks.Any()
+        ? planningTasks.Min(t => t.DateDebutPrevue).Date
+        : (Model.DateDebut?.Date ?? DateTime.Today);
+    var ganttEnd = planningTasks.Any()
+        ? planningTasks.Max(t => t.DateFinPrevue).Date
+        : (Model.DateFinPrevue?.Date ?? ganttStart.AddDays(14));
+    var ganttTotalDays = Math.Max(1, (ganttEnd - ganttStart).Days + 1);
+
+    Func<TachePlanningProjet, string> barStyle = task =>
+    {
+        var left = ((task.DateDebutPrevue.Date - ganttStart).Days / (double)ganttTotalDays) * 100d;
+        var spanDays = Math.Max(1, (task.DateFinPrevue.Date - task.DateDebutPrevue.Date).Days + 1);
+        var width = Math.Max(4d, (spanDays / (double)ganttTotalDays) * 100d);
+        return $"left:{left:0.##}%; width:{Math.Min(100d - left, width):0.##}%;";
+    };
+
+    var cspNonce = Context.Items["CspNonce"] as string;
+}
+
+<div class="card-modern mb-4">
+    <div class="card-header-modern">
+        <h3 class="card-title-modern" style="font-size: 1.1rem;">
+            <i class="bi bi-calendar-check"></i>
+            Planification & validation
+        </h3>
+    </div>
+    <div class="card-body-modern">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="admin-metric-panel">
+                    <div class="admin-metric-panel-title form-help-title-row">
+                        <span>Validation Directeur métier</span>
+                        @RenderHelpPopover(
+                            "Validation Directeur Métier",
+                            "Ce bloc sert au sponsor pour confirmer que la planification préparée par le Chef de Projet est acceptable côté métier.",
+                            "Le Directeur Métier ne saisit pas le planning ici. Il contrôle les livrables, le budget, les jalons et le dossier global avant de cliquer sur le bouton de validation.")
+                    </div>
+                    <div class="admin-mini-kpi-grid">
+                        <div class="admin-mini-kpi">
+                            <span class="admin-mini-kpi-label">Statut</span>
+                            <strong class="admin-mini-kpi-value">@(Model.PlanningValideParDM ? "Validée" : "En attente")</strong>
+                            <span class="admin-mini-kpi-trend">@(Model.DatePlanningValideParDM?.ToString("dd/MM/yyyy") ?? "Action requise")</span>
+                        </div>
+                    </div>
+                    @if (canValiderDM)
+                    {
+                        <form asp-action="ValiderPlanifDM" method="post" class="mt-3">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <button type="submit" class="btn-modern btn-modern-success">
+                                <i class="bi bi-check-circle"></i>
+                                Valider la planification
+                            </button>
+                        </form>
+                    }
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="admin-metric-panel">
+                    <div class="admin-metric-panel-title form-help-title-row">
+                        <span>Validation DSI</span>
+                        @RenderHelpPopover(
+                            "Validation DSI",
+                            "Ce bloc sert à la validation transverse finale de la planification avant le passage en exécution.",
+                            "La DSI ou le RSIT délégué contrôle le dossier seulement après validation DM. Si les livrables obligatoires sont tous au vert, elle peut faire passer le projet en exécution.")
+                    </div>
+                    <div class="admin-mini-kpi-grid">
+                        <div class="admin-mini-kpi">
+                            <span class="admin-mini-kpi-label">Statut</span>
+                            <strong class="admin-mini-kpi-value">@(Model.PlanningValideParDSI ? "Validée" : Model.PlanningValideParDM ? "À valider" : "En attente DM")</strong>
+                            <span class="admin-mini-kpi-trend">@(Model.DatePlanningValideParDSI?.ToString("dd/MM/yyyy") ?? "Go/No-Go non atteint")</span>
+                        </div>
+                    </div>
+                    @if (canValiderDSI)
+                    {
+                        <form asp-action="ValiderPlanifDSI" method="post" class="mt-3">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <button type="submit" class="btn-modern btn-modern-success" data-confirm-submit="Valider la planification et passer le projet en exécution ?">
+                                <i class="bi bi-arrow-right-circle"></i>
+                                Passer en exécution
+                            </button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-dashboard-grid admin-dashboard-grid-middle">
+            <article class="admin-metric-panel">
+                <div class="admin-metric-panel-title">Informations projet</div>
+                <div class="charge-summary-list">
+                    <div><span>Code projet</span><strong>@Model.CodeProjet</strong></div>
+                    <div><span>Direction</span><strong>@(Model.Direction?.Libelle ?? "Non définie")</strong></div>
+                    <div><span>Sponsor</span><strong>@Model.Sponsor.Nom @Model.Sponsor.Prenoms</strong></div>
+                    <div><span>Chef de projet</span><strong>@(Model.ChefProjet != null ? $"{Model.ChefProjet.Nom} {Model.ChefProjet.Prenoms}" : "Non affecté")</strong></div>
+                </div>
+            </article>
+            <article class="admin-metric-panel">
+                <div class="admin-metric-panel-title form-help-title-row">
+                    <span>Checklist livrables obligatoires</span>
+                    @RenderHelpPopover(
+                        "Checklist livrables obligatoires",
+                        "Cette checklist montre si le dossier de planification est complet pour permettre la validation finale et le passage en exécution.",
+                        "Vous ne renseignez pas cette zone directement. Chaque ligne passe à OK après saisie des données dans les blocs plus bas puis enregistrement de la planification.")
+                </div>
+                <div class="admin-list-stack">
+                    <div class="admin-list-item"><span class="admin-list-main"><strong>Planning détaillé</strong></span><span class="badge-modern @(HasLivrable(TypeLivrable.PlanningDetaille) ? "badge-modern-success" : "badge-modern-danger")">@(HasLivrable(TypeLivrable.PlanningDetaille) ? "OK" : "Manquant")</span></div>
+                    <div class="admin-list-item"><span class="admin-list-main"><strong>WBS</strong></span><span class="badge-modern @(HasLivrable(TypeLivrable.Wbs) ? "badge-modern-success" : "badge-modern-danger")">@(HasLivrable(TypeLivrable.Wbs) ? "OK" : "Manquant")</span></div>
+                    <div class="admin-list-item"><span class="admin-list-main"><strong>Matrice RACI</strong></span><span class="badge-modern @(HasLivrable(TypeLivrable.MatriceRaci) ? "badge-modern-success" : "badge-modern-danger")">@(HasLivrable(TypeLivrable.MatriceRaci) ? "OK" : "Manquant")</span></div>
+                    <div class="admin-list-item"><span class="admin-list-main"><strong>Schéma de communication</strong></span><span class="badge-modern @(HasLivrable(TypeLivrable.SchemaCommunication) ? "badge-modern-success" : "badge-modern-danger")">@(HasLivrable(TypeLivrable.SchemaCommunication) ? "OK" : "Manquant")</span></div>
+                    <div class="admin-list-item"><span class="admin-list-main"><strong>Budget prévisionnel</strong></span><span class="badge-modern @(HasLivrable(TypeLivrable.BudgetPrevisionnel) ? "badge-modern-success" : "badge-modern-danger")">@(HasLivrable(TypeLivrable.BudgetPrevisionnel) ? "OK" : "Manquant")</span></div>
+                    <div class="admin-list-item"><span class="admin-list-main"><strong>PV de kick-off</strong></span><span class="badge-modern @(HasLivrable(TypeLivrable.PvKickOff) ? "badge-modern-success" : "badge-modern-danger")">@(HasLivrable(TypeLivrable.PvKickOff) ? "OK" : "Manquant")</span></div>
+                </div>
+            </article>
+        </div>
+
+        <div class="planning-gantt-shell mt-4">
+            <div class="planning-gantt-header">
+                <div>
+                    <span class="surface-pill surface-pill-blue">Planning interactif</span>
+                    <h4 class="planning-gantt-title">Diagramme de Gantt opérationnel</h4>
+                    <p class="planning-gantt-copy">
+                        La planification, la RACI, la communication, le budget et le PV de kick-off se saisissent ici.
+                        Les livrables officiels sont générés automatiquement à l'enregistrement.
+                    </p>
+                </div>
+                <div class="planning-gantt-kpis">
+                    <div class="planning-gantt-kpi">
+                        <span>Tâches</span>
+                        <strong>@planningTasks.Count</strong>
+                    </div>
+                    <div class="planning-gantt-kpi">
+                        <span>Début</span>
+                        <strong>@ganttStart.ToString("dd/MM/yyyy")</strong>
+                    </div>
+                    <div class="planning-gantt-kpi">
+                        <span>Fin</span>
+                        <strong>@ganttEnd.ToString("dd/MM/yyyy")</strong>
+                    </div>
+                </div>
+            </div>
+
+            @if (canEditPlanification)
+            {
+                <form asp-action="UpdatePlanification" method="post" id="planningForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <input type="hidden" name="ganttPayload" id="ganttPayload" />
+                    <input type="hidden" name="raciPayload" id="raciPayload" />
+                    <input type="hidden" name="communicationPayload" id="communicationPayload" />
+                    <input type="hidden" name="budgetPayload" id="budgetPayload" />
+                    <input type="hidden" name="kickOffPayload" id="kickOffPayload" />
+                    <input type="hidden" name="RaciParActivite" id="RaciParActiviteHidden" value="@fiche.RaciParActivite" />
+                    <input type="hidden" name="FrequenceReunions" id="FrequenceReunionsHidden" value="@fiche.FrequenceReunions" />
+                    <input type="hidden" name="ParticipantsReunions" id="ParticipantsReunionsHidden" value="@fiche.ParticipantsReunions" />
+                    <input type="hidden" name="CanalCommunication" id="CanalCommunicationHidden" value="@fiche.CanalCommunication" />
+                    <input type="hidden" name="BudgetPrevisionnel" id="BudgetPrevisionnelHidden" value="@(fiche.BudgetPrevisionnel ?? budgetTotal)" />
+
+                    <div class="planning-editor-card">
+                        <div class="planning-editor-toolbar">
+                            <div class="planning-editor-toolbar-copy">
+                                <strong>Éditeur du planning</strong>
+                                <span>Ajoutez les tâches, jalons, responsables et dépendances directement dans l'application.</span>
+                            </div>
+                            @RenderHelpPopover(
+                                "Éditeur du planning",
+                                "C'est le cœur du planning natif. Il sert à créer les tâches, les jalons, les responsables et les dates du projet.",
+                                "Ajoutez une ligne par tâche. Renseignez au minimum le WBS, le libellé, le responsable, la date de début et la date de fin. Enregistrez ensuite la planification pour générer le planning détaillé et le WBS.")
+                            <button type="button" class="btn-modern btn-modern-primary" id="planningAddTaskButton">
+                                <i class="bi bi-plus-circle"></i>
+                                Ajouter une tâche
+                            </button>
+                        </div>
+                        <div class="planning-editor-table-wrap">
+                            <table class="planning-editor-table" id="planningTasksTable">
+                                <thead>
+                                    <tr>
+                                        <th>WBS</th>
+                                        <th>Tâche</th>
+                                        <th>Responsable</th>
+                                        <th>Début</th>
+                                        <th>Fin</th>
+                                        <th>Avancement</th>
+                                        <th>Jalon</th>
+                                        <th>Dépendances</th>
+                                        <th>Commentaire</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var task in planningTasks)
+                                    {
+                                        <tr class="planning-task-row">
+                                            <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="CodeWbs" value="@task.CodeWbs" /></td>
+                                            <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Libelle" value="@task.Libelle" /></td>
+                                            <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Responsable" value="@task.Responsable" /></td>
+                                            <td><input type="date" class="form-control-modern form-control-modern-compact" data-field="DateDebutPrevue" value="@task.DateDebutPrevue.ToString("yyyy-MM-dd")" /></td>
+                                            <td><input type="date" class="form-control-modern form-control-modern-compact" data-field="DateFinPrevue" value="@task.DateFinPrevue.ToString("yyyy-MM-dd")" /></td>
+                                            <td>
+                                                <div class="planning-progress-cell">
+                                                    <input type="range" min="0" max="100" step="5" class="planning-progress-range" data-field="Avancement" value="@task.Avancement" />
+                                                    <span class="planning-progress-value">@task.Avancement%</span>
+                                                </div>
+                                            </td>
+                                            <td class="planning-task-checkbox-cell"><input type="checkbox" class="form-check-input" data-field="EstJalon" @(task.EstJalon ? "checked" : string.Empty) /></td>
+                                            <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Dependances" value="@task.Dependances" placeholder="1;2" /></td>
+                                            <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Commentaire" value="@task.Commentaire" /></td>
+                                            <td class="planning-task-actions-cell">
+                                                <button type="button" class="btn-modern btn-modern-secondary icon-button" data-planning-remove="true" title="Supprimer la tâche">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="planning-editor-note">
+                            Le planning enregistré pilote ensuite automatiquement les livrables Planning détaillé et WBS.
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-lg-6 mb-4">
+                            <div class="card-modern h-100">
+                                <div class="card-header-modern card-header-help">
+                                    <h4 class="card-title-modern"><i class="bi bi-kanban"></i> Planning & jalons</h4>
+                                    @RenderHelpPopover(
+                                        "Planning et jalons",
+                                        "Ce bloc sert à consolider les dates structurantes du projet et le prochain point de passage important.",
+                                        "Le prochain jalon doit être court et actionnable. Dans Jalons principaux, listez les grands points de passage sous la forme jalon - date - responsable.")
+                                </div>
+                                <div class="card-body-modern">
+                                    <div class="form-group-modern">
+                                        <label class="form-label-modern">Date début prévue</label>
+                                        <input class="form-control-modern" value="@(Model.DateDebut?.ToString("yyyy-MM-dd") ?? string.Empty)" type="date" disabled />
+                                    </div>
+                                    <div class="form-group-modern">
+                                        <label class="form-label-modern">Date de fin prévue</label>
+                                        <input class="form-control-modern" value="@(Model.DateFinPrevue?.ToString("yyyy-MM-dd") ?? string.Empty)" type="date" disabled />
+                                    </div>
+                                    <div class="form-group-modern">
+                                        <label class="form-label-modern">Prochain jalon</label>
+                                        <input name="ProchainJalon" class="form-control-modern" value="@fiche.ProchainJalon" />
+                                    </div>
+                                    <div class="form-group-modern">
+                                        <label class="form-label-modern">Jalons principaux</label>
+                                        <textarea name="JalonsPrincipaux" class="form-control-modern" rows="5" placeholder="Jalon - date - responsable">@fiche.JalonsPrincipaux</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6 mb-4">
+                            <div class="card-modern h-100">
+                                <div class="card-header-modern card-header-help">
+                                    <h4 class="card-title-modern"><i class="bi bi-diagram-3"></i> WBS / ressources / RACI natif</h4>
+                                    @RenderHelpPopover(
+                                        "WBS, ressources et RACI",
+                                        "Ce bloc sert à décrire le découpage du travail, les ressources prévues et la répartition des responsabilités.",
+                                        "Renseignez d'abord les grands lots de travail et les ressources. Ensuite, saisissez la matrice RACI ligne par ligne pour formaliser qui fait quoi.")
+                                </div>
+                                <div class="card-body-modern">
+                                    <div class="form-group-modern">
+                                        <label class="form-label-modern">Lots de travail / grandes activités</label>
+                                        <textarea name="DecoupageLotsTravail" class="form-control-modern" rows="4" placeholder="Lot - responsable - échéance">@fiche.DecoupageLotsTravail</textarea>
+                                    </div>
+                                    <div class="form-group-modern">
+                                        <label class="form-label-modern">Ressources projet & disponibilité</label>
+                                        <textarea name="PlanificationRessources" class="form-control-modern" rows="4" placeholder="Ressource - rôle - service - disponibilité">@fiche.PlanificationRessources</textarea>
+                                    </div>
+                                    <div class="planning-native-card">
+                                        <div class="planning-native-card-header">
+                                            <div>
+                                                <strong>Matrice RACI</strong>
+                                                <span>Décrit les responsabilités directement dans l'application. Le document officiel se génère automatiquement.</span>
+                                            </div>
+                                            @RenderHelpPopover(
+                                                "Matrice RACI",
+                                                "La matrice RACI formalise les responsabilités par activité : Responsable, Approbateur, Consulté et Informé.",
+                                                "Ajoutez une ligne par activité. Renseignez le code, le libellé de l'activité, puis les colonnes R, A, C et I avec les acteurs concernés.")
+                                            <button type="button" class="btn-modern btn-modern-secondary" id="raciAddRowButton">
+                                                <i class="bi bi-plus-circle"></i>
+                                                Ajouter une ligne
+                                            </button>
+                                        </div>
+                                        <div class="planning-native-table-wrap">
+                                            <table class="planning-native-table" id="raciTable">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Code</th>
+                                                        <th>Activité</th>
+                                                        <th>R</th>
+                                                        <th>A</th>
+                                                        <th>C</th>
+                                                        <th>I</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var line in raciLines)
+                                                    {
+                                                        <tr>
+                                                            <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="CodeActivite" value="@line.CodeActivite" /></td>
+                                                            <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Activite" value="@line.Activite" /></td>
+                                                            <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Responsable" value="@line.Responsable" /></td>
+                                                            <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Approbateur" value="@line.Approbateur" /></td>
+                                                            <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Consulte" value="@line.Consulte" /></td>
+                                                            <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Informe" value="@line.Informe" /></td>
+                                                            <td><button type="button" class="btn-modern btn-modern-secondary icon-button" data-raci-remove="true" title="Supprimer la ligne"><i class="bi bi-trash"></i></button></td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6 mb-4">
+                            <div class="card-modern h-100">
+                                <div class="card-header-modern card-header-help">
+                                    <h4 class="card-title-modern"><i class="bi bi-people"></i> Communication & gouvernance natives</h4>
+                                    @RenderHelpPopover(
+                                        "Communication et gouvernance",
+                                        "Ce bloc sert à organiser les instances projet, les canaux de communication et la gouvernance comme le COPIL.",
+                                        "Activez « COPIL prévu » si nécessaire puis ajoutez les instances une par une : objectif, fréquence, canal, participants et responsable.")
+                                </div>
+                                <div class="card-body-modern">
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="copilPrevu" name="CopilPrevu" value="true" @(fiche.CopilPrevu ? "checked" : string.Empty) />
+                                        <label class="form-check-label" for="copilPrevu">COPIL prévu</label>
+                                    </div>
+                                    <div class="planning-native-card">
+                                        <div class="planning-native-card-header">
+                                            <div>
+                                                <strong>Plan de communication</strong>
+                                                <span>Recense les instances, rythmes, canaux et participants sans passer par un document externe.</span>
+                                            </div>
+                                            @RenderHelpPopover(
+                                                "Plan de communication",
+                                                "Le plan de communication sert à lister les instances projet : COPROJ, COPIL, point hebdomadaire, atelier métier, etc.",
+                                                "Ajoutez une ligne par instance. Indiquez l'objectif, la fréquence, le canal, les participants et le responsable. Cochez COPIL si l'instance est un comité de pilotage.")
+                                            <button type="button" class="btn-modern btn-modern-secondary" id="communicationAddRowButton">
+                                                <i class="bi bi-plus-circle"></i>
+                                                Ajouter une instance
+                                            </button>
+                                        </div>
+                                        <div class="planning-native-table-wrap">
+                                            <table class="planning-native-table" id="communicationTable">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Instance</th>
+                                                        <th>Objectif</th>
+                                                        <th>Fréquence</th>
+                                                        <th>Canal</th>
+                                                        <th>Participants</th>
+                                                        <th>Responsable</th>
+                                                        <th>COPIL</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var line in communicationLines)
+                                                    {
+                                                        <tr>
+                                                            <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Instance" value="@line.Instance" /></td>
+                                                            <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Objectif" value="@line.Objectif" /></td>
+                                                            <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Frequence" value="@line.Frequence" /></td>
+                                                            <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Canal" value="@line.Canal" /></td>
+                                                            <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Participants" value="@line.Participants" /></td>
+                                                            <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Responsable" value="@line.Responsable" /></td>
+                                                            <td class="planning-task-checkbox-cell"><input type="checkbox" class="form-check-input" data-field="EstCopil" @(line.EstCopil ? "checked" : string.Empty) /></td>
+                                                            <td><button type="button" class="btn-modern btn-modern-secondary icon-button" data-communication-remove="true" title="Supprimer l'instance"><i class="bi bi-trash"></i></button></td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6 mb-4">
+                            <div class="card-modern h-100">
+                                <div class="card-header-modern card-header-help">
+                                    <h4 class="card-title-modern"><i class="bi bi-cash-stack"></i> Budget natif & risques initiaux</h4>
+                                    @RenderHelpPopover(
+                                        "Budget et risques initiaux",
+                                        "Ce bloc sert à préparer le budget de référence du projet et à consigner les premiers risques de pilotage.",
+                                        "Ajoutez un poste par ligne de budget, puis complétez le commentaire budgétaire, le commentaire de validation et la synthèse des risques.")
+                                </div>
+                                <div class="card-body-modern">
+                                    <div class="planning-native-card">
+                                        <div class="planning-native-card-header">
+                                            <div>
+                                                <strong>Budget prévisionnel détaillé</strong>
+                                                <span>Saisissez les postes budgétaires directement. Le total et le livrable sont générés automatiquement.</span>
+                                            </div>
+                                            @RenderHelpPopover(
+                                                "Budget prévisionnel détaillé",
+                                                "Ce bloc sert à construire le budget prévisionnel officiel du projet sans fichier externe.",
+                                                "Ajoutez une ligne par poste : développement, licences, matériel, accompagnement, formation, etc. Indiquez le montant et un commentaire si besoin.")
+                                            <button type="button" class="btn-modern btn-modern-secondary" id="budgetAddRowButton">
+                                                <i class="bi bi-plus-circle"></i>
+                                                Ajouter un poste
+                                            </button>
+                                        </div>
+                                        <div class="planning-native-budget-total">
+                                            <span>Total prévisionnel</span>
+                                            <strong id="budgetTotalValue">@((budgetLines.Any() ? budgetTotal : (fiche.BudgetPrevisionnel ?? 0m)).ToString("N2")) FCFA</strong>
+                                        </div>
+                                        <div class="planning-native-table-wrap">
+                                            <table class="planning-native-table" id="budgetTable">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Poste</th>
+                                                        <th>Description</th>
+                                                        <th>Montant (FCFA)</th>
+                                                        <th>Commentaire</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var line in budgetLines)
+                                                    {
+                                                        <tr>
+                                                            <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Poste" value="@line.Poste" /></td>
+                                                            <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Description" value="@line.Description" /></td>
+                                                            <td><input type="number" step="0.01" class="form-control-modern form-control-modern-compact" data-field="Montant" value="@line.Montant.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" /></td>
+                                                            <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Commentaire" value="@line.Commentaire" /></td>
+                                                            <td><button type="button" class="btn-modern btn-modern-secondary icon-button" data-budget-remove="true" title="Supprimer le poste"><i class="bi bi-trash"></i></button></td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="form-group-modern">
+                                        <label class="form-label-modern">Commentaire budgétaire</label>
+                                        <textarea name="CommentaireBudgetPlanification" class="form-control-modern" rows="3">@fiche.CommentaireBudgetPlanification</textarea>
+                                    </div>
+                                    <div class="form-group-modern">
+                                        <label class="form-label-modern">Commentaire de validation / Go-No-Go</label>
+                                        <textarea name="CommentaireValidationPlanification" class="form-control-modern" rows="3">@fiche.CommentaireValidationPlanification</textarea>
+                                    </div>
+                                    <div class="form-group-modern">
+                                        <label class="form-label-modern">Synthèse des risques initiaux</label>
+                                        <textarea name="SyntheseRisques" class="form-control-modern" rows="4">@fiche.SyntheseRisques</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6 mb-4">
+                            <div class="card-modern h-100">
+                                <div class="card-header-modern card-header-help">
+                                    <h4 class="card-title-modern"><i class="bi bi-megaphone"></i> PV de kick-off natif</h4>
+                                    @RenderHelpPopover(
+                                        "PV de kick-off",
+                                        "Ce bloc sert à préparer la trace officielle de la réunion de lancement du projet.",
+                                        "Renseignez la date, l'heure, le lieu, l'animateur, les objectifs, les participants, l'ordre du jour, les décisions et les actions à lancer après le kick-off.")
+                                </div>
+                                <div class="card-body-modern">
+                                    <div class="form-group-modern">
+                                        <label class="form-label-modern">Date de la réunion</label>
+                                        <input type="date" class="form-control-modern" id="kickOffDate" value="@(kickOff.DateReunion?.ToString("yyyy-MM-dd") ?? string.Empty)" />
+                                    </div>
+                                    <div class="form-group-modern">
+                                        <label class="form-label-modern">Heure</label>
+                                        <input type="text" class="form-control-modern" id="kickOffHeure" value="@kickOff.Heure" placeholder="09:00 - 10:30" />
+                                    </div>
+                                    <div class="form-group-modern">
+                                        <label class="form-label-modern">Lieu</label>
+                                        <input type="text" class="form-control-modern" id="kickOffLieu" value="@kickOff.Lieu" />
+                                    </div>
+                                    <div class="form-group-modern">
+                                        <label class="form-label-modern">Animateur</label>
+                                        <input type="text" class="form-control-modern" id="kickOffAnimateur" value="@kickOff.Animateur" />
+                                    </div>
+                                    <div class="form-group-modern">
+                                        <label class="form-label-modern">Objectifs</label>
+                                        <textarea class="form-control-modern" rows="3" id="kickOffObjectifs">@kickOff.Objectifs</textarea>
+                                    </div>
+                                    <div class="form-group-modern">
+                                        <label class="form-label-modern">Participants</label>
+                                        <textarea class="form-control-modern" rows="3" id="kickOffParticipants">@kickOff.Participants</textarea>
+                                    </div>
+                                    <div class="form-group-modern">
+                                        <label class="form-label-modern">Ordre du jour</label>
+                                        <textarea class="form-control-modern" rows="3" id="kickOffOrdreDuJour">@kickOff.OrdreDuJour</textarea>
+                                    </div>
+                                    <div class="form-group-modern">
+                                        <label class="form-label-modern">Décisions prises</label>
+                                        <textarea class="form-control-modern" rows="3" id="kickOffDecisions">@kickOff.Decisions</textarea>
+                                    </div>
+                                    <div class="form-group-modern">
+                                        <label class="form-label-modern">Actions à lancer</label>
+                                        <textarea class="form-control-modern" rows="3" id="kickOffActions">@kickOff.Actions</textarea>
+                                    </div>
+                                    <div class="form-group-modern">
+                                        <label class="form-label-modern">Commentaires</label>
+                                        <textarea class="form-control-modern" rows="3" id="kickOffCommentaires">@kickOff.Commentaires</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-save"></i>
+                        Enregistrer la planification
+                    </button>
+                </form>
+            }
+            else
+            {
+                <div class="row mt-4">
+                    <div class="col-lg-6 mb-4">
+                        <div class="card-modern h-100">
+                            <div class="card-header-modern"><h4 class="card-title-modern"><i class="bi bi-kanban"></i> Planning & jalons</h4></div>
+                            <div class="card-body-modern">
+                                <p><strong>Prochain jalon :</strong> @(string.IsNullOrWhiteSpace(fiche.ProchainJalon) ? "Non renseigné" : fiche.ProchainJalon)</p>
+                                <p><strong>Jalons principaux :</strong><br />@(string.IsNullOrWhiteSpace(fiche.JalonsPrincipaux) ? "Non renseignés" : fiche.JalonsPrincipaux)</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 mb-4">
+                        <div class="card-modern h-100">
+                            <div class="card-header-modern"><h4 class="card-title-modern"><i class="bi bi-diagram-3"></i> Ressources, WBS & RACI</h4></div>
+                            <div class="card-body-modern">
+                                <p><strong>Lots de travail :</strong><br />@(string.IsNullOrWhiteSpace(fiche.DecoupageLotsTravail) ? "Non renseignés" : fiche.DecoupageLotsTravail)</p>
+                                <p><strong>Ressources :</strong><br />@(string.IsNullOrWhiteSpace(fiche.PlanificationRessources) ? "Non renseignées" : fiche.PlanificationRessources)</p>
+                                @if (raciLines.Any())
+                                {
+                                    <div class="planning-native-table-wrap">
+                                        <table class="planning-native-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Code</th>
+                                                    <th>Activité</th>
+                                                    <th>R</th>
+                                                    <th>A</th>
+                                                    <th>C</th>
+                                                    <th>I</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var line in raciLines)
+                                                {
+                                                    <tr>
+                                                        <td>@line.CodeActivite</td>
+                                                        <td>@line.Activite</td>
+                                                        <td>@line.Responsable</td>
+                                                        <td>@line.Approbateur</td>
+                                                        <td>@line.Consulte</td>
+                                                        <td>@line.Informe</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <p><strong>RACI :</strong><br />@(string.IsNullOrWhiteSpace(fiche.RaciParActivite) ? "Non renseigné" : fiche.RaciParActivite)</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 mb-4">
+                        <div class="card-modern h-100">
+                            <div class="card-header-modern"><h4 class="card-title-modern"><i class="bi bi-people"></i> Communication</h4></div>
+                            <div class="card-body-modern">
+                                @if (communicationLines.Any())
+                                {
+                                    <div class="planning-native-table-wrap">
+                                        <table class="planning-native-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Instance</th>
+                                                    <th>Objectif</th>
+                                                    <th>Fréquence</th>
+                                                    <th>Canal</th>
+                                                    <th>Participants</th>
+                                                    <th>Responsable</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var line in communicationLines)
+                                                {
+                                                    <tr>
+                                                        <td>@line.Instance</td>
+                                                        <td>@line.Objectif</td>
+                                                        <td>@line.Frequence</td>
+                                                        <td>@line.Canal</td>
+                                                        <td>@line.Participants</td>
+                                                        <td>@line.Responsable</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <p><strong>Fréquence :</strong> @(string.IsNullOrWhiteSpace(fiche.FrequenceReunions) ? "Non renseignée" : fiche.FrequenceReunions)</p>
+                                    <p><strong>Participants :</strong><br />@(string.IsNullOrWhiteSpace(fiche.ParticipantsReunions) ? "Non renseignés" : fiche.ParticipantsReunions)</p>
+                                    <p><strong>Canal :</strong> @(string.IsNullOrWhiteSpace(fiche.CanalCommunication) ? "Non renseigné" : fiche.CanalCommunication)</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 mb-4">
+                        <div class="card-modern h-100">
+                            <div class="card-header-modern"><h4 class="card-title-modern"><i class="bi bi-cash-stack"></i> Budget & kick-off</h4></div>
+                            <div class="card-body-modern">
+                                <p><strong>Budget prévisionnel :</strong> @((fiche.BudgetPrevisionnel ?? budgetTotal).ToString("N2")) FCFA</p>
+                                <p><strong>Commentaire budgétaire :</strong><br />@(string.IsNullOrWhiteSpace(fiche.CommentaireBudgetPlanification) ? "Non renseigné" : fiche.CommentaireBudgetPlanification)</p>
+                                <p><strong>COPIL prévu :</strong> @(fiche.CopilPrevu ? "Oui" : "Non")</p>
+                                @if (kickOff.DateReunion.HasValue || !string.IsNullOrWhiteSpace(kickOff.Participants) || !string.IsNullOrWhiteSpace(kickOff.Decisions))
+                                {
+                                    <p><strong>Kick-off :</strong> @(kickOff.DateReunion?.ToString("dd/MM/yyyy") ?? "Date à préciser")</p>
+                                    <p><strong>Participants :</strong><br />@(string.IsNullOrWhiteSpace(kickOff.Participants) ? "Non renseignés" : kickOff.Participants)</p>
+                                    <p><strong>Décisions :</strong><br />@(string.IsNullOrWhiteSpace(kickOff.Decisions) ? "Non renseignées" : kickOff.Decisions)</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <div class="planning-gantt-preview-card mt-4">
+                <div class="planning-gantt-preview-header">
+                    <div>
+                        <span class="surface-pill surface-pill-sand">Prévisualisation</span>
+                        <h4>Vue Gantt consolidée</h4>
+                    </div>
+                    <div class="planning-gantt-period">@ganttStart.ToString("dd/MM/yyyy") - @ganttEnd.ToString("dd/MM/yyyy")</div>
+                </div>
+
+                @if (planningTasks.Any())
+                {
+                    <div class="planning-gantt-timeline">
+                        <div class="planning-gantt-scale">
+                            @for (var index = 0; index < Math.Min(ganttTotalDays, 12); index++)
+                            {
+                                var markerDate = ganttStart.AddDays(Math.Floor(index * (ganttTotalDays / (double)Math.Min(ganttTotalDays, 12))));
+                                <span>@markerDate.ToString("dd/MM")</span>
+                            }
+                        </div>
+                        <div class="planning-gantt-rows">
+                            @foreach (var task in planningTasks)
+                            {
+                                <div class="planning-gantt-row">
+                                    <div class="planning-gantt-row-meta">
+                                        <strong>@task.CodeWbs</strong>
+                                        <span>@task.Libelle</span>
+                                        @if (!string.IsNullOrWhiteSpace(task.Responsable))
+                                        {
+                                            <small>@task.Responsable</small>
+                                        }
+                                    </div>
+                                    <div class="planning-gantt-row-track">
+                                        <div class="planning-gantt-bar @(task.EstJalon ? "planning-gantt-bar-milestone" : string.Empty)" style="@barStyle(task)">
+                                            <span>@task.Avancement%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state-modern">
+                        <i class="bi bi-bar-chart-steps"></i>
+                        <p>Aucune tâche de planning n'a encore été saisie dans le diagramme de Gantt.</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="card-modern mt-4">
+            <div class="card-header-modern">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: var(--spacing-sm); flex-wrap: wrap;">
+                    <h4 class="card-title-modern"><i class="bi bi-folder2-open"></i> Livrables de planification</h4>
+                    @if (canEditPlanification)
+                    {
+                        <div class="planning-livrable-actions">
+                            <form asp-action="GenererLivrablesPlanificationDepuisGantt" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <button type="submit" class="btn-modern btn-modern-secondary">
+                                    <i class="bi bi-magic"></i>
+                                    Régénérer les livrables natifs
+                                </button>
+                            </form>
+                            <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#uploadLivrableModal" data-phase="PlanificationValidation">
+                                <i class="bi bi-upload"></i>
+                                Ajouter un livrable externe
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="card-body-modern">
+                @if (livrablesPlanif.Any())
+                {
+                    <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
+                        @foreach (var livrable in livrablesPlanif)
+                        {
+                            <div class="planning-livrable-row">
+                                <div style="display: flex; align-items: center; gap: var(--spacing-md);">
+                                    <i class="bi bi-file-earmark" style="font-size: 1.5rem; color: var(--primary-blue);"></i>
+                                    <div>
+                                        <strong>@livrable.NomDocument</strong>
+                                        <div class="soft-note">@livrable.TypeLivrable · déposé le @livrable.DateDepot.ToString("dd/MM/yyyy")</div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: var(--spacing-xs);">
+                                    <a asp-controller="Document" asp-action="PreviewProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@livrable.Id" target="_blank" class="btn-modern btn-modern-primary icon-button" title="Prévisualiser">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a asp-controller="Document" asp-action="StreamProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@livrable.Id" asp-route-download="true" class="btn-modern btn-modern-secondary icon-button" title="Télécharger">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state-modern">
+                        <i class="bi bi-inbox"></i>
+                        <p>Aucun livrable de planification n'a encore été généré ou déposé.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_DossierSignature", Model)
+
+<script nonce="@cspNonce">
+    window.planningBoard = window.planningBoard || {
+        addTaskRow: function () {
+            const tbody = document.querySelector('#planningTasksTable tbody');
+            if (!tbody) return;
+
+            const row = document.createElement('tr');
+            row.className = 'planning-task-row';
+            row.innerHTML = `
+                <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="CodeWbs" /></td>
+                <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Libelle" /></td>
+                <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Responsable" /></td>
+                <td><input type="date" class="form-control-modern form-control-modern-compact" data-field="DateDebutPrevue" /></td>
+                <td><input type="date" class="form-control-modern form-control-modern-compact" data-field="DateFinPrevue" /></td>
+                <td><div class="planning-progress-cell"><input type="range" min="0" max="100" step="5" class="planning-progress-range" data-field="Avancement" value="0" /><span class="planning-progress-value">0%</span></div></td>
+                <td class="planning-task-checkbox-cell"><input type="checkbox" class="form-check-input" data-field="EstJalon" /></td>
+                <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Dependances" placeholder="1;2" /></td>
+                <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Commentaire" /></td>
+                <td class="planning-task-actions-cell"><button type="button" class="btn-modern btn-modern-secondary icon-button" data-planning-remove="true" title="Supprimer la tâche"><i class="bi bi-trash"></i></button></td>
+            `;
+            tbody.appendChild(row);
+        },
+        addRaciRow: function () {
+            const tbody = document.querySelector('#raciTable tbody');
+            if (!tbody) return;
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="CodeActivite" /></td>
+                <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Activite" /></td>
+                <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Responsable" /></td>
+                <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Approbateur" /></td>
+                <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Consulte" /></td>
+                <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Informe" /></td>
+                <td><button type="button" class="btn-modern btn-modern-secondary icon-button" data-raci-remove="true" title="Supprimer la ligne"><i class="bi bi-trash"></i></button></td>
+            `;
+            tbody.appendChild(row);
+        },
+        addCommunicationRow: function () {
+            const tbody = document.querySelector('#communicationTable tbody');
+            if (!tbody) return;
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Instance" /></td>
+                <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Objectif" /></td>
+                <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Frequence" /></td>
+                <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Canal" /></td>
+                <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Participants" /></td>
+                <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Responsable" /></td>
+                <td class="planning-task-checkbox-cell"><input type="checkbox" class="form-check-input" data-field="EstCopil" /></td>
+                <td><button type="button" class="btn-modern btn-modern-secondary icon-button" data-communication-remove="true" title="Supprimer l'instance"><i class="bi bi-trash"></i></button></td>
+            `;
+            tbody.appendChild(row);
+        },
+        addBudgetRow: function () {
+            const tbody = document.querySelector('#budgetTable tbody');
+            if (!tbody) return;
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Poste" /></td>
+                <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Description" /></td>
+                <td><input type="number" step="0.01" class="form-control-modern form-control-modern-compact" data-field="Montant" value="0" /></td>
+                <td><input type="text" class="form-control-modern form-control-modern-compact" data-field="Commentaire" /></td>
+                <td><button type="button" class="btn-modern btn-modern-secondary icon-button" data-budget-remove="true" title="Supprimer le poste"><i class="bi bi-trash"></i></button></td>
+            `;
+            tbody.appendChild(row);
+            window.planningBoard.refreshBudgetTotal();
+        },
+        removeRow: function (button) {
+            const row = button.closest('tr');
+            if (row) row.remove();
+        },
+        syncRange: function (input) {
+            const wrapper = input.closest('.planning-progress-cell');
+            const value = wrapper ? wrapper.querySelector('.planning-progress-value') : null;
+            if (value) value.textContent = `${input.value}%`;
+        },
+        serializeTable: function (tableSelector, fields, checkboxFields, numberFields) {
+            const rows = Array.from(document.querySelectorAll(`${tableSelector} tbody tr`));
+            return rows.map((row, index) => {
+                const payload = { Ordre: index };
+                fields.forEach(field => {
+                    const node = row.querySelector(`[data-field="${field}"]`);
+                    if (!node) {
+                        payload[field] = '';
+                        return;
+                    }
+
+                    if ((numberFields || []).includes(field)) {
+                        payload[field] = Number(node.value || 0);
+                        return;
+                    }
+
+                    payload[field] = node.value || '';
+                });
+                (checkboxFields || []).forEach(field => {
+                    const node = row.querySelector(`[data-field="${field}"]`);
+                    payload[field] = !!(node && node.checked);
+                });
+                return payload;
+            });
+        },
+        refreshBudgetTotal: function () {
+            const rows = Array.from(document.querySelectorAll('#budgetTable tbody tr'));
+            const total = rows.reduce((sum, row) => {
+                const field = row.querySelector('[data-field="Montant"]');
+                const value = field ? Number(field.value || 0) : 0;
+                return sum + (Number.isFinite(value) ? value : 0);
+            }, 0);
+
+            const label = document.getElementById('budgetTotalValue');
+            if (label) {
+                label.textContent = `${total.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} FCFA`;
+            }
+
+            const hidden = document.getElementById('BudgetPrevisionnelHidden');
+            if (hidden) {
+                hidden.value = total.toFixed(2);
+            }
+        },
+        serializeKickOff: function () {
+            return {
+                DateReunion: document.getElementById('kickOffDate')?.value || null,
+                Heure: document.getElementById('kickOffHeure')?.value || '',
+                Lieu: document.getElementById('kickOffLieu')?.value || '',
+                Animateur: document.getElementById('kickOffAnimateur')?.value || '',
+                Objectifs: document.getElementById('kickOffObjectifs')?.value || '',
+                Participants: document.getElementById('kickOffParticipants')?.value || '',
+                OrdreDuJour: document.getElementById('kickOffOrdreDuJour')?.value || '',
+                Decisions: document.getElementById('kickOffDecisions')?.value || '',
+                Actions: document.getElementById('kickOffActions')?.value || '',
+                Commentaires: document.getElementById('kickOffCommentaires')?.value || ''
+            };
+        },
+        syncLegacySummaries: function (raci, communication) {
+            const raciHidden = document.getElementById('RaciParActiviteHidden');
+            if (raciHidden) {
+                raciHidden.value = raci
+                    .filter(line => line.Activite)
+                    .map(line => `${line.CodeActivite ? `${line.CodeActivite} - ` : ''}${line.Activite} | R: ${line.Responsable} | A: ${line.Approbateur} | C: ${line.Consulte} | I: ${line.Informe}`)
+                    .join('\n');
+            }
+
+            const freqHidden = document.getElementById('FrequenceReunionsHidden');
+            if (freqHidden) {
+                freqHidden.value = communication.filter(line => line.Instance || line.Frequence).map(line => `${line.Instance}: ${line.Frequence}`).join(' ; ');
+            }
+
+            const participantsHidden = document.getElementById('ParticipantsReunionsHidden');
+            if (participantsHidden) {
+                participantsHidden.value = communication.filter(line => line.Instance || line.Participants).map(line => `${line.Instance}: ${line.Participants}`).join('\n');
+            }
+
+            const canalHidden = document.getElementById('CanalCommunicationHidden');
+            if (canalHidden) {
+                canalHidden.value = communication.filter(line => line.Instance || line.Canal).map(line => `${line.Instance}: ${line.Canal}`).join(' ; ');
+            }
+        },
+        serializeAll: function () {
+            const ganttRows = window.planningBoard.serializeTable('#planningTasksTable',
+                ['CodeWbs', 'Libelle', 'Responsable', 'DateDebutPrevue', 'DateFinPrevue', 'Avancement', 'Dependances', 'Commentaire'],
+                ['EstJalon'],
+                ['Avancement']);
+            const raciRows = window.planningBoard.serializeTable('#raciTable',
+                ['CodeActivite', 'Activite', 'Responsable', 'Approbateur', 'Consulte', 'Informe']);
+            const communicationRows = window.planningBoard.serializeTable('#communicationTable',
+                ['Instance', 'Objectif', 'Frequence', 'Canal', 'Participants', 'Responsable'],
+                ['EstCopil']);
+            const budgetRows = window.planningBoard.serializeTable('#budgetTable',
+                ['Poste', 'Description', 'Montant', 'Commentaire'],
+                [],
+                ['Montant']);
+            const kickOff = window.planningBoard.serializeKickOff();
+
+            document.getElementById('ganttPayload').value = JSON.stringify(ganttRows);
+            document.getElementById('raciPayload').value = JSON.stringify(raciRows);
+            document.getElementById('communicationPayload').value = JSON.stringify(communicationRows);
+            document.getElementById('budgetPayload').value = JSON.stringify(budgetRows);
+            document.getElementById('kickOffPayload').value = JSON.stringify(kickOff);
+            window.planningBoard.syncLegacySummaries(raciRows, communicationRows);
+            window.planningBoard.refreshBudgetTotal();
+            return true;
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const addTaskButton = document.getElementById('planningAddTaskButton');
+        if (addTaskButton) {
+            addTaskButton.addEventListener('click', function () {
+                window.planningBoard.addTaskRow();
+            });
+        }
+
+        const addRaciButton = document.getElementById('raciAddRowButton');
+        if (addRaciButton) {
+            addRaciButton.addEventListener('click', function () {
+                window.planningBoard.addRaciRow();
+            });
+        }
+
+        const addCommunicationButton = document.getElementById('communicationAddRowButton');
+        if (addCommunicationButton) {
+            addCommunicationButton.addEventListener('click', function () {
+                window.planningBoard.addCommunicationRow();
+            });
+        }
+
+        const addBudgetButton = document.getElementById('budgetAddRowButton');
+        if (addBudgetButton) {
+            addBudgetButton.addEventListener('click', function () {
+                window.planningBoard.addBudgetRow();
+            });
+        }
+
+        const planificationZone = document.querySelector('.planning-gantt-shell');
+        if (planificationZone) {
+            planificationZone.addEventListener('click', function (event) {
+                const element = event.target instanceof Element ? event.target.closest('[data-planning-remove="true"], [data-raci-remove="true"], [data-communication-remove="true"], [data-budget-remove="true"]') : null;
+                if (!element) return;
+
+                window.planningBoard.removeRow(element);
+                window.planningBoard.refreshBudgetTotal();
+            });
+
+            planificationZone.addEventListener('input', function (event) {
+                const target = event.target;
+                if (target instanceof HTMLInputElement && target.matches('.planning-progress-range')) {
+                    window.planningBoard.syncRange(target);
+                }
+
+                if (target instanceof HTMLInputElement && target.matches('#budgetTable [data-field="Montant"]')) {
+                    window.planningBoard.refreshBudgetTotal();
+                }
+            });
+        }
+
+        const planningForm = document.getElementById('planningForm');
+        if (planningForm) {
+            planningForm.addEventListener('submit', function () {
+                window.planningBoard.serializeAll();
+            });
+        }
+
+        document.querySelectorAll('[data-confirm-submit]').forEach(function (button) {
+            button.addEventListener('click', function (event) {
+                const message = button.getAttribute('data-confirm-submit');
+                if (message && !window.confirm(message)) {
+                    event.preventDefault();
+                }
+            });
+        });
+
+        window.planningBoard.refreshBudgetTotal();
+    });
+</script>

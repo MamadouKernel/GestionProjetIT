@@ -1,0 +1,278 @@
+@model GestionProjects.Domain.Models.Projet
+@using GestionProjects.Domain.Enums
+@inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
+
+@{
+    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, Model);
+    var canEdit = ui.CanEditCollaboration;
+    var collab = ViewBag.Collaboration as GestionProjects.Domain.Models.CollaborationProjet;
+    var taches = collab?.Taches?.OrderBy(t => t.Phase).ToList() ?? new List<GestionProjects.Domain.Models.TacheCollaborationProjet>();
+}
+
+<div class="card-modern mb-4">
+    <div class="card-header-modern">
+        <div class="surface-action-row w-100 justify-content-between">
+            <div>
+                <h3 class="card-title-modern" style="font-size:1.05rem;">
+                    <i class="bi bi-microsoft-teams" style="color:#6264A7;"></i>
+                    Collaboration Teams / Planner
+                </h3>
+                <div class="soft-note">Pilotage des espaces collaboratifs, du provisioning Microsoft 365 et des tâches synchronisées.</div>
+            </div>
+            @if (collab != null && canEdit)
+            {
+                <form asp-action="SynchroniserCollaboration" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="projetId" value="@Model.Id" />
+                    <button type="submit" class="btn-modern btn-modern-secondary">
+                        <i class="bi bi-arrow-clockwise"></i> Synchroniser
+                    </button>
+                </form>
+            }
+        </div>
+    </div>
+    <div class="card-body-modern">
+        @if (collab == null)
+        {
+            <div class="surface-empty">
+                <i class="bi bi-people"></i>
+                <h5>Collaboration non configurée</h5>
+                <p>Configurez une équipe Teams et un plan Planner pour suivre les tâches du projet dans un espace partagé.</p>
+                @if (canEdit)
+                {
+                    <button class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#modalCollab">
+                        <i class="bi bi-gear"></i> Configurer la collaboration
+                    </button>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="surface-grid mb-4">
+                <div class="surface-panel">
+                    <div class="surface-panel-title">Configuration</div>
+                    <div class="surface-pair-grid">
+                        <div>Mode</div>
+                        <div>@(collab.Mode == ModeCollaborationProjet.Microsoft365 ? "Microsoft 365 (Teams + Planner)" : "Manuel")</div>
+
+                        <div>Statut</div>
+                        <div>
+                            <span class="badge-modern badge-modern-@(collab.Statut == StatutCollaborationProjet.Synchronisee ? "success" : collab.Statut == StatutCollaborationProjet.Configuree ? "info" : collab.Statut == StatutCollaborationProjet.Erreur ? "danger" : "secondary")">
+                                @collab.Statut
+                            </span>
+                        </div>
+
+                        <div>Dernière synchro</div>
+                        <div>@(collab.DerniereSynchronisationEquipe?.ToString("dd/MM/yyyy HH:mm") ?? "Jamais")</div>
+
+                        <div>Membres synchronisés</div>
+                        <div>@collab.NombreMembresSynchronises</div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(collab.MessageStatut))
+                    {
+                        <div class="record-card-note mt-3">@collab.MessageStatut</div>
+                    }
+                </div>
+
+                <div class="surface-panel">
+                    <div class="surface-panel-title">Espaces liés</div>
+                    <div class="record-stack">
+                        @if (!string.IsNullOrWhiteSpace(collab.NomEquipeTeams))
+                        {
+                            <div class="record-card">
+                                <div class="record-card-title">Équipe Teams</div>
+                                <div class="record-card-subtitle">@collab.NomEquipeTeams</div>
+                                @if (!string.IsNullOrWhiteSpace(collab.TeamUrl))
+                                {
+                                    <div class="record-card-actions">
+                                        <a href="@collab.TeamUrl" target="_blank" class="btn-modern btn-modern-secondary">
+                                            <i class="bi bi-box-arrow-up-right"></i> Ouvrir dans Teams
+                                        </a>
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(collab.NomCanalTeams))
+                        {
+                            <div class="record-card">
+                                <div class="record-card-title">Canal</div>
+                                <div class="record-card-subtitle">@collab.NomCanalTeams</div>
+                                @if (!string.IsNullOrWhiteSpace(collab.ChannelUrl))
+                                {
+                                    <div class="record-card-actions">
+                                        <a href="@collab.ChannelUrl" target="_blank" class="btn-modern btn-modern-secondary">
+                                            <i class="bi bi-box-arrow-up-right"></i> Ouvrir le canal
+                                        </a>
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(collab.NomPlanPlanner))
+                        {
+                            <div class="record-card">
+                                <div class="record-card-title">Plan Planner</div>
+                                <div class="record-card-subtitle">@collab.NomPlanPlanner</div>
+                                @if (!string.IsNullOrWhiteSpace(collab.PlanUrl))
+                                {
+                                    <div class="record-card-actions">
+                                        <a href="@collab.PlanUrl" target="_blank" class="btn-modern btn-modern-secondary">
+                                            <i class="bi bi-box-arrow-up-right"></i> Ouvrir dans Planner
+                                        </a>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            @if (taches.Any())
+            {
+                <div class="card-modern" style="border:1px solid var(--gray-200);">
+                    <div class="card-header-modern">
+                        <h5 class="card-title-modern" style="font-size:.95rem;margin:0;">
+                            <i class="bi bi-kanban"></i> Tâches par phase
+                        </h5>
+                    </div>
+                    <div class="card-body-modern" style="padding:0;">
+                        <div class="table-modern">
+                            <table style="width:100%;">
+                                <thead>
+                                    <tr>
+                                        <th>Phase</th>
+                                        <th>Titre</th>
+                                        <th>Statut</th>
+                                        <th>Échéance</th>
+                                        <th>Synchronisé</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var t in taches)
+                                    {
+                                        var statClass = t.Statut switch {
+                                            StatutTacheCollaborationProjet.Terminee => "success",
+                                            StatutTacheCollaborationProjet.EnCours => "info",
+                                            StatutTacheCollaborationProjet.Bloquee => "danger",
+                                            _ => "secondary"
+                                        };
+                                        <tr>
+                                            <td><span class="badge-modern badge-modern-secondary">@t.Phase</span></td>
+                                            <td>@t.Titre</td>
+                                            <td><span class="badge-modern badge-modern-@statClass">@t.Statut</span></td>
+                                            <td>@(t.DateEcheance?.ToString("dd/MM/yyyy") ?? "—")</td>
+                                            <td>@(t.EstSynchronisee ? "Oui" : "—")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (canEdit)
+            {
+                <div class="text-end mt-3">
+                    <button class="btn-modern btn-modern-secondary" data-bs-toggle="modal" data-bs-target="#modalCollab">
+                        <i class="bi bi-pencil"></i> Modifier la configuration
+                    </button>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@if (canEdit)
+{
+    <div class="modal fade" id="modalCollab" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-gear"></i> Configurer la collaboration</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form asp-action="ConfigurerCollaboration" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="projetId" value="@Model.Id" />
+                    <div class="modal-body">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Mode de collaboration *</label>
+                            <select name="mode" class="form-control-modern" id="selectModeCollab">
+                                @if (collab?.Mode == ModeCollaborationProjet.Manuel)
+                                {
+                                    <option value="@ModeCollaborationProjet.Manuel" selected="selected">Manuel (suivi interne)</option>
+                                }
+                                else
+                                {
+                                    <option value="@ModeCollaborationProjet.Manuel">Manuel (suivi interne)</option>
+                                }
+
+                                @if (collab?.Mode == ModeCollaborationProjet.Microsoft365)
+                                {
+                                    <option value="@ModeCollaborationProjet.Microsoft365" selected="selected">Microsoft 365 (Teams + Planner)</option>
+                                }
+                                else
+                                {
+                                    <option value="@ModeCollaborationProjet.Microsoft365">Microsoft 365 (Teams + Planner)</option>
+                                }
+                            </select>
+                        </div>
+
+                        <hr />
+
+                        <div id="sectionTeams">
+                            <h6 class="fw-bold mb-3">Microsoft Teams</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Nom de l'équipe</label>
+                                    <input name="nomEquipeTeams" type="text" class="form-control" value="@(collab?.NomEquipeTeams ?? $"{Model.CodeProjet} - {Model.Titre}")" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Nom du canal</label>
+                                    <input name="nomCanalTeams" type="text" class="form-control" value="@(collab?.NomCanalTeams ?? "Général")" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Teams ID (optionnel)</label>
+                                    <input name="teamId" type="text" class="form-control" value="@collab?.TeamId" placeholder="ID de l'équipe Teams" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">URL Teams (optionnel)</label>
+                                    <input name="teamUrl" type="url" class="form-control" value="@collab?.TeamUrl" placeholder="https://teams.microsoft.com/..." />
+                                </div>
+                            </div>
+
+                            <hr />
+
+                            <h6 class="fw-bold mb-3">Microsoft Planner</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Nom du plan</label>
+                                    <input name="nomPlanPlanner" type="text" class="form-control" value="@(collab?.NomPlanPlanner ?? $"Planification {Model.CodeProjet}")" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Nom du bucket (optionnel)</label>
+                                    <input name="nomBucketPlanner" type="text" class="form-control" value="@collab?.NomBucketPlanner" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Plan ID (optionnel)</label>
+                                    <input name="planId" type="text" class="form-control" value="@collab?.PlanId" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Bucket ID (optionnel)</label>
+                                    <input name="bucketId" type="text" class="form-control" value="@collab?.BucketId" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn-modern btn-modern-primary">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}

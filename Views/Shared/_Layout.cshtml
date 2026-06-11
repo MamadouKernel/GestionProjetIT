@@ -1,0 +1,480 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Zéïnab</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+    <style>
+        .sidebar {
+            scrollbar-width: thin;
+            scrollbar-color: var(--gray-300) transparent;
+        }
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background-color: var(--gray-300);
+            border-radius: 3px;
+        }
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background-color: var(--gray-400);
+        }
+    </style>
+</head>
+<body data-controller="@(ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty)"
+      data-action="@(ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty)"
+      data-page-title="@(ViewData["Title"]?.ToString() ?? string.Empty)">
+    @if (User?.Identity?.IsAuthenticated == true)
+    {
+        <div class="app-container">
+            <!-- Sidebar Overlay (mobile) -->
+            <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+            
+            <!-- Sidebar -->
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-header">
+                    <div class="sidebar-brand">
+                        <span class="logo-icon">ZE</span>
+                        <div class="brand-copy">
+                            <span class="brand-name">Zéïnab</span>
+                            <span class="brand-caption">DSI Côte d'Ivoire Terminal</span>
+                        </div>
+                    </div>
+                    <button class="sidebar-toggle d-none d-md-flex" id="sidebarCollapseBtn" onclick="toggleSidebarDesktop()" title="Réduire le menu" aria-label="Réduire le menu">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                </div>
+                <nav class="sidebar-nav">
+                    @await Component.InvokeAsync("SidebarMenu")
+                </nav>
+            </aside>
+            
+            <!-- Main Content -->
+            <div class="main-content">
+                <div class="topbar">
+                    <div class="d-flex align-items-center gap-3">
+                        <button class="d-md-none" id="sidebarToggleBtn" onclick="toggleSidebar()" aria-label="Menu">
+                            <i class="bi bi-list"></i>
+                        </button>
+                        <div class="topbar-heading">
+                            <h1 class="topbar-title">@ViewData["Title"]</h1>
+                            <div class="topbar-subtitle">Zéïnab · Pilotage des projets, validations et portefeuille IT</div>
+                        </div>
+                    </div>
+                    <div class="topbar-user">
+                        <!-- Notifications -->
+                        <div class="dropdown">
+                            <button class="notif-btn d-flex align-items-center justify-content-center" data-bs-toggle="dropdown" aria-expanded="false"
+                                aria-label="Notifications">
+                                <i class="bi bi-bell"></i>
+                                <span id="notificationBadge" class="notif-badge"></span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end notif-dropdown">
+                                <li class="notif-header">
+                                    <span class="notif-title">Notifications</span>
+                                    <a asp-controller="Notification" asp-action="Index" class="notif-see-all">Voir tout</a>
+                                </li>
+                                <li>
+                                    <div id="notificationsList" class="notif-list">
+                                        <div class="text-center p-4 text-muted notif-loading">Chargement…</div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- User menu -->
+                        <div class="dropdown">
+                            @{
+                                var nom = User.FindFirst("Nom")?.Value ?? "";
+                                var prenom = User.FindFirst("Prenoms")?.Value ?? "";
+                                var initiales = (!string.IsNullOrEmpty(nom) ? nom[0].ToString() : "") + (!string.IsNullOrEmpty(prenom) ? prenom[0].ToString() : "");
+                                var roleLabel = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
+                            }
+                            <div class="user-info" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <div class="user-avatar">@initiales</div>
+                                <div class="d-none d-sm-block">
+                                    <div class="user-name">@nom @prenom</div>
+                                    <div class="user-role-label">@roleLabel</div>
+                                </div>
+                                <i class="bi bi-chevron-down user-chevron"></i>
+                            </div>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li class="user-menu-header">
+                                    <div class="user-menu-name">@nom @prenom</div>
+                                    <div class="user-menu-role">@roleLabel</div>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Account" asp-action="Profil">
+                                        <i class="bi bi-person-circle"></i> Mon Profil
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Aide" asp-action="Index">
+                                        <i class="bi bi-question-circle"></i> Aide
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider" /></li>
+                                <li>
+                                    <form id="logoutForm" asp-controller="Account" asp-action="LogoutPost" method="post" class="m-0">
+                                        @Html.AntiForgeryToken()
+                                        <input id="logoutReason" type="hidden" name="reason" value="" />
+                                        <button type="submit" class="dropdown-item logout-btn">
+                                            <i class="bi bi-box-arrow-right text-danger"></i> Déconnexion
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="content-wrapper">
+                    @if (TempData["Success"] != null)
+                    {
+                        <div class="alert-modern alert-modern-success alert-dismissible fade show" role="alert">
+                            <i class="bi bi-check-circle-fill"></i>
+                            <div>
+                                <strong>Succès :</strong> @TempData["Success"]
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    @if (TempData["Error"] != null || TempData["ErrorHtml"] != null)
+                    {
+                        <div class="alert-modern alert-modern-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            <div>
+                                <strong>Erreur :</strong>
+                                @if (TempData["ErrorHtml"] != null)
+                                {
+                                    @Html.Raw(TempData["ErrorHtml"])
+                                }
+                                else
+                                {
+                                    @TempData["Error"]
+                                }
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    @if (TempData["Warning"] != null)
+                    {
+                        <div class="alert-modern alert-modern-warning alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-circle-fill"></i>
+                            <div>
+                                <strong>Attention :</strong> @TempData["Warning"]
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    @if (TempData["Info"] != null)
+                    {
+                        <div class="alert-modern alert-modern-info alert-dismissible fade show" role="alert">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <div>
+                                <strong>Information :</strong> @TempData["Info"]
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    
+                    <form id="antiForgeryForm" class="d-none">@Html.AntiForgeryToken()</form>
+                    <div class="flex-grow-1">
+                        @RenderBody()
+                    </div>
+                    
+                    <footer class="layout-footer">
+                        <span class="footer-copyright">&copy; @DateTime.Now.Year Côte d'Ivoire Terminal · DSI</span>
+                        <span class="footer-version">Zéïnab v2.0</span>
+                    </footer>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <form id="antiForgeryForm" class="d-none">@Html.AntiForgeryToken()</form>
+        @RenderBody()
+    }
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        /* ── Sidebar mobile (drawer) ── */
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const open = sidebar.classList.toggle('open');
+            overlay.classList.toggle('active', open);
+            document.body.style.overflow = open ? 'hidden' : '';
+        }
+
+        /* ── Sidebar desktop (collapse to mini) ── */
+        function toggleSidebarDesktop() {
+            const sidebar = document.getElementById('sidebar');
+            const collapsed = sidebar.classList.toggle('collapsed');
+            document.body.classList.toggle('sidebar-collapsed', collapsed);
+            localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0');
+            const btn = document.getElementById('sidebarCollapseBtn');
+            if (btn) btn.title = collapsed ? 'Développer le menu' : 'Réduire le menu';
+        }
+
+        /* Restore state */
+        (function () {
+            if (window.innerWidth >= 769 && localStorage.getItem('sidebarCollapsed') === '1') {
+                document.getElementById('sidebar')?.classList.add('collapsed');
+                document.body.classList.add('sidebar-collapsed');
+            }
+        })();
+
+        /* Close mobile sidebar on outside click */
+        document.getElementById('sidebarOverlay')?.addEventListener('click', toggleSidebar);
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar?.classList.contains('open')) toggleSidebar();
+            }
+        });
+        
+        // Animation du chevron du dropdown utilisateur
+        (function() {
+            function initUserDropdown() {
+                const userDropdown = document.getElementById('userDropdown');
+                if (!userDropdown) return;
+                
+                const chevron = userDropdown.querySelector('.bi-chevron-down');
+                if (!chevron) return;
+                
+                // S'assurer que Bootstrap dropdown est initialisé
+                if (typeof bootstrap !== 'undefined') {
+                    try {
+                        // Vérifier si une instance existe déjà
+                        let dropdownInstance = bootstrap.Dropdown.getInstance(userDropdown);
+                        if (!dropdownInstance) {
+                            dropdownInstance = new bootstrap.Dropdown(userDropdown);
+                        }
+                    } catch (e) {
+                        console.warn('Erreur lors de l\'initialisation du dropdown:', e);
+                    }
+                }
+                
+                // Animation du chevron
+                userDropdown.addEventListener('show.bs.dropdown', function() {
+                    const chevronEl = userDropdown.querySelector('.bi-chevron-down');
+                    if (chevronEl) chevronEl.style.transform = 'rotate(180deg)';
+                });
+                
+                userDropdown.addEventListener('hide.bs.dropdown', function() {
+                    const chevronEl = userDropdown.querySelector('.bi-chevron-down');
+                    if (chevronEl) chevronEl.style.transform = 'rotate(0deg)';
+                });
+            }
+            
+            // Initialiser au chargement de la page
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    setTimeout(initUserDropdown, 50);
+                });
+            } else {
+                setTimeout(initUserDropdown, 50);
+            }
+        })();
+    </script>
+
+    @if (User?.Identity?.IsAuthenticated == true)
+    {
+        <script>
+            (function() {
+            
+            let inactivityTimer;
+            const INACTIVITY_TIMEOUT = 60 * 60 * 1000; // 1 heure en millisecondes
+            const WARNING_TIME = 5 * 60 * 1000; // Avertir 5 minutes avant
+            
+            let warningShown = false;
+            let warningTimer;
+
+            function resetTimer() {
+                clearTimeout(inactivityTimer);
+                clearTimeout(warningTimer);
+                warningShown = false;
+                
+                // Définir le timer principal
+                inactivityTimer = setTimeout(function() {
+                    logoutNow();
+                }, INACTIVITY_TIMEOUT);
+
+                // Afficher un avertissement 5 minutes avant la déconnexion
+                warningTimer = setTimeout(function() {
+                    if (!warningShown) {
+                        warningShown = true;
+                        const warningModal = document.createElement('div');
+                        warningModal.className = 'modal fade show';
+                        warningModal.style.display = 'block';
+                        warningModal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                        warningModal.innerHTML = 
+                            "<div class=\"modal-dialog modal-dialog-centered\">" +
+                                "<div class=\"modal-content\" style=\"border-radius: var(--radius-lg);\">" +
+                                    "<div class=\"modal-header\" style=\"background: var(--warning); color: white; border-radius: var(--radius-lg) var(--radius-lg) 0 0;\">" +
+                                        "<h5 class=\"modal-title\">" +
+                                            "<i class=\"bi bi-exclamation-triangle-fill\"></i> Session sur le point d'expirer" +
+                                        "</h5>" +
+                                    "</div>" +
+                                    "<div class=\"modal-body\" style=\"padding: var(--spacing-lg);\">" +
+                                        "<p>Votre session expirera dans <strong id=\"countdown\">5:00</strong> minutes en raison de l'inactivité.</p>" +
+                                        "<p class=\"mb-0\">Souhaitez-vous continuer votre session ?</p>" +
+                                    "</div>" +
+                                    "<div class=\"modal-footer\">" +
+                                        "<button type=\"button\" class=\"btn-modern btn-modern-primary\" onclick=\"extendSession()\">" +
+                                            "<i class=\"bi bi-check-circle\"></i> Continuer" +
+                                        "</button>" +
+                                        "<button type=\"button\" class=\"btn-modern btn-modern-secondary\" onclick=\"logoutNow()\">" +
+                                            "<i class=\"bi bi-box-arrow-right\"></i> Se déconnecter" +
+                                        "</button>" +
+                                    "</div>" +
+                                "</div>" +
+                            "</div>";
+                        document.body.appendChild(warningModal);
+                        
+                        // Compte à rebours
+                        let seconds = 300; // 5 minutes
+                        const countdownEl = warningModal.querySelector('#countdown');
+                        const countdownInterval = setInterval(function() {
+                            seconds--;
+                            const mins = Math.floor(seconds / 60);
+                            const secs = seconds % 60;
+                            const secsStr = secs.toString().padStart(2, '0');
+                            countdownEl.textContent = mins + ':' + secsStr;
+                            
+                            if (seconds <= 0) {
+                                clearInterval(countdownInterval);
+                                logoutNow();
+                            }
+                        }, 1000);
+                    }
+                }, INACTIVITY_TIMEOUT - WARNING_TIME);
+            }
+
+            function extendSession() {
+                // Récupérer le token anti-forgery
+                const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+                const token = tokenInput ? tokenInput.value : '';
+                
+                // Faire une requête pour renouveler la session
+                const formData = new FormData();
+                if (token) {
+                    formData.append('__RequestVerificationToken', token);
+                }
+                
+                fetch('@Url.Action("KeepAlive", "Account")', {
+                    method: 'POST',
+                    body: formData
+                }).then(() => {
+                    const modal = document.querySelector('.modal.show');
+                    if (modal) {
+                        modal.remove();
+                    }
+                    warningShown = false;
+                    resetTimer();
+                }).catch(() => {
+                    // En cas d'erreur, réinitialiser quand même le timer
+                    const modal = document.querySelector('.modal.show');
+                    if (modal) {
+                        modal.remove();
+                    }
+                    warningShown = false;
+                    resetTimer();
+                });
+            }
+
+            function logoutNow() {
+                const form = document.getElementById('logoutForm');
+                const reasonInput = document.getElementById('logoutReason');
+                if (reasonInput) {
+                    reasonInput.value = 'inactivity';
+                }
+                if (form) {
+                    form.submit();
+                }
+            }
+
+            // Événements qui réinitialisent le timer
+            const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+            events.forEach(function(event) {
+                document.addEventListener(event, resetTimer, true);
+            });
+
+            // Démarrer le timer au chargement
+            resetTimer();
+            })();
+            
+            // Charger les notifications
+            function loadNotifications() {
+                fetch('@Url.Action("GetUnreadCount", "Notification")')
+                    .then(response => response.json())
+                    .then(data => {
+                        const badge = document.getElementById('notificationBadge');
+                        if (data.count > 0) {
+                            badge.textContent = data.count > 99 ? '99+' : data.count;
+                            badge.style.display = 'inline-block';
+                        } else {
+                            badge.style.display = 'none';
+                        }
+                    })
+                    .catch(err => console.error('Erreur chargement notifications:', err));
+                
+                fetch('@Url.Action("GetUnreadNotifications", "Notification")?count=5')
+                    .then(response => response.json())
+                    .then(data => {
+                        const list = document.getElementById('notificationsList');
+                        if (data.length === 0) {
+                            list.innerHTML = '<div class="text-center p-3 text-muted" style="font-size: 0.875rem;">Aucune notification</div>';
+                        } else {
+                            list.innerHTML = data.map(n => `
+                                <div class="dropdown-item-text" style="padding: var(--spacing-md); border-bottom: 1px solid var(--gray-100);">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <div style="font-weight: 600; font-size: 0.875rem; margin-bottom: var(--spacing-xs);">${escapeHtml(n.titre)}</div>
+                                            <div style="font-size: 0.8rem; color: var(--gray-600); margin-bottom: var(--spacing-xs);">${escapeHtml(n.message)}</div>
+                                            <div style="font-size: 0.75rem; color: var(--gray-500);">${n.dateCreationFormatted}</div>
+                                        </div>
+                                        ${n.entiteType && n.entiteId ? `<a href="${getEntityUrl(n.entiteType, n.entiteId)}" class="btn-modern btn-modern-sm btn-modern-secondary" style="margin-left: var(--spacing-sm);"><i class="bi bi-arrow-right"></i></a>` : ''}
+                                    </div>
+                                </div>
+                            `).join('');
+                        }
+                    })
+                    .catch(err => console.error('Erreur chargement liste notifications:', err));
+            }
+            
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            function getEntityUrl(entiteType, entiteId) {
+                switch(entiteType) {
+                    case 'Projet': return '@Url.Action("Details", "Projet")/' + entiteId;
+                    case 'DemandeProjet': return '@Url.Action("Details", "DemandeProjet")/' + entiteId;
+                    case 'AnomalieProjet': return '@Url.Action("Details", "Projet")/' + entiteId + '?tab=execution';
+                    default: return '#';
+                }
+            }
+            
+            // Charger les notifications au chargement de la page
+            loadNotifications();
+            // Recharger toutes les 30 secondes
+            setInterval(loadNotifications, 30000);
+            </script>
+        }
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+

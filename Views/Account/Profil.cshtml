@@ -1,0 +1,196 @@
+@model GestionProjects.Application.ViewModels.ProfilViewModel
+
+@{
+    ViewData["Title"] = "Mon Profil";
+}
+
+<div class="fade-in profile-shell">
+    <section class="profile-hero">
+        <span class="badge-modern badge-modern-info mb-3">Espace personnel</span>
+        <h1 class="profile-hero-title">Mon Profil</h1>
+        <p class="profile-hero-copy">
+            Gérez vos informations personnelles, suivez vos accès actifs et mettez à jour votre mot de passe
+            depuis un point d'entrée unique et lisible.
+        </p>
+        <div class="profile-role-cloud">
+            @foreach (var role in Model.Roles)
+            {
+                <span class="profile-role-chip">
+                    <i class="bi bi-shield-check"></i>
+                    @(role switch {
+                        "DSI" => "DSI",
+                        "AdminIT" => "Admin IT",
+                        "ResponsableSolutionsIT" => "Responsable Solutions IT",
+                        "DirecteurMetier" => "Directeur Métier",
+                        "ChefDeProjet" => "Chef de Projet",
+                        "Demandeur" => "Demandeur",
+                        _ => role
+                    })
+                </span>
+            }
+        </div>
+    </section>
+
+    <form asp-action="Profil" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+
+        @await Html.PartialAsync("_ValidationSummary")
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card-modern mb-4">
+                    <div class="card-header-modern">
+                        <h3 class="card-title-modern">
+                            <i class="bi bi-person-vcard"></i>
+                            Identité et rattachement
+                        </h3>
+                    </div>
+                    <div class="card-body-modern">
+                        <div class="form-group-modern">
+                            <label asp-for="Matricule" class="form-label-modern">Matricule</label>
+                            <input asp-for="Matricule" class="form-control-modern" readonly />
+                            <small class="profile-muted-note">Le matricule est figé et piloté par l'administration.</small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group-modern">
+                                    <label asp-for="Nom" class="form-label-modern">Nom *</label>
+                                    <input asp-for="Nom" class="form-control-modern" required />
+                                    <span asp-validation-for="Nom" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group-modern">
+                                    <label asp-for="Prenoms" class="form-label-modern">Prénoms *</label>
+                                    <input asp-for="Prenoms" class="form-control-modern" required />
+                                    <span asp-validation-for="Prenoms" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="Email" class="form-label-modern">Email *</label>
+                            <input asp-for="Email" type="email" class="form-control-modern" required />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Direction</label>
+                            <input type="text" class="form-control-modern" value="@Model.DirectionLibelle" readonly />
+                            <small class="profile-muted-note">La direction de rattachement reste gérée par l'administration.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card-modern mb-4">
+                    <div class="card-header-modern">
+                        <h3 class="card-title-modern">
+                            <i class="bi bi-activity"></i>
+                            Activité du compte
+                        </h3>
+                    </div>
+                    <div class="card-body-modern">
+                        <div class="profile-metric-grid">
+                            <div class="profile-metric-card">
+                                <span class="profile-metric-label">Dernière connexion</span>
+                                <span class="profile-metric-value">@(Model.DateDerniereConnexion?.ToString("dd/MM/yyyy HH:mm") ?? "Jamais")</span>
+                            </div>
+                            <div class="profile-metric-card">
+                                <span class="profile-metric-label">Connexions</span>
+                                <span class="profile-metric-value">@Model.NombreConnexion</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-modern mb-4">
+                    <div class="card-header-modern">
+                        <h3 class="card-title-modern">
+                            <i class="bi bi-shield-lock"></i>
+                            Rôles actifs
+                        </h3>
+                    </div>
+                    <div class="card-body-modern">
+                        <div class="profile-role-cloud">
+                            @foreach (var role in Model.Roles)
+                            {
+                                <span class="profile-role-chip">
+                                    <i class="bi bi-person-badge"></i>
+                                    @(role switch {
+                                        "DSI" => "DSI",
+                                        "AdminIT" => "Admin IT",
+                                        "ResponsableSolutionsIT" => "Responsable Solutions IT",
+                                        "DirecteurMetier" => "Directeur Métier",
+                                        "ChefDeProjet" => "Chef de Projet",
+                                        "Demandeur" => "Demandeur",
+                                        _ => role
+                                    })
+                                </span>
+                            }
+                        </div>
+                        <p class="profile-muted-note mt-3 mb-0">La gestion des rôles se fait uniquement depuis l'administration.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-modern mb-4">
+            <div class="card-header-modern">
+                <h3 class="card-title-modern">
+                    <i class="bi bi-key"></i>
+                    Sécurité du mot de passe
+                </h3>
+            </div>
+            <div class="card-body-modern">
+                <div class="alert-modern alert-modern-info mb-4">
+                    <i class="bi bi-info-circle"></i>
+                    <div>Laissez les champs vides si vous ne souhaitez pas modifier votre mot de passe sur cette session.</div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-4">
+                        <div class="form-group-modern">
+                            <label asp-for="MotDePasseActuel" class="form-label-modern">Mot de passe actuel</label>
+                            <input asp-for="MotDePasseActuel" type="password" class="form-control-modern" autocomplete="current-password" />
+                            <span asp-validation-for="MotDePasseActuel" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="form-group-modern">
+                            <label asp-for="NouveauMotDePasse" class="form-label-modern">Nouveau mot de passe</label>
+                            <input asp-for="NouveauMotDePasse" type="password" class="form-control-modern" autocomplete="new-password" minlength="12" />
+                            <small class="profile-muted-note">Minimum 12 caractères avec au moins une majuscule et un chiffre.</small>
+                            <span asp-validation-for="NouveauMotDePasse" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="form-group-modern">
+                            <label asp-for="ConfirmerMotDePasse" class="form-label-modern">Confirmation</label>
+                            <input asp-for="ConfirmerMotDePasse" type="password" class="form-control-modern" autocomplete="new-password" minlength="12" />
+                            <span asp-validation-for="ConfirmerMotDePasse" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="auth-actions">
+            <button type="submit" class="btn-modern btn-modern-primary">
+                <i class="bi bi-save"></i>
+                Enregistrer les modifications
+            </button>
+            <a asp-action="Index" asp-controller="Home" class="btn-modern btn-modern-secondary">
+                <i class="bi bi-arrow-left"></i>
+                Retour au tableau de bord
+            </a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

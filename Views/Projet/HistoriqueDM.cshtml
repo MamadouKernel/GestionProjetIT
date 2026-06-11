@@ -1,0 +1,634 @@
+@model IEnumerable<GestionProjects.Domain.Models.Projet>
+@using GestionProjects.Domain.Enums
+@using GestionProjects.Domain.Models
+@{
+    ViewData["Title"] = "Historique de mes Projets";
+    var projetsAvecHistorique = ViewBag.ProjetsAvecHistorique as List<dynamic> ?? new List<dynamic>();
+    var directions    = ViewBag.Directions as IEnumerable<Direction> ?? Enumerable.Empty<Direction>();
+    var recherche     = ViewBag.Recherche as string ?? string.Empty;
+    var selectedDir   = ViewBag.SelectedDirectionId as Guid?;
+    var selectedPhase = ViewBag.SelectedPhase as PhaseProjet?;
+    var selectedStatut = ViewBag.SelectedStatut as StatutProjet?;
+    var totalCount    = ViewBag.TotalCount as int? ?? Model.Count();
+}
+
+<div class="fade-in app-page">
+    <div class="card-modern mb-0">
+        <div class="card-header-modern page-hero">
+            <div class="page-hero-main">
+                <span class="page-kicker">Traçabilité</span>
+                <h1 class="page-hero-title">Historique de mes projets</h1>
+                <p class="page-hero-subtitle">
+                    Vue consolidée des projets de votre direction, avec les phases, validations, risques, anomalies et journaux d'audit.
+                </p>
+                <div class="page-hero-meta">
+                    <span class="badge-modern badge-modern-info">@totalCount projet(s)</span>
+                    <span class="badge-modern badge-modern-secondary">Lecture sponsor + direction</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-modern mb-4">
+        <div class="card-body-modern">
+            <form method="get" asp-action="HistoriqueDM">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label-modern">Recherche</label>
+                        <input type="text" name="recherche" value="@recherche"
+                               class="form-control-modern" placeholder="Code ou titre du projet..." />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label-modern">Direction</label>
+                        <select name="directionId" class="form-control-modern">
+                            <option value="">Toutes</option>
+                            @foreach (var dir in directions)
+                            {
+                                <option value="@dir.Id" selected="@(selectedDir == dir.Id)">@dir.Libelle</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label-modern">Phase</label>
+                        <select name="phase" class="form-control-modern">
+                            <option value="">Toutes les phases</option>
+                            @foreach (PhaseProjet p in Enum.GetValues(typeof(PhaseProjet)))
+                            {
+                                <option value="@((int)p)" selected="@(selectedPhase == p)">@p</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label-modern">Statut</label>
+                        <select name="statut" class="form-control-modern">
+                            <option value="">Tous les statuts</option>
+                            @foreach (StatutProjet s in Enum.GetValues(typeof(StatutProjet)))
+                            {
+                                <option value="@((int)s)" selected="@(selectedStatut == s)">@s</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn-modern btn-modern-primary flex-fill">
+                            <i class="bi bi-search"></i> Filtrer
+                        </button>
+                        @if (!string.IsNullOrWhiteSpace(recherche) || selectedDir.HasValue || selectedPhase.HasValue || selectedStatut.HasValue)
+                        {
+                            <a asp-action="HistoriqueDM" class="btn-modern btn-modern-secondary" title="Effacer">
+                                <i class="bi bi-x-circle"></i>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (Model.Any())
+    {
+        @foreach (var item in projetsAvecHistorique)
+        {
+            var projet = item.Projet as GestionProjects.Domain.Models.Projet;
+            var auditLogs = item.AuditLogs as IEnumerable<GestionProjects.Domain.Models.AuditLog>;
+            var totalLivrables = (int)item.TotalLivrables;
+            var totalAnomalies = (int)item.TotalAnomalies;
+            var anomaliesOuvertes = (int)item.AnomaliesOuvertes;
+            var totalRisques = (int)item.TotalRisques;
+            var risquesCritiques = (int)item.RisquesCritiques;
+
+            if (projet == null)
+            {
+                continue;
+            }
+
+            <details class="card-modern panel-accent history-project-accordion">
+                <summary class="card-header-modern history-project-summary">
+                    <div class="page-toolbar w-100">
+                        <div class="flex-grow-1">
+                            <div class="history-project-title-row">
+                                <h3 class="card-title-modern history-project-title">
+                                    <i class="bi bi-folder2-open"></i>
+                                    @projet.CodeProjet - @projet.Titre
+                                </h3>
+                                <div class="history-project-summary-actions">
+                                    <span class="history-project-summary-hint">
+                                        <span class="history-project-summary-label-collapsed">Ouvrir le projet</span>
+                                        <span class="history-project-summary-label-open">Replier le projet</span>
+                                    </span>
+                                    <span class="history-project-toggle" aria-hidden="true">
+                                        <i class="bi bi-chevron-down"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="page-hero-meta mt-2">
+                                <span class="badge-modern badge-modern-@GetPhaseClass(projet.PhaseActuelle)">
+                                    @FormatPhase(projet.PhaseActuelle)
+                                </span>
+                                <span class="badge-modern badge-modern-@GetStatutClass(projet.StatutProjet)">
+                                    @projet.StatutWorkflowLabel
+                                </span>
+                                <span class="badge-modern badge-modern-@GetEtatClass(projet.EtatProjet)">
+                                    @projet.EtatProjet
+                                </span>
+                            </div>
+
+                            <div class="detail-grid mt-3">
+                                <div class="detail-item">
+                                    <span class="detail-label">Chef de projet</span>
+                                    <div class="detail-value">@(projet.ChefProjet != null ? $"{projet.ChefProjet.Nom} {projet.ChefProjet.Prenoms}" : "Non assigné")</div>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Direction</span>
+                                    <div class="detail-value">@(projet.Direction != null ? projet.Direction.Libelle : "N/A")</div>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Date de création</span>
+                                    <div class="detail-value">@projet.DateCreation.ToString("dd/MM/yyyy HH:mm")</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="project-progress-panel">
+                            <div class="project-progress-copy">
+                                <div class="project-progress-kicker">Avancement</div>
+                                <div class="project-progress-value">@projet.PourcentageAvancement%</div>
+                            </div>
+                            <div class="project-progress-ring">
+                                <svg width="104" height="104">
+                                    <circle cx="52" cy="52" r="40" fill="none" stroke="var(--gray-200)" stroke-width="8"></circle>
+                                    <circle cx="52" cy="52" r="40" fill="none" stroke="var(--cit-blue)" stroke-width="8"
+                                            stroke-dasharray="@(2 * Math.PI * 40)"
+                                            stroke-dashoffset="@(2 * Math.PI * 40 * (1 - projet.PourcentageAvancement / 100.0))"
+                                            stroke-linecap="round"></circle>
+                                </svg>
+                                <div class="project-progress-ring-value">@projet.PourcentageAvancement%</div>
+                            </div>
+                        </div>
+                    </div>
+                </summary>
+
+                <div class="card-body-modern history-project-content">
+                    <div class="phase-rail">
+                        <div class="phase-rail-header">
+                            <h4 class="phase-rail-title">Progression dans le cycle de vie</h4>
+                        </div>
+                        <div class="phase-rail-track" style="--phase-progress:@($"{GetPhaseProgress(projet.PhaseActuelle)}%");">
+                            <div class="phase-rail-progress"></div>
+                            @{
+                                var phases = new[]
+                                {
+                                    (GestionProjects.Domain.Enums.PhaseProjet.Demande, "Demande"),
+                                    (GestionProjects.Domain.Enums.PhaseProjet.AnalyseClarification, "Analyse"),
+                                    (GestionProjects.Domain.Enums.PhaseProjet.PlanificationValidation, "Planification"),
+                                    (GestionProjects.Domain.Enums.PhaseProjet.ExecutionSuivi, "Exécution"),
+                                    (GestionProjects.Domain.Enums.PhaseProjet.UatMep, "UAT & MEP"),
+                                    (GestionProjects.Domain.Enums.PhaseProjet.ClotureLeconsApprises, "Clôture")
+                                };
+                            }
+                            @foreach (var (phase, label) in phases)
+                            {
+                                var isActive = projet.PhaseActuelle == phase;
+                                var isCompleted = GetPhaseOrder(projet.PhaseActuelle) > GetPhaseOrder(phase);
+                                var nodeClass = isActive ? "phase-node active" : isCompleted ? "phase-node completed" : "phase-node";
+
+                                <div class="@nodeClass">
+                                    <div class="phase-dot">
+                                        <i class="bi @(isCompleted ? "bi-check-lg" : isActive ? "bi-dot" : "bi-circle")"></i>
+                                    </div>
+                                    <div class="phase-label">@label</div>
+                                    @if (isActive)
+                                    {
+                                        <div class="phase-state">En cours</div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="stats-grid mt-4">
+                        <div class="stat-card info">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-value">@totalLivrables</div>
+                                    <div class="stat-label">Livrables</div>
+                                </div>
+                                <span class="stat-icon"><i class="bi bi-files"></i></span>
+                            </div>
+                        </div>
+                        <div class="stat-card danger">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-value">@totalAnomalies</div>
+                                    <div class="stat-label">Anomalies</div>
+                                </div>
+                                <span class="stat-icon"><i class="bi bi-bug"></i></span>
+                            </div>
+                            <span class="stat-change negative">@anomaliesOuvertes ouverte(s)</span>
+                        </div>
+                        <div class="stat-card warning">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-value">@totalRisques</div>
+                                    <div class="stat-label">Risques</div>
+                                </div>
+                                <span class="stat-icon"><i class="bi bi-exclamation-triangle"></i></span>
+                            </div>
+                            <span class="stat-change negative">@risquesCritiques critique(s)</span>
+                        </div>
+                        <div class="stat-card success">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-value">@projet.DateCreation.ToString("dd/MM")</div>
+                                    <div class="stat-label">Créé à @projet.DateCreation.ToString("HH:mm")</div>
+                                </div>
+                                <span class="stat-icon"><i class="bi bi-calendar3"></i></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-shell mt-4">
+                        @{
+                            var allEvents = new List<dynamic>();
+
+                            foreach (var phase in projet.HistoriquePhases?.OrderByDescending(h => h.DateDebut) ?? Enumerable.Empty<GestionProjects.Domain.Models.HistoriquePhaseProjet>())
+                            {
+                                allEvents.Add(new
+                                {
+                                    Type = "Phase",
+                                    Date = phase.DateDebut,
+                                    Titre = $"Phase: {phase.Phase}",
+                                    Description = $"Statut: {GetStatutWorkflowLabel(phase.StatutProjet, phase.Phase)}",
+                                    Auteur = phase.ModifieParUtilisateur != null ? $"{phase.ModifieParUtilisateur.Nom} {phase.ModifieParUtilisateur.Prenoms}" : phase.CreePar,
+                                    Commentaire = phase.Commentaire ?? "",
+                                    Icon = "bi-diagram-3",
+                                    LevelClass = "info"
+                                });
+
+                                if (phase.DateFin.HasValue)
+                                {
+                                    allEvents.Add(new
+                                    {
+                                        Type = "Phase",
+                                        Date = phase.DateFin.Value,
+                                        Titre = $"Fin de phase: {phase.Phase}",
+                                        Description = "Phase terminée",
+                                        Auteur = phase.ModifieParUtilisateur != null ? $"{phase.ModifieParUtilisateur.Nom} {phase.ModifieParUtilisateur.Prenoms}" : phase.CreePar,
+                                        Commentaire = phase.Commentaire ?? "",
+                                        Icon = "bi-check-circle",
+                                        LevelClass = "success"
+                                    });
+                                }
+                            }
+
+                            foreach (var log in auditLogs ?? Enumerable.Empty<GestionProjects.Domain.Models.AuditLog>())
+                            {
+                                var icon = "bi-info-circle";
+                                var levelClass = "info";
+                                var titre = log.TypeAction;
+
+                                switch (log.TypeAction.ToUpperInvariant())
+                                {
+                                    case "CREATION_PROJET":
+                                        icon = "bi-plus-circle-fill";
+                                        levelClass = "success";
+                                        titre = "Création du projet";
+                                        break;
+                                    case "VALIDATION_DM":
+                                    case "VALIDATIONDM":
+                                    case "REJETDM":
+                                    case "CORRECTIONDM":
+                                    case "VALIDATION_DSI":
+                                        icon = "bi-check-circle-fill";
+                                        levelClass = "success";
+                                        titre = log.TypeAction.Contains("DM", StringComparison.OrdinalIgnoreCase) ? "Validation Directeur Métier" : "Validation DSI";
+                                        break;
+                                    case "UPLOAD_LIVRABLE":
+                                        icon = "bi-file-earmark-arrow-up";
+                                        levelClass = "info";
+                                        titre = "Livrable déposé";
+                                        break;
+                                    case "AJOUT_ANOMALIE":
+                                        icon = "bi-bug-fill";
+                                        levelClass = "danger";
+                                        titre = "Anomalie ajoutée";
+                                        break;
+                                    case "AJOUT_RISQUE":
+                                        icon = "bi-exclamation-triangle-fill";
+                                        levelClass = "warning";
+                                        titre = "Risque ajouté";
+                                        break;
+                                    case "MODIFICATION_PROJET":
+                                        icon = "bi-pencil-square";
+                                        levelClass = "info";
+                                        titre = "Modification du projet";
+                                        break;
+                                    case "CHANGEMENT_PHASE":
+                                        icon = "bi-arrow-right-circle";
+                                        levelClass = "info";
+                                        titre = "Changement de phase";
+                                        break;
+                                    case "VALIDATION_PLANIF_DM":
+                                        icon = "bi-calendar-check";
+                                        levelClass = "success";
+                                        titre = "Planning validé par DM";
+                                        break;
+                                    case "VALIDATION_RECETTE":
+                                        icon = "bi-check2-square";
+                                        levelClass = "success";
+                                        titre = "Recette validée";
+                                        break;
+                                }
+
+                                allEvents.Add(new
+                                {
+                                    Type = "Audit",
+                                    Date = log.DateAction,
+                                    Titre = titre,
+                                    Description = log.TypeAction,
+                                    Auteur = log.Utilisateur != null ? $"{log.Utilisateur.Nom} {log.Utilisateur.Prenoms}" : "Système",
+                                    Commentaire = log.Commentaire ?? "",
+                                    Icon = icon,
+                                    LevelClass = levelClass
+                                });
+                            }
+
+                            if (projet.DateCreation != default)
+                            {
+                                allEvents.Add(new
+                                {
+                                    Type = "Projet",
+                                    Date = projet.DateCreation,
+                                    Titre = "Projet créé",
+                                    Description = $"Projet {projet.CodeProjet} créé",
+                                    Auteur = projet.CreePar,
+                                    Commentaire = "",
+                                    Icon = "bi-folder-plus",
+                                    LevelClass = "success"
+                                });
+                            }
+
+                            if (projet.CharteValidee && projet.DateCharteValidee.HasValue)
+                            {
+                                allEvents.Add(new
+                                {
+                                    Type = "Projet",
+                                    Date = projet.DateCharteValidee.Value,
+                                    Titre = "Charte validée",
+                                    Description = "Charte de projet validée",
+                                    Auteur = "Chef de Projet",
+                                    Commentaire = "",
+                                    Icon = "bi-file-check",
+                                    LevelClass = "success"
+                                });
+                            }
+
+                            if (projet.PlanningValideParDM && projet.DatePlanningValideParDM.HasValue)
+                            {
+                                allEvents.Add(new
+                                {
+                                    Type = "Projet",
+                                    Date = projet.DatePlanningValideParDM.Value,
+                                    Titre = "Planning validé par Directeur Métier",
+                                    Description = "Planning validé",
+                                    Auteur = projet.Sponsor != null ? $"{projet.Sponsor.Nom} {projet.Sponsor.Prenoms}" : "Directeur Métier",
+                                    Commentaire = "",
+                                    Icon = "bi-calendar-check",
+                                    LevelClass = "success"
+                                });
+                            }
+
+                            if (projet.PlanningValideParDSI && projet.DatePlanningValideParDSI.HasValue)
+                            {
+                                allEvents.Add(new
+                                {
+                                    Type = "Projet",
+                                    Date = projet.DatePlanningValideParDSI.Value,
+                                    Titre = "Planning validé par DSI",
+                                    Description = "Planning validé",
+                                    Auteur = "DSI",
+                                    Commentaire = "",
+                                    Icon = "bi-shield-check",
+                                    LevelClass = "success"
+                                });
+                            }
+
+                            if (projet.RecetteValidee && projet.DateRecetteValidee.HasValue)
+                            {
+                                allEvents.Add(new
+                                {
+                                    Type = "Projet",
+                                    Date = projet.DateRecetteValidee.Value,
+                                    Titre = "Recette validée",
+                                    Description = "Recette UAT validée",
+                                    Auteur = projet.RecetteValideePar != null ? $"{projet.RecetteValideePar.Nom} {projet.RecetteValideePar.Prenoms}" : "Directeur Métier",
+                                    Commentaire = "",
+                                    Icon = "bi-check2-square",
+                                    LevelClass = "success"
+                                });
+                            }
+
+                            if (projet.MepEffectuee && projet.DateMep.HasValue)
+                            {
+                                allEvents.Add(new
+                                {
+                                    Type = "Projet",
+                                    Date = projet.DateMep.Value,
+                                    Titre = "Mise en production effectuée",
+                                    Description = "MEP réalisée",
+                                    Auteur = "Chef de Projet",
+                                    Commentaire = "",
+                                    Icon = "bi-rocket-takeoff",
+                                    LevelClass = "gold"
+                                });
+                            }
+
+                            var sortedEvents = allEvents.OrderByDescending(e => e.Date).ToList();
+                        }
+
+                        @if (sortedEvents.Any())
+                        {
+                            @foreach (var evt in sortedEvents)
+                            {
+                                <div class="timeline-event @evt.LevelClass">
+                                    <div class="card-modern timeline-card @evt.LevelClass">
+                                        <div class="card-body-modern">
+                                            <div class="timeline-head">
+                                                <div class="d-flex align-items-start gap-3">
+                                                    <i class="bi @evt.Icon" style="color: @GetLevelColor((string)evt.LevelClass); font-size: 1.2rem;"></i>
+                                                    <div>
+                                                        <h4 class="timeline-title">@evt.Titre</h4>
+                                                        <div class="timeline-date">@evt.Date.ToString("dd/MM/yyyy à HH:mm")</div>
+                                                    </div>
+                                                </div>
+                                                <span class="badge-modern badge-modern-@evt.LevelClass">@evt.Type</span>
+                                            </div>
+
+                                            @if (!string.IsNullOrEmpty(evt.Description))
+                                            {
+                                                <p class="timeline-description">@evt.Description</p>
+                                            }
+
+                                            <div class="mt-3">
+                                                <span class="timeline-author">
+                                                    <i class="bi bi-person"></i>
+                                                    @evt.Auteur
+                                                </span>
+                                            </div>
+
+                                            @if (!string.IsNullOrEmpty(evt.Commentaire))
+                                            {
+                                                <div class="timeline-note">@evt.Commentaire</div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="empty-state-soft">
+                                <i class="bi bi-inbox"></i>
+                                <p>Aucun historique disponible pour ce projet.</p>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-4">
+                        <a asp-action="Details"
+                           asp-route-id="@projet.Id"
+                           class="btn-modern btn-modern-primary btn-icon"
+                           title="Ouvrir les détails du projet"
+                           aria-label="Ouvrir les détails du projet">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </div>
+                </div>
+            </details>
+        }
+    }
+    else
+    {
+        <div class="card-modern">
+            <div class="card-body-modern empty-state-soft">
+                <i class="bi bi-inbox"></i>
+                <p>Aucun projet trouvé.</p>
+            </div>
+        </div>
+    }
+
+    @await Html.PartialAsync("_Pagination")
+</div>
+
+@functions {
+    string GetPhaseClass(GestionProjects.Domain.Enums.PhaseProjet phase)
+    {
+        return phase switch
+        {
+            GestionProjects.Domain.Enums.PhaseProjet.Demande => "secondary",
+            GestionProjects.Domain.Enums.PhaseProjet.AnalyseClarification => "info",
+            GestionProjects.Domain.Enums.PhaseProjet.PlanificationValidation => "warning",
+            GestionProjects.Domain.Enums.PhaseProjet.ExecutionSuivi => "primary",
+            GestionProjects.Domain.Enums.PhaseProjet.UatMep => "success",
+            GestionProjects.Domain.Enums.PhaseProjet.ClotureLeconsApprises => "dark",
+            _ => "secondary"
+        };
+    }
+
+    string FormatPhase(GestionProjects.Domain.Enums.PhaseProjet phase)
+    {
+        return phase switch
+        {
+            GestionProjects.Domain.Enums.PhaseProjet.Demande => "Demande",
+            GestionProjects.Domain.Enums.PhaseProjet.AnalyseClarification => "Analyse & Clarification",
+            GestionProjects.Domain.Enums.PhaseProjet.PlanificationValidation => "Planification",
+            GestionProjects.Domain.Enums.PhaseProjet.ExecutionSuivi => "Exécution",
+            GestionProjects.Domain.Enums.PhaseProjet.UatMep => "UAT & MEP",
+            GestionProjects.Domain.Enums.PhaseProjet.ClotureLeconsApprises => "Clôture",
+            _ => phase.ToString()
+        };
+    }
+
+    int GetPhaseOrder(GestionProjects.Domain.Enums.PhaseProjet phase)
+    {
+        return phase switch
+        {
+            GestionProjects.Domain.Enums.PhaseProjet.Demande => 0,
+            GestionProjects.Domain.Enums.PhaseProjet.AnalyseClarification => 1,
+            GestionProjects.Domain.Enums.PhaseProjet.PlanificationValidation => 2,
+            GestionProjects.Domain.Enums.PhaseProjet.ExecutionSuivi => 3,
+            GestionProjects.Domain.Enums.PhaseProjet.UatMep => 4,
+            GestionProjects.Domain.Enums.PhaseProjet.ClotureLeconsApprises => 5,
+            _ => 0
+        };
+    }
+
+    int GetPhaseProgress(GestionProjects.Domain.Enums.PhaseProjet phase)
+    {
+        return phase switch
+        {
+            GestionProjects.Domain.Enums.PhaseProjet.Demande => 0,
+            GestionProjects.Domain.Enums.PhaseProjet.AnalyseClarification => 20,
+            GestionProjects.Domain.Enums.PhaseProjet.PlanificationValidation => 40,
+            GestionProjects.Domain.Enums.PhaseProjet.ExecutionSuivi => 60,
+            GestionProjects.Domain.Enums.PhaseProjet.UatMep => 80,
+            GestionProjects.Domain.Enums.PhaseProjet.ClotureLeconsApprises => 100,
+            _ => 0
+        };
+    }
+
+    string GetStatutClass(GestionProjects.Domain.Enums.StatutProjet statut)
+    {
+        return statut switch
+        {
+            GestionProjects.Domain.Enums.StatutProjet.NonDemarre => "secondary",
+            GestionProjects.Domain.Enums.StatutProjet.EnCours => "success",
+            GestionProjects.Domain.Enums.StatutProjet.Suspendu => "warning",
+            GestionProjects.Domain.Enums.StatutProjet.ClotureEnCours => "info",
+            GestionProjects.Domain.Enums.StatutProjet.Cloture => "dark",
+            GestionProjects.Domain.Enums.StatutProjet.Annule => "danger",
+            _ => "secondary"
+        };
+    }
+
+    string GetStatutWorkflowLabel(GestionProjects.Domain.Enums.StatutProjet statut, GestionProjects.Domain.Enums.PhaseProjet phase)
+    {
+        return statut switch
+        {
+            GestionProjects.Domain.Enums.StatutProjet.NonDemarre when phase == GestionProjects.Domain.Enums.PhaseProjet.AnalyseClarification => "En analyse",
+            GestionProjects.Domain.Enums.StatutProjet.NonDemarre => "En analyse",
+            GestionProjects.Domain.Enums.StatutProjet.EnCours when phase == GestionProjects.Domain.Enums.PhaseProjet.AnalyseClarification => "En analyse",
+            GestionProjects.Domain.Enums.StatutProjet.EnCours when phase == GestionProjects.Domain.Enums.PhaseProjet.PlanificationValidation => "En planification",
+            GestionProjects.Domain.Enums.StatutProjet.EnCours when phase == GestionProjects.Domain.Enums.PhaseProjet.ExecutionSuivi => "En exécution",
+            GestionProjects.Domain.Enums.StatutProjet.EnCours when phase == GestionProjects.Domain.Enums.PhaseProjet.UatMep => "En UAT/MEP",
+            GestionProjects.Domain.Enums.StatutProjet.EnCours => "En cours",
+            GestionProjects.Domain.Enums.StatutProjet.ClotureEnCours => "En clôture",
+            GestionProjects.Domain.Enums.StatutProjet.Cloture => "Clôturé",
+            GestionProjects.Domain.Enums.StatutProjet.Suspendu => "Suspendu",
+            GestionProjects.Domain.Enums.StatutProjet.Annule => "Annulé",
+            _ => statut.ToString()
+        };
+    }
+
+    string GetEtatClass(GestionProjects.Domain.Enums.EtatProjet etat)
+    {
+        return etat switch
+        {
+            GestionProjects.Domain.Enums.EtatProjet.Vert => "success",
+            GestionProjects.Domain.Enums.EtatProjet.Orange => "warning",
+            GestionProjects.Domain.Enums.EtatProjet.Rouge => "danger",
+            _ => "secondary"
+        };
+    }
+
+    string GetLevelColor(string levelClass)
+    {
+        return levelClass switch
+        {
+            "success" => "var(--success)",
+            "warning" => "var(--warning)",
+            "danger" => "var(--danger)",
+            "gold" => "var(--cit-gold)",
+            _ => "var(--cit-blue)"
+        };
+    }
+}

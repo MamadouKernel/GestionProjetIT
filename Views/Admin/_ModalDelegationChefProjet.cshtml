@@ -1,0 +1,131 @@
+@{
+    var currentUserId = (Guid)ViewBag.CurrentUserId;
+    var canCreateForOthers = ViewBag.CanAdminDelegations is bool canAdmin && canAdmin;
+}
+
+<!-- Modal Délégation Chef de Projet -->
+<div class="modal fade" id="createDelegationChefProjetModal" tabindex="-1" aria-labelledby="createDelegationChefProjetModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content admin-modal-content">
+            <form id="delegationChefProjetForm" method="post" asp-action="CreateDelegationChefProjet">
+                @Html.AntiForgeryToken()
+                <div class="modal-header admin-modal-header">
+                    <h5 class="modal-title" id="createDelegationChefProjetModalLabel">
+                        <i class="bi bi-person-workspace"></i>
+                        <span id="modalChefProjetTitle">Nouvelle délégation Chef de Projet</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body admin-modal-body">
+                    <input type="hidden" name="Id" id="delegationChefProjetId" />
+                    <div class="stack-sections">
+                        <div class="admin-form-section">
+                            <h6 class="admin-form-section-title">
+                                <i class="bi bi-diagram-3"></i>
+                                Projet et acteurs
+                            </h6>
+                            <div class="detail-grid">
+                                <div class="form-group-modern">
+                                    <label class="form-label-modern" for="projetId">Projet *</label>
+                                    <select name="ProjetId" id="projetId" class="form-control-modern" required>
+                                        <option value="">-- Sélectionner un projet --</option>
+                                        @if (ViewBag.Projets != null)
+                                        {
+                                            @foreach (var projet in (IEnumerable<GestionProjects.Domain.Models.Projet>)ViewBag.Projets)
+                                            {
+                                                <option value="@projet.Id">@projet.CodeProjet - @projet.Titre</option>
+                                            }
+                                        }
+                                    </select>
+                                    <small class="text-muted">Seuls les projets non clôturés sont disponibles.</small>
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="ProjetId" data-valmsg-replace="true"></span>
+                                </div>
+                                <div class="form-group-modern">
+                                    <label class="form-label-modern" for="delegantId">Délégant *</label>
+                                    <select name="DelegantId" id="delegantId" class="form-control-modern" required @(!canCreateForOthers ? "disabled" : "")>
+                                        <option value="">-- Sélectionner un délégant --</option>
+                                        @if (ViewBag.Delegants != null)
+                                        {
+                                            @foreach (var delegant in (IEnumerable<GestionProjects.Domain.Models.Utilisateur>)ViewBag.Delegants)
+                                            {
+                                                var isSelected = !canCreateForOthers && delegant.Id == currentUserId;
+                                                <option value="@delegant.Id" selected="@isSelected">@delegant.Nom @delegant.Prenoms (@(delegant.Role == GestionProjects.Domain.Enums.RoleUtilisateur.DSI ? "DSI" : "Responsable Solutions IT"))</option>
+                                            }
+                                        }
+                                    </select>
+                                    @if (!canCreateForOthers)
+                                    {
+                                        <input type="hidden" name="DelegantId" value="@currentUserId" />
+                                        <small class="text-muted">Vous créez cette délégation pour votre propre compte.</small>
+                                    }
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="DelegantId" data-valmsg-replace="true"></span>
+                                </div>
+                                <div class="form-group-modern">
+                                    <label class="form-label-modern" for="delegueChefProjetId">Délégué *</label>
+                                    <select name="DelegueId" id="delegueChefProjetId" class="form-control-modern" required>
+                                        <option value="">-- Sélectionner un délégué --</option>
+                                        @if (ViewBag.DeleguesChefProjet != null)
+                                        {
+                                            @foreach (var delegue in (IEnumerable<GestionProjects.Domain.Models.Utilisateur>)ViewBag.DeleguesChefProjet)
+                                            {
+                                                <option value="@delegue.Id">@delegue.Nom @delegue.Prenoms (@delegue.Role)</option>
+                                            }
+                                        }
+                                    </select>
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="DelegueId" data-valmsg-replace="true"></span>
+                                </div>
+                                <div class="form-group-modern">
+                                    <label class="form-label-modern" for="dateDebutChefProjet">Date début *</label>
+                                    <input type="date" name="DateDebut" id="dateDebutChefProjet" class="form-control-modern" required />
+                                    <small class="text-muted">La délégation prendra automatiquement fin à la clôture du projet.</small>
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="DateDebut" data-valmsg-replace="true"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="admin-form-section">
+                            <h6 class="admin-form-section-title">
+                                <i class="bi bi-toggle-on"></i>
+                                Activation
+                            </h6>
+                            <div class="admin-inline-note">
+                                <i class="bi bi-info-circle"></i>
+                                <div>
+                                    Cette délégation permet au délégué d'agir sur le projet ciblé jusqu'à sa clôture.
+                                </div>
+                            </div>
+                            <div class="admin-permission-card mt-3">
+                                <input type="checkbox" name="EstActive" id="estActiveChefProjet" class="form-check-input" checked />
+                                <label class="form-check-label m-0" for="estActiveChefProjet">
+                                    <strong>Délégation active</strong>
+                                    <small class="d-block text-muted">Décochez si vous souhaitez préparer la délégation sans l'activer immédiatement.</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer admin-modal-footer">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-save"></i>
+                        Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('createDelegationChefProjetModal');
+        if (modal) {
+            modal.addEventListener('hidden.bs.modal', function () {
+                resetChefProjetForm();
+            });
+        }
+    });
+</script>

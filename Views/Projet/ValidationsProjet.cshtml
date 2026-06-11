@@ -1,0 +1,367 @@
+@model IEnumerable<GestionProjects.Domain.Models.Projet>
+@using GestionProjects.Domain.Enums
+@inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
+
+@{
+    ViewData["Title"] = "Validations Projet";
+
+    var projets = Model.ToList();
+    var userId = Guid.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Guid.Empty.ToString(), out var currentUserId)
+        ? currentUserId
+        : Guid.Empty;
+    var canValidateDmWorkflow = await PermissionService.CurrentUserHasPermissionAsync("Projet", "ValiderCharteDM");
+    var canValidateDsiWorkflow = await PermissionService.CurrentUserHasPermissionAsync("Projet", "ValiderCharteDSI");
+    var canValidateAsDsi = (ViewBag.CanValidateAsDsi as bool?) ?? false;
+    var isDsiWorkflow = canValidateDsiWorkflow || canValidateAsDsi;
+
+    var totalProjets = projets.Count;
+    var pendingDmCount = projets.Count(p => !p.CharteValideeParDM);
+    var pendingDsiCount = projets.Count(p => p.CharteValideeParDM && !p.CharteValideeParDSI);
+    var readyCount = projets.Count(HasCompleteSignedCharte);
+    var blockedCount = totalProjets - readyCount;
+}
+
+<div class="validation-workspace fade-in">
+    <section class="validation-hero card-modern">
+        <div class="validation-hero-main">
+            <span class="phase-eyebrow">
+                <i class="bi bi-file-check"></i>
+                Validation charte
+            </span>
+            <h2 class="validation-hero-title">Validations de la phase Analyse</h2>
+            <p class="validation-hero-text">
+                Pilotez la validation de la charte projet par le Directeur Métier et la DSI avant le passage en planification.
+            </p>
+            <div class="validation-hero-tags">
+                <span class="phase-chip @(canValidateDmWorkflow ? "is-success" : "is-warning")">
+                    <i class="bi @(canValidateDmWorkflow ? "bi-person-check" : "bi-person")"></i>
+                    @(canValidateDmWorkflow ? "Vue Directeur Métier" : isDsiWorkflow ? "Vue DSI / délégation DSI" : "Vue consultation")
+                </span>
+                <span class="phase-chip @(readyCount > 0 ? "is-success" : "is-warning")">
+                    <i class="bi bi-file-earmark-check"></i>
+                    @readyCount charte(s) signée(s) complète(s)
+                </span>
+            </div>
+        </div>
+
+        <div class="validation-metric-grid">
+            <article class="validation-metric-card is-primary">
+                <span class="validation-metric-label">Projets à traiter</span>
+                <strong class="validation-metric-value">@totalProjets</strong>
+                <small class="validation-metric-note">Phase Analyse uniquement</small>
+            </article>
+            <article class="validation-metric-card is-warning">
+                <span class="validation-metric-label">En attente DM</span>
+                <strong class="validation-metric-value">@pendingDmCount</strong>
+                <small class="validation-metric-note">Validation sponsor métier</small>
+            </article>
+            <article class="validation-metric-card is-info">
+                <span class="validation-metric-label">En attente DSI</span>
+                <strong class="validation-metric-value">@pendingDsiCount</strong>
+                <small class="validation-metric-note">Après validation DM</small>
+            </article>
+            <article class="validation-metric-card @(blockedCount == 0 ? "is-success" : "is-danger")">
+                <span class="validation-metric-label">Blocages charte</span>
+                <strong class="validation-metric-value">@blockedCount</strong>
+                <small class="validation-metric-note">Signature ou dépôt manquant</small>
+            </article>
+        </div>
+    </section>
+
+    @if (projets.Any())
+    {
+        <section class="validation-list">
+            @foreach (var projet in projets)
+            {
+                var charteSigneeComplete = HasCompleteSignedCharte(projet);
+                var demandeurNom = projet.DemandeProjet?.Demandeur != null
+                    ? $"{projet.DemandeProjet.Demandeur.Nom} {projet.DemandeProjet.Demandeur.Prenoms}"
+                    : "N/A";
+                var chefProjetNom = projet.ChefProjet != null
+                    ? $"{projet.ChefProjet.Nom} {projet.ChefProjet.Prenoms}"
+                    : "Non assigné";
+                var sponsorNom = projet.Sponsor != null
+                    ? $"{projet.Sponsor.Nom} {projet.Sponsor.Prenoms}"
+                    : "N/A";
+                var dmCanValidate = canValidateDmWorkflow && projet.SponsorId == userId && !projet.CharteValideeParDM && charteSigneeComplete;
+                var dsiCanValidate = isDsiWorkflow && projet.CharteValideeParDM && !projet.CharteValideeParDSI && charteSigneeComplete;
+            <article class="validation-project-card card-modern">
+                <div class="validation-project-main">
+                    <div class="validation-project-header">
+                        <div>
+                            <div class="validation-project-code">@projet.CodeProjet</div>
+                            <h3 class="validation-project-title">@projet.Titre</h3>
+                            <div class="validation-project-subtitle">
+                                @(projet.Direction?.Libelle ?? "Direction non renseignée")
+                            </div>
+                        </div>
+                        <div class="validation-project-state">
+                            <span class="phase-chip @(charteSigneeComplete ? "is-success" : "is-warning")">
+                                <i class="bi @(charteSigneeComplete ? "bi-patch-check" : "bi-exclamation-circle")"></i>
+                                @(charteSigneeComplete ? "Dossier prêt" : "Dossier incomplet")
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="validation-meta-grid">
+                        <div class="validation-meta-card">
+                            <span class="validation-meta-label">Chef de projet</span>
+                            <strong class="validation-meta-value">@chefProjetNom</strong>
+                        </div>
+                        <div class="validation-meta-card">
+                            <span class="validation-meta-label">Sponsor</span>
+                            <strong class="validation-meta-value">@sponsorNom</strong>
+                        </div>
+                        <div class="validation-meta-card">
+                            <span class="validation-meta-label">Demandeur</span>
+                            <strong class="validation-meta-value">@demandeurNom</strong>
+                        </div>
+                        <div class="validation-meta-card">
+                            <span class="validation-meta-label">Statut projet</span>
+                            <strong class="validation-meta-value">@projet.StatutWorkflowLabel</strong>
+                        </div>
+                    </div>
+
+                    <div class="validation-status-grid">
+                        <div class="validation-status-card @(charteSigneeComplete ? "is-success" : "is-warning")">
+                            <span class="validation-status-label">Charte signée</span>
+                            <strong class="validation-status-value">
+                                @(charteSigneeComplete ? "Complète" : "Incomplète")
+                            </strong>
+                            <small class="validation-status-note">
+                                Sponsor : @(projet.CharteProjet?.SignatureSponsor == true ? "OK" : "manquante")
+                                · CP : @(projet.CharteProjet?.SignatureChefProjet == true ? "OK" : "manquante")
+                            </small>
+                        </div>
+                        <div class="validation-status-card @(projet.CharteValideeParDM ? "is-success" : "is-warning")">
+                            <span class="validation-status-label">Validation DM</span>
+                            <strong class="validation-status-value">
+                                @(projet.CharteValideeParDM ? "Validée" : "En attente")
+                            </strong>
+                            <small class="validation-status-note">
+                                @(projet.CharteValideeParDM
+                                    ? $"Le {projet.DateCharteValideeParDM:dd/MM/yyyy}"
+                                    : "Directeur Métier requis")
+                            </small>
+                        </div>
+                        <div class="validation-status-card @(projet.CharteValideeParDSI ? "is-success" : projet.CharteValideeParDM ? "is-info" : "is-muted")">
+                            <span class="validation-status-label">Validation DSI</span>
+                            <strong class="validation-status-value">
+                                @(projet.CharteValideeParDSI ? "Validée" : "En attente")
+                            </strong>
+                            <small class="validation-status-note">
+                                @(projet.CharteValideeParDSI
+                                    ? $"Le {projet.DateCharteValideeParDSI:dd/MM/yyyy}"
+                                    : projet.CharteValideeParDM ? "DSI ou délégation DSI requise" : "Disponible après validation DM")
+                            </small>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(projet.CommentaireRefusCharteDM))
+                    {
+                        <div class="alert-modern alert-modern-danger">
+                            <i class="bi bi-x-circle-fill"></i>
+                            <div>
+                                <strong>Refus DM</strong>
+                                <p class="mb-0">@projet.CommentaireRefusCharteDM</p>
+                            </div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(projet.CommentaireRefusCharteDSI))
+                    {
+                        <div class="alert-modern alert-modern-danger">
+                            <i class="bi bi-x-circle-fill"></i>
+                            <div>
+                                <strong>Refus DSI</strong>
+                                <p class="mb-0">@projet.CommentaireRefusCharteDSI</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <aside class="validation-actions-panel">
+                    <div class="validation-actions-title">Actions</div>
+                    <div class="validation-actions-stack">
+                        <a asp-action="Details"
+                           asp-controller="Projet"
+                           asp-route-id="@projet.Id"
+                           asp-route-tab="analyse"
+                           class="btn-modern btn-modern-primary btn-icon"
+                           title="Ouvrir la phase Analyse"
+                           aria-label="Ouvrir la phase Analyse">
+                            <i class="bi bi-eye"></i>
+                        </a>
+
+                        @if (canValidateDmWorkflow)
+                        {
+                            <form asp-action="ValiderCharteDM" method="post" class="validation-action-form">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@projet.Id" />
+                                <button type="submit"
+                                        class="btn-modern btn-modern-success btn-icon"
+                                        title="Valider la charte côté Directeur Métier"
+                                        aria-label="Valider la charte côté Directeur Métier"
+                                        @(dmCanValidate ? null : "disabled")>
+                                    <i class="bi bi-check-circle"></i>
+                                </button>
+                            </form>
+                            <button type="button"
+                                    class="btn-modern btn-modern-danger btn-icon"
+                                    title="Refuser la charte côté Directeur Métier"
+                                    aria-label="Refuser la charte côté Directeur Métier"
+                                    data-charte-modal="dm"
+                                    data-projet-id="@projet.Id"
+                                    data-projet-code="@projet.CodeProjet">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                        }
+
+                        @if (isDsiWorkflow)
+                        {
+                            <form asp-action="ValiderCharteDSI" method="post" class="validation-action-form">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@projet.Id" />
+                                <button type="submit"
+                                        class="btn-modern btn-modern-success btn-icon"
+                                        title="Valider la charte côté DSI"
+                                        aria-label="Valider la charte côté DSI"
+                                        @(dsiCanValidate ? null : "disabled")>
+                                    <i class="bi bi-check-circle"></i>
+                                </button>
+                            </form>
+                            <button type="button"
+                                    class="btn-modern btn-modern-danger btn-icon"
+                                    title="Refuser la charte côté DSI"
+                                    aria-label="Refuser la charte côté DSI"
+                                    data-charte-modal="dsi"
+                                    data-projet-id="@projet.Id"
+                                    data-projet-code="@projet.CodeProjet">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                        }
+                    </div>
+
+                    @if (!charteSigneeComplete)
+                    {
+                        <div class="validation-side-note">
+                            Déposez une charte signée complète avant validation.
+                        </div>
+                    }
+                    else if (!projet.CharteValideeParDM && isDsiWorkflow)
+                    {
+                        <div class="validation-side-note">
+                            La validation DSI s’ouvre après validation DM.
+                        </div>
+                    }
+                </aside>
+            </article>
+            }
+        </section>
+    }
+    else
+    {
+        <section class="validation-empty card-modern">
+            <i class="bi bi-inbox"></i>
+            <h3>Aucun projet en attente</h3>
+            <p>Aucune charte projet n’attend actuellement de validation sur la phase Analyse.</p>
+        </section>
+    }
+</div>
+
+<div class="modal fade" id="modalRejeterCharteDM" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content app-modal-content">
+            <form asp-action="RejeterCharteDM" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="projetIdRejeterDM" />
+                <div class="app-modal-header is-danger">
+                    <h5 class="app-modal-title">
+                        <i class="bi bi-x-circle"></i>
+                        Refuser la charte côté DM
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <div class="app-modal-body">
+                    <p class="app-modal-note mb-3">Projet concerné : <strong id="projetCodeRejeterDM">-</strong></p>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Commentaire *</label>
+                        <textarea name="commentaire" class="form-control-modern" rows="4" required placeholder="Précisez la raison du refus..."></textarea>
+                    </div>
+                </div>
+                <div class="app-modal-footer">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn-modern btn-modern-danger">Refuser</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalRejeterCharteDSI" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content app-modal-content">
+            <form asp-action="RejeterCharteDSI" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="projetIdRejeterDSI" />
+                <div class="app-modal-header is-danger">
+                    <h5 class="app-modal-title">
+                        <i class="bi bi-x-circle"></i>
+                        Refuser la charte côté DSI
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <div class="app-modal-body">
+                    <p class="app-modal-note mb-3">Projet concerné : <strong id="projetCodeRejeterDSI">-</strong></p>
+                    <div class="form-group-modern">
+                        <label class="form-label-modern">Commentaire *</label>
+                        <textarea name="commentaire" class="form-control-modern" rows="4" required placeholder="Précisez la raison du refus..."></textarea>
+                    </div>
+                </div>
+                <div class="app-modal-footer">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn-modern btn-modern-danger">Refuser</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('[data-charte-modal]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const mode = button.getAttribute('data-charte-modal');
+                    const projetId = button.getAttribute('data-projet-id');
+                    const projetCode = button.getAttribute('data-projet-code');
+
+                    if (mode === 'dm') {
+                        document.getElementById('projetIdRejeterDM').value = projetId;
+                        document.getElementById('projetCodeRejeterDM').textContent = projetCode;
+                        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalRejeterCharteDM')).show();
+                    }
+
+                    if (mode === 'dsi') {
+                        document.getElementById('projetIdRejeterDSI').value = projetId;
+                        document.getElementById('projetCodeRejeterDSI').textContent = projetCode;
+                        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalRejeterCharteDSI')).show();
+                    }
+                });
+            });
+        });
+    </script>
+}
+
+@functions {
+    private static bool HasCompleteSignedCharte(GestionProjects.Domain.Models.Projet projet)
+    {
+        var hasSignedLivrable = projet.Livrables != null && projet.Livrables.Any(l =>
+            !l.EstSupprime &&
+            l.TypeLivrable == TypeLivrable.CharteProjetSignee);
+
+        return hasSignedLivrable &&
+               projet.CharteProjet?.SignatureSponsor == true &&
+               projet.CharteProjet?.SignatureChefProjet == true;
+    }
+}

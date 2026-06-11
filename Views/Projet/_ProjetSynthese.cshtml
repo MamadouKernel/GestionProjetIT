@@ -1,0 +1,438 @@
+@using Microsoft.AspNetCore.Html
+@using System.Net
+@model GestionProjects.Domain.Models.Projet
+@inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
+
+@functions {
+    private static IHtmlContent RenderHelpPopover(string title, string purpose, string guidance)
+    {
+        var encodedTitle = WebUtility.HtmlEncode(title);
+        var encodedPurpose = WebUtility.HtmlEncode(purpose);
+        var encodedGuidance = WebUtility.HtmlEncode(guidance);
+
+        return new HtmlString($@"
+<div class=""form-help"">
+    <button type=""button"" class=""form-help-trigger"" aria-label=""Aide : {encodedTitle}"">
+        <i class=""bi bi-info-circle""></i>
+    </button>
+    <div class=""form-help-popover"" role=""tooltip"">
+        <strong>{encodedTitle}</strong>
+        <div class=""form-help-popover-section"">
+            <span>A quoi sert ce bloc ?</span>
+            <p>{encodedPurpose}</p>
+        </div>
+        <div class=""form-help-popover-section"">
+            <span>Comment le renseigner ?</span>
+            <p>{encodedGuidance}</p>
+        </div>
+    </div>
+</div>");
+    }
+}
+
+@{
+    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, Model);
+}
+
+<div class="phase-shell">
+    <section class="phase-hero">
+        <div class="phase-hero-top">
+            <div>
+                <div class="phase-eyebrow">
+                    <i class="bi bi-grid"></i>
+                    Synthese
+                </div>
+                <h3 class="phase-title">Fiche de pilotage projet</h3>
+                <p class="phase-subtitle">
+                    Vue de reference pour suivre la gouvernance, le rythme de progression, les risques et la collaboration autour du projet.
+                </p>
+            </div>
+            <div class="phase-action-row">
+                <span class="phase-chip is-info">
+                    <i class="bi bi-signpost"></i>
+                    @Model.PhaseWorkflowLabel
+                </span>
+                <span class="phase-chip">
+                    <i class="bi bi-bar-chart"></i>
+                    @Model.PourcentageAvancement%
+                </span>
+                <span class="phase-chip @(Model.StatutProjet == GestionProjects.Domain.Enums.StatutProjet.Cloture ? "is-success" : "is-warning")">
+                    <i class="bi bi-flag"></i>
+                    @Model.StatutWorkflowLabel
+                </span>
+            </div>
+        </div>
+    </section>
+
+    <div class="phase-grid">
+        <section class="phase-panel">
+                <div class="phase-section-header">
+                    <div>
+                        <div class="form-help-title-row">
+                            <h4 class="phase-panel-title">Informations generales</h4>
+                            @RenderHelpPopover(
+                                "Informations générales",
+                                "Ce bloc donne la lecture de référence du projet : identité, sponsor, responsable IT, phase et dates.",
+                                "Il ne se renseigne pas ici directement. Les informations proviennent de la demande initiale, de l'affectation du chef de projet et des mises à jour faites dans les phases métier.")
+                        </div>
+                        <div class="phase-record-meta">Identite, gouvernance et dates de reference.</div>
+                    </div>
+                </div>
+
+            <div class="phase-summary-list">
+                <div class="phase-summary-item">
+                    <span>Code Projet</span>
+                    <strong>@Model.CodeProjet</strong>
+                </div>
+                <div class="phase-summary-item">
+                    <span>Direction</span>
+                    <strong>@(Model.Direction?.Libelle ?? "N/A")</strong>
+                </div>
+                <div class="phase-summary-item">
+                    <span>Sponsor</span>
+                    <strong>@Model.Sponsor?.Nom @Model.Sponsor?.Prenoms</strong>
+                </div>
+                @if (Model.DemandeProjet?.AutreSponsor != null)
+                {
+                    <div class="phase-summary-item">
+                        <span>Autre sponsor (CODIR)</span>
+                        <strong>@Model.DemandeProjet.AutreSponsor.Nom @Model.DemandeProjet.AutreSponsor.Prenoms</strong>
+                    </div>
+                }
+                <div class="phase-summary-item">
+                    <span>ResponsableSolutionsIT</span>
+                    <strong>@(Model.ChefProjet != null ? $"{Model.ChefProjet.Nom} {Model.ChefProjet.Prenoms}" : "Non assigne")</strong>
+                </div>
+                <div class="phase-summary-item">
+                    <span>Phase actuelle</span>
+                    <strong>@Model.PhaseWorkflowLabel</strong>
+                </div>
+                <div class="phase-summary-item">
+                    <span>Statut</span>
+                    <strong>@Model.StatutWorkflowLabel</strong>
+                </div>
+                <div class="phase-summary-item">
+                    <span>Date de debut</span>
+                    <strong>@(Model.DateDebut?.ToString("dd/MM/yyyy") ?? "Non definie")</strong>
+                </div>
+                <div class="phase-summary-item">
+                    <span>Date fin prevue</span>
+                    <strong>@(Model.DateFinPrevue?.ToString("dd/MM/yyyy") ?? "Non definie")</strong>
+                </div>
+                <div class="phase-summary-item">
+                    <span>Date fin reelle</span>
+                    <strong>@(Model.DateFinReelle?.ToString("dd/MM/yyyy") ?? "En cours")</strong>
+                </div>
+            </div>
+
+            <div class="phase-action-row" style="margin-top: 1rem;">
+                @if (ui.CanReassignChefProjet && Model.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
+                {
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-toggle="modal" data-bs-target="#updateChefProjetModal">
+                        <i class="bi bi-pencil"></i>
+                        Modifier le ResponsableSolutionsIT
+                    </button>
+                }
+                @if (ui.CanChangePhase && Model.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
+                {
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-toggle="modal" data-bs-target="#changerPhaseModal">
+                        <i class="bi bi-arrow-repeat"></i>
+                        Changer la phase
+                    </button>
+                }
+                @if (ui.CanForceStatus && Model.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
+                {
+                    <button type="button" class="btn-modern btn-modern-warning" data-bs-toggle="modal" data-bs-target="#forcerStatutModal">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Forcer le statut
+                    </button>
+                }
+            </div>
+        </section>
+
+        <div class="phase-shell">
+            @if (ui.CanUpdateProgress)
+            {
+                <section class="phase-panel">
+                    <div class="form-help-title-row">
+                        <h4 class="phase-panel-title">Pilotage du statut</h4>
+                        @RenderHelpPopover(
+                            "Pilotage du statut",
+                            "Ce bloc sert à ajuster le statut de santé du projet, tandis que le pourcentage d'avancement est calculé automatiquement par l'application.",
+                            "Utilisez ce bloc pour qualifier l'état global Vert / Orange / Rouge. L'avancement affiché se met à jour à partir de la phase, des validations, des livrables et des tâches du planning.")
+                    </div>
+                    <form asp-action="UpdateAvancement" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Pourcentage d'avancement (calcul automatique)</label>
+                            <input type="text" class="form-control-modern" value="@Model.PourcentageAvancement%" disabled />
+                            <small class="app-modal-note">
+                                Calculé automatiquement depuis les validations de phase, les livrables obligatoires, les tâches du planning et les preuves de clôture.
+                            </small>
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Etat du projet</label>
+                            <select name="etatProjet" class="form-control-modern" asp-items="Html.GetEnumSelectList<GestionProjects.Domain.Enums.EtatProjet>()" asp-for="EtatProjet"></select>
+                        </div>
+                        <button type="submit" class="btn-modern btn-modern-primary w-100 mt-3">
+                            <i class="bi bi-save"></i>
+                            Mettre a jour le statut
+                        </button>
+                    </form>
+                </section>
+            }
+            else
+            {
+                <section class="phase-panel">
+                    <div class="form-help-title-row">
+                        <h4 class="phase-panel-title">Avancement courant</h4>
+                        @RenderHelpPopover(
+                            "Avancement courant",
+                            "Ce bloc explique le niveau de progression calculé automatiquement sur le projet.",
+                            "Aucune saisie n'est attendue ici. Vérifiez plutôt les validations, les livrables et les tâches de phase si l'avancement semble trop bas.")
+                    </div>
+                    <div class="phase-summary-list">
+                        <div class="phase-summary-item">
+                            <span>Progression</span>
+                            <strong>@Model.PourcentageAvancement%</strong>
+                        </div>
+                        <div class="phase-summary-item">
+                            <span>Etat</span>
+                            <strong>@Model.EtatProjet</strong>
+                        </div>
+                    </div>
+                </section>
+            }
+
+            <section class="phase-panel">
+                <div class="phase-section-header">
+                    <div>
+                        <div class="form-help-title-row">
+                            <h4 class="phase-panel-title">Risques prioritaires</h4>
+                            @RenderHelpPopover(
+                                "Risques prioritaires",
+                                "Ce registre sert à identifier les risques majeurs qui peuvent impacter le planning, le budget ou la qualité.",
+                                "Ajoutez un risque par élément significatif, avec une description claire, une probabilité, un impact et un plan de mitigation exploitable.")
+                        </div>
+                        <div class="phase-record-meta">@((Model.Risques?.Count ?? 0)) risque(s) suivi(s) sur le projet.</div>
+                    </div>
+                    @if (ui.CanAddRisk)
+                    {
+                        <button type="button" class="btn-modern btn-modern-warning" data-bs-toggle="modal" data-bs-target="#ajouterRisqueModal">
+                            <i class="bi bi-plus-circle"></i>
+                            Ajouter
+                        </button>
+                    }
+                </div>
+
+                @if (Model.Risques != null && Model.Risques.Any())
+                {
+                    <div class="record-stack">
+                        @foreach (var risque in Model.Risques.Take(5))
+                        {
+                            <article class="record-card">
+                                <div class="record-card-header">
+                                    <div>
+                                        <div class="record-card-title">@risque.Description</div>
+                                        <div class="record-card-subtitle">
+                                            Probabilite: @risque.Probabilite | Impact: @risque.Impact | Statut: @risque.Statut
+                                        </div>
+                                    </div>
+                                </div>
+                                @if (!string.IsNullOrEmpty(risque.PlanMitigation))
+                                {
+                                    <div class="record-card-note">
+                                        <strong>Plan de mitigation:</strong> @risque.PlanMitigation
+                                    </div>
+                                }
+                            </article>
+                        }
+                    </div>
+                    @if (Model.Risques.Count > 5)
+                    {
+                        <div class="phase-record-meta" style="margin-top: 1rem;">... et @(Model.Risques.Count - 5) autre(s) risque(s)</div>
+                    }
+                }
+                else
+                {
+                    <div class="phase-empty">
+                        <i class="bi bi-shield-check"></i>
+                        <p>Aucun risque identifie pour le moment.</p>
+                    </div>
+                }
+            </section>
+        </div>
+    </div>
+
+    @await Html.PartialAsync("_ProjetCollaboration", Model)
+</div>
+
+@if (ui.CanReassignChefProjet && Model.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
+{
+    <div class="modal fade" id="updateChefProjetModal" tabindex="-1" aria-labelledby="updateChefProjetModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content app-modal-content">
+                <div class="modal-header app-modal-header">
+                    <h5 class="modal-title app-modal-title" id="updateChefProjetModalLabel">
+                        <i class="bi bi-person-badge"></i>
+                        Modifier le ResponsableSolutionsIT
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body app-modal-body">
+                    <form asp-action="UpdateChefProjet" method="post" id="updateChefProjetForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">ResponsableSolutionsIT</label>
+                            <select name="chefProjetId" class="form-control-modern">
+                                <option value="">-- Aucun --</option>
+                                @if (ViewBag.ChefsProjet != null)
+                                {
+                                    @foreach (var chef in ViewBag.ChefsProjet as List<GestionProjects.Domain.Models.Utilisateur> ?? new List<GestionProjects.Domain.Models.Utilisateur>())
+                                    {
+                                        @if (Model.ChefProjetId == chef.Id)
+                                        {
+                                            <option value="@chef.Id" selected>@chef.Nom @chef.Prenoms</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@chef.Id">@chef.Nom @chef.Prenoms</option>
+                                        }
+                                    }
+                                }
+                            </select>
+                            <small class="app-modal-note">
+                                Selectionnez un ResponsableSolutionsIT pour ce projet ou laissez vide pour retirer l'assignation.
+                            </small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer app-modal-footer">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" form="updateChefProjetForm" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-check-circle"></i>
+                        Enregistrer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ui.CanChangePhase && Model.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
+{
+    <div class="modal fade" id="changerPhaseModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content app-modal-content">
+                <form asp-action="ChangerPhase" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="modal-header app-modal-header">
+                        <h5 class="modal-title app-modal-title">
+                            <i class="bi bi-arrow-repeat"></i>
+                            Changer la phase du projet
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body app-modal-body">
+                        <div class="alert-modern alert-modern-info document-alert-tight">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <div>
+                                <strong>Phase actuelle :</strong> @Model.PhaseWorkflowLabel
+                            </div>
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Nouvelle phase *</label>
+                            <select name="nouvellePhase" class="form-control-modern" asp-items="Html.GetEnumSelectList<GestionProjects.Domain.Enums.PhaseProjet>()" required>
+                                <option value="">-- Selectionner --</option>
+                            </select>
+                        </div>
+                        <div class="form-group-modern mt-3">
+                            <label class="form-label-modern">Commentaire (optionnel)</label>
+                            <textarea name="commentaire" class="form-control-modern" rows="3" placeholder="Ajoutez un commentaire si necessaire..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer app-modal-footer">
+                        <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i>
+                            Annuler
+                        </button>
+                        <button type="submit" class="btn-modern btn-modern-primary">
+                            <i class="bi bi-arrow-repeat"></i>
+                            Changer la phase
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ui.CanForceStatus && Model.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
+{
+    <div class="modal fade" id="forcerStatutModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content app-modal-content">
+                <form asp-action="ForcerStatutProjet" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="modal-header app-modal-header is-warning">
+                        <h5 class="modal-title app-modal-title">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            Forcer le statut du projet
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body app-modal-body">
+                        <div class="alert-modern alert-modern-warning document-alert-tight">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            <div>
+                                <strong>Attention :</strong> Cette action permet de forcer manuellement le statut du projet. Le statut actuel est : <strong>@Model.StatutWorkflowLabel</strong>
+                            </div>
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Action *</label>
+                            <select name="actionType" class="form-control-modern" required onchange="toggleCommentaire(this.value)">
+                                <option value="">-- Selectionner --</option>
+                                <option value="Cloture">Cloturer le projet (projet termine avec succes)</option>
+                                <option value="Abandon">Abandonner le projet (travaux arretes ou changement d'avis)</option>
+                            </select>
+                        </div>
+                        <div class="form-group-modern mt-3" id="commentaireGroup">
+                            <label class="form-label-modern">Commentaire *</label>
+                            <textarea name="commentaire" id="commentaireField" class="form-control-modern" rows="3" required placeholder="Expliquez la raison de cette action..."></textarea>
+                        </div>
+                        <script>
+                            function toggleCommentaire(value) {
+                                const commentaireGroup = document.getElementById('commentaireGroup');
+                                const commentaireField = document.getElementById('commentaireField');
+                                if (value) {
+                                    commentaireGroup.style.display = 'block';
+                                    commentaireField.required = true;
+                                } else {
+                                    commentaireGroup.style.display = 'none';
+                                    commentaireField.required = false;
+                                }
+                            }
+                        </script>
+                    </div>
+                    <div class="modal-footer app-modal-footer">
+                        <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i>
+                            Annuler
+                        </button>
+                        <button type="submit" class="btn-modern btn-modern-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            Forcer le statut
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}

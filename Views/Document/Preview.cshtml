@@ -1,0 +1,148 @@
+@model GestionProjects.Application.DTOs.DocumentPreviewViewModel
+@using GestionProjects.Application.DTOs
+
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="preview-shell fade-in">
+    <section class="preview-hero">
+        <div class="preview-hero-head">
+            <div>
+                <div class="phase-eyebrow">
+                    <i class="bi bi-file-earmark-text"></i>
+                    Apercu document
+                </div>
+                <h2 class="phase-title">@Model.DisplayName</h2>
+                <div class="preview-badges">
+                    <span class="badge-modern badge-modern-secondary">@Model.FileExtension</span>
+                    <span class="badge-modern badge-modern-info">@Model.FileSizeDisplay</span>
+                </div>
+            </div>
+            <div class="phase-action-row">
+                <a href="@Model.RawUrl" target="_blank" class="btn-modern btn-modern-primary">
+                    <i class="bi bi-box-arrow-up-right"></i>
+                    Ouvrir
+                </a>
+                <a href="@Model.DownloadUrl" class="btn-modern btn-modern-secondary">
+                    <i class="bi bi-download"></i>
+                    Telecharger
+                </a>
+            </div>
+        </div>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(Model.InfoMessage))
+    {
+        <div class="phase-note is-info">
+            <i class="bi bi-info-circle"></i>
+            @Model.InfoMessage
+        </div>
+    }
+
+    @switch (Model.Mode)
+    {
+        case DocumentPreviewMode.Pdf:
+            <div class="preview-frame">
+                <iframe src="@Model.RawUrl" title="@Model.DisplayName"></iframe>
+            </div>
+            break;
+
+        case DocumentPreviewMode.Image:
+            <div class="preview-media">
+                <img src="@Model.RawUrl" alt="@Model.DisplayName" />
+            </div>
+            break;
+
+        case DocumentPreviewMode.Text:
+            <div class="preview-code">
+                <pre>@Model.TextContent</pre>
+            </div>
+            break;
+
+        case DocumentPreviewMode.Spreadsheet:
+            <div class="preview-shell">
+                @foreach (var sheet in Model.Sheets)
+                {
+                    <section class="preview-sheet-card">
+                        <div class="preview-sheet-header">
+                            <h3 class="card-title-modern" style="font-size: 1rem;">
+                                <i class="bi bi-table"></i>
+                                @sheet.Name
+                            </h3>
+                        </div>
+                        <div class="preview-sheet-table-wrap">
+                            <table class="preview-sheet-table">
+                                <thead>
+                                    <tr>
+                                        @foreach (var header in sheet.Headers)
+                                        {
+                                            <th>@header</th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (sheet.Rows.Any())
+                                    {
+                                        @foreach (var row in sheet.Rows)
+                                        {
+                                            <tr>
+                                                @foreach (var cell in row)
+                                                {
+                                                    <td>@cell</td>
+                                                }
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td colspan="@sheet.Headers.Count" class="preview-empty-row">
+                                                Aucune donnee exploitable a afficher pour cette feuille.
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                }
+            </div>
+            break;
+
+        case DocumentPreviewMode.Archive:
+            <section class="preview-archive-card">
+                <div class="card-body-modern">
+                    @if (Model.ArchiveEntries.Any())
+                    {
+                        <div class="record-stack">
+                            @foreach (var entry in Model.ArchiveEntries)
+                            {
+                                <div class="record-card">
+                                    <div class="record-card-title">@entry</div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="phase-empty">
+                            <i class="bi bi-box-seam"></i>
+                            <p>L'archive ne contient aucun fichier consultable.</p>
+                        </div>
+                    }
+                </div>
+            </section>
+            break;
+
+        default:
+            <div class="alert-modern alert-modern-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+                <div>
+                    <strong>Apercu non disponible</strong>
+                    <div>Ce format ne peut pas etre rendu directement dans l'application. Utilisez le telechargement ou l'ouverture du fichier brut.</div>
+                </div>
+            </div>
+            break;
+    }
+</div>
