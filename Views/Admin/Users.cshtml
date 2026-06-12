@@ -52,6 +52,10 @@
                 <i class="bi bi-shield-check"></i>
                 Vue rôles
             </a>
+            <a asp-controller="DemandeProjet" asp-action="Create" class="btn-modern btn-modern-success">
+                <i class="bi bi-plus-circle"></i>
+                Nouvelle demande projet
+            </a>
         </div>
     </div>
 
@@ -64,6 +68,12 @@
         <a asp-action="Services" class="nav-link">Services</a>
         <a asp-action="Delegations" class="nav-link">Délégations</a>
         <a asp-action="Parametres" class="nav-link">Paramètres</a>
+        <span class="ms-auto d-flex align-items-center">
+            <a asp-controller="DemandeProjet" asp-action="Create" class="btn-modern btn-modern-success" style="white-space:nowrap">
+                <i class="bi bi-plus-circle"></i>
+                Nouvelle demande
+            </a>
+        </span>
     </div>
 
     <div class="row g-3 mb-4">

@@ -100,6 +100,8 @@ namespace GestionProjects.Controllers
                 PreSelectedDirecteurMetierId = preSelectedDirecteurMetierId
             };
 
+            ViewBag.CahierChargesRequired = !canManageDemandes;
+
             return View(vm);
         }
 
@@ -108,7 +110,7 @@ namespace GestionProjects.Controllers
         [ValidateAntiForgeryToken]
         [Authorize]
         [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("UploadPolicy")]
-        public async Task<IActionResult> Create(DemandeProjet Demande, IFormFile? cahierCharges, List<IFormFile>? annexes)
+        public async Task<IActionResult> Create(DemandeProjet Demande, IFormFile? cahierCharges, List<IFormFile>? annexes, string? workflowAction = "submit")
         {
             const string pfx = "Demande.";
             ModelState.Remove(pfx + nameof(Demande.Projet));
@@ -156,11 +158,16 @@ namespace GestionProjects.Controllers
             {
                 var userId = User.GetUserIdOrThrow();
 
+                var canManage = await CanManageDemandesBackofficeAsync();
+                var saveAsDraft = workflowAction == "draft" && canManage;
+
                 Demande.DateValidationDM  = null;
                 Demande.DateValidationDSI = null;
                 Demande.Id              = Guid.NewGuid();
                 Demande.DemandeurId     = userId;
-                Demande.StatutDemande   = StatutDemande.EnAttenteValidationDirecteurMetier;
+                Demande.StatutDemande   = saveAsDraft
+                    ? StatutDemande.Brouillon
+                    : StatutDemande.EnAttenteValidationDirecteurMetier;
                 Demande.DateSoumission  = DateTime.Now;
                 Demande.DateCreation    = DateTime.Now;
                 Demande.CreePar         = _currentUserService.Matricule;
@@ -220,15 +227,22 @@ namespace GestionProjects.Controllers
                     null,
                     new { Titre = Demande.Titre, DirectionId = Demande.DirectionId, DirecteurMetierId = Demande.DirecteurMetierId });
 
-                var dm = await _db.Utilisateurs.FindAsync(Demande.DirecteurMetierId);
-                var dir = await _db.Directions.FindAsync(Demande.DirectionId);
-                var nomDemandeur = $"{User.FindFirst("Nom")?.Value} {User.FindFirst("Prenoms")?.Value}".Trim();
-                _ = _teams.EnvoyerNouvelleDemandeAsync(
-                    Demande.Titre ?? string.Empty, nomDemandeur, dir?.Libelle ?? "—",
-                    dm != null ? $"{dm.Nom} {dm.Prenoms}" : "—", Demande.Id);
-                if (dm?.Email != null)
-                    _ = _email.EnvoyerNouvelleDemandeAuDMAsync(
-                        dm.Email, $"{dm.Nom} {dm.Prenoms}".Trim(), Demande.Titre ?? string.Empty, nomDemandeur, dir?.Libelle ?? "—");
+                if (!saveAsDraft)
+                {
+                    var dm = await _db.Utilisateurs.FindAsync(Demande.DirecteurMetierId);
+                    var dir = await _db.Directions.FindAsync(Demande.DirectionId);
+                    var nomDemandeur = $"{User.FindFirst("Nom")?.Value} {User.FindFirst("Prenoms")?.Value}".Trim();
+                    _ = _teams.EnvoyerNouvelleDemandeAsync(
+                        Demande.Titre ?? string.Empty, nomDemandeur, dir?.Libelle ?? "—",
+                        dm != null ? $"{dm.Nom} {dm.Prenoms}" : "—", Demande.Id);
+                    if (dm?.Email != null)
+                        _ = _email.EnvoyerNouvelleDemandeAuDMAsync(
+                            dm.Email, $"{dm.Nom} {dm.Prenoms}".Trim(), Demande.Titre ?? string.Empty, nomDemandeur, dir?.Libelle ?? "—");
+                }
+
+                TempData[saveAsDraft ? "Info" : "Success"] = saveAsDraft
+                    ? "Demande enregistrée comme brouillon."
+                    : "Demande soumise au directeur métier pour validation.";
 
                 return RedirectToAction(nameof(Details), new { id = Demande.Id });
             }

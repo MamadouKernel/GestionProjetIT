@@ -6,6 +6,7 @@
     var preSelectedDirectionId = Model.PreSelectedDirectionId;
     var preSelectedDirecteurMetierId = Model.PreSelectedDirecteurMetierId;
     var hasMembresCodir = Model.HasMembresCodir;
+    var cahierChargesRequired = ViewBag.CahierChargesRequired as bool? ?? true;
 }
 
 <div class="phase-shell">
@@ -186,9 +187,18 @@
             <div class="phase-grid">
                 <section class="phase-panel">
                     <h4 class="phase-panel-title">Cahier des charges</h4>
-                    <input type="file" name="cahierCharges" class="form-control-modern" accept=".pdf,.doc,.docx" required />
+                    <input type="file" name="cahierCharges" class="form-control-modern" accept=".pdf,.doc,.docx" @(cahierChargesRequired ? "required" : "") />
                     @Html.ValidationMessage("cahierCharges", "", new { @class = "text-danger d-block mt-2" })
-                    <div class="soft-note mt-2">Document obligatoire. Formats acceptes : PDF, DOC, DOCX.</div>
+                    <div class="soft-note mt-2">
+                        @if (cahierChargesRequired)
+                        {
+                            <span>Document obligatoire. Formats acceptés : PDF, DOC, DOCX.</span>
+                        }
+                        else
+                        {
+                            <span>Document optionnel pour les administrateurs. Formats acceptés : PDF, DOC, DOCX.</span>
+                        }
+                    </div>
                 </section>
 
                 <section class="phase-panel">
