@@ -58,21 +58,15 @@ namespace GestionProjects.Infrastructure.Services
             var desiredRoles = selectedRoles.Distinct().ToList();
             var operateur = _currentUserService.Matricule ?? "SYSTEM";
 
-            // IgnoreQueryFilters is required: the global soft-delete filter hides deleted roles,
-            // so user.UtilisateurRoles only contains active ones. Without this, re-adding a
-            // previously removed role would try to INSERT a new row and hit the unique index
-            // on (UtilisateurId, Role), causing a SqlException (500).
-            var allExistingRoles = await _db.UtilisateurRoles
-                .IgnoreQueryFilters()
-                .Where(ur => ur.UtilisateurId == user.Id)
-                .ToListAsync();
-
             // Activer ou créer les rôles désirés
             foreach (var role in desiredRoles)
             {
-                var existingRole = allExistingRoles.FirstOrDefault(ur => ur.Role == role);
+                var existingRole = user.UtilisateurRoles.FirstOrDefault(ur => ur.Role == role);
                 if (existingRole == null)
                 {
+                    // L'index unique sur (UtilisateurId, Role) est filtré WHERE EstSupprime=0,
+                    // donc on peut insérer une nouvelle ligne active même si une ancienne
+                    // supprimée existe pour la même combinaison.
                     user.UtilisateurRoles.Add(new UtilisateurRole
                     {
                         Id = Guid.NewGuid(),
@@ -95,7 +89,7 @@ namespace GestionProjects.Infrastructure.Services
             }
 
             // Désactiver les rôles retirés
-            foreach (var existingRole in allExistingRoles
+            foreach (var existingRole in user.UtilisateurRoles
                 .Where(ur => !ur.EstSupprime && !desiredRoles.Contains(ur.Role)))
             {
                 existingRole.EstSupprime = true;
@@ -103,6 +97,8 @@ namespace GestionProjects.Infrastructure.Services
                 existingRole.DateModification = DateTime.Now;
                 existingRole.ModifiePar = operateur;
             }
+
+            await Task.CompletedTask;
         }
 
         /// <inheritdoc/>

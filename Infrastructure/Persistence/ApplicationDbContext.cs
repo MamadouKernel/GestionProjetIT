@@ -248,10 +248,13 @@ namespace GestionProjects.Infrastructure.Persistence
                 .HasForeignKey(ur => ur.UtilisateurId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Index pour améliorer les performances
+            // Index unique filtré : une seule entrée ACTIVE par (UtilisateurId, Role).
+            // Les lignes soft-deleted (EstSupprime=1) sont exclues du filtre, ce qui permet
+            // de réinsérer un rôle précédemment supprimé sans violation de contrainte.
             modelBuilder.Entity<UtilisateurRole>()
                 .HasIndex(ur => new { ur.UtilisateurId, ur.Role })
-                .IsUnique();
+                .IsUnique()
+                .HasFilter("[EstSupprime] = 0");
 
             // ---- Relations Notification ----
             modelBuilder.Entity<Notification>()
