@@ -61,6 +61,11 @@ namespace GestionProjects.Controllers
                 SelectedRole        = role
             };
 
+            ViewBag.PageNumber = vm.PageNumber;
+            ViewBag.TotalPages = vm.TotalPages;
+            ViewBag.TotalCount = vm.TotalCount;
+            ViewBag.PageSize   = vm.PageSize;
+
             return View(vm);
         }
 

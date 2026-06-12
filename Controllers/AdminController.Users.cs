@@ -14,6 +14,10 @@ namespace GestionProjects.Controllers
         public async Task<IActionResult> Users(string? recherche = null, Guid? directionId = null, RoleUtilisateur? role = null, int page = 1, int pageSize = 5)
         {
             var vm = await BuildUsersListViewModelAsync(recherche, directionId, role, page, pageSize);
+            ViewBag.PageNumber = vm.PageNumber;
+            ViewBag.TotalPages = vm.TotalPages;
+            ViewBag.TotalCount = vm.TotalCount;
+            ViewBag.PageSize   = vm.PageSize;
             return View(vm);
         }
 
