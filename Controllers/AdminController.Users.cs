@@ -456,8 +456,11 @@ namespace GestionProjects.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateUser(Guid id, string Matricule, string Nom, string Prenoms, string Email, string? DirectionId, string? nouveauMotDePasse, string? confirmNouveauMotDePasse, string? Roles = null, bool PeutCreerDemandeProjet = true, GestionProjects.Domain.Enums.ProfilRessource? ProfilRessource = null, decimal? CapaciteHebdomadaire = null)
         {
+            // AsNoTracking : on ne veut pas que cette lecture interagisse avec le tracker.
+            // Le service UpdateUserAsync charge l'utilisateur avec ses rôles (avec tracking)
+            // et est le seul propriétaire des entités dans le ChangeTracker.
             var existingUser = await _db.Utilisateurs
-                .Include(u => u.UtilisateurRoles)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == id && !u.EstSupprime);
 
             if (existingUser == null)
@@ -492,6 +495,9 @@ namespace GestionProjects.Controllers
             if (!ModelState.IsValid)
                 return View("Users", await BuildUsersListViewModelAsync());
 
+            // Capture avant modification pour le log d'audit
+            var ancienMatricule = existingUser.Matricule;
+
             Guid? directionGuid = Guid.TryParse(DirectionId, out var dg) ? dg : (Guid?)null;
             var rolesSelectionnes = ParseSelectedRoles(Roles);
 
@@ -503,7 +509,7 @@ namespace GestionProjects.Controllers
             await _db.SaveChangesAsync();
 
             await _auditService.LogActionAsync("ModificationUtilisateur", "Utilisateur", id,
-                new { AncienMatricule = existingUser.Matricule },
+                new { AncienMatricule = ancienMatricule },
                 new { NouveauMatricule = Matricule, MotDePasseModifie = !string.IsNullOrEmpty(nouveauMotDePasse), Roles = rolesSelectionnes });
 
             TempData["Success"] = "Utilisateur modifié avec succès.";
