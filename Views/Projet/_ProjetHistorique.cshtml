@@ -1,7 +1,8 @@
-@model GestionProjects.Domain.Models.Projet
+@model GestionProjects.Application.ViewModels.Projet.ProjetDetailsViewModel
 @{
-    var auditLogs = ViewBag.AuditLogs as IEnumerable<GestionProjects.Domain.Models.AuditLog> ?? Enumerable.Empty<GestionProjects.Domain.Models.AuditLog>();
-    var historiquePhases = Model.HistoriquePhases?.OrderByDescending(h => h.DateDebut).ToList() ?? new List<GestionProjects.Domain.Models.HistoriquePhaseProjet>();
+    var projet = Model.Projet;
+    var auditLogs = Model.AuditLogs;
+    var historiquePhases = projet.HistoriquePhases?.OrderByDescending(h => h.DateDebut).ToList() ?? new List<GestionProjects.Domain.Models.HistoriquePhaseProjet>();
     
     var allEvents = new List<dynamic>();
                 
@@ -95,25 +96,25 @@
                 }
                 
                 // Ajouter les événements importants du projet
-                if (Model.DateCreation != default)
+                if (projet.DateCreation != default)
                 {
                     allEvents.Add(new {
                         Type = "Projet",
-                        Date = Model.DateCreation,
+                        Date = projet.DateCreation,
                         Titre = "Projet créé",
-                        Description = $"Projet {Model.CodeProjet} créé",
-                        Auteur = Model.CreePar,
+                        Description = $"Projet {projet.CodeProjet} créé",
+                        Auteur = projet.CreePar,
                         Commentaire = "",
                         Icon = "bi-folder-plus",
                         Color = "var(--success)"
                     });
                 }
                 
-                if (Model.CharteValidee && Model.DateCharteValidee.HasValue)
+                if (projet.CharteValidee && projet.DateCharteValidee.HasValue)
                 {
                     allEvents.Add(new {
                         Type = "Projet",
-                        Date = Model.DateCharteValidee.Value,
+                        Date = projet.DateCharteValidee.Value,
                         Titre = "Charte validée",
                         Description = "Charte de projet validée",
                         Auteur = "Chef de Projet",
@@ -123,25 +124,25 @@
                     });
                 }
                 
-                if (Model.PlanningValideParDM && Model.DatePlanningValideParDM.HasValue)
+                if (projet.PlanningValideParDM && projet.DatePlanningValideParDM.HasValue)
                 {
                     allEvents.Add(new {
                         Type = "Projet",
-                        Date = Model.DatePlanningValideParDM.Value,
+                        Date = projet.DatePlanningValideParDM.Value,
                         Titre = "Planning validé par Directeur Métier",
                         Description = "Planning validé",
-                        Auteur = Model.Sponsor != null ? $"{Model.Sponsor.Nom} {Model.Sponsor.Prenoms}" : "Directeur Métier",
+                        Auteur = projet.Sponsor != null ? $"{projet.Sponsor.Nom} {projet.Sponsor.Prenoms}" : "Directeur Métier",
                         Commentaire = "",
                         Icon = "bi-calendar-check",
                         Color = "var(--success)"
                     });
                 }
                 
-                if (Model.PlanningValideParDSI && Model.DatePlanningValideParDSI.HasValue)
+                if (projet.PlanningValideParDSI && projet.DatePlanningValideParDSI.HasValue)
                 {
                     allEvents.Add(new {
                         Type = "Projet",
-                        Date = Model.DatePlanningValideParDSI.Value,
+                        Date = projet.DatePlanningValideParDSI.Value,
                         Titre = "Planning validé par DSI",
                         Description = "Planning validé",
                         Auteur = "DSI",
@@ -151,25 +152,25 @@
                     });
                 }
                 
-                if (Model.RecetteValidee && Model.DateRecetteValidee.HasValue)
+                if (projet.RecetteValidee && projet.DateRecetteValidee.HasValue)
                 {
                     allEvents.Add(new {
                         Type = "Projet",
-                        Date = Model.DateRecetteValidee.Value,
+                        Date = projet.DateRecetteValidee.Value,
                         Titre = "Recette validée",
                         Description = "Recette UAT validée",
-                        Auteur = Model.RecetteValideePar != null ? $"{Model.RecetteValideePar.Nom} {Model.RecetteValideePar.Prenoms}" : "Directeur Métier",
+                        Auteur = projet.RecetteValideePar != null ? $"{projet.RecetteValideePar.Nom} {projet.RecetteValideePar.Prenoms}" : "Directeur Métier",
                         Commentaire = "",
                         Icon = "bi-check2-square",
                         Color = "var(--success)"
                     });
                 }
                 
-                if (Model.MepEffectuee && Model.DateMep.HasValue)
+                if (projet.MepEffectuee && projet.DateMep.HasValue)
                 {
                     allEvents.Add(new {
                         Type = "Projet",
-                        Date = Model.DateMep.Value,
+                        Date = projet.DateMep.Value,
                         Titre = "Mise en production effectuée",
                         Description = "MEP réalisée",
                         Auteur = "Chef de Projet",

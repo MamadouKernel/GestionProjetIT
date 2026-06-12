@@ -1,10 +1,10 @@
-@model IEnumerable<GestionProjects.Domain.Models.Projet>
+@model GestionProjects.Application.ViewModels.Projet.PortefeuilleViewModel
 @inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
 
 @{
     ViewData["Title"] = "Portefeuille de Projet DSI";
-    var portefeuille = ViewBag.Portefeuille as GestionProjects.Domain.Models.PortefeuilleProjet ?? new GestionProjects.Domain.Models.PortefeuilleProjet();
-    var demandesEnCours = ViewBag.DemandesEnCours as IEnumerable<GestionProjects.Domain.Models.DemandeProjet> ?? Enumerable.Empty<GestionProjects.Domain.Models.DemandeProjet>();
+    var portefeuille = Model.Portefeuille;
+    var demandesEnCours = Model.DemandesEnCours;
     var portefeuilleId = portefeuille?.Id ?? Guid.Empty;
     var objectifStrategiqueGlobal = portefeuille?.ObjectifStrategiqueGlobal;
     var avantagesAttendus = portefeuille?.AvantagesAttendus ?? string.Empty;
@@ -23,7 +23,7 @@
                     Vue consolidée des demandes en cours et des projets IT suivis par la DSI.
                 </p>
                 <div class="page-hero-meta">
-                    <span class="badge-modern badge-modern-info">@Model.Count() projet(s)</span>
+                    <span class="badge-modern badge-modern-info">@Model.Projets.Count() projet(s)</span>
                     <span class="badge-modern badge-modern-warning">@demandesEnCours.Count() demande(s) en attente</span>
                 </div>
             </div>
@@ -289,7 +289,7 @@
                     <i class="bi bi-list-ul"></i>
                     Projets inclus dans le portefeuille
                 </h3>
-                <span class="badge-modern badge-modern-info">@Model.Count() projet(s)</span>
+                <span class="badge-modern badge-modern-info">@Model.Projets.Count() projet(s)</span>
             </div>
         </div>
         <div class="card-body-modern p-0">
@@ -312,7 +312,7 @@
                         @{
                             var index = 1;
                         }
-                        @foreach (var projet in Model)
+                        @foreach (var projet in Model.Projets)
                         {
                             <tr>
                                 <td class="table-code">@index</td>

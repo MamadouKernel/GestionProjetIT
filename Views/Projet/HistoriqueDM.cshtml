@@ -1,15 +1,19 @@
-@model IEnumerable<GestionProjects.Domain.Models.Projet>
+@model GestionProjects.Application.ViewModels.Projet.ProjetHistoriqueDMViewModel
 @using GestionProjects.Domain.Enums
 @using GestionProjects.Domain.Models
 @{
     ViewData["Title"] = "Historique de mes Projets";
-    var projetsAvecHistorique = ViewBag.ProjetsAvecHistorique as List<dynamic> ?? new List<dynamic>();
-    var directions    = ViewBag.Directions as IEnumerable<Direction> ?? Enumerable.Empty<Direction>();
-    var recherche     = ViewBag.Recherche as string ?? string.Empty;
-    var selectedDir   = ViewBag.SelectedDirectionId as Guid?;
-    var selectedPhase = ViewBag.SelectedPhase as PhaseProjet?;
-    var selectedStatut = ViewBag.SelectedStatut as StatutProjet?;
-    var totalCount    = ViewBag.TotalCount as int? ?? Model.Count();
+    var projetsAvecHistorique = Model.ProjetsAvecHistorique;
+    var directions    = Model.Directions;
+    var recherche     = Model.Recherche ?? string.Empty;
+    var selectedDir   = Model.SelectedDirectionId;
+    var selectedPhase = Model.SelectedPhase;
+    var selectedStatut = Model.SelectedStatut;
+    var totalCount    = Model.TotalCount;
+    ViewBag.PageNumber = Model.PageNumber;
+    ViewBag.TotalPages = Model.TotalPages;
+    ViewBag.TotalCount = Model.TotalCount;
+    ViewBag.PageSize   = Model.PageSize;
 }
 
 <div class="fade-in app-page">
@@ -84,22 +88,17 @@
         </div>
     </div>
 
-    @if (Model.Any())
+    @if (projetsAvecHistorique.Any())
     {
         @foreach (var item in projetsAvecHistorique)
         {
-            var projet = item.Projet as GestionProjects.Domain.Models.Projet;
+            var projet = item.Projet;
             var auditLogs = item.AuditLogs as IEnumerable<GestionProjects.Domain.Models.AuditLog>;
-            var totalLivrables = (int)item.TotalLivrables;
-            var totalAnomalies = (int)item.TotalAnomalies;
-            var anomaliesOuvertes = (int)item.AnomaliesOuvertes;
-            var totalRisques = (int)item.TotalRisques;
-            var risquesCritiques = (int)item.RisquesCritiques;
-
-            if (projet == null)
-            {
-                continue;
-            }
+            var totalLivrables = item.TotalLivrables;
+            var totalAnomalies = item.TotalAnomalies;
+            var anomaliesOuvertes = item.AnomaliesOuvertes;
+            var totalRisques = item.TotalRisques;
+            var risquesCritiques = item.RisquesCritiques;
 
             <details class="card-modern panel-accent history-project-accordion">
                 <summary class="card-header-modern history-project-summary">

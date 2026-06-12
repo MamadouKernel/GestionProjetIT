@@ -1,5 +1,6 @@
 ﻿using GestionProjects.Application.Common.Extensions;
 using GestionProjects.Application.Common.Interfaces;
+using GestionProjects.Application.ViewModels.DemandesAcces;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using GestionProjects.Infrastructure.Persistence;
@@ -65,20 +66,25 @@ namespace GestionProjects.Controllers
 
             var paged = await query.ToPagedResultAsync(page, pageSize);
 
-            ViewBag.PageNumber      = paged.PageNumber;
-            ViewBag.TotalPages      = paged.TotalPages;
-            ViewBag.TotalCount      = paged.TotalCount;
-            ViewBag.PageSize        = paged.PageSize;
-            ViewBag.Recherche       = recherche;
-            ViewBag.SelectedStatut  = statut;
-
-            ViewBag.Directions = await _db.Directions
+            var directions = await _db.Directions
                 .Where(d => !d.EstSupprime && d.EstActive)
                 .OrderBy(d => d.Libelle)
                 .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Libelle })
                 .ToListAsync();
 
-            return View(paged.Items);
+            var vm = new DemandesAccesIndexViewModel
+            {
+                Items          = paged.Items,
+                Directions     = directions,
+                Recherche      = recherche,
+                SelectedStatut = statut,
+                TotalCount     = paged.TotalCount,
+                PageNumber     = paged.PageNumber,
+                TotalPages     = paged.TotalPages,
+                PageSize       = paged.PageSize
+            };
+
+            return View(vm);
         }
 
         [HttpPost]

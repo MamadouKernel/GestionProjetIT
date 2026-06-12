@@ -1,6 +1,6 @@
 @using Microsoft.AspNetCore.Html
 @using System.Net
-@model GestionProjects.Domain.Models.CharteProjet
+@model GestionProjects.Application.ViewModels.Projet.CharteProjetPageViewModel
 @inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
 
 @functions {
@@ -32,10 +32,11 @@
 
 @{
     ViewData["Title"] = "Charte de Projet";
-    var projet = ViewBag.Projet as GestionProjects.Domain.Models.Projet;
-    var utilisateurs = ViewBag.Utilisateurs as List<GestionProjects.Domain.Models.Utilisateur> ?? new List<GestionProjects.Domain.Models.Utilisateur>();
-    var charteSignee = ViewBag.CharteSigneeLivrable as GestionProjects.Domain.Models.LivrableProjet;
-    var dossierSignatureCharte = ViewBag.DossierSignatureCharte as GestionProjects.Domain.Models.DossierSignatureProjet;
+    var charte = Model.Charte;
+    var projet = Model.Projet;
+    var utilisateurs = Model.Utilisateurs;
+    var charteSignee = Model.CharteSigneeLivrable;
+    var dossierSignatureCharte = Model.DossierSignatureCharte;
     var signatairesDossier = dossierSignatureCharte?.Signataires?
         .OrderBy(s => s.OrdreSignature)
         .ToList() ?? new List<GestionProjects.Domain.Models.SignataireDossierSignatureProjet>();
@@ -70,12 +71,12 @@
                 <div class="document-kpi-panel">
                     <div class="document-kpi">
                         <span class="document-kpi-label">Jalons</span>
-                        <span class="document-kpi-value">@Model.Jalons.Count</span>
+                        <span class="document-kpi-value">@charte.Jalons.Count</span>
                         <span class="document-kpi-copy">Étapes prévisionnelles renseignées</span>
                     </div>
                     <div class="document-kpi">
                         <span class="document-kpi-label">Parties prenantes</span>
-                        <span class="document-kpi-value">@Model.PartiesPrenantes.Count</span>
+                        <span class="document-kpi-value">@charte.PartiesPrenantes.Count</span>
                         <span class="document-kpi-copy">Acteurs enregistrés dans la charte</span>
                     </div>
                     <div class="document-kpi">
@@ -114,8 +115,8 @@
     <form asp-action="SauvegarderCharteProjet" method="post" id="charteForm" class="document-editor">
         @Html.AntiForgeryToken()
         <input type="hidden" name="id" value="@projet?.Id" />
-        <input type="hidden" asp-for="Id" />
-        <input type="hidden" asp-for="ProjetId" />
+        <input type="hidden" name="Id" value="@charte.Id" />
+        <input type="hidden" name="ProjetId" value="@charte.ProjetId" />
 
         <!-- En-tête du document -->
         <div class="card-modern mb-4">
@@ -136,19 +137,19 @@
                     <div class="col-md-4">
                         <div class="form-group-modern">
                             <label class="form-label-modern">Département</label>
-                            <input asp-for="Departement" class="form-control-modern" readonly />
+                            <input name="Departement" value="@charte.Departement" class="form-control-modern" readonly />
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-group-modern">
                             <label class="form-label-modern">Type de Document</label>
-                            <input asp-for="TypeDocument" class="form-control-modern" readonly />
+                            <input name="TypeDocument" value="@charte.TypeDocument" class="form-control-modern" readonly />
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-group-modern">
                             <label class="form-label-modern">Code du Document</label>
-                            <input asp-for="CodeDocument" class="form-control-modern" />
+                            <input name="CodeDocument" value="@charte.CodeDocument" class="form-control-modern" />
                         </div>
                     </div>
                 </div>
@@ -156,19 +157,19 @@
                     <div class="col-md-4">
                         <div class="form-group-modern">
                             <label class="form-label-modern">N° de Révision</label>
-                            <input asp-for="NumeroRevision" type="number" class="form-control-modern" />
+                            <input name="NumeroRevision" value="@charte.NumeroRevision" type="number" class="form-control-modern" />
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-group-modern">
                             <label class="form-label-modern">Date de Révision</label>
-                            <input asp-for="DateRevision" type="date" class="form-control-modern" />
+                            <input name="DateRevision" value="@(charte.DateRevision?.ToString("yyyy-MM-dd"))" type="date" class="form-control-modern" />
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-group-modern">
                             <label class="form-label-modern">Description</label>
-                            <input asp-for="DescriptionRevision" class="form-control-modern" />
+                            <input name="DescriptionRevision" value="@charte.DescriptionRevision" class="form-control-modern" />
                         </div>
                     </div>
                 </div>
@@ -176,19 +177,19 @@
                     <div class="col-md-4">
                         <div class="form-group-modern">
                             <label class="form-label-modern">Rédigé par</label>
-                            <input asp-for="RedigePar" class="form-control-modern" />
+                            <input name="RedigePar" value="@charte.RedigePar" class="form-control-modern" />
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-group-modern">
                             <label class="form-label-modern">Vérifié par</label>
-                            <input asp-for="VerifiePar" class="form-control-modern" />
+                            <input name="VerifiePar" value="@charte.VerifiePar" class="form-control-modern" />
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-group-modern">
                             <label class="form-label-modern">Approuvé par</label>
-                            <input asp-for="ApprouvePar" class="form-control-modern" />
+                            <input name="ApprouvePar" value="@charte.ApprouvePar" class="form-control-modern" />
                         </div>
                     </div>
                 </div>
@@ -214,36 +215,36 @@
                     <div class="col-md-6">
                         <div class="form-group-modern">
                             <label class="form-label-modern">Nom du Projet *</label>
-                            <input asp-for="NomProjet" class="form-control-modern" required />
+                            <input name="NomProjet" value="@charte.NomProjet" class="form-control-modern" required />
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group-modern">
                             <label class="form-label-modern">Numéro du Projet</label>
-                            <input asp-for="NumeroProjet" class="form-control-modern" />
+                            <input name="NumeroProjet" value="@charte.NumeroProjet" class="form-control-modern" />
                         </div>
                     </div>
                 </div>
                 <div class="form-group-modern">
                     <label class="form-label-modern">Objectif du Projet *</label>
-                    <textarea asp-for="ObjectifProjet" class="form-control-modern" rows="5" required placeholder="Un objectif par ligne, commencer par •"></textarea>
+                    <textarea name="ObjectifProjet" class="form-control-modern" rows="5" required placeholder="Un objectif par ligne, commencer par •">@charte.ObjectifProjet</textarea>
                     <small class="text-muted">Un objectif par ligne, commencer chaque ligne par •</small>
                 </div>
                 <div class="form-group-modern">
                     <label class="form-label-modern">Assurance de la Qualité</label>
-                    <textarea asp-for="AssuranceQualite" class="form-control-modern" rows="3" placeholder="Tests approfondis, conformité aux normes..."></textarea>
+                    <textarea name="AssuranceQualite" class="form-control-modern" rows="3" placeholder="Tests approfondis, conformité aux normes...">@charte.AssuranceQualite</textarea>
                 </div>
                 <div class="form-group-modern">
                     <label class="form-label-modern">Périmètre</label>
-                    <textarea asp-for="Perimetre" class="form-control-modern" rows="3" placeholder="Mise en œuvre, intégration, formation..."></textarea>
+                    <textarea name="Perimetre" class="form-control-modern" rows="3" placeholder="Mise en œuvre, intégration, formation...">@charte.Perimetre</textarea>
                 </div>
                 <div class="form-group-modern">
                     <label class="form-label-modern">Contraintes Initiales</label>
-                    <textarea asp-for="ContraintesInitiales" class="form-control-modern" rows="3" placeholder="Budget, Ressources Humaines, Calendrier..."></textarea>
+                    <textarea name="ContraintesInitiales" class="form-control-modern" rows="3" placeholder="Budget, Ressources Humaines, Calendrier...">@charte.ContraintesInitiales</textarea>
                 </div>
                 <div class="form-group-modern">
                     <label class="form-label-modern">Risques Initiaux</label>
-                    <textarea asp-for="RisquesInitiaux" class="form-control-modern" rows="3" placeholder="Retards possibles, risques de sécurité..."></textarea>
+                    <textarea name="RisquesInitiaux" class="form-control-modern" rows="3" placeholder="Retards possibles, risques de sécurité...">@charte.RisquesInitiaux</textarea>
                 </div>
             </div>
         </div>
@@ -261,11 +262,11 @@
                     <div class="col-md-6">
                         <div class="form-group-modern">
                             <label class="form-label-modern">Demandeur *</label>
-                            <select asp-for="DemandeurId" class="form-control-modern" required>
+                            <select name="DemandeurId" class="form-control-modern" required>
                                 <option value="">-- Sélectionner --</option>
                                 @foreach (var user in utilisateurs)
                                 {
-                                    <option value="@user.Id">@user.Nom @user.Prenoms</option>
+                                    <option value="@user.Id" selected="@(charte.DemandeurId == user.Id)">@user.Nom @user.Prenoms</option>
                                 }
                             </select>
                         </div>
@@ -273,7 +274,7 @@
                     <div class="col-md-6">
                         <div class="form-group-modern">
                             <label class="form-label-modern">Sponsors *</label>
-                            <textarea asp-for="Sponsors" class="form-control-modern" rows="2" required placeholder="Un sponsor par ligne"></textarea>
+                            <textarea name="Sponsors" class="form-control-modern" rows="2" required placeholder="Un sponsor par ligne">@charte.Sponsors</textarea>
                         </div>
                     </div>
                 </div>
@@ -281,11 +282,11 @@
                     <div class="col-md-6">
                         <div class="form-group-modern">
                             <label class="form-label-modern">Chef de Projet *</label>
-                            <select asp-for="ChefProjetId" class="form-control-modern" required>
+                            <select name="ChefProjetId" class="form-control-modern" required>
                                 <option value="">-- Sélectionner --</option>
                                 @foreach (var user in utilisateurs)
                                 {
-                                    <option value="@user.Id">@user.Nom @user.Prenoms</option>
+                                    <option value="@user.Id" selected="@(charte.ChefProjetId == user.Id)">@user.Nom @user.Prenoms</option>
                                 }
                             </select>
                         </div>
@@ -293,7 +294,7 @@
                     <div class="col-md-6">
                         <div class="form-group-modern">
                             <label class="form-label-modern">Email Chef de Projet</label>
-                            <input asp-for="EmailChefProjet" type="email" class="form-control-modern" />
+                            <input name="EmailChefProjet" value="@charte.EmailChefProjet" type="email" class="form-control-modern" />
                         </div>
                     </div>
                 </div>
@@ -316,9 +317,9 @@
             </div>
             <div class="card-body-modern">
                 <div id="jalonsContainer">
-                    @for (int i = 0; i < Model.Jalons.Count; i++)
+                    @for (int i = 0; i < charte.Jalons.Count; i++)
                     {
-                        var jalon = Model.Jalons.ElementAt(i);
+                        var jalon = charte.Jalons.ElementAt(i);
                         <div class="card-modern mb-3 jalon-item" data-jalon-id="@jalon.Id">
                             <div class="card-body-modern">
                                 <div class="d-flex justify-content-between align-items-start mb-3">
@@ -331,7 +332,7 @@
                                     }
                                 </div>
                                 <input type="hidden" name="Jalons[@i].Id" value="@jalon.Id" />
-                                <input type="hidden" name="Jalons[@i].CharteProjetId" value="@Model.Id" />
+                                <input type="hidden" name="Jalons[@i].CharteProjetId" value="@charte.Id" />
                                 <input type="hidden" name="Jalons[@i].Ordre" value="@(i + 1)" />
                                 <div class="form-group-modern mb-2">
                                     <label class="form-label-modern">Nom du Jalon</label>
@@ -390,12 +391,12 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @for (int i = 0; i < Model.PartiesPrenantes.Count; i++)
+                            @for (int i = 0; i < charte.PartiesPrenantes.Count; i++)
                             {
-                                var partie = Model.PartiesPrenantes.ElementAt(i);
+                                var partie = charte.PartiesPrenantes.ElementAt(i);
                                 <tr data-partie-id="@partie.Id">
                                     <input type="hidden" name="PartiesPrenantes[@i].Id" value="@partie.Id" />
-                                    <input type="hidden" name="PartiesPrenantes[@i].CharteProjetId" value="@Model.Id" />
+                                    <input type="hidden" name="PartiesPrenantes[@i].CharteProjetId" value="@charte.Id" />
                                     <td>
                                         <input name="PartiesPrenantes[@i].Nom" value="@partie.Nom" class="form-control-modern" />
                                     </td>
@@ -430,12 +431,12 @@
                 <div class="document-signature-grid">
                     <div class="document-signature-panel">
                         <div class="document-signature-label">Signature Sponsor</div>
-                            @if (Model.SignatureSponsor)
+                            @if (charte.SignatureSponsor)
                             {
                                 <div class="document-signature-state is-success">
                                     <i class="bi bi-check-circle-fill"></i>
-                                    <div>Signé le @Model.DateSignatureSponsor?.ToString("dd/MM/yyyy")</div>
-                                    <div>@Model.SignatureSponsorUtilisateur?.Nom @Model.SignatureSponsorUtilisateur?.Prenoms</div>
+                                    <div>Signé le @charte.DateSignatureSponsor?.ToString("dd/MM/yyyy")</div>
+                                    <div>@charte.SignatureSponsorUtilisateur?.Nom @charte.SignatureSponsorUtilisateur?.Prenoms</div>
                                 </div>
                             }
                             else
@@ -448,12 +449,12 @@
                     </div>
                     <div class="document-signature-panel">
                         <div class="document-signature-label">Signature Chef de Projet</div>
-                            @if (Model.SignatureChefProjet)
+                            @if (charte.SignatureChefProjet)
                             {
                                 <div class="document-signature-state is-success">
                                     <i class="bi bi-check-circle-fill"></i>
-                                    <div>Signé le @Model.DateSignatureChefProjet?.ToString("dd/MM/yyyy")</div>
-                                    <div>@Model.SignatureChefProjetUtilisateur?.Nom @Model.SignatureChefProjetUtilisateur?.Prenoms</div>
+                                    <div>Signé le @charte.DateSignatureChefProjet?.ToString("dd/MM/yyyy")</div>
+                                    <div>@charte.SignatureChefProjetUtilisateur?.Nom @charte.SignatureChefProjetUtilisateur?.Prenoms</div>
                                 </div>
                             }
                             else
@@ -769,16 +770,16 @@
             <div class="document-summary-grid">
                 <div class="document-summary-card">
                         <strong>Signature Sponsor</strong>
-                        <div class="mt-2 @(Model.SignatureSponsor ? "text-success" : "text-warning")">
-                            <i class="bi @(Model.SignatureSponsor ? "bi-check-circle-fill" : "bi-clock")"></i>
-                            @(Model.SignatureSponsor ? $"Signée le {Model.DateSignatureSponsor?.ToString("dd/MM/yyyy HH:mm")}" : "En attente")
+                        <div class="mt-2 @(charte.SignatureSponsor ? "text-success" : "text-warning")">
+                            <i class="bi @(charte.SignatureSponsor ? "bi-check-circle-fill" : "bi-clock")"></i>
+                            @(charte.SignatureSponsor ? $"Signée le {charte.DateSignatureSponsor?.ToString("dd/MM/yyyy HH:mm")}" : "En attente")
                         </div>
                 </div>
                 <div class="document-summary-card">
                         <strong>Signature Chef de Projet</strong>
-                        <div class="mt-2 @(Model.SignatureChefProjet ? "text-success" : "text-warning")">
-                            <i class="bi @(Model.SignatureChefProjet ? "bi-check-circle-fill" : "bi-clock")"></i>
-                            @(Model.SignatureChefProjet ? $"Signée le {Model.DateSignatureChefProjet?.ToString("dd/MM/yyyy HH:mm")}" : "En attente")
+                        <div class="mt-2 @(charte.SignatureChefProjet ? "text-success" : "text-warning")">
+                            <i class="bi @(charte.SignatureChefProjet ? "bi-check-circle-fill" : "bi-clock")"></i>
+                            @(charte.SignatureChefProjet ? $"Signée le {charte.DateSignatureChefProjet?.ToString("dd/MM/yyyy HH:mm")}" : "En attente")
                         </div>
                 </div>
             </div>
@@ -823,7 +824,7 @@
                         <div class="col-md-3">
                             <div class="form-group-modern">
                                 <label class="form-label-modern">Version</label>
-                                <input type="text" name="version" class="form-control-modern" value="@(charteSignee?.Version ?? $"R{Model.NumeroRevision:00}-SIGNEE")" />
+                                <input type="text" name="version" class="form-control-modern" value="@(charteSignee?.Version ?? $"R{charte.NumeroRevision:00}-SIGNEE")" />
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -846,11 +847,11 @@
                             <label class="form-label-modern">Signatures présentes sur le document</label>
                             <div class="document-checkbox-panel">
                                 <label>
-                                    <input type="checkbox" name="signatureSponsor" value="true" @(Model.SignatureSponsor ? "checked" : "") />
+                                    <input type="checkbox" name="signatureSponsor" value="true" @(charte.SignatureSponsor ? "checked" : "") />
                                     <span>Sponsor / Directeur Métier</span>
                                 </label>
                                 <label>
-                                    <input type="checkbox" name="signatureChefProjet" value="true" @(Model.SignatureChefProjet ? "checked" : "") />
+                                    <input type="checkbox" name="signatureChefProjet" value="true" @(charte.SignatureChefProjet ? "checked" : "") />
                                     <span>Chef de Projet</span>
                                 </label>
                             </div>
@@ -899,8 +900,8 @@
 </div>
 
 <script>
-    let jalonIndex = @Model.Jalons.Count;
-    let partiePrenanteIndex = @Model.PartiesPrenantes.Count;
+    let jalonIndex = @charte.Jalons.Count;
+    let partiePrenanteIndex = @charte.PartiesPrenantes.Count;
     let editMode = false;
 
     function toggleEditMode() {
@@ -926,7 +927,7 @@
                         </button>
                     </div>
                     <input type="hidden" name="Jalons[${jalonIndex}].Id" value="00000000-0000-0000-0000-000000000000" />
-                    <input type="hidden" name="Jalons[${jalonIndex}].CharteProjetId" value="@Model.Id" />
+                    <input type="hidden" name="Jalons[${jalonIndex}].CharteProjetId" value="@charte.Id" />
                     <input type="hidden" name="Jalons[${jalonIndex}].Ordre" value="${jalonIndex + 1}" />
                     <div class="form-group-modern mb-2">
                         <label class="form-label-modern">Nom du Jalon</label>
@@ -968,7 +969,7 @@
         const row = document.createElement('tr');
         row.innerHTML = `
             <input type="hidden" name="PartiesPrenantes[${partiePrenanteIndex}].Id" value="00000000-0000-0000-0000-000000000000" />
-            <input type="hidden" name="PartiesPrenantes[${partiePrenanteIndex}].CharteProjetId" value="@Model.Id" />
+            <input type="hidden" name="PartiesPrenantes[${partiePrenanteIndex}].CharteProjetId" value="@charte.Id" />
             <td>
                 <input name="PartiesPrenantes[${partiePrenanteIndex}].Nom" class="form-control-modern" />
             </td>

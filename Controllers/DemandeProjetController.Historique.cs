@@ -1,4 +1,5 @@
 using GestionProjects.Application.Common.Extensions;
+using GestionProjects.Application.ViewModels.DemandeProjet;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -44,12 +45,16 @@ namespace GestionProjects.Controllers
                 .Where(d => demandeIds.Contains(d.Id))
                 .ToDictionaryAsync(d => d.Id);
 
-            ViewBag.Demandes    = demandes;
-            ViewBag.Page        = page;
-            ViewBag.TotalPages  = totalPages;
-            ViewBag.Total       = total;
+            var vm = new HistoriqueActionsDMViewModel
+            {
+                Logs       = logs,
+                Demandes   = demandes,
+                Page       = page,
+                TotalPages = totalPages,
+                Total      = total
+            };
 
-            return View(logs);
+            return View(vm);
         }
     }
 }

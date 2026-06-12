@@ -1,8 +1,8 @@
-@model GestionProjects.Domain.Models.Projet
+@model GestionProjects.Application.ViewModels.Projet.ProjetDetailsViewModel
 
 @{
-    var casTests = ViewBag.CasTests as List<GestionProjects.Domain.Models.CasTestProjet>
-        ?? new List<GestionProjects.Domain.Models.CasTestProjet>();
+    var projet = Model.Projet;
+    var casTests = Model.CasTests;
 }
 
 <div class="modal fade" id="ajouterAnomalieModal" tabindex="-1" aria-hidden="true">
@@ -10,7 +10,7 @@
         <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
             <form asp-action="AjouterAnomalie" method="post">
                 @Html.AntiForgeryToken()
-                <input type="hidden" name="projetId" value="@Model.Id" />
+                <input type="hidden" name="projetId" value="@projet.Id" />
                 <div class="modal-header" style="border-bottom: 1px solid var(--gray-200); padding: var(--spacing-lg);">
                     <h5 class="modal-title" style="font-weight: 600; color: var(--gray-800); display: flex; align-items: center; gap: var(--spacing-sm);">
                         <i class="bi bi-bug" style="color: var(--warning);"></i>

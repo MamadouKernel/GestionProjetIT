@@ -1,9 +1,10 @@
-@model GestionProjects.Domain.Models.FicheProjet
+@model GestionProjects.Application.ViewModels.Projet.FicheProjetPageViewModel
 @inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
 
 @{
     ViewData["Title"] = "Fiche Projet CIT";
-    var projet = ViewBag.Projet as GestionProjects.Domain.Models.Projet;
+    var projet = Model.Projet;
+    var fiche = Model.Fiche;
     var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, projet);
     var canEdit = ui.CanEditCharte;
 }
@@ -39,12 +40,12 @@
                     </div>
                     <div class="document-kpi">
                         <span class="document-kpi-label">Budget prévu</span>
-                        <span class="document-kpi-value">@(Model.BudgetPrevisionnel?.ToString("N0") ?? "N/A")</span>
+                        <span class="document-kpi-value">@(fiche.BudgetPrevisionnel?.ToString("N0") ?? "N/A")</span>
                         <span class="document-kpi-copy">Montant prévisionnel saisi</span>
                     </div>
                     <div class="document-kpi">
                         <span class="document-kpi-label">Prochain jalon</span>
-                        <span class="document-kpi-value">@(string.IsNullOrWhiteSpace(Model.ProchainJalon) ? "À définir" : Model.ProchainJalon)</span>
+                        <span class="document-kpi-value">@(string.IsNullOrWhiteSpace(fiche.ProchainJalon) ? "À définir" : fiche.ProchainJalon)</span>
                         <span class="document-kpi-copy">Point de passage opérationnel</span>
                     </div>
                 </div>
@@ -73,8 +74,8 @@
     <form asp-action="SauvegarderFicheProjet" method="post" id="ficheForm" class="document-editor">
         @Html.AntiForgeryToken()
         <input type="hidden" name="id" value="@projet?.Id" />
-        <input type="hidden" asp-for="Id" />
-        <input type="hidden" asp-for="ProjetId" />
+        <input type="hidden" name="Id" value="@fiche.Id" />
+        <input type="hidden" name="ProjetId" value="@fiche.ProjetId" />
 
         <div class="card-modern mb-4">
             <div class="card-header-modern document-accent-header">
@@ -89,10 +90,10 @@
                     <div class="document-definition-value document-highlight-value">@projet?.CodeProjet</div>
 
                     <strong class="document-definition-label">Titre court</strong>
-                    <input asp-for="TitreCourt" class="form-control-modern" placeholder="@projet?.Titre" />
+                    <input name="TitreCourt" value="@fiche.TitreCourt" class="form-control-modern" placeholder="@projet?.Titre" />
 
                     <strong class="document-definition-label">Titre long</strong>
-                    <input asp-for="TitreLong" class="form-control-modern" placeholder="@projet?.Titre" />
+                    <input name="TitreLong" value="@fiche.TitreLong" class="form-control-modern" placeholder="@projet?.Titre" />
 
                     <strong class="document-definition-label">Direction métier porteuse</strong>
                     <div class="document-definition-value">@projet?.Direction?.Libelle</div>
@@ -125,19 +126,19 @@
             <div class="card-body-modern">
                 <div class="form-group-modern mb-3">
                     <label class="form-label-modern">Objectif principal (3-5 lignes)</label>
-                    <textarea asp-for="ObjectifPrincipal" class="form-control-modern" rows="5"></textarea>
+                    <textarea name="ObjectifPrincipal" class="form-control-modern" rows="5">@fiche.ObjectifPrincipal</textarea>
                 </div>
                 <div class="form-group-modern mb-3">
                     <label class="form-label-modern">Contexte / problème adressé</label>
-                    <textarea asp-for="ContexteProblemeAdresse" class="form-control-modern" rows="4"></textarea>
+                    <textarea name="ContexteProblemeAdresse" class="form-control-modern" rows="4">@fiche.ContexteProblemeAdresse</textarea>
                 </div>
                 <div class="form-group-modern mb-3">
                     <label class="form-label-modern">Description synthétique du projet</label>
-                    <textarea asp-for="DescriptionSynthetique" class="form-control-modern" rows="4"></textarea>
+                    <textarea name="DescriptionSynthetique" class="form-control-modern" rows="4">@fiche.DescriptionSynthetique</textarea>
                 </div>
                 <div class="form-group-modern mb-3">
                     <label class="form-label-modern">Résultats attendus</label>
-                    <textarea asp-for="ResultatsAttendus" class="form-control-modern" rows="4"></textarea>
+                    <textarea name="ResultatsAttendus" class="form-control-modern" rows="4">@fiche.ResultatsAttendus</textarea>
                 </div>
             </div>
         </div>
@@ -154,13 +155,13 @@
                     <div class="col-md-6">
                         <div class="form-group-modern">
                             <label class="form-label-modern">Périmètre inclus (IN)</label>
-                            <textarea asp-for="PerimetreInclus" class="form-control-modern" rows="5" placeholder="Un élément par ligne"></textarea>
+                            <textarea name="PerimetreInclus" class="form-control-modern" rows="5" placeholder="Un élément par ligne">@fiche.PerimetreInclus</textarea>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group-modern">
                             <label class="form-label-modern">Périmètre exclu (OUT)</label>
-                            <textarea asp-for="PerimetreExclu" class="form-control-modern" rows="5" placeholder="Un élément par ligne"></textarea>
+                            <textarea name="PerimetreExclu" class="form-control-modern" rows="5" placeholder="Un élément par ligne">@fiche.PerimetreExclu</textarea>
                         </div>
                     </div>
                 </div>
@@ -177,19 +178,19 @@
             <div class="card-body-modern">
                 <div class="form-group-modern mb-3">
                     <label class="form-label-modern">Bénéfices attendus (opérationnels, financiers, qualité, conformité...)</label>
-                    <textarea asp-for="BeneficesAttendus" class="form-control-modern" rows="4"></textarea>
+                    <textarea name="BeneficesAttendus" class="form-control-modern" rows="4">@fiche.BeneficesAttendus</textarea>
                 </div>
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group-modern">
                             <label class="form-label-modern">Criticité / urgence</label>
-                            <input asp-for="CriticiteUrgence" class="form-control-modern" />
+                            <input name="CriticiteUrgence" value="@fiche.CriticiteUrgence" class="form-control-modern" />
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group-modern">
                             <label class="form-label-modern">Type de projet</label>
-                            <input asp-for="TypeProjet" class="form-control-modern" />
+                            <input name="TypeProjet" value="@fiche.TypeProjet" class="form-control-modern" />
                         </div>
                     </div>
                 </div>
@@ -215,7 +216,7 @@
                     <div class="document-definition-value">@(projet?.DateFinPrevue?.ToString("dd/MM/yyyy") ?? "N/A")</div>
 
                     <strong class="document-definition-label">Prochain jalon</strong>
-                    <input asp-for="ProchainJalon" class="form-control-modern" />
+                    <input name="ProchainJalon" value="@fiche.ProchainJalon" class="form-control-modern" />
 
                     <strong class="document-definition-label">Statut</strong>
                     <span class="badge-modern badge-modern-@(projet?.EtatProjet == GestionProjects.Domain.Enums.EtatProjet.Vert ? "success" : projet?.EtatProjet == GestionProjects.Domain.Enums.EtatProjet.Orange ? "warning" : "danger")">
@@ -243,7 +244,7 @@
             <div class="card-body-modern">
                 <div class="form-group-modern">
                     <label class="form-label-modern">Synthèse des risques</label>
-                    <textarea asp-for="SyntheseRisques" class="form-control-modern" rows="6" placeholder="Pour chaque risque : description, impact, statut"></textarea>
+                    <textarea name="SyntheseRisques" class="form-control-modern" rows="6" placeholder="Pour chaque risque : description, impact, statut">@fiche.SyntheseRisques</textarea>
                 </div>
                 @if (projet?.Risques != null && projet.Risques.Any(r => !r.EstSupprime))
                 {
@@ -282,11 +283,11 @@
                 </div>
                 <div class="form-group-modern mb-3">
                     <label class="form-label-modern">Équipe projet (nom + rôle)</label>
-                    <textarea asp-for="EquipeProjet" class="form-control-modern" rows="5" placeholder="Un membre par ligne"></textarea>
+                    <textarea name="EquipeProjet" class="form-control-modern" rows="5" placeholder="Un membre par ligne">@fiche.EquipeProjet</textarea>
                 </div>
                 <div class="form-group-modern mb-3">
                     <label class="form-label-modern">Parties prenantes clés</label>
-                    <textarea asp-for="PartiesPrenantesCles" class="form-control-modern" rows="4"></textarea>
+                    <textarea name="PartiesPrenantesCles" class="form-control-modern" rows="4">@fiche.PartiesPrenantesCles</textarea>
                 </div>
             </div>
         </div>
@@ -313,7 +314,7 @@
                                 <td><strong>Analyse / Clarification</strong></td>
                                 <td>Charte Projet</td>
                                 <td class="text-center">
-                                    @if (Model.CharteProjetPresente)
+                                    @if (fiche.CharteProjetPresente)
                                     {
                                         <span class="badge-modern badge-modern-success">✔</span>
                                     }
@@ -327,7 +328,7 @@
                                 <td><strong>Planification</strong></td>
                                 <td>WBS / Planning / RACI / Budget</td>
                                 <td class="text-center">
-                                    @if (Model.WBSPlanningRACIBudgetPresent)
+                                    @if (fiche.WBSPlanningRACIBudgetPresent)
                                     {
                                         <span class="badge-modern badge-modern-success">✔</span>
                                     }
@@ -341,7 +342,7 @@
                                 <td><strong>Exécution</strong></td>
                                 <td>CR réunions</td>
                                 <td class="text-center">
-                                    @if (Model.CRReunionsPresent)
+                                    @if (fiche.CRReunionsPresent)
                                     {
                                         <span class="badge-modern badge-modern-success">✔</span>
                                     }
@@ -355,7 +356,7 @@
                                 <td><strong>Recette & MEP</strong></td>
                                 <td>Cahier tests / PV Recette / PV MEP</td>
                                 <td class="text-center">
-                                    @if (Model.CahierTestsPVRecettePVMEPPresent)
+                                    @if (fiche.CahierTestsPVRecettePVMEPPresent)
                                     {
                                         <span class="badge-modern badge-modern-success">✔</span>
                                     }
@@ -369,7 +370,7 @@
                                 <td><strong>Clôture</strong></td>
                                 <td>Rapport / Leçons apprises / PV Clôture</td>
                                 <td class="text-center">
-                                    @if (Model.RapportLeconsApprisesPVCloturePresent)
+                                    @if (fiche.RapportLeconsApprisesPVCloturePresent)
                                     {
                                         <span class="badge-modern badge-modern-success">✔</span>
                                     }
@@ -397,27 +398,27 @@
                     <div class="col-md-4">
                         <div class="form-group-modern">
                             <label class="form-label-modern">Budget prévisionnel</label>
-                            <input asp-for="BudgetPrevisionnel" type="number" step="0.01" class="form-control-modern" />
+                            <input name="BudgetPrevisionnel" value="@fiche.BudgetPrevisionnel" type="number" step="0.01" class="form-control-modern" />
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-group-modern">
                             <label class="form-label-modern">Budget consommé</label>
-                            <input asp-for="BudgetConsomme" type="number" step="0.01" class="form-control-modern" />
+                            <input name="BudgetConsomme" value="@fiche.BudgetConsomme" type="number" step="0.01" class="form-control-modern" />
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-group-modern">
                             <label class="form-label-modern">Écarts</label>
-                            <input asp-for="EcartsBudget" type="number" step="0.01" class="form-control-modern" readonly />
+                            <input name="EcartsBudget" value="@fiche.EcartsBudget" type="number" step="0.01" class="form-control-modern" readonly />
                         </div>
                     </div>
                 </div>
                 @{
                     var ecartPourcentage = 0m;
-                    if (Model.BudgetPrevisionnel.HasValue && Model.BudgetConsomme.HasValue && Model.BudgetPrevisionnel.Value > 0)
+                    if (fiche.BudgetPrevisionnel.HasValue && fiche.BudgetConsomme.HasValue && fiche.BudgetPrevisionnel.Value > 0)
                     {
-                        ecartPourcentage = Math.Abs((Model.BudgetConsomme.Value - Model.BudgetPrevisionnel.Value) / Model.BudgetPrevisionnel.Value * 100);
+                        ecartPourcentage = Math.Abs((fiche.BudgetConsomme.Value - fiche.BudgetPrevisionnel.Value) / fiche.BudgetPrevisionnel.Value * 100);
                     }
                 }
                 @if (ecartPourcentage > 10)
@@ -428,11 +429,11 @@
                     </div>
                     <div class="form-group-modern mt-3">
                         <label class="form-label-modern">Justification de l'écart budget <span class="text-danger">*</span></label>
-                        <textarea asp-for="JustificationEcartBudget" class="form-control-modern" rows="4" required placeholder="Expliquez les raisons de l'écart budgétaire..."></textarea>
+                        <textarea name="JustificationEcartBudget" class="form-control-modern" rows="4" required placeholder="Expliquez les raisons de l'écart budgétaire...">@fiche.JustificationEcartBudget</textarea>
                         <small class="profile-muted-note">
-                            @if (Model.JustificationPar != null && Model.DateJustificationEcart.HasValue)
+                            @if (fiche.JustificationPar != null && fiche.DateJustificationEcart.HasValue)
                             {
-                                <span>Justifié par @Model.JustificationPar.Nom @Model.JustificationPar.Prenoms le @Model.DateJustificationEcart.Value.ToString("dd/MM/yyyy")</span>
+                                <span>Justifié par @fiche.JustificationPar.Nom @fiche.JustificationPar.Prenoms le @fiche.DateJustificationEcart.Value.ToString("dd/MM/yyyy")</span>
                             }
                         </small>
                     </div>
@@ -450,30 +451,30 @@
             <div class="card-body-modern">
                 <div class="form-group-modern mb-3">
                     <label class="form-label-modern">Points forts du projet</label>
-                    <textarea asp-for="PointsForts" class="form-control-modern" rows="4"></textarea>
+                    <textarea name="PointsForts" class="form-control-modern" rows="4">@fiche.PointsForts</textarea>
                 </div>
                 <div class="form-group-modern mb-3">
                     <label class="form-label-modern">Points de vigilance</label>
-                    <textarea asp-for="PointsVigilance" class="form-control-modern" rows="4"></textarea>
+                    <textarea name="PointsVigilance" class="form-control-modern" rows="4">@fiche.PointsVigilance</textarea>
                 </div>
                 <div class="form-group-modern mb-3">
                     <label class="form-label-modern">Décisions attendues</label>
-                    <textarea asp-for="DecisionsAttendues" class="form-control-modern" rows="3"></textarea>
+                    <textarea name="DecisionsAttendues" class="form-control-modern" rows="3">@fiche.DecisionsAttendues</textarea>
                 </div>
                 <div class="form-group-modern mb-3">
                     <label class="form-label-modern">Demandes d'arbitrage</label>
-                    <textarea asp-for="DemandesArbitrage" class="form-control-modern" rows="3"></textarea>
+                    <textarea name="DemandesArbitrage" class="form-control-modern" rows="3">@fiche.DemandesArbitrage</textarea>
                 </div>
             </div>
         </div>
 
-        @if (Model.DateDerniereMiseAJour.HasValue)
+        @if (fiche.DateDerniereMiseAJour.HasValue)
         {
             <div class="profile-muted-note text-end mb-3">
-                Dernière mise à jour : @Model.DateDerniereMiseAJour.Value.ToString("dd/MM/yyyy à HH:mm")
-                @if (Model.DerniereMiseAJourPar != null)
+                Dernière mise à jour : @fiche.DateDerniereMiseAJour.Value.ToString("dd/MM/yyyy à HH:mm")
+                @if (fiche.DerniereMiseAJourPar != null)
                 {
-                    <span>par @Model.DerniereMiseAJourPar.Nom @Model.DerniereMiseAJourPar.Prenoms</span>
+                    <span>par @fiche.DerniereMiseAJourPar.Nom @fiche.DerniereMiseAJourPar.Prenoms</span>
                 }
             </div>
         }

@@ -23,9 +23,6 @@ namespace GestionProjects.Controllers
             if (!await CanManageLivrableAsync(projet, phase))
                 return Forbid();
 
-            ViewBag.ProjetId = projetId;
-            ViewBag.Phase = phase;
-            ViewBag.TypesLivrables = Enum.GetValues<TypeLivrable>();
             return PartialView("_UploadLivrableModal");
         }
 

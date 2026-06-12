@@ -88,8 +88,7 @@ namespace GestionProjects.Controllers
                 await _db.SaveChangesAsync();
             }
 
-            ViewBag.Projet = projet;
-            return View(fiche);
+            return View(new GestionProjects.Application.ViewModels.Projet.FicheProjetPageViewModel { Fiche = fiche, Projet = projet });
         }
 
         // POST: Sauvegarder la fiche projet
@@ -794,15 +793,17 @@ namespace GestionProjects.Controllers
 
             var pagedResult = await query.ToPagedResultAsync(page, pageSize);
 
-            ViewBag.PageNumber = pagedResult.PageNumber;
-            ViewBag.TotalPages = pagedResult.TotalPages;
-            ViewBag.TotalCount = pagedResult.TotalCount;
-            ViewBag.PageSize = pagedResult.PageSize;
-            ViewBag.CanValidateAsDsi = canValidateAsDsi;
-
             var projets = pagedResult.Items;
 
-            return View(projets);
+            return View(new GestionProjects.Application.ViewModels.Projet.ValidationsProjetViewModel
+            {
+                Projets          = projets,
+                CanValidateAsDsi = canValidateAsDsi,
+                PageNumber       = pagedResult.PageNumber,
+                TotalPages       = pagedResult.TotalPages,
+                TotalCount       = pagedResult.TotalCount,
+                PageSize         = pagedResult.PageSize,
+            });
         }
     }
 }

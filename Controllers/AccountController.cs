@@ -2,6 +2,7 @@
 using GestionProjects.Application.Common.Extensions;
 using GestionProjects.Application.Common.Interfaces;
 using GestionProjects.Application.ViewModels;
+using GestionProjects.Application.ViewModels.Account;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using GestionProjects.Infrastructure.Persistence;
@@ -501,16 +502,21 @@ namespace GestionProjects.Controllers
 
         // ─── Inscription (nouveau workflow) ───────────────────────────────────
 
+        private async Task<InscriptionViewModel> BuildInscriptionViewModelAsync()
+        {
+            var directions = await _db.Directions
+                .Where(d => !d.EstSupprime && d.EstActive)
+                .OrderBy(d => d.Libelle)
+                .Select(d => new DirectionSelectItem { Id = d.Id, Libelle = d.Libelle })
+                .ToListAsync();
+            return new InscriptionViewModel { Directions = directions };
+        }
+
         [AllowAnonymous, HttpGet]
         public async Task<IActionResult> Inscription()
         {
             if (User?.Identity?.IsAuthenticated == true) return RedirectToAction("Index", "Home");
-            ViewBag.Directions = await _db.Directions
-                .Where(d => !d.EstSupprime && d.EstActive)
-                .OrderBy(d => d.Libelle)
-                .Select(d => new { d.Id, d.Libelle })
-                .ToListAsync();
-            return View();
+            return View(await BuildInscriptionViewModelAsync());
         }
 
         [AllowAnonymous, HttpPost, ValidateAntiForgeryToken]
@@ -523,24 +529,14 @@ namespace GestionProjects.Controllers
                 || string.IsNullOrWhiteSpace(email) || directionId == null || directeurMetierId == null)
             {
                 TempData["Error"] = "Tous les champs obligatoires doivent être remplis.";
-                ViewBag.Directions = await _db.Directions
-                    .Where(d => !d.EstSupprime && d.EstActive)
-                    .OrderBy(d => d.Libelle)
-                    .Select(d => new { d.Id, d.Libelle })
-                    .ToListAsync();
-                return View();
+                return View(await BuildInscriptionViewModelAsync());
             }
 
             // Vérifier email non déjà utilisé (ni en demande en cours)
             if (await _db.Utilisateurs.AnyAsync(u => u.Email == email && !u.EstSupprime))
             {
                 TempData["Error"] = "Un compte avec cette adresse email existe déjà.";
-                ViewBag.Directions = await _db.Directions
-                    .Where(d => !d.EstSupprime && d.EstActive)
-                    .OrderBy(d => d.Libelle)
-                    .Select(d => new { d.Id, d.Libelle })
-                    .ToListAsync();
-                return View();
+                return View(await BuildInscriptionViewModelAsync());
             }
             if (await _db.DemandesCreationCompte.AnyAsync(d =>
                     d.Email == email &&
@@ -549,12 +545,7 @@ namespace GestionProjects.Controllers
                     !d.EstSupprime))
             {
                 TempData["Error"] = "Une demande de création de compte est déjà en cours pour cette adresse email.";
-                ViewBag.Directions = await _db.Directions
-                    .Where(d => !d.EstSupprime && d.EstActive)
-                    .OrderBy(d => d.Libelle)
-                    .Select(d => new { d.Id, d.Libelle })
-                    .ToListAsync();
-                return View();
+                return View(await BuildInscriptionViewModelAsync());
             }
 
             var dm = await _db.Utilisateurs.FindAsync(directeurMetierId);

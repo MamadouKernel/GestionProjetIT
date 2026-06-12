@@ -1,12 +1,13 @@
-﻿@{
+﻿@model GestionProjects.Application.ViewModels.AzureAuth.DemanderAccesViewModel
+@{
     ViewData["Title"] = "Demande d'accès";
-    var email = ViewBag.Email as string ?? string.Empty;
-    var nom = ViewBag.Nom as string ?? string.Empty;
-    var prenom = ViewBag.Prenom as string ?? string.Empty;
-    var matricule = ViewBag.Matricule as string ?? string.Empty;
-    var azureDepartment = ViewBag.AzureDepartment as string ?? string.Empty;
-    var directionDetecteeId = ViewBag.DirectionDetecteeId as string ?? string.Empty;
-    var directionDetecteeNom = ViewBag.DirectionDetecteeNom as string ?? "Non déterminée";
+    var email = Model.Email;
+    var nom = Model.Nom;
+    var prenom = Model.Prenom;
+    var matricule = Model.Matricule;
+    var azureDepartment = Model.AzureDepartment;
+    var directionDetecteeId = Model.DirectionDetecteeId;
+    var directionDetecteeNom = Model.DirectionDetecteeNom;
 }
 
 <!DOCTYPE html>

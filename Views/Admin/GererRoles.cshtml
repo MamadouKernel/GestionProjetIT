@@ -1,10 +1,10 @@
-@model GestionProjects.Domain.Models.Utilisateur
+@model GestionProjects.Application.ViewModels.Admin.GererRolesViewModel
 @using GestionProjects.Domain.Enums
 
 @{
     ViewData["Title"] = "Gérer les rôles";
-    var userRolesActifs = Model.GetRolesActifs().ToList();
-    var allRoles = (List<RoleUtilisateur>)ViewBag.AllRoles;
+    var userRolesActifs = Model.User.GetRolesActifs().ToList();
+    var allRoles = Model.AllRoles;
 }
 
 <div class="fade-in admin-page">
@@ -14,13 +14,13 @@
                 <span class="page-kicker">Administration</span>
                 <h1 class="page-hero-title">Gérer les rôles</h1>
                 <p class="page-hero-subtitle">
-                    Ajustez les droits applicatifs de <strong>@Model.Nom @Model.Prenoms</strong> avec un contrôle centralisé des accès.
+                    Ajustez les droits applicatifs de <strong>@Model.User.Nom @Model.User.Prenoms</strong> avec un contrôle centralisé des accès.
                 </p>
                 <div class="page-hero-meta">
                     <span class="badge-modern badge-modern-info">@userRolesActifs.Count rôle(s) actif(s)</span>
-                    @if (Model.Direction != null)
+                    @if (Model.User.Direction != null)
                     {
-                        <span class="badge-modern badge-modern-secondary">@Model.Direction.Libelle</span>
+                        <span class="badge-modern badge-modern-secondary">@Model.User.Direction.Libelle</span>
                     }
                 </div>
             </div>
@@ -49,10 +49,10 @@
             <div class="card-body-modern">
                 <span class="soft-kicker">Identité</span>
                 <div class="table-person mt-3">
-                    <span class="table-avatar primary">@GetInitiales(Model.Nom, Model.Prenoms)</span>
+                    <span class="table-avatar primary">@GetInitiales(Model.User.Nom, Model.User.Prenoms)</span>
                     <div class="table-person-main">
-                        <div class="table-person-title">@Model.Nom @Model.Prenoms</div>
-                        <div class="table-person-subtitle">@Model.Email</div>
+                        <div class="table-person-title">@Model.User.Nom @Model.User.Prenoms</div>
+                        <div class="table-person-subtitle">@Model.User.Email</div>
                     </div>
                 </div>
             </div>
@@ -61,8 +61,8 @@
             <div class="card-body-modern">
                 <span class="soft-kicker">Références</span>
                 <div class="table-inline-stack column mt-3">
-                    <span class="table-code">@Model.Matricule</span>
-                    <span class="soft-note">@(Model.Direction?.Libelle ?? "Aucune direction assignée")</span>
+                    <span class="table-code">@Model.User.Matricule</span>
+                    <span class="soft-note">@(Model.User.Direction?.Libelle ?? "Aucune direction assignée")</span>
                 </div>
             </div>
         </div>
@@ -81,7 +81,7 @@
         <div class="card-body-modern">
             <form asp-action="UpdateRoles" method="post" id="rolesForm">
                 @Html.AntiForgeryToken()
-                <input type="hidden" name="id" value="@Model.Id" />
+                <input type="hidden" name="id" value="@Model.User.Id" />
                 <input type="hidden" name="Roles" id="rolesHidden" value="" />
 
                 <div class="admin-inline-note mb-4">

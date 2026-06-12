@@ -1,13 +1,12 @@
-@model List<GestionProjects.Domain.Models.DemandeAccesAzureAd>
+@model GestionProjects.Application.ViewModels.DemandesAcces.DemandesAccesIndexViewModel
 @using GestionProjects.Domain.Enums
-@using Microsoft.AspNetCore.Mvc.Rendering
 
 @{
     ViewData["Title"] = "Demandes d'accès Azure AD";
-    var directions      = ViewBag.Directions as IEnumerable<SelectListItem> ?? Enumerable.Empty<SelectListItem>();
-    var recherche       = ViewBag.Recherche as string ?? string.Empty;
-    var selectedStatut  = ViewBag.SelectedStatut as StatutDemandeAcces?;
-    var totalCount      = ViewBag.TotalCount as int? ?? Model.Count;
+    var directions     = Model.Directions;
+    var recherche      = Model.Recherche ?? string.Empty;
+    var selectedStatut = Model.SelectedStatut;
+    var totalCount     = Model.TotalCount;
 }
 
 <div class="fade-in">
@@ -66,7 +65,7 @@
         <div class="alert alert-danger">@error</div>
     }
 
-    @if (!Model.Any())
+    @if (!Model.Items.Any())
     {
         <div class="card-modern">
             <div class="card-body-modern text-center" style="padding: var(--spacing-2xl);">
@@ -78,7 +77,7 @@
     else
     {
         <div style="display: grid; gap: var(--spacing-lg);">
-            @foreach (var demande in Model)
+            @foreach (var demande in Model.Items)
             {
                 var badgeClass = demande.Statut switch
                 {

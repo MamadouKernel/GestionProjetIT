@@ -1,4 +1,5 @@
 using GestionProjects.Application.Common.Extensions;
+using GestionProjects.Application.ViewModels.DemandeProjet;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -77,11 +78,6 @@ namespace GestionProjects.Controllers
                 .OrderBy(d => d.Libelle)
                 .ToListAsync();
 
-            ViewBag.Directions = new SelectList(directions, "Id", "Libelle", preSelectedDirectionId);
-            ViewBag.PreSelectedDirectionId       = preSelectedDirectionId;
-            ViewBag.PreSelectedDirecteurMetierId = preSelectedDirecteurMetierId;
-            ViewBag.IsReadOnly = isReadOnly;
-
             var directeursMetier = await _db.Utilisateurs
                 .Include(u => u.UtilisateurRoles)
                 .Where(u => !u.EstSupprime &&
@@ -89,14 +85,22 @@ namespace GestionProjects.Controllers
                 .OrderBy(u => u.Nom)
                 .ToListAsync();
 
-            ViewBag.DirecteursMetier = directeursMetier.Select(u => new SelectListItem
+            var vm = new DemandeProjetCreateViewModel
             {
-                Value = u.Id.ToString(),
-                Text = $"{u.Nom} {u.Prenoms}",
-                Selected = preSelectedDirecteurMetierId == u.Id
-            });
+                Demande = new Domain.Models.DemandeProjet(),
+                Directions = new SelectList(directions, "Id", "Libelle", preSelectedDirectionId),
+                DirecteursMetier = directeursMetier.Select(u => new SelectListItem
+                {
+                    Value = u.Id.ToString(),
+                    Text = $"{u.Nom} {u.Prenoms}",
+                    Selected = preSelectedDirecteurMetierId == u.Id
+                }),
+                IsReadOnly = isReadOnly,
+                PreSelectedDirectionId = preSelectedDirectionId,
+                PreSelectedDirecteurMetierId = preSelectedDirecteurMetierId
+            };
 
-            return View();
+            return View(vm);
         }
 
         // POST: Créer nouvelle demande
@@ -104,85 +108,86 @@ namespace GestionProjects.Controllers
         [ValidateAntiForgeryToken]
         [Authorize]
         [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("UploadPolicy")]
-        public async Task<IActionResult> Create(DemandeProjet demande, IFormFile? cahierCharges, List<IFormFile>? annexes)
+        public async Task<IActionResult> Create(DemandeProjet Demande, IFormFile? cahierCharges, List<IFormFile>? annexes)
         {
-            ModelState.Remove(nameof(demande.Projet));
-            ModelState.Remove(nameof(demande.Demandeur));
-            ModelState.Remove(nameof(demande.DemandeurId));
-            ModelState.Remove(nameof(demande.CommentaireDSI));
-            ModelState.Remove(nameof(demande.CommentaireDirecteurMetier));
-            ModelState.Remove(nameof(demande.CahierChargesPath));
-            ModelState.Remove(nameof(demande.StatutDemande));
-            ModelState.Remove(nameof(demande.DateSoumission));
-            ModelState.Remove(nameof(demande.DateValidationDM));
-            ModelState.Remove(nameof(demande.DateValidationDSI));
-            ModelState.Remove(nameof(demande.CreePar));
-            ModelState.Remove(nameof(demande.DateCreation));
-            ModelState.Remove(nameof(demande.ModifiePar));
-            ModelState.Remove(nameof(demande.DateModification));
-            ModelState.Remove(nameof(demande.DirectionId));
-            ModelState.Remove(nameof(demande.DirecteurMetierId));
-            ModelState.Remove(nameof(demande.Direction));
-            ModelState.Remove(nameof(demande.DirecteurMetier));
-            ModelState.Remove(nameof(demande.Titre));
-            ModelState.Remove(nameof(demande.Description));
-            ModelState.Remove(nameof(demande.Contexte));
-            ModelState.Remove(nameof(demande.Objectifs));
+            const string pfx = "Demande.";
+            ModelState.Remove(pfx + nameof(Demande.Projet));
+            ModelState.Remove(pfx + nameof(Demande.Demandeur));
+            ModelState.Remove(pfx + nameof(Demande.DemandeurId));
+            ModelState.Remove(pfx + nameof(Demande.CommentaireDSI));
+            ModelState.Remove(pfx + nameof(Demande.CommentaireDirecteurMetier));
+            ModelState.Remove(pfx + nameof(Demande.CahierChargesPath));
+            ModelState.Remove(pfx + nameof(Demande.StatutDemande));
+            ModelState.Remove(pfx + nameof(Demande.DateSoumission));
+            ModelState.Remove(pfx + nameof(Demande.DateValidationDM));
+            ModelState.Remove(pfx + nameof(Demande.DateValidationDSI));
+            ModelState.Remove(pfx + nameof(Demande.CreePar));
+            ModelState.Remove(pfx + nameof(Demande.DateCreation));
+            ModelState.Remove(pfx + nameof(Demande.ModifiePar));
+            ModelState.Remove(pfx + nameof(Demande.DateModification));
+            ModelState.Remove(pfx + nameof(Demande.DirectionId));
+            ModelState.Remove(pfx + nameof(Demande.DirecteurMetierId));
+            ModelState.Remove(pfx + nameof(Demande.Direction));
+            ModelState.Remove(pfx + nameof(Demande.DirecteurMetier));
+            ModelState.Remove(pfx + nameof(Demande.Titre));
+            ModelState.Remove(pfx + nameof(Demande.Description));
+            ModelState.Remove(pfx + nameof(Demande.Contexte));
+            ModelState.Remove(pfx + nameof(Demande.Objectifs));
 
-            if (string.IsNullOrWhiteSpace(demande.Titre))
-                ModelState.AddModelError(nameof(demande.Titre), "Le titre du projet est requis.");
+            if (string.IsNullOrWhiteSpace(Demande.Titre))
+                ModelState.AddModelError(pfx + nameof(Demande.Titre), "Le titre du projet est requis.");
 
-            if (string.IsNullOrWhiteSpace(demande.Description))
-                ModelState.AddModelError(nameof(demande.Description), "La description est requise.");
+            if (string.IsNullOrWhiteSpace(Demande.Description))
+                ModelState.AddModelError(pfx + nameof(Demande.Description), "La description est requise.");
 
-            if (string.IsNullOrWhiteSpace(demande.Contexte))
-                ModelState.AddModelError(nameof(demande.Contexte), "Le contexte est requis.");
+            if (string.IsNullOrWhiteSpace(Demande.Contexte))
+                ModelState.AddModelError(pfx + nameof(Demande.Contexte), "Le contexte est requis.");
 
-            if (string.IsNullOrWhiteSpace(demande.Objectifs))
-                ModelState.AddModelError(nameof(demande.Objectifs), "Les objectifs sont requis.");
+            if (string.IsNullOrWhiteSpace(Demande.Objectifs))
+                ModelState.AddModelError(pfx + nameof(Demande.Objectifs), "Les objectifs sont requis.");
 
-            if (!demande.DirectionId.HasValue || demande.DirectionId.Value == Guid.Empty)
-                ModelState.AddModelError(nameof(demande.DirectionId), "La direction est requise.");
+            if (!Demande.DirectionId.HasValue || Demande.DirectionId.Value == Guid.Empty)
+                ModelState.AddModelError(pfx + nameof(Demande.DirectionId), "La direction est requise.");
 
-            if (demande.DirecteurMetierId == Guid.Empty)
-                ModelState.AddModelError(nameof(demande.DirecteurMetierId), "Le directeur métier est requis.");
+            if (Demande.DirecteurMetierId == Guid.Empty)
+                ModelState.AddModelError(pfx + nameof(Demande.DirecteurMetierId), "Le directeur métier est requis.");
 
             if (ModelState.IsValid)
             {
                 var userId = User.GetUserIdOrThrow();
 
-                demande.DateValidationDM  = null;
-                demande.DateValidationDSI = null;
-                demande.Id              = Guid.NewGuid();
-                demande.DemandeurId     = userId;
-                demande.StatutDemande   = StatutDemande.EnAttenteValidationDirecteurMetier;
-                demande.DateSoumission  = DateTime.Now;
-                demande.DateCreation    = DateTime.Now;
-                demande.CreePar         = _currentUserService.Matricule;
+                Demande.DateValidationDM  = null;
+                Demande.DateValidationDSI = null;
+                Demande.Id              = Guid.NewGuid();
+                Demande.DemandeurId     = userId;
+                Demande.StatutDemande   = StatutDemande.EnAttenteValidationDirecteurMetier;
+                Demande.DateSoumission  = DateTime.Now;
+                Demande.DateCreation    = DateTime.Now;
+                Demande.CreePar         = _currentUserService.Matricule;
 
-                demande.Titre                       = demande.Titre ?? string.Empty;
-                demande.Description                 = demande.Description ?? string.Empty;
-                demande.Contexte                    = demande.Contexte ?? string.Empty;
-                demande.Objectifs                   = demande.Objectifs ?? string.Empty;
-                demande.AvantagesAttendus           = demande.AvantagesAttendus ?? string.Empty;
-                demande.Perimetre                   = demande.Perimetre ?? string.Empty;
-                demande.CommentaireDirecteurMetier  = demande.CommentaireDirecteurMetier ?? string.Empty;
-                demande.CommentaireDSI              = demande.CommentaireDSI ?? string.Empty;
-                demande.CahierChargesPath           = demande.CahierChargesPath ?? string.Empty;
+                Demande.Titre                       = Demande.Titre ?? string.Empty;
+                Demande.Description                 = Demande.Description ?? string.Empty;
+                Demande.Contexte                    = Demande.Contexte ?? string.Empty;
+                Demande.Objectifs                   = Demande.Objectifs ?? string.Empty;
+                Demande.AvantagesAttendus           = Demande.AvantagesAttendus ?? string.Empty;
+                Demande.Perimetre                   = Demande.Perimetre ?? string.Empty;
+                Demande.CommentaireDirecteurMetier  = Demande.CommentaireDirecteurMetier ?? string.Empty;
+                Demande.CommentaireDSI              = Demande.CommentaireDSI ?? string.Empty;
+                Demande.CahierChargesPath           = Demande.CahierChargesPath ?? string.Empty;
 
                 if (cahierCharges != null && cahierCharges.Length > 0)
                 {
                     var allowedExtensions = new[] { ".pdf", ".doc", ".docx" };
                     var maxSize = 10 * 1024 * 1024;
-                    var savedPath = await _fileStorage.SaveFileAsync(cahierCharges, "demandes", demande.Id.ToString(), allowedExtensions, maxSize);
+                    var savedPath = await _fileStorage.SaveFileAsync(cahierCharges, "demandes", Demande.Id.ToString(), allowedExtensions, maxSize);
                     if (!string.IsNullOrEmpty(savedPath))
-                        demande.CahierChargesPath = savedPath;
+                        Demande.CahierChargesPath = savedPath;
                 }
 
-                if (string.IsNullOrEmpty(demande.CahierChargesPath))
-                    demande.CahierChargesPath = string.Empty;
+                if (string.IsNullOrEmpty(Demande.CahierChargesPath))
+                    Demande.CahierChargesPath = string.Empty;
 
-                _db.DemandesProjets.Add(demande);
+                _db.DemandesProjets.Add(Demande);
                 await _db.SaveChangesAsync();
 
                 if (annexes != null && annexes.Any())
@@ -193,12 +198,12 @@ namespace GestionProjects.Controllers
                         {
                             var allowedExtensions = new[] { ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".jpg", ".png" };
                             var maxSize = 10 * 1024 * 1024;
-                            var path = await _fileStorage.SaveFileAsync(annexe, "demandes", demande.Id.ToString(), allowedExtensions, maxSize);
+                            var path = await _fileStorage.SaveFileAsync(annexe, "demandes", Demande.Id.ToString(), allowedExtensions, maxSize);
 
                             _db.DocumentsJointsDemandes.Add(new DocumentJointDemande
                             {
                                 Id               = Guid.NewGuid(),
-                                DemandeProjetId  = demande.Id,
+                                DemandeProjetId  = Demande.Id,
                                 NomFichier       = annexe.FileName,
                                 CheminRelatif    = path,
                                 DateDepot        = DateTime.Now,
@@ -211,40 +216,41 @@ namespace GestionProjects.Controllers
                     await _db.SaveChangesAsync();
                 }
 
-                await _auditService.LogActionAsync("CreationDemande", "DemandeProjet", demande.Id,
+                await _auditService.LogActionAsync("CreationDemande", "DemandeProjet", Demande.Id,
                     null,
-                    new { Titre = demande.Titre, DirectionId = demande.DirectionId, DirecteurMetierId = demande.DirecteurMetierId });
+                    new { Titre = Demande.Titre, DirectionId = Demande.DirectionId, DirecteurMetierId = Demande.DirecteurMetierId });
 
-                var dm = await _db.Utilisateurs.FindAsync(demande.DirecteurMetierId);
-                var dir = await _db.Directions.FindAsync(demande.DirectionId);
+                var dm = await _db.Utilisateurs.FindAsync(Demande.DirecteurMetierId);
+                var dir = await _db.Directions.FindAsync(Demande.DirectionId);
                 var nomDemandeur = $"{User.FindFirst("Nom")?.Value} {User.FindFirst("Prenoms")?.Value}".Trim();
                 _ = _teams.EnvoyerNouvelleDemandeAsync(
-                    demande.Titre ?? string.Empty, nomDemandeur, dir?.Libelle ?? "—",
-                    dm != null ? $"{dm.Nom} {dm.Prenoms}" : "—", demande.Id);
+                    Demande.Titre ?? string.Empty, nomDemandeur, dir?.Libelle ?? "—",
+                    dm != null ? $"{dm.Nom} {dm.Prenoms}" : "—", Demande.Id);
                 if (dm?.Email != null)
                     _ = _email.EnvoyerNouvelleDemandeAuDMAsync(
-                        dm.Email, $"{dm.Nom} {dm.Prenoms}".Trim(), demande.Titre ?? string.Empty, nomDemandeur, dir?.Libelle ?? "—");
+                        dm.Email, $"{dm.Nom} {dm.Prenoms}".Trim(), Demande.Titre ?? string.Empty, nomDemandeur, dir?.Libelle ?? "—");
 
-                return RedirectToAction(nameof(Details), new { id = demande.Id });
+                return RedirectToAction(nameof(Details), new { id = Demande.Id });
             }
 
-            var directions = await _db.Directions.Where(d => !d.EstSupprime && d.EstActive).OrderBy(d => d.Libelle).ToListAsync();
-            ViewBag.Directions = new SelectList(directions, "Id", "Libelle", demande?.DirectionId);
-
-            var directeursMetier = await _db.Utilisateurs
+            var directionsErr = await _db.Directions.Where(d => !d.EstSupprime && d.EstActive).OrderBy(d => d.Libelle).ToListAsync();
+            var directeursMetierErr = await _db.Utilisateurs
                 .Include(u => u.UtilisateurRoles)
                 .Where(u => !u.EstSupprime && u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.DirecteurMetier))
                 .OrderBy(u => u.Nom)
                 .ToListAsync();
 
-            ViewBag.DirecteursMetier = directeursMetier.Select(u => new SelectListItem
+            return View(new DemandeProjetCreateViewModel
             {
-                Value = u.Id.ToString(),
-                Text = $"{u.Nom} {u.Prenoms}",
-                Selected = demande?.DirecteurMetierId == u.Id
+                Demande = Demande,
+                Directions = new SelectList(directionsErr, "Id", "Libelle", Demande?.DirectionId),
+                DirecteursMetier = directeursMetierErr.Select(u => new SelectListItem
+                {
+                    Value = u.Id.ToString(),
+                    Text  = $"{u.Nom} {u.Prenoms}",
+                    Selected = Demande?.DirecteurMetierId == u.Id
+                })
             });
-
-            return View(demande);
         }
 
         // GET: Éditer demande
@@ -283,22 +289,23 @@ namespace GestionProjects.Controllers
                 }
             }
 
-            var directions = await _db.Directions.Where(d => !d.EstSupprime && d.EstActive).OrderBy(d => d.Libelle).ToListAsync();
-            ViewBag.Directions = new SelectList(directions, "Id", "Libelle", demande?.DirectionId);
-
-            var directeursMetier = await _db.Utilisateurs
+            var directionsEdit = await _db.Directions.Where(d => !d.EstSupprime && d.EstActive).OrderBy(d => d.Libelle).ToListAsync();
+            var directeursMetierEdit = await _db.Utilisateurs
                 .Where(u => !u.EstSupprime && u.Role == RoleUtilisateur.DirecteurMetier)
                 .OrderBy(u => u.Nom)
                 .ToListAsync();
 
-            ViewBag.DirecteursMetier = directeursMetier.Select(u => new SelectListItem
+            return View(new DemandeProjetEditViewModel
             {
-                Value = u.Id.ToString(),
-                Text = $"{u.Nom} {u.Prenoms}",
-                Selected = demande?.DirecteurMetierId == u.Id
+                Demande = demande,
+                Directions = new SelectList(directionsEdit, "Id", "Libelle", demande?.DirectionId),
+                DirecteursMetier = directeursMetierEdit.Select(u => new SelectListItem
+                {
+                    Value = u.Id.ToString(),
+                    Text = $"{u.Nom} {u.Prenoms}",
+                    Selected = demande?.DirecteurMetierId == u.Id
+                })
             });
-
-            return View(demande);
         }
 
         // POST: Éditer demande
@@ -308,9 +315,7 @@ namespace GestionProjects.Controllers
         [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("UploadPolicy")]
         public async Task<IActionResult> Edit(
             Guid id,
-            string Titre, string Description, string Contexte, string Objectifs,
-            string AvantagesAttendus, string? Perimetre, int Urgence, int Criticite,
-            DateTime? DateMiseEnOeuvreSouhaitee, string? DirectionId, string DirecteurMetierId,
+            DemandeProjet Demande,
             IFormFile? cahierCharges, List<IFormFile>? annexes)
         {
             var existingDemande = await _db.DemandesProjets.Include(d => d.Annexes).FirstOrDefaultAsync(d => d.Id == id);
@@ -324,44 +329,40 @@ namespace GestionProjects.Controllers
             if (!canManageDemandes && !canEditOwnDemande && !canEditAsDm)
                 return Forbid();
 
-            ModelState.Remove("Projet"); ModelState.Remove("Demandeur"); ModelState.Remove("DemandeurId");
-            ModelState.Remove("CommentaireDSI"); ModelState.Remove("CommentaireDirecteurMetier"); ModelState.Remove("CahierChargesPath");
-            ModelState.Remove("StatutDemande"); ModelState.Remove("DateSoumission"); ModelState.Remove("DateValidationDM");
-            ModelState.Remove("DateValidationDSI"); ModelState.Remove("CreePar"); ModelState.Remove("DateCreation");
-            ModelState.Remove("ModifiePar"); ModelState.Remove("DateModification"); ModelState.Remove("DirectionId");
-            ModelState.Remove("DirecteurMetierId"); ModelState.Remove("Direction"); ModelState.Remove("DirecteurMetier");
-            ModelState.Remove("Titre"); ModelState.Remove("Description"); ModelState.Remove("Contexte");
-            ModelState.Remove("Objectifs"); ModelState.Remove("AvantagesAttendus");
+            const string pfx = "Demande.";
+            ModelState.Remove(pfx + "Projet"); ModelState.Remove(pfx + "Demandeur"); ModelState.Remove(pfx + "DemandeurId");
+            ModelState.Remove(pfx + "CommentaireDSI"); ModelState.Remove(pfx + "CommentaireDirecteurMetier"); ModelState.Remove(pfx + "CahierChargesPath");
+            ModelState.Remove(pfx + "StatutDemande"); ModelState.Remove(pfx + "DateSoumission"); ModelState.Remove(pfx + "DateValidationDM");
+            ModelState.Remove(pfx + "DateValidationDSI"); ModelState.Remove(pfx + "CreePar"); ModelState.Remove(pfx + "DateCreation");
+            ModelState.Remove(pfx + "ModifiePar"); ModelState.Remove(pfx + "DateModification"); ModelState.Remove(pfx + "DirectionId");
+            ModelState.Remove(pfx + "DirecteurMetierId"); ModelState.Remove(pfx + "Direction"); ModelState.Remove(pfx + "DirecteurMetier");
+            ModelState.Remove(pfx + "Titre"); ModelState.Remove(pfx + "Description"); ModelState.Remove(pfx + "Contexte");
+            ModelState.Remove(pfx + "Objectifs"); ModelState.Remove(pfx + "AvantagesAttendus"); ModelState.Remove(pfx + "Id");
 
-            if (string.IsNullOrWhiteSpace(Titre))         ModelState.AddModelError("Titre", "Le titre est requis.");
-            if (string.IsNullOrWhiteSpace(Description))   ModelState.AddModelError("Description", "La description est requise.");
-            if (string.IsNullOrWhiteSpace(Contexte))      ModelState.AddModelError("Contexte", "Le contexte est requis.");
-            if (string.IsNullOrWhiteSpace(Objectifs))     ModelState.AddModelError("Objectifs", "Les objectifs sont requis.");
+            if (string.IsNullOrWhiteSpace(Demande.Titre))         ModelState.AddModelError(pfx + "Titre", "Le titre est requis.");
+            if (string.IsNullOrWhiteSpace(Demande.Description))   ModelState.AddModelError(pfx + "Description", "La description est requise.");
+            if (string.IsNullOrWhiteSpace(Demande.Contexte))      ModelState.AddModelError(pfx + "Contexte", "Le contexte est requis.");
+            if (string.IsNullOrWhiteSpace(Demande.Objectifs))     ModelState.AddModelError(pfx + "Objectifs", "Les objectifs sont requis.");
 
-            Guid? directionGuid = null;
-            Guid directeurMetierGuid = Guid.Empty;
+            if (!Demande.DirectionId.HasValue || Demande.DirectionId.Value == Guid.Empty)
+                ModelState.AddModelError(pfx + "DirectionId", "La direction est requise.");
 
-            if (string.IsNullOrWhiteSpace(DirectionId) || !Guid.TryParse(DirectionId, out var parsedDirectionGuid))
-                ModelState.AddModelError("DirectionId", "La direction est requise.");
-            else
-                directionGuid = parsedDirectionGuid;
-
-            if (string.IsNullOrWhiteSpace(DirecteurMetierId) || !Guid.TryParse(DirecteurMetierId, out directeurMetierGuid))
-                ModelState.AddModelError("DirecteurMetierId", "Le directeur métier est requis.");
+            if (Demande.DirecteurMetierId == Guid.Empty)
+                ModelState.AddModelError(pfx + "DirecteurMetierId", "Le directeur métier est requis.");
 
             if (ModelState.IsValid)
             {
-                existingDemande.Titre                 = Titre.Trim();
-                existingDemande.Description           = Description?.Trim() ?? string.Empty;
-                existingDemande.Contexte              = Contexte?.Trim() ?? string.Empty;
-                existingDemande.Objectifs             = Objectifs?.Trim() ?? string.Empty;
-                existingDemande.AvantagesAttendus     = AvantagesAttendus?.Trim() ?? string.Empty;
-                existingDemande.Perimetre             = Perimetre?.Trim() ?? string.Empty;
-                existingDemande.Urgence               = (UrgenceProjet)Urgence;
-                existingDemande.Criticite             = (CriticiteProjet)Criticite;
-                existingDemande.DateMiseEnOeuvreSouhaitee = DateMiseEnOeuvreSouhaitee;
-                existingDemande.DirectionId           = directionGuid;
-                existingDemande.DirecteurMetierId     = directeurMetierGuid;
+                existingDemande.Titre                 = Demande.Titre?.Trim() ?? "";
+                existingDemande.Description           = Demande.Description?.Trim() ?? string.Empty;
+                existingDemande.Contexte              = Demande.Contexte?.Trim() ?? string.Empty;
+                existingDemande.Objectifs             = Demande.Objectifs?.Trim() ?? string.Empty;
+                existingDemande.AvantagesAttendus     = Demande.AvantagesAttendus?.Trim() ?? string.Empty;
+                existingDemande.Perimetre             = Demande.Perimetre?.Trim() ?? string.Empty;
+                existingDemande.Urgence               = Demande.Urgence;
+                existingDemande.Criticite             = Demande.Criticite;
+                existingDemande.DateMiseEnOeuvreSouhaitee = Demande.DateMiseEnOeuvreSouhaitee;
+                existingDemande.DirectionId           = Demande.DirectionId;
+                existingDemande.DirecteurMetierId     = Demande.DirecteurMetierId;
 
                 if (existingDemande.StatutDemande == StatutDemande.CorrectionDemandeeParDirecteurMetier)
                     existingDemande.StatutDemande = StatutDemande.EnAttenteValidationDirecteurMetier;
@@ -418,16 +419,19 @@ namespace GestionProjects.Controllers
                 return RedirectToAction(nameof(Details), new { id = existingDemande.Id });
             }
 
-            var directions = await _db.Directions.Where(d => !d.EstSupprime && d.EstActive).OrderBy(d => d.Libelle).ToListAsync();
-            ViewBag.Directions = new SelectList(directions, "Id", "Libelle", existingDemande?.DirectionId);
-
-            var dms = await _db.Utilisateurs.Where(u => !u.EstSupprime && u.Role == RoleUtilisateur.DirecteurMetier).OrderBy(u => u.Nom).ToListAsync();
-            ViewBag.DirecteursMetier = dms.Select(u => new SelectListItem
+            var directionsPostErr = await _db.Directions.Where(d => !d.EstSupprime && d.EstActive).OrderBy(d => d.Libelle).ToListAsync();
+            var dmsPostErr = await _db.Utilisateurs.Where(u => !u.EstSupprime && u.Role == RoleUtilisateur.DirecteurMetier).OrderBy(u => u.Nom).ToListAsync();
+            return View(new DemandeProjetEditViewModel
             {
-                Value = u.Id.ToString(), Text = $"{u.Nom} {u.Prenoms}", Selected = existingDemande?.DirecteurMetierId == u.Id
+                Demande = existingDemande,
+                Directions = new SelectList(directionsPostErr, "Id", "Libelle", existingDemande?.DirectionId),
+                DirecteursMetier = dmsPostErr.Select(u => new SelectListItem
+                {
+                    Value = u.Id.ToString(),
+                    Text = $"{u.Nom} {u.Prenoms}",
+                    Selected = existingDemande?.DirecteurMetierId == u.Id
+                })
             });
-
-            return View(existingDemande);
         }
     }
 }

@@ -337,30 +337,31 @@ namespace GestionProjects.Controllers
                 .OrderByDescending(d => d.DateDebut)
                 .ToListAsync();
 
-            ViewBag.Projets = await _db.Projets
-                .Where(p => !p.EstSupprime && p.StatutProjet != StatutProjet.Cloture)
-                .OrderByDescending(p => p.DateCreation)
-                .ToListAsync();
+            var vm = new DelegationsChefProjetPageViewModel
+            {
+                Delegations = delegations,
+                Projets = await _db.Projets
+                    .Where(p => !p.EstSupprime && p.StatutProjet != StatutProjet.Cloture)
+                    .OrderByDescending(p => p.DateCreation)
+                    .ToListAsync(),
+                Delegants = await _db.Utilisateurs
+                    .Include(u => u.UtilisateurRoles)
+                    .Where(u => !u.EstSupprime &&
+                                u.UtilisateurRoles.Any(ur => !ur.EstSupprime &&
+                                                             (ur.Role == RoleUtilisateur.DSI || ur.Role == RoleUtilisateur.ResponsableSolutionsIT)) &&
+                                (hasFullAdminScope || u.Id == userId))
+                    .OrderBy(u => u.Nom)
+                    .ToListAsync(),
+                Delegues = await _db.Utilisateurs
+                    .Include(u => u.UtilisateurRoles)
+                    .Where(u => !u.EstSupprime && !u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.Demandeur))
+                    .OrderBy(u => u.Nom)
+                    .ToListAsync(),
+                CurrentUserId = userId,
+                CanAdminDelegations = hasFullAdminScope
+            };
 
-            ViewBag.Delegants = await _db.Utilisateurs
-                .Include(u => u.UtilisateurRoles)
-                .Where(u => !u.EstSupprime &&
-                            u.UtilisateurRoles.Any(ur => !ur.EstSupprime &&
-                                                         (ur.Role == RoleUtilisateur.DSI || ur.Role == RoleUtilisateur.ResponsableSolutionsIT)) &&
-                            (hasFullAdminScope || u.Id == userId))
-                .OrderBy(u => u.Nom)
-                .ToListAsync();
-
-            ViewBag.Delegues = await _db.Utilisateurs
-                .Include(u => u.UtilisateurRoles)
-                .Where(u => !u.EstSupprime && !u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.Demandeur))
-                .OrderBy(u => u.Nom)
-                .ToListAsync();
-
-            ViewBag.CurrentUserId = userId;
-            ViewBag.CanAdminDelegations = hasFullAdminScope;
-
-            return View(delegations);
+            return View(vm);
         }
 
         [HttpGet]

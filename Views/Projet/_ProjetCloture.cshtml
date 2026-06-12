@@ -2,7 +2,7 @@
 @using System.Net
 @using GestionProjects.Domain.Enums
 @using GestionProjects.Domain.Models
-@model GestionProjects.Domain.Models.Projet
+@model GestionProjects.Application.ViewModels.Projet.ProjetDetailsViewModel
 @inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
 
 @functions {
@@ -33,21 +33,20 @@
 }
 
 @{
-    var isReadOnly = ViewBag.IsReadOnly as bool? ?? false;
-    var isDemandeurProject = Model.DemandeProjet != null &&
-        Guid.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Guid.Empty.ToString(), out var currentUserId) &&
-        Model.DemandeProjet.DemandeurId == currentUserId;
-    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, Model, isReadOnly, isDemandeurProject);
-    var fiche = Model.FicheProjet ?? new FicheProjet();
-    var livrablesCloture = Model.Livrables?.Where(l => l.Phase == PhaseProjet.ClotureLeconsApprises && !l.EstSupprime).ToList() ?? new List<LivrableProjet>();
-    var demandeClotureActive = Model.DemandesCloture?.FirstOrDefault(d => !d.EstTerminee);
-    var chargePrevue = Model.Charges?.Where(c => !c.EstSupprime).Sum(c => c.ChargePrevisionnelle) ?? 0m;
-    var chargeReelle = Model.Charges?.Where(c => !c.EstSupprime).Sum(c => c.ChargeReelle ?? 0m) ?? 0m;
+    var projet = Model.Projet;
+    var isReadOnly = Model.IsReadOnly;
+    var isDemandeurProject = Model.IsDemandeurProject;
+    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, projet, isReadOnly, isDemandeurProject);
+    var fiche = projet.FicheProjet ?? new FicheProjet();
+    var livrablesCloture = projet.Livrables?.Where(l => l.Phase == PhaseProjet.ClotureLeconsApprises && !l.EstSupprime).ToList() ?? new List<LivrableProjet>();
+    var demandeClotureActive = projet.DemandesCloture?.FirstOrDefault(d => !d.EstTerminee);
+    var chargePrevue = projet.Charges?.Where(c => !c.EstSupprime).Sum(c => c.ChargePrevisionnelle) ?? 0m;
+    var chargeReelle = projet.Charges?.Where(c => !c.EstSupprime).Sum(c => c.ChargeReelle ?? 0m) ?? 0m;
     var hasRightRole = ui.CanEditCloture || ui.CanValidateClotureDsi;
-    var isInRightPhase = Model.PhaseActuelle == PhaseProjet.ClotureLeconsApprises;
+    var isInRightPhase = projet.PhaseActuelle == PhaseProjet.ClotureLeconsApprises;
     var noActiveDemand = demandeClotureActive == null;
     var canDemanderCloture = hasRightRole && isInRightPhase && noActiveDemand;
-    var canEditCloture = ui.CanEditCloture && (Model.PhaseActuelle == PhaseProjet.ClotureLeconsApprises || Model.PhaseActuelle == PhaseProjet.UatMep);
+    var canEditCloture = ui.CanEditCloture && (projet.PhaseActuelle == PhaseProjet.ClotureLeconsApprises || projet.PhaseActuelle == PhaseProjet.UatMep);
     var ecartCharge = chargeReelle - chargePrevue;
 }
 
@@ -70,9 +69,9 @@
                     <i class="bi @(demandeClotureActive != null ? "bi-hourglass-split" : "bi-hourglass")"></i>
                     @(demandeClotureActive != null ? "Validation en cours" : "Aucune demande active")
                 </span>
-                <span class="phase-chip @(Model.StatutProjet == StatutProjet.Cloture ? "is-success" : "is-warning")">
+                <span class="phase-chip @(projet.StatutProjet == StatutProjet.Cloture ? "is-success" : "is-warning")">
                     <i class="bi bi-signpost"></i>
-                    @Model.StatutWorkflowLabel
+                    @projet.StatutWorkflowLabel
                 </span>
             </div>
         </div>
@@ -92,19 +91,19 @@
             <div class="phase-summary-list">
                 <div class="phase-summary-item">
                     <span>Projet</span>
-                    <strong>@Model.CodeProjet</strong>
+                    <strong>@projet.CodeProjet</strong>
                 </div>
                 <div class="phase-summary-item">
                     <span>Demandeur</span>
-                    <strong>@Model.DemandeProjet?.Demandeur?.Nom @Model.DemandeProjet?.Demandeur?.Prenoms</strong>
+                    <strong>@projet.DemandeProjet?.Demandeur?.Nom @projet.DemandeProjet?.Demandeur?.Prenoms</strong>
                 </div>
                 <div class="phase-summary-item">
                     <span>Sponsor</span>
-                    <strong>@Model.Sponsor.Nom @Model.Sponsor.Prenoms</strong>
+                    <strong>@projet.Sponsor.Nom @projet.Sponsor.Prenoms</strong>
                 </div>
                 <div class="phase-summary-item">
                     <span>Chef de projet</span>
-                    <strong>@(Model.ChefProjet != null ? $"{Model.ChefProjet.Nom} {Model.ChefProjet.Prenoms}" : "Non affecté")</strong>
+                    <strong>@(projet.ChefProjet != null ? $"{projet.ChefProjet.Nom} {projet.ChefProjet.Prenoms}" : "Non affecté")</strong>
                 </div>
             </div>
         </article>
@@ -295,7 +294,7 @@
     {
         <form asp-action="UpdateBilan" method="post" class="phase-shell">
             @Html.AntiForgeryToken()
-            <input type="hidden" name="id" value="@Model.Id" />
+            <input type="hidden" name="id" value="@projet.Id" />
 
             <div class="phase-grid">
                 <section class="phase-panel">
@@ -308,15 +307,15 @@
                     </div>
                     <div class="form-group-modern">
                         <label class="form-label-modern">Bilan périmètre</label>
-                        <textarea name="bilanPerimetre" class="form-control-modern" rows="3">@Model.BilanPerimetre</textarea>
+                        <textarea name="bilanPerimetre" class="form-control-modern" rows="3">@projet.BilanPerimetre</textarea>
                     </div>
                     <div class="form-group-modern">
                         <label class="form-label-modern">Bilan planning</label>
-                        <textarea name="bilanPlanning" class="form-control-modern" rows="3">@Model.BilanPlanning</textarea>
+                        <textarea name="bilanPlanning" class="form-control-modern" rows="3">@projet.BilanPlanning</textarea>
                     </div>
                     <div class="form-group-modern">
                         <label class="form-label-modern">Bilan budget</label>
-                        <textarea name="bilanBudget" class="form-control-modern" rows="3">@Model.BilanBudget</textarea>
+                        <textarea name="bilanBudget" class="form-control-modern" rows="3">@projet.BilanBudget</textarea>
                     </div>
                     <div class="form-group-modern">
                         <label class="form-label-modern">Bilan charge</label>
@@ -334,23 +333,23 @@
                     </div>
                     <div class="form-group-modern">
                         <label class="form-label-modern">Réussites</label>
-                        <textarea name="bilanReussites" class="form-control-modern" rows="3">@Model.BilanReussites</textarea>
+                        <textarea name="bilanReussites" class="form-control-modern" rows="3">@projet.BilanReussites</textarea>
                     </div>
                     <div class="form-group-modern">
                         <label class="form-label-modern">Difficultés</label>
-                        <textarea name="bilanDifficultes" class="form-control-modern" rows="3">@Model.BilanDifficultes</textarea>
+                        <textarea name="bilanDifficultes" class="form-control-modern" rows="3">@projet.BilanDifficultes</textarea>
                     </div>
                     <div class="form-group-modern">
                         <label class="form-label-modern">Ce qu'il faut reproduire</label>
-                        <textarea name="leconsReussites" class="form-control-modern" rows="3">@Model.LeconsReussites</textarea>
+                        <textarea name="leconsReussites" class="form-control-modern" rows="3">@projet.LeconsReussites</textarea>
                     </div>
                     <div class="form-group-modern">
                         <label class="form-label-modern">Ce qu'il faut éviter</label>
-                        <textarea name="leconsEchecs" class="form-control-modern" rows="3">@Model.LeconsEchecs</textarea>
+                        <textarea name="leconsEchecs" class="form-control-modern" rows="3">@projet.LeconsEchecs</textarea>
                     </div>
                     <div class="form-group-modern">
                         <label class="form-label-modern">Recommandations</label>
-                        <textarea name="leconsRecommandations" class="form-control-modern" rows="3">@Model.LeconsRecommandations</textarea>
+                        <textarea name="leconsRecommandations" class="form-control-modern" rows="3">@projet.LeconsRecommandations</textarea>
                     </div>
                 </section>
 
@@ -443,19 +442,19 @@
                     <div class="phase-record-row">
                         <div>
                             <div class="phase-record-title">Périmètre</div>
-                            <div class="phase-record-meta">@(string.IsNullOrWhiteSpace(Model.BilanPerimetre) ? "Non renseigné" : Model.BilanPerimetre)</div>
+                            <div class="phase-record-meta">@(string.IsNullOrWhiteSpace(projet.BilanPerimetre) ? "Non renseigné" : projet.BilanPerimetre)</div>
                         </div>
                     </div>
                     <div class="phase-record-row">
                         <div>
                             <div class="phase-record-title">Planning</div>
-                            <div class="phase-record-meta">@(string.IsNullOrWhiteSpace(Model.BilanPlanning) ? "Non renseigné" : Model.BilanPlanning)</div>
+                            <div class="phase-record-meta">@(string.IsNullOrWhiteSpace(projet.BilanPlanning) ? "Non renseigné" : projet.BilanPlanning)</div>
                         </div>
                     </div>
                     <div class="phase-record-row">
                         <div>
                             <div class="phase-record-title">Budget</div>
-                            <div class="phase-record-meta">@(string.IsNullOrWhiteSpace(Model.BilanBudget) ? "Non renseigné" : Model.BilanBudget)</div>
+                            <div class="phase-record-meta">@(string.IsNullOrWhiteSpace(projet.BilanBudget) ? "Non renseigné" : projet.BilanBudget)</div>
                         </div>
                     </div>
                 </div>
@@ -467,13 +466,13 @@
                     <div class="phase-record-row">
                         <div>
                             <div class="phase-record-title">Réussites</div>
-                            <div class="phase-record-meta">@(string.IsNullOrWhiteSpace(Model.BilanReussites) ? "Non renseigné" : Model.BilanReussites)</div>
+                            <div class="phase-record-meta">@(string.IsNullOrWhiteSpace(projet.BilanReussites) ? "Non renseigné" : projet.BilanReussites)</div>
                         </div>
                     </div>
                     <div class="phase-record-row">
                         <div>
                             <div class="phase-record-title">Recommandations</div>
-                            <div class="phase-record-meta">@(string.IsNullOrWhiteSpace(Model.LeconsRecommandations) ? "Non renseignées" : Model.LeconsRecommandations)</div>
+                            <div class="phase-record-meta">@(string.IsNullOrWhiteSpace(projet.LeconsRecommandations) ? "Non renseignées" : projet.LeconsRecommandations)</div>
                         </div>
                     </div>
                 </div>
@@ -514,10 +513,10 @@
                                 <div class="record-card-subtitle">@livrable.TypeLivrable · @livrable.DateDepot.ToString("dd/MM/yyyy")</div>
                             </div>
                             <div class="record-card-actions">
-                                <a asp-controller="Document" asp-action="PreviewProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@livrable.Id" target="_blank" class="btn-modern btn-modern-primary" title="Visualiser">
+                                <a asp-controller="Document" asp-action="PreviewProjetLivrable" asp-route-projetId="@projet.Id" asp-route-livrableId="@livrable.Id" target="_blank" class="btn-modern btn-modern-primary" title="Visualiser">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                <a asp-controller="Document" asp-action="StreamProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@livrable.Id" asp-route-download="true" class="btn-modern btn-modern-secondary" title="Télécharger">
+                                <a asp-controller="Document" asp-action="StreamProjetLivrable" asp-route-projetId="@projet.Id" asp-route-livrableId="@livrable.Id" asp-route-download="true" class="btn-modern btn-modern-secondary" title="Télécharger">
                                     <i class="bi bi-download"></i>
                                 </a>
                             </div>
@@ -543,7 +542,7 @@
             <div class="modal-content app-modal-content">
                 <form asp-action="DemanderCloture" method="post">
                     @Html.AntiForgeryToken()
-                    <input type="hidden" name="id" value="@Model.Id" />
+                    <input type="hidden" name="id" value="@projet.Id" />
                     <div class="modal-header app-modal-header">
                         <h5 class="modal-title app-modal-title">
                             <i class="bi bi-flag-fill"></i>

@@ -1,13 +1,14 @@
-@model GestionProjects.Domain.Models.CharteProjet
+@model GestionProjects.Application.ViewModels.Projet.SignatureCharteViewModel
 
 @{
     ViewData["Title"] = "Signature électronique — Charte projet";
-    var role = ViewBag.RoleSignataire as string ?? "CP";
-    var projetId = ViewBag.ProjetId as Guid? ?? Guid.Empty;
-    var nomSignataire = ViewBag.NomSignataire as string ?? User.FindFirst("Nom")?.Value + " " + User.FindFirst("Prenoms")?.Value;
-    var dejaSigneCP = !string.IsNullOrWhiteSpace(Model.SignatureImageCP);
-    var dejaSigneSponsor = !string.IsNullOrWhiteSpace(Model.SignatureImageSponsor);
-    var dejaSigneDSI = !string.IsNullOrWhiteSpace(Model.SignatureImageDSI);
+    var charte = Model.Charte;
+    var role = Model.RoleSignataire;
+    var projetId = Model.ProjetId;
+    var nomSignataire = Model.NomSignataire;
+    var dejaSigneCP = !string.IsNullOrWhiteSpace(charte.SignatureImageCP);
+    var dejaSigneSponsor = !string.IsNullOrWhiteSpace(charte.SignatureImageSponsor);
+    var dejaSigneDSI = !string.IsNullOrWhiteSpace(charte.SignatureImageDSI);
 }
 
 <div class="fade-in">
@@ -34,9 +35,9 @@
                             <div class="p-3 rounded" style="background: @(dejaSigneCP ? "var(--success-light, #d4edda)" : "var(--gray-100)");">
                                 <i class="bi @(dejaSigneCP ? "bi-check-circle-fill text-success" : "bi-clock text-muted")" style="font-size: 2rem;"></i>
                                 <p class="mt-2 mb-0 fw-semibold">Chef de Projet</p>
-                                @if (dejaSigneCP && Model.DateSignatureImageCP.HasValue)
+                                @if (dejaSigneCP && charte.DateSignatureImageCP.HasValue)
                                 {
-                                    <small class="text-muted">Signé le @Model.DateSignatureImageCP.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                                    <small class="text-muted">Signé le @charte.DateSignatureImageCP.Value.ToString("dd/MM/yyyy HH:mm")</small>
                                 }
                                 else
                                 {
@@ -48,9 +49,9 @@
                             <div class="p-3 rounded" style="background: @(dejaSigneSponsor ? "var(--success-light, #d4edda)" : "var(--gray-100)");">
                                 <i class="bi @(dejaSigneSponsor ? "bi-check-circle-fill text-success" : "bi-clock text-muted")" style="font-size: 2rem;"></i>
                                 <p class="mt-2 mb-0 fw-semibold">Sponsor / Directeur métier</p>
-                                @if (dejaSigneSponsor && Model.DateSignatureImageSponsor.HasValue)
+                                @if (dejaSigneSponsor && charte.DateSignatureImageSponsor.HasValue)
                                 {
-                                    <small class="text-muted">Signé le @Model.DateSignatureImageSponsor.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                                    <small class="text-muted">Signé le @charte.DateSignatureImageSponsor.Value.ToString("dd/MM/yyyy HH:mm")</small>
                                 }
                                 else
                                 {
@@ -62,9 +63,9 @@
                             <div class="p-3 rounded" style="background: @(dejaSigneDSI ? "var(--success-light, #d4edda)" : "var(--gray-100)");">
                                 <i class="bi @(dejaSigneDSI ? "bi-check-circle-fill text-success" : "bi-clock text-muted")" style="font-size: 2rem;"></i>
                                 <p class="mt-2 mb-0 fw-semibold">DSI</p>
-                                @if (dejaSigneDSI && Model.DateSignatureImageDSI.HasValue)
+                                @if (dejaSigneDSI && charte.DateSignatureImageDSI.HasValue)
                                 {
-                                    <small class="text-muted">Signé le @Model.DateSignatureImageDSI.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                                    <small class="text-muted">Signé le @charte.DateSignatureImageDSI.Value.ToString("dd/MM/yyyy HH:mm")</small>
                                 }
                                 else
                                 {
@@ -108,7 +109,7 @@
 
                     <form id="signatureForm" asp-controller="Projet" asp-action="EnregistrerSignature" method="post">
                         @Html.AntiForgeryToken()
-                        <input type="hidden" name="charteId" value="@Model.Id" />
+                        <input type="hidden" name="charteId" value="@charte.Id" />
                         <input type="hidden" name="projetId" value="@projetId" />
                         <input type="hidden" name="role" value="@role" />
                         <input type="hidden" id="signatureData" name="signatureData" />
@@ -131,21 +132,21 @@
                             {
                                 <div class="col-md-4 text-center">
                                     <p class="fw-semibold mb-2">Chef de Projet</p>
-                                    <img src="@Model.SignatureImageCP" alt="Signature CP" class="img-fluid border rounded" style="max-height: 80px; background: white;" />
+                                    <img src="@charte.SignatureImageCP" alt="Signature CP" class="img-fluid border rounded" style="max-height: 80px; background: white;" />
                                 </div>
                             }
                             @if (dejaSigneSponsor)
                             {
                                 <div class="col-md-4 text-center">
                                     <p class="fw-semibold mb-2">Sponsor / Directeur métier</p>
-                                    <img src="@Model.SignatureImageSponsor" alt="Signature Sponsor" class="img-fluid border rounded" style="max-height: 80px; background: white;" />
+                                    <img src="@charte.SignatureImageSponsor" alt="Signature Sponsor" class="img-fluid border rounded" style="max-height: 80px; background: white;" />
                                 </div>
                             }
                             @if (dejaSigneDSI)
                             {
                                 <div class="col-md-4 text-center">
                                     <p class="fw-semibold mb-2">DSI</p>
-                                    <img src="@Model.SignatureImageDSI" alt="Signature DSI" class="img-fluid border rounded" style="max-height: 80px; background: white;" />
+                                    <img src="@charte.SignatureImageDSI" alt="Signature DSI" class="img-fluid border rounded" style="max-height: 80px; background: white;" />
                                 </div>
                             }
                         </div>

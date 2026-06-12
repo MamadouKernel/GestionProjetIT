@@ -1,4 +1,5 @@
 using GestionProjects.Application.Common.Interfaces;
+using GestionProjects.Application.ViewModels.AzureAuth;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using GestionProjects.Infrastructure.Persistence;
@@ -190,15 +191,18 @@ namespace GestionProjects.Controllers
         [HttpGet]
         public IActionResult DemanderAcces()
         {
-            ViewBag.Email = TempData["AzureEmail"];
-            ViewBag.Nom = TempData["AzureNom"];
-            ViewBag.Prenom = TempData["AzurePrenom"];
-            ViewBag.Matricule = TempData["AzureMatricule"];
-            ViewBag.AzureDepartment = TempData["AzureDepartment"];
-            ViewBag.DirectionDetecteeId = TempData["AzureDirectionDetecteeId"];
-            ViewBag.DirectionDetecteeNom = TempData["AzureDirectionDetecteeNom"];
+            var vm = new DemanderAccesViewModel
+            {
+                Email              = TempData["AzureEmail"] as string ?? string.Empty,
+                Nom                = TempData["AzureNom"] as string ?? string.Empty,
+                Prenom             = TempData["AzurePrenom"] as string ?? string.Empty,
+                Matricule          = TempData["AzureMatricule"] as string ?? string.Empty,
+                AzureDepartment    = TempData["AzureDepartment"] as string ?? string.Empty,
+                DirectionDetecteeId  = TempData["AzureDirectionDetecteeId"] as string ?? string.Empty,
+                DirectionDetecteeNom = TempData["AzureDirectionDetecteeNom"] as string ?? "Non déterminée"
+            };
 
-            return View();
+            return View(vm);
         }
 
         [HttpPost]

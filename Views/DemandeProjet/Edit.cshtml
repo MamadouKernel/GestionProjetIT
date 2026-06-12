@@ -1,18 +1,17 @@
-@model GestionProjects.Domain.Models.DemandeProjet
+@model GestionProjects.Application.ViewModels.DemandeProjet.DemandeProjetEditViewModel
 @inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
 
 @{
     ViewData["Title"] = "Modifier la Demande";
-    var isCorrection = Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier ||
-                       Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDemandeurParDSI;
+    var isCorrection = Model.Demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier ||
+                       Model.Demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDemandeurParDSI;
     var canValidateDemandeAsDm = await PermissionService.CurrentUserHasPermissionAsync("DemandeProjet", "ValiderDM");
     var isDirecteurMetierEdit = canValidateDemandeAsDm &&
-                                (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.EnAttenteValidationDirecteurMetier ||
-                                 Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDirecteurMetierParDSI);
-    var autresSponsors = ViewBag.AutresSponsors as System.Collections.Generic.IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>;
-    var hasMembresCodir = ViewBag.HasMembresCodir as bool? ?? false;
-    var cahierPresent = Model.CahierChargesDocument != null || !string.IsNullOrEmpty(Model.CahierChargesPath);
-    var annexesExistantes = Model.DocumentsAnnexes.ToList();
+                                (Model.Demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.EnAttenteValidationDirecteurMetier ||
+                                 Model.Demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDirecteurMetierParDSI);
+    var hasMembresCodir = Model.HasMembresCodir;
+    var cahierPresent = Model.Demande.CahierChargesDocument != null || !string.IsNullOrEmpty(Model.Demande.CahierChargesPath);
+    var annexesExistantes = Model.Demande.DocumentsAnnexes.ToList();
     var pageTitle = isDirecteurMetierEdit ? "Modifier avant validation" : (isCorrection ? "Corriger la demande" : "Modifier la demande");
 }
 
@@ -32,13 +31,13 @@
             <div class="phase-action-row">
                 <span class="phase-chip is-info">
                     <i class="bi bi-diagram-3"></i>
-                    @Model.StatutDemande
+                    @Model.Demande.StatutDemande
                 </span>
-                @if (Model.DateSoumission != default)
+                @if (Model.Demande.DateSoumission != default)
                 {
                     <span class="phase-chip">
                         <i class="bi bi-calendar3"></i>
-                        @Model.DateSoumission.ToString("dd/MM/yyyy")
+                        @Model.Demande.DateSoumission.ToString("dd/MM/yyyy")
                     </span>
                 }
             </div>
@@ -50,7 +49,7 @@
         <section class="phase-note is-warning">
             <div class="phase-strong">Correction demandee</div>
             <p style="margin: .6rem 0 0;">
-                @(!string.IsNullOrWhiteSpace(Model.CommentaireDirecteurMetier) ? Model.CommentaireDirecteurMetier : Model.CommentaireDSI)
+                @(!string.IsNullOrWhiteSpace(Model.Demande.CommentaireDirecteurMetier) ? Model.Demande.CommentaireDirecteurMetier : Model.Demande.CommentaireDSI)
             </p>
         </section>
     }
@@ -66,7 +65,7 @@
 
     <form asp-action="Edit" method="post" enctype="multipart/form-data">
         @Html.AntiForgeryToken()
-        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="Demande.Id" />
 
         @await Html.PartialAsync("_ValidationSummary")
 
@@ -75,38 +74,38 @@
                 <h3 class="phase-panel-title">Informations generales</h3>
 
                 <div class="form-group-modern">
-                    <label asp-for="Titre" class="form-label-modern">Titre du projet *</label>
-                    <input asp-for="Titre" class="form-control-modern" required />
-                    <span asp-validation-for="Titre" class="text-danger"></span>
+                    <label asp-for="Demande.Titre" class="form-label-modern">Titre du projet *</label>
+                    <input asp-for="Demande.Titre" class="form-control-modern" required />
+                    <span asp-validation-for="Demande.Titre" class="text-danger"></span>
                 </div>
 
                 <div class="form-group-modern">
-                    <label asp-for="Description" class="form-label-modern">Description *</label>
-                    <textarea asp-for="Description" class="form-control-modern" rows="4" required></textarea>
-                    <span asp-validation-for="Description" class="text-danger"></span>
+                    <label asp-for="Demande.Description" class="form-label-modern">Description *</label>
+                    <textarea asp-for="Demande.Description" class="form-control-modern" rows="4" required></textarea>
+                    <span asp-validation-for="Demande.Description" class="text-danger"></span>
                 </div>
 
                 <div class="form-group-modern">
-                    <label asp-for="Contexte" class="form-label-modern">Contexte *</label>
-                    <textarea asp-for="Contexte" class="form-control-modern" rows="4" required></textarea>
-                    <span asp-validation-for="Contexte" class="text-danger"></span>
+                    <label asp-for="Demande.Contexte" class="form-label-modern">Contexte *</label>
+                    <textarea asp-for="Demande.Contexte" class="form-control-modern" rows="4" required></textarea>
+                    <span asp-validation-for="Demande.Contexte" class="text-danger"></span>
                 </div>
 
                 <div class="form-group-modern">
-                    <label asp-for="Objectifs" class="form-label-modern">Objectifs *</label>
-                    <textarea asp-for="Objectifs" class="form-control-modern" rows="4" required></textarea>
-                    <span asp-validation-for="Objectifs" class="text-danger"></span>
+                    <label asp-for="Demande.Objectifs" class="form-label-modern">Objectifs *</label>
+                    <textarea asp-for="Demande.Objectifs" class="form-control-modern" rows="4" required></textarea>
+                    <span asp-validation-for="Demande.Objectifs" class="text-danger"></span>
                 </div>
 
                 <div class="form-group-modern">
-                    <label asp-for="AvantagesAttendus" class="form-label-modern">Avantages attendus *</label>
-                    <textarea asp-for="AvantagesAttendus" class="form-control-modern" rows="3" required></textarea>
-                    <span asp-validation-for="AvantagesAttendus" class="text-danger"></span>
+                    <label asp-for="Demande.AvantagesAttendus" class="form-label-modern">Avantages attendus *</label>
+                    <textarea asp-for="Demande.AvantagesAttendus" class="form-control-modern" rows="3" required></textarea>
+                    <span asp-validation-for="Demande.AvantagesAttendus" class="text-danger"></span>
                 </div>
 
                 <div class="form-group-modern">
-                    <label asp-for="Perimetre" class="form-label-modern">Perimetre</label>
-                    <textarea asp-for="Perimetre" class="form-control-modern" rows="4" placeholder="Processus impactes, activites couvertes, utilisateurs concernes..."></textarea>
+                    <label asp-for="Demande.Perimetre" class="form-label-modern">Perimetre</label>
+                    <textarea asp-for="Demande.Perimetre" class="form-control-modern" rows="4" placeholder="Processus impactes, activites couvertes, utilisateurs concernes..."></textarea>
                     <div class="soft-note">Decrivez le perimetre du projet : processus impactes, activites couvertes et population concernee.</div>
                 </div>
             </section>
@@ -115,19 +114,19 @@
                 <h3 class="phase-panel-title">Parametres & gouvernance</h3>
 
                 <div class="form-group-modern">
-                    <label asp-for="DirectionId" class="form-label-modern">Direction *</label>
-                    <select asp-for="DirectionId" id="DirectionId" class="form-control-modern" asp-items="ViewBag.Directions" required>
+                    <label asp-for="Demande.DirectionId" class="form-label-modern">Direction *</label>
+                    <select asp-for="Demande.DirectionId" id="DirectionId" class="form-control-modern" asp-items="Model.Directions" required>
                         <option value="">-- Selectionner --</option>
                     </select>
-                    <span asp-validation-for="DirectionId" class="text-danger"></span>
+                    <span asp-validation-for="Demande.DirectionId" class="text-danger"></span>
                 </div>
 
                 <div class="form-group-modern">
-                    <label asp-for="DirecteurMetierId" class="form-label-modern">Directeur metier *</label>
-                    <select asp-for="DirecteurMetierId" id="DirecteurMetierId" class="form-control-modern" required>
+                    <label asp-for="Demande.DirecteurMetierId" class="form-label-modern">Directeur metier *</label>
+                    <select asp-for="Demande.DirecteurMetierId" id="DirecteurMetierId" class="form-control-modern" required>
                         <option value="">-- Selectionner d'abord une direction --</option>
                     </select>
-                    <span asp-validation-for="DirecteurMetierId" class="text-danger"></span>
+                    <span asp-validation-for="Demande.DirecteurMetierId" class="text-danger"></span>
                     <div class="soft-note d-none" id="directeurMetierHelp">
                         <i class="bi bi-info-circle"></i>
                         Selectionnez une direction pour voir les directeurs metier disponibles.
@@ -135,11 +134,11 @@
                 </div>
 
                 <div class="form-group-modern">
-                    <label asp-for="AutreSponsorId" class="form-label-modern">Autre sponsor (CODIR)</label>
-                    <select asp-for="AutreSponsorId" class="form-control-modern" asp-items="autresSponsors">
+                    <label asp-for="Demande.AutreSponsorId" class="form-label-modern">Autre sponsor (CODIR)</label>
+                    <select asp-for="Demande.AutreSponsorId" class="form-control-modern" asp-items="Model.AutresSponsors">
                         <option value="">-- Aucun autre sponsor --</option>
                     </select>
-                    <span asp-validation-for="AutreSponsorId" class="text-danger"></span>
+                    <span asp-validation-for="Demande.AutreSponsorId" class="text-danger"></span>
                     @if (hasMembresCodir)
                     {
                         <div class="soft-note">Selectionnez, si besoin, un sponsor complementaire parmi les membres du CODIR.</div>
@@ -154,31 +153,31 @@
                     <label class="form-label-modern">Priorite *</label>
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label asp-for="Urgence" class="form-label-modern">Urgence</label>
-                            <select asp-for="Urgence" class="form-control-modern" asp-items="Html.GetEnumSelectList<GestionProjects.Domain.Enums.UrgenceProjet>()" required></select>
-                            <span asp-validation-for="Urgence" class="text-danger"></span>
+                            <label asp-for="Demande.Urgence" class="form-label-modern">Urgence</label>
+                            <select asp-for="Demande.Urgence" class="form-control-modern" asp-items="Html.GetEnumSelectList<GestionProjects.Domain.Enums.UrgenceProjet>()" required></select>
+                            <span asp-validation-for="Demande.Urgence" class="text-danger"></span>
                         </div>
                         <div class="col-md-6">
-                            <label asp-for="Criticite" class="form-label-modern">Criticite</label>
-                            <select asp-for="Criticite" class="form-control-modern" asp-items="Html.GetEnumSelectList<GestionProjects.Domain.Enums.CriticiteProjet>()" required></select>
-                            <span asp-validation-for="Criticite" class="text-danger"></span>
+                            <label asp-for="Demande.Criticite" class="form-label-modern">Criticite</label>
+                            <select asp-for="Demande.Criticite" class="form-control-modern" asp-items="Html.GetEnumSelectList<GestionProjects.Domain.Enums.CriticiteProjet>()" required></select>
+                            <span asp-validation-for="Demande.Criticite" class="text-danger"></span>
                         </div>
                     </div>
                     <div class="soft-note">La priorite du besoin est calculee a partir du couple urgence / criticite.</div>
                     <div id="prioriteCalculeePreview" class="phase-note is-info mt-3">
                         <div class="phase-strong">
                             Priorite calculee
-                            <span id="prioriteCalculeeCode" class="badge-modern badge-modern-@Model.PrioriteBadgeClass ms-2">@Model.PrioriteCode</span>
+                            <span id="prioriteCalculeeCode" class="badge-modern badge-modern-@Model.Demande.PrioriteBadgeClass ms-2">@Model.Demande.PrioriteCode</span>
                         </div>
                         <p id="prioriteCalculeeLibelle" style="margin: .6rem 0 0;">
-                            @Model.PrioriteLibelle (score @Model.PrioriteScore/7)
+                            @Model.Demande.PrioriteLibelle (score @Model.Demande.PrioriteScore/7)
                         </p>
                     </div>
                 </div>
 
                 <div class="form-group-modern">
-                    <label asp-for="DateMiseEnOeuvreSouhaitee" class="form-label-modern">Date de mise en oeuvre souhaitee</label>
-                    <input asp-for="DateMiseEnOeuvreSouhaitee" type="date" class="form-control-modern" />
+                    <label asp-for="Demande.DateMiseEnOeuvreSouhaitee" class="form-label-modern">Date de mise en oeuvre souhaitee</label>
+                    <input asp-for="Demande.DateMiseEnOeuvreSouhaitee" type="date" class="form-control-modern" />
                 </div>
             </section>
         </div>
@@ -202,7 +201,7 @@
                         <div class="record-card-actions">
                             <a asp-controller="Document"
                                asp-action="PreviewDemandeCahier"
-                               asp-route-demandeId="@Model.Id"
+                               asp-route-demandeId="@Model.Demande.Id"
                                target="_blank"
                                class="btn-modern btn-modern-primary"
                                title="Visualiser">
@@ -261,7 +260,7 @@
                 <i class="bi bi-save"></i>
                 @(isDirecteurMetierEdit ? "Enregistrer les modifications" : (isCorrection ? "Enregistrer les corrections" : "Enregistrer"))
             </button>
-            <a asp-action="Details" asp-route-id="@Model.Id" class="btn-modern btn-modern-secondary">
+            <a asp-action="Details" asp-route-id="@Model.Demande.Id" class="btn-modern btn-modern-secondary">
                 <i class="bi bi-x-circle"></i>
                 Annuler
             </a>

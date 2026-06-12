@@ -1,6 +1,7 @@
+@model GestionProjects.Application.ViewModels.Projet.ProjetDetailsViewModel
 @{
-    var projetId = ViewBag.ProjetId ?? Model?.Id;
-    var phase = ViewBag.Phase ?? Model?.PhaseActuelle;
+    var projetId = Model.Projet.Id;
+    var phase = Model.Projet.PhaseActuelle;
 }
 
 <div class="modal fade" id="uploadLivrableModal" tabindex="-1">

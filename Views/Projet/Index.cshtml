@@ -1,10 +1,14 @@
-@model IEnumerable<GestionProjects.Domain.Models.Projet>
+@model GestionProjects.Application.ViewModels.Projet.ProjetIndexViewModel
 @inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
 
 @{
-    var isDemandeurOnlyView = ViewBag.IsDemandeurOnlyView as bool? ?? false;
-    var isDirecteurMetierProjectsView = ViewBag.IsDirecteurMetierProjectsView as bool? ?? false;
+    var isDemandeurOnlyView = Model.IsDemandeurOnlyView;
+    var isDirecteurMetierProjectsView = Model.IsDirecteurMetierProjectsView;
     ViewData["Title"] = (isDemandeurOnlyView || isDirecteurMetierProjectsView) ? "Mes Projets" : "Portefeuille de Projets";
+    ViewBag.PageNumber = Model.PageNumber;
+    ViewBag.TotalPages = Model.TotalPages;
+    ViewBag.TotalCount = Model.TotalCount;
+    ViewBag.PageSize   = Model.PageSize;
 }
 
 <div class="fade-in app-page">
@@ -46,7 +50,7 @@
                         <div>
                             <div class="form-group-modern">
                                 <label class="form-label-modern">Direction</label>
-                                <select name="directionId" class="form-control-modern" asp-items="ViewBag.Directions">
+                                <select name="directionId" class="form-control-modern" asp-items="Model.Directions">
                                     <option value="">-- Toutes --</option>
                                 </select>
                             </div>
@@ -54,7 +58,7 @@
                         <div>
                             <div class="form-group-modern">
                                 <label class="form-label-modern">Chef de Projet</label>
-                                <select name="chefProjetId" class="form-control-modern" asp-items="ViewBag.ChefsProjet">
+                                <select name="chefProjetId" class="form-control-modern" asp-items="Model.ChefsProjet">
                                     <option value="">-- Tous --</option>
                                 </select>
                             </div>
@@ -62,7 +66,7 @@
                         <div>
                             <div class="form-group-modern">
                                 <label class="form-label-modern">Phase</label>
-                                <select name="phase" class="form-control-modern" asp-items="ViewBag.Phases">
+                                <select name="phase" class="form-control-modern" asp-items="Model.Phases">
                                     <option value="">-- Toutes --</option>
                                 </select>
                             </div>
@@ -70,7 +74,7 @@
                         <div>
                             <div class="form-group-modern">
                                 <label class="form-label-modern">Statut</label>
-                                <select name="statut" class="form-control-modern" asp-items="ViewBag.Statuts">
+                                <select name="statut" class="form-control-modern" asp-items="Model.Statuts">
                                     <option value="">-- Tous --</option>
                                 </select>
                             </div>
@@ -80,7 +84,7 @@
                         <div>
                             <div class="form-group-modern">
                                 <label class="form-label-modern">État</label>
-                                <select name="etat" class="form-control-modern" asp-items="ViewBag.Etats">
+                                <select name="etat" class="form-control-modern" asp-items="Model.Etats">
                                     <option value="">-- Tous --</option>
                                 </select>
                             </div>
@@ -124,7 +128,7 @@
             </h2>
         </div>
 
-        @if (Model.Any())
+        @if (Model.Projets.Any())
         {
             <div class="table-responsive">
                 <table class="table-modern">
@@ -143,10 +147,9 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var projet in Model)
+                        @foreach (var projet in Model.Projets)
                         {
-                            var readOnlyProjets = ViewBag.ReadOnlyProjets as HashSet<Guid> ?? new HashSet<Guid>();
-                            var isReadOnly = readOnlyProjets.Contains(projet.Id);
+                            var isReadOnly = Model.ReadOnlyProjets.Contains(projet.Id);
                             
                             <tr class="@(isReadOnly ? "readonly-row" : "")">
                                 <td>

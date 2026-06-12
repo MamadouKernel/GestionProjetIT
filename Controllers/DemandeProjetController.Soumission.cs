@@ -36,9 +36,7 @@ namespace GestionProjects.Controllers
             var demandesSimilaires = await DetecterDemandesSimilairesAsync(demande);
             if (demandesSimilaires.Any())
             {
-                ViewBag.DemandesSimilaires = demandesSimilaires;
-                ViewBag.DemandeCourante    = demande;
-                return View("VerificationDoublons", demande);
+                return View("VerificationDoublons", BuildVerificationDoublonsViewModel(demande, demandesSimilaires));
             }
 
             await EnsurePortefeuilleActifAsync();
@@ -81,10 +79,8 @@ namespace GestionProjects.Controllers
                 var demandesSimilaires = await DetecterDemandesSimilairesAsync(demande);
                 if (demandesSimilaires.Any())
                 {
-                    ViewBag.DemandesSimilaires = demandesSimilaires;
-                    ViewBag.DemandeCourante    = demande;
                     TempData["Warning"] = "Veuillez confirmer que vous souhaitez soumettre cette demande malgré l'existence de demandes similaires.";
-                    return View("VerificationDoublons", demande);
+                    return View("VerificationDoublons", BuildVerificationDoublonsViewModel(demande, demandesSimilaires));
                 }
             }
 
@@ -101,6 +97,39 @@ namespace GestionProjects.Controllers
 
             TempData["Success"] = "Demande soumise avec succès.";
             return RedirectToAction(nameof(Details), new { id });
+        }
+
+        // Helper : construire le ViewModel de vérification des doublons
+        private GestionProjects.Application.ViewModels.DemandeProjet.VerificationDoublonsViewModel BuildVerificationDoublonsViewModel(
+            DemandeProjet demande,
+            List<DemandeSimilaireInfo> similaires)
+        {
+            return new GestionProjects.Application.ViewModels.DemandeProjet.VerificationDoublonsViewModel
+            {
+                DemandeCourante = demande,
+                DemandesSimilaires = similaires.Select(s => new GestionProjects.Application.ViewModels.DemandeProjet.DemandeSimilaireDto
+                {
+                    DemandeId        = s.DemandeId,
+                    Titre            = s.Titre,
+                    StatutDemande    = s.StatutDemande,
+                    DateSoumission   = s.DateSoumission,
+                    Demandeur        = s.Demandeur,
+                    Direction        = s.Direction,
+                    CommentaireRejet = s.CommentaireRejet,
+                    Similarite       = s.Similarite,
+                    ProjetExistant   = s.ProjetExistant != null
+                        ? new GestionProjects.Application.ViewModels.DemandeProjet.ProjetExistantDto
+                          {
+                              ProjetId      = s.ProjetExistant.ProjetId,
+                              CodeProjet    = s.ProjetExistant.CodeProjet,
+                              Titre         = s.ProjetExistant.Titre,
+                              StatutProjet  = s.ProjetExistant.StatutProjet,
+                              PhaseActuelle = s.ProjetExistant.PhaseActuelle,
+                              ChefProjet    = s.ProjetExistant.ChefProjet
+                          }
+                        : null
+                }).ToList()
+            };
         }
 
         // Helper : s'assurer qu'un portefeuille actif existe

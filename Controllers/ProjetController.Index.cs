@@ -1,4 +1,5 @@
 using GestionProjects.Application.Common.Extensions;
+using GestionProjects.Application.ViewModels.Projet;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -32,6 +33,8 @@ namespace GestionProjects.Controllers
                 currentUserDirectionId);
 
             // Filtres additionnels (portefeuille seulement)
+            var vm = new ProjetIndexViewModel();
+
             if (canPortfolioAccess)
             {
                 if (directionId.HasValue)   query = query.Where(p => p.DirectionId == directionId.Value);
@@ -42,15 +45,11 @@ namespace GestionProjects.Controllers
 
                 // Charger les listes de référence pour les filtres via le service
                 var filtres = await _projetQuery.ChargerFiltresAsync(directionId, chefProjetId, phase, statut, etat);
-                ViewBag.Directions      = filtres.Directions;
-                ViewBag.ChefsProjet     = filtres.ChefsProjet;
-                ViewBag.Phases          = filtres.Phases;
-                ViewBag.Statuts         = filtres.Statuts;
-                ViewBag.Etats           = filtres.Etats;
-                ViewBag.SelectedDirectionId  = directionId;
-                ViewBag.SelectedChefProjetId = chefProjetId;
-                ViewBag.SelectedPhase        = phase;
-                ViewBag.SelectedStatut       = statut;
+                vm.Directions  = filtres.Directions;
+                vm.ChefsProjet = filtres.ChefsProjet;
+                vm.Phases      = filtres.Phases;
+                vm.Statuts     = filtres.Statuts;
+                vm.Etats       = filtres.Etats;
             }
 
             // Pagination
@@ -61,22 +60,23 @@ namespace GestionProjects.Controllers
                 .OrderByDescending(p => p.DateCreation)
                 .ToPagedResultAsync(page, pageSize);
 
-            ViewBag.PageNumber = pagedResult.PageNumber;
-            ViewBag.TotalPages = pagedResult.TotalPages;
-            ViewBag.TotalCount = pagedResult.TotalCount;
-            ViewBag.PageSize   = pagedResult.PageSize;
+            vm.PageNumber = pagedResult.PageNumber;
+            vm.TotalPages = pagedResult.TotalPages;
+            vm.TotalCount = pagedResult.TotalCount;
+            vm.PageSize   = pagedResult.PageSize;
 
             var projets = pagedResult.Items;
+            vm.Projets = projets;
 
             if (hasDmScope && !canPortfolioAccess)
             {
-                ViewBag.ReadOnlyProjets = projets
+                vm.ReadOnlyProjets = projets
                     .Where(p => p.SponsorId != userId)
                     .Select(p => p.Id)
                     .ToHashSet();
             }
 
-            return View(projets);
+            return View(vm);
         }
 
         // GET: Historique des projets pour Directeur Métier
@@ -129,20 +129,6 @@ namespace GestionProjects.Controllers
             var pagedProjets = await query.OrderByDescending(p => p.DateCreation).ToPagedResultAsync(page, pageSize);
             var projets = pagedProjets.Items;
 
-            ViewBag.PageNumber    = pagedProjets.PageNumber;
-            ViewBag.TotalPages    = pagedProjets.TotalPages;
-            ViewBag.TotalCount    = pagedProjets.TotalCount;
-            ViewBag.PageSize      = pagedProjets.PageSize;
-            ViewBag.Recherche     = recherche;
-            ViewBag.SelectedDirectionId = directionId;
-            ViewBag.SelectedPhase = phase;
-            ViewBag.SelectedStatut = statut;
-
-            ViewBag.Directions = await _db.Directions
-                .Where(d => !d.EstSupprime && d.EstActive)
-                .OrderBy(d => d.Libelle)
-                .ToListAsync();
-
             // Optimisation : charger les données uniquement pour la page courante
             var projetIds = projets.Select(p => p.Id).ToList();
 
@@ -186,8 +172,25 @@ namespace GestionProjects.Controllers
                 })
                 .ToDictionaryAsync(x => x.ProjetId, x => new { x.Total, x.Critiques });
 
-            // Construire la liste avec les données pré-chargées
-            var projetsAvecHistorique = new List<dynamic>();
+            // Construire le ViewModel
+            var directions = await _db.Directions
+                .Where(d => !d.EstSupprime && d.EstActive)
+                .OrderBy(d => d.Libelle)
+                .ToListAsync();
+
+            var vmHistorique = new ProjetHistoriqueDMViewModel
+            {
+                Projets          = projets,
+                Directions       = directions,
+                Recherche        = recherche,
+                SelectedDirectionId = directionId,
+                SelectedPhase    = phase,
+                SelectedStatut   = statut,
+                PageNumber       = pagedProjets.PageNumber,
+                TotalPages       = pagedProjets.TotalPages,
+                TotalCount       = pagedProjets.TotalCount,
+                PageSize         = pagedProjets.PageSize,
+            };
 
             foreach (var projet in projets)
             {
@@ -198,20 +201,19 @@ namespace GestionProjects.Controllers
                 var totalRisques = risquesCounts.TryGetValue(projet.Id, out var riskCount) ? riskCount.Total : 0;
                 var risquesCritiques = risquesCounts.TryGetValue(projet.Id, out var riskCount2) ? riskCount2.Critiques : 0;
 
-                projetsAvecHistorique.Add(new
+                vmHistorique.ProjetsAvecHistorique.Add(new ProjetHistoriqueItem
                 {
-                    Projet = projet,
-                    AuditLogs = auditLogs,
-                    TotalLivrables = totalLivrables,
-                    TotalAnomalies = totalAnomalies,
+                    Projet            = projet,
+                    AuditLogs         = auditLogs,
+                    TotalLivrables    = totalLivrables,
+                    TotalAnomalies    = totalAnomalies,
                     AnomaliesOuvertes = anomaliesOuvertes,
-                    TotalRisques = totalRisques,
-                    RisquesCritiques = risquesCritiques
+                    TotalRisques      = totalRisques,
+                    RisquesCritiques  = risquesCritiques
                 });
             }
 
-            ViewBag.ProjetsAvecHistorique = projetsAvecHistorique;
-            return View(projets);
+            return View(vmHistorique);
         }
 
         // GET: Portefeuille de Projets (vue stratégique)
@@ -284,9 +286,13 @@ Risques de sécurité liés aux échanges de données sensibles: Atténué par l
                 .OrderByDescending(d => d.DateSoumission)
                 .ToListAsync();
 
-            ViewBag.Portefeuille = portefeuille;
-            ViewBag.DemandesEnCours = demandesEnCours;
-            return View(projets);
+            var vmPortefeuille = new PortefeuilleViewModel
+            {
+                Projets         = projets,
+                Portefeuille    = portefeuille,
+                DemandesEnCours = demandesEnCours
+            };
+            return View(vmPortefeuille);
         }
 
         // POST: Mettre à jour le portefeuille
@@ -336,7 +342,7 @@ Risques de sécurité liés aux échanges de données sensibles: Atténué par l
             }
 
             // En cas d'erreur, recharger les données
-            var projets = await _db.Projets
+            var projetsErreur = await _db.Projets
                 .Include(p => p.Direction)
                 .Include(p => p.Sponsor)
                 .Include(p => p.ChefProjet)
@@ -344,8 +350,12 @@ Risques de sécurité liés aux échanges de données sensibles: Atténué par l
                 .OrderBy(p => p.Titre)
                 .ToListAsync();
 
-            ViewBag.Portefeuille = portefeuille;
-            return View("Portefeuille", projets);
+            var vmErreur = new PortefeuilleViewModel
+            {
+                Projets      = projetsErreur,
+                Portefeuille = portefeuille,
+            };
+            return View("Portefeuille", vmErreur);
         }
     }
 }

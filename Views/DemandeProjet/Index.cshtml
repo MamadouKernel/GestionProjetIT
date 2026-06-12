@@ -1,4 +1,4 @@
-@model IEnumerable<GestionProjects.Domain.Models.DemandeProjet>
+@model GestionProjects.Application.ViewModels.DemandeProjet.DemandeProjetIndexViewModel
 @inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
 
 @{
@@ -7,6 +7,10 @@
     var canEditDemandes = await PermissionService.CurrentUserHasPermissionAsync("DemandeProjet", "Edit");
     var canSubmitDemandes = await PermissionService.CurrentUserHasPermissionAsync("DemandeProjet", "Soumettre");
     var canCreateDemandes = await PermissionService.CurrentUserHasPermissionAsync("DemandeProjet", "Create");
+    ViewBag.PageNumber = Model.PageNumber;
+    ViewBag.TotalPages = Model.TotalPages;
+    ViewBag.TotalCount = Model.TotalCount;
+    ViewBag.PageSize   = Model.PageSize;
 }
 
 <div class="fade-in app-page">
@@ -26,7 +30,7 @@
                             <label class="form-label-modern">Direction</label>
                             <select name="directionId" class="form-control-modern" id="directionSelect">
                                 <option value="">-- Toutes les directions --</option>
-                                @foreach (var direction in ViewBag.Directions as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>())
+                                @foreach (var direction in Model.Directions)
                                 {
                                     <option value="@direction.Value" selected="@direction.Selected">@direction.Text</option>
                                 }
@@ -36,7 +40,7 @@
                             <label class="form-label-modern">Demandeur</label>
                             <select name="demandeurId" class="form-control-modern" id="demandeurSelect">
                                 <option value="">-- Tous les demandeurs --</option>
-                                @foreach (var demandeur in ViewBag.Demandeurs as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>())
+                                @foreach (var demandeur in Model.Demandeurs)
                                 {
                                     <option value="@demandeur.Value" selected="@demandeur.Selected">@demandeur.Text</option>
                                 }
@@ -46,7 +50,7 @@
                             <label class="form-label-modern">Directeur Métier</label>
                             <select name="directeurMetierId" class="form-control-modern" id="directeurMetierSelect">
                                 <option value="">-- Tous les directeurs métier --</option>
-                                @foreach (var dm in ViewBag.DirecteursMetier as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>())
+                                @foreach (var dm in Model.DirecteursMetier)
                                 {
                                     <option value="@dm.Value" selected="@dm.Selected">@dm.Text</option>
                                 }
@@ -163,7 +167,7 @@
             </h2>
         </div>
 
-        @if (Model.Any())
+        @if (Model.Demandes.Any())
         {
             <div class="table-responsive">
                 <table class="table-modern">
@@ -186,7 +190,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var demande in Model)
+                        @foreach (var demande in Model.Demandes)
                         {
                             <tr>
                                 <td><strong>@demande.Titre</strong></td>

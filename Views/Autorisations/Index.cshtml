@@ -1,13 +1,12 @@
+@model GestionProjects.Application.ViewModels.AutorisationsViewModel
 @using GestionProjects.Domain.Enums
 @using GestionProjects.Domain.Models
 @{
     ViewData["Title"] = "Autorisations et droits";
 
-    var roles = ViewBag.Roles as List<RoleUtilisateur> ?? new List<RoleUtilisateur>();
-    var permissionsParRole = ViewBag.PermissionsParRole as Dictionary<RoleUtilisateur, List<RolePermission>>
-        ?? new Dictionary<RoleUtilisateur, List<RolePermission>>();
-    var vuesDisponibles = ViewBag.VuesDisponibles as List<GestionProjects.Controllers.VueInfo>
-        ?? new List<GestionProjects.Controllers.VueInfo>();
+    var roles = Model.Roles;
+    var permissionsParRole = Model.PermissionsParRole;
+    var vuesDisponibles = Model.VuesDisponibles;
 
     var totalPages = vuesDisponibles.Count;
     var totalCategories = vuesDisponibles.Select(v => v.Categorie).Distinct().Count();

@@ -2,7 +2,7 @@
 @using GestionProjects.Domain.Models
 @using Microsoft.AspNetCore.Html
 @using System.Net
-@model GestionProjects.Domain.Models.Projet
+@model GestionProjects.Application.ViewModels.Projet.ProjetDetailsViewModel
 @inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
 
 @functions {
@@ -33,28 +33,29 @@
 }
 
 @{
-    var isReadOnly = ViewBag.IsReadOnly as bool? ?? false;
-    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, Model, isReadOnly);
-    var fiche = Model.FicheProjet ?? new FicheProjet();
-    var livrablesPlanif = Model.Livrables?.Where(l => l.Phase == PhaseProjet.PlanificationValidation && !l.EstSupprime).OrderByDescending(l => l.DateDepot).ToList() ?? new List<LivrableProjet>();
-    var planningTasks = Model.TachesPlanning?.Where(t => !t.EstSupprime).OrderBy(t => t.Ordre).ThenBy(t => t.DateDebutPrevue).ToList() ?? new List<TachePlanningProjet>();
-    var raciLines = Model.LignesRaci?.Where(l => !l.EstSupprime).OrderBy(l => l.Ordre).ToList() ?? new List<LigneRaciProjet>();
-    var communicationLines = Model.LignesCommunication?.Where(l => !l.EstSupprime).OrderBy(l => l.Ordre).ToList() ?? new List<LigneCommunicationProjet>();
-    var budgetLines = Model.LignesBudgetPlanification?.Where(l => !l.EstSupprime).OrderBy(l => l.Ordre).ToList() ?? new List<LigneBudgetPlanificationProjet>();
-    var kickOff = Model.PvKickOff != null && !Model.PvKickOff.EstSupprime ? Model.PvKickOff : new PvKickOffProjet();
+    var projet = Model.Projet;
+    var isReadOnly = Model.IsReadOnly;
+    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, projet, isReadOnly);
+    var fiche = projet.FicheProjet ?? new FicheProjet();
+    var livrablesPlanif = projet.Livrables?.Where(l => l.Phase == PhaseProjet.PlanificationValidation && !l.EstSupprime).OrderByDescending(l => l.DateDepot).ToList() ?? new List<LivrableProjet>();
+    var planningTasks = projet.TachesPlanning?.Where(t => !t.EstSupprime).OrderBy(t => t.Ordre).ThenBy(t => t.DateDebutPrevue).ToList() ?? new List<TachePlanningProjet>();
+    var raciLines = projet.LignesRaci?.Where(l => !l.EstSupprime).OrderBy(l => l.Ordre).ToList() ?? new List<LigneRaciProjet>();
+    var communicationLines = projet.LignesCommunication?.Where(l => !l.EstSupprime).OrderBy(l => l.Ordre).ToList() ?? new List<LigneCommunicationProjet>();
+    var budgetLines = projet.LignesBudgetPlanification?.Where(l => !l.EstSupprime).OrderBy(l => l.Ordre).ToList() ?? new List<LigneBudgetPlanificationProjet>();
+    var kickOff = projet.PvKickOff != null && !projet.PvKickOff.EstSupprime ? projet.PvKickOff : new PvKickOffProjet();
     var budgetTotal = budgetLines.Sum(l => l.Montant);
-    var canEditPlanification = ui.CanEditPlanification && Model.PhaseActuelle == PhaseProjet.PlanificationValidation;
-    var canValiderDM = ui.CanValidatePlanificationDm && Model.PhaseActuelle == PhaseProjet.PlanificationValidation && !Model.PlanningValideParDM;
-    var canValiderDSI = ui.CanValidatePlanificationDsi && Model.PhaseActuelle == PhaseProjet.PlanificationValidation && Model.PlanningValideParDM && !Model.PlanningValideParDSI;
+    var canEditPlanification = ui.CanEditPlanification && projet.PhaseActuelle == PhaseProjet.PlanificationValidation;
+    var canValiderDM = ui.CanValidatePlanificationDm && projet.PhaseActuelle == PhaseProjet.PlanificationValidation && !projet.PlanningValideParDM;
+    var canValiderDSI = ui.CanValidatePlanificationDsi && projet.PhaseActuelle == PhaseProjet.PlanificationValidation && projet.PlanningValideParDM && !projet.PlanningValideParDSI;
 
     bool HasLivrable(TypeLivrable type) => livrablesPlanif.Any(l => l.TypeLivrable == type);
 
     var ganttStart = planningTasks.Any()
         ? planningTasks.Min(t => t.DateDebutPrevue).Date
-        : (Model.DateDebut?.Date ?? DateTime.Today);
+        : (projet.DateDebut?.Date ?? DateTime.Today);
     var ganttEnd = planningTasks.Any()
         ? planningTasks.Max(t => t.DateFinPrevue).Date
-        : (Model.DateFinPrevue?.Date ?? ganttStart.AddDays(14));
+        : (projet.DateFinPrevue?.Date ?? ganttStart.AddDays(14));
     var ganttTotalDays = Math.Max(1, (ganttEnd - ganttStart).Days + 1);
 
     Func<TachePlanningProjet, string> barStyle = task =>
@@ -89,15 +90,15 @@
                     <div class="admin-mini-kpi-grid">
                         <div class="admin-mini-kpi">
                             <span class="admin-mini-kpi-label">Statut</span>
-                            <strong class="admin-mini-kpi-value">@(Model.PlanningValideParDM ? "Validée" : "En attente")</strong>
-                            <span class="admin-mini-kpi-trend">@(Model.DatePlanningValideParDM?.ToString("dd/MM/yyyy") ?? "Action requise")</span>
+                            <strong class="admin-mini-kpi-value">@(projet.PlanningValideParDM ? "Validée" : "En attente")</strong>
+                            <span class="admin-mini-kpi-trend">@(projet.DatePlanningValideParDM?.ToString("dd/MM/yyyy") ?? "Action requise")</span>
                         </div>
                     </div>
                     @if (canValiderDM)
                     {
                         <form asp-action="ValiderPlanifDM" method="post" class="mt-3">
                             @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@Model.Id" />
+                            <input type="hidden" name="id" value="@projet.Id" />
                             <button type="submit" class="btn-modern btn-modern-success">
                                 <i class="bi bi-check-circle"></i>
                                 Valider la planification
@@ -118,15 +119,15 @@
                     <div class="admin-mini-kpi-grid">
                         <div class="admin-mini-kpi">
                             <span class="admin-mini-kpi-label">Statut</span>
-                            <strong class="admin-mini-kpi-value">@(Model.PlanningValideParDSI ? "Validée" : Model.PlanningValideParDM ? "À valider" : "En attente DM")</strong>
-                            <span class="admin-mini-kpi-trend">@(Model.DatePlanningValideParDSI?.ToString("dd/MM/yyyy") ?? "Go/No-Go non atteint")</span>
+                            <strong class="admin-mini-kpi-value">@(projet.PlanningValideParDSI ? "Validée" : projet.PlanningValideParDM ? "À valider" : "En attente DM")</strong>
+                            <span class="admin-mini-kpi-trend">@(projet.DatePlanningValideParDSI?.ToString("dd/MM/yyyy") ?? "Go/No-Go non atteint")</span>
                         </div>
                     </div>
                     @if (canValiderDSI)
                     {
                         <form asp-action="ValiderPlanifDSI" method="post" class="mt-3">
                             @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@Model.Id" />
+                            <input type="hidden" name="id" value="@projet.Id" />
                             <button type="submit" class="btn-modern btn-modern-success" data-confirm-submit="Valider la planification et passer le projet en exécution ?">
                                 <i class="bi bi-arrow-right-circle"></i>
                                 Passer en exécution
@@ -141,10 +142,10 @@
             <article class="admin-metric-panel">
                 <div class="admin-metric-panel-title">Informations projet</div>
                 <div class="charge-summary-list">
-                    <div><span>Code projet</span><strong>@Model.CodeProjet</strong></div>
-                    <div><span>Direction</span><strong>@(Model.Direction?.Libelle ?? "Non définie")</strong></div>
-                    <div><span>Sponsor</span><strong>@Model.Sponsor.Nom @Model.Sponsor.Prenoms</strong></div>
-                    <div><span>Chef de projet</span><strong>@(Model.ChefProjet != null ? $"{Model.ChefProjet.Nom} {Model.ChefProjet.Prenoms}" : "Non affecté")</strong></div>
+                    <div><span>Code projet</span><strong>@projet.CodeProjet</strong></div>
+                    <div><span>Direction</span><strong>@(projet.Direction?.Libelle ?? "Non définie")</strong></div>
+                    <div><span>Sponsor</span><strong>@projet.Sponsor.Nom @projet.Sponsor.Prenoms</strong></div>
+                    <div><span>Chef de projet</span><strong>@(projet.ChefProjet != null ? $"{projet.ChefProjet.Nom} {projet.ChefProjet.Prenoms}" : "Non affecté")</strong></div>
                 </div>
             </article>
             <article class="admin-metric-panel">
@@ -196,7 +197,7 @@
             {
                 <form asp-action="UpdatePlanification" method="post" id="planningForm">
                     @Html.AntiForgeryToken()
-                    <input type="hidden" name="id" value="@Model.Id" />
+                    <input type="hidden" name="id" value="@projet.Id" />
                     <input type="hidden" name="ganttPayload" id="ganttPayload" />
                     <input type="hidden" name="raciPayload" id="raciPayload" />
                     <input type="hidden" name="communicationPayload" id="communicationPayload" />
@@ -285,11 +286,11 @@
                                 <div class="card-body-modern">
                                     <div class="form-group-modern">
                                         <label class="form-label-modern">Date début prévue</label>
-                                        <input class="form-control-modern" value="@(Model.DateDebut?.ToString("yyyy-MM-dd") ?? string.Empty)" type="date" disabled />
+                                        <input class="form-control-modern" value="@(projet.DateDebut?.ToString("yyyy-MM-dd") ?? string.Empty)" type="date" disabled />
                                     </div>
                                     <div class="form-group-modern">
                                         <label class="form-label-modern">Date de fin prévue</label>
-                                        <input class="form-control-modern" value="@(Model.DateFinPrevue?.ToString("yyyy-MM-dd") ?? string.Empty)" type="date" disabled />
+                                        <input class="form-control-modern" value="@(projet.DateFinPrevue?.ToString("yyyy-MM-dd") ?? string.Empty)" type="date" disabled />
                                     </div>
                                     <div class="form-group-modern">
                                         <label class="form-label-modern">Prochain jalon</label>
@@ -744,7 +745,7 @@
                         <div class="planning-livrable-actions">
                             <form asp-action="GenererLivrablesPlanificationDepuisGantt" method="post">
                                 @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@Model.Id" />
+                                <input type="hidden" name="id" value="@projet.Id" />
                                 <button type="submit" class="btn-modern btn-modern-secondary">
                                     <i class="bi bi-magic"></i>
                                     Régénérer les livrables natifs
@@ -773,10 +774,10 @@
                                     </div>
                                 </div>
                                 <div style="display: flex; gap: var(--spacing-xs);">
-                                    <a asp-controller="Document" asp-action="PreviewProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@livrable.Id" target="_blank" class="btn-modern btn-modern-primary icon-button" title="Prévisualiser">
+                                    <a asp-controller="Document" asp-action="PreviewProjetLivrable" asp-route-projetId="@projet.Id" asp-route-livrableId="@livrable.Id" target="_blank" class="btn-modern btn-modern-primary icon-button" title="Prévisualiser">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <a asp-controller="Document" asp-action="StreamProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@livrable.Id" asp-route-download="true" class="btn-modern btn-modern-secondary icon-button" title="Télécharger">
+                                    <a asp-controller="Document" asp-action="StreamProjetLivrable" asp-route-projetId="@projet.Id" asp-route-livrableId="@livrable.Id" asp-route-download="true" class="btn-modern btn-modern-secondary icon-button" title="Télécharger">
                                         <i class="bi bi-download"></i>
                                     </a>
                                 </div>

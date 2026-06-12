@@ -10,7 +10,7 @@ namespace GestionProjects.Application.ViewModels.Admin
         public List<Utilisateur> DeleguesDSI { get; set; } = new();
         public List<Utilisateur> Delegants { get; set; } = new();
         public List<Utilisateur> DeleguesChefProjet { get; set; } = new();
-        public List<Projet> Projets { get; set; } = new();
+        public List<GestionProjects.Domain.Models.Projet> Projets { get; set; } = new();
         public string ActiveTab { get; set; } = "dsi";
         public bool CanAdminDelegations { get; set; }
         public Guid CurrentUserId { get; set; }

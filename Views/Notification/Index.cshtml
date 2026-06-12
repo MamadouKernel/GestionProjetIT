@@ -1,8 +1,8 @@
-@model IEnumerable<GestionProjects.Domain.Models.Notification>
+@model GestionProjects.Application.ViewModels.Notification.NotificationIndexViewModel
 
 @{
     ViewData["Title"] = "Mes Notifications";
-    var nonLues = ViewBag.NonLues as int? ?? 0;
+    var nonLues = Model.NonLues;
     var currentUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
 }
 
@@ -39,7 +39,7 @@
         </div>
     </section>
 
-    @if (!Model.Any())
+    @if (!Model.Items.Any())
     {
         <div class="phase-empty">
             <i class="bi bi-bell-slash"></i>
@@ -49,7 +49,7 @@
     else
     {
         <div class="notification-list">
-            @foreach (var notification in Model)
+            @foreach (var notification in Model.Items)
             {
                 <article class="notification-card @(!notification.EstLue ? "is-unread" : string.Empty)">
                     <div class="notification-card-header">

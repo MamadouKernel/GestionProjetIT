@@ -86,11 +86,14 @@ namespace GestionProjects.Controllers
                         .ToList();
                 }
 
-                ViewBag.Roles = roles;
-                ViewBag.PermissionsParRole = permissionsParRole;
-                ViewBag.VuesDisponibles = vuesDisponibles;
+                var viewModel = new Application.ViewModels.AutorisationsViewModel
+                {
+                    Roles = roles,
+                    PermissionsParRole = permissionsParRole,
+                    VuesDisponibles = vuesDisponibles
+                };
 
-                return View();
+                return View(viewModel);
             }
             catch (Exception ex)
             {

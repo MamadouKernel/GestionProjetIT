@@ -1,11 +1,14 @@
-@model IEnumerable<GestionProjects.Domain.Models.AuditLog>
+@model GestionProjects.Application.ViewModels.DemandeProjet.HistoriqueActionsDMViewModel
 @using System.Text.Json
 @{
     ViewData["Title"] = "Historique des actions DM";
-    var demandes = ViewBag.Demandes as Dictionary<Guid, GestionProjects.Domain.Models.DemandeProjet> ?? new();
-    var page = (int)ViewBag.Page;
-    var totalPages = (int)ViewBag.TotalPages;
-    var total = (int)ViewBag.Total;
+    var demandes = Model.Demandes;
+    var page = Model.Page;
+    var totalPages = Model.TotalPages;
+    var total = Model.Total;
+    ViewBag.PageNumber = Model.Page;
+    ViewBag.TotalPages = Model.TotalPages;
+    ViewBag.TotalCount = Model.Total;
 }
 
 <div class="phase-shell">
@@ -37,7 +40,7 @@
         </p>
     </section>
 
-    @if (!Model.Any())
+    @if (!Model.Logs.Any())
     {
         <div class="phase-empty">
             <i class="bi bi-inbox"></i>
@@ -47,7 +50,7 @@
     else
     {
         <div class="timeline-list">
-            @foreach (var log in Model)
+            @foreach (var log in Model.Logs)
             {
                 var demandeId = Guid.TryParse(log.EntiteId, out var did) ? did : Guid.Empty;
                 var demande = demandeId != Guid.Empty && demandes.TryGetValue(demandeId, out var d) ? d : null;

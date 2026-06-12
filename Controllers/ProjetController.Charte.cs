@@ -1,4 +1,5 @@
 using GestionProjects.Application.Common.Extensions;
+using GestionProjects.Application.ViewModels.Projet;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using GestionProjects.Infrastructure.Security;
@@ -99,20 +100,19 @@ namespace GestionProjects.Controllers
                 await _db.SaveChangesAsync();
             }
 
-            ViewBag.Projet = projet;
-            ViewBag.Utilisateurs = await _db.Utilisateurs
+            var utilisateurs = await _db.Utilisateurs
                 .Where(u => !u.EstSupprime)
                 .OrderBy(u => u.Nom)
                 .ThenBy(u => u.Prenoms)
                 .ToListAsync();
-            ViewBag.CharteSigneeLivrable = await _db.LivrablesProjets
+            var charteSigneeLivrable = await _db.LivrablesProjets
                 .Include(l => l.DeposePar)
                 .Where(l => l.ProjetId == id &&
                             l.TypeLivrable == TypeLivrable.CharteProjetSignee &&
                             !l.EstSupprime)
                 .OrderByDescending(l => l.DateDepot)
                 .FirstOrDefaultAsync();
-            ViewBag.DossierSignatureCharte = await _db.DossiersSignatureProjets
+            var dossierSignatureCharte = await _db.DossiersSignatureProjets
                 .Include(d => d.Signataires.OrderBy(s => s.OrdreSignature))
                     .ThenInclude(s => s.Utilisateur)
                 .Where(d => d.ProjetId == id &&
@@ -121,7 +121,16 @@ namespace GestionProjects.Controllers
                 .OrderByDescending(d => d.DateCreation)
                 .FirstOrDefaultAsync();
 
-            return View(charte);
+            var vm = new CharteProjetPageViewModel
+            {
+                Charte                = charte,
+                Projet                = projet,
+                Utilisateurs          = utilisateurs,
+                CharteSigneeLivrable  = charteSigneeLivrable,
+                DossierSignatureCharte = dossierSignatureCharte
+            };
+
+            return View(vm);
         }
 
         // POST: Sauvegarder la charte de projet
@@ -1071,6 +1080,104 @@ namespace GestionProjects.Controllers
 
             TempData["Success"] = "Charte rejetée par la DSI.";
             return RedirectToAction(nameof(ValidationsProjet));
+        }
+
+        // GET: Page de signature électronique de la charte
+        [Authorize]
+        public async Task<IActionResult> SignatureCharte(Guid id)
+        {
+            var projet = await _db.Projets
+                .Include(p => p.ChefProjet)
+                .Include(p => p.Sponsor)
+                .Include(p => p.CharteProjet)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (projet?.CharteProjet == null)
+            {
+                TempData["Error"] = "Charte projet introuvable.";
+                return RedirectToAction(nameof(Details), new { id, tab = "analyse" });
+            }
+
+            var userId = User.GetUserIdOrThrow();
+
+            string role;
+            if (projet.ChefProjetId == userId || User.IsInRole("AdminIT"))
+                role = "CP";
+            else if (projet.SponsorId == userId || User.IsInRole("DirecteurMetier"))
+                role = "Sponsor";
+            else if (User.IsInRole("DSI") || User.IsInRole("ResponsableSolutionsIT"))
+                role = "DSI";
+            else
+                return Forbid();
+
+            return View(new SignatureCharteViewModel
+            {
+                Charte         = projet.CharteProjet,
+                RoleSignataire = role,
+                ProjetId       = id,
+                NomSignataire  = $"{User.FindFirst("Nom")?.Value} {User.FindFirst("Prenoms")?.Value}".Trim()
+            });
+        }
+
+        // POST: Enregistrer une signature électronique
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
+        public async Task<IActionResult> EnregistrerSignature(Guid charteId, Guid projetId, string role, string signatureData)
+        {
+            if (string.IsNullOrWhiteSpace(signatureData) || !signatureData.StartsWith("data:image/png;base64,"))
+            {
+                TempData["Error"] = "Signature invalide.";
+                return RedirectToAction(nameof(SignatureCharte), new { id = projetId });
+            }
+
+            var charte = await _db.CharteProjets.FindAsync(charteId);
+            if (charte == null)
+                return NotFound();
+
+            var now = DateTime.Now;
+            switch (role)
+            {
+                case "CP":
+                    charte.SignatureImageCP = signatureData;
+                    charte.DateSignatureImageCP = now;
+                    charte.SignatureChefProjet = true;
+                    charte.DateSignatureChefProjet = now;
+                    break;
+                case "Sponsor":
+                    charte.SignatureImageSponsor = signatureData;
+                    charte.DateSignatureImageSponsor = now;
+                    charte.SignatureSponsor = true;
+                    charte.DateSignatureSponsor = now;
+                    break;
+                case "DSI":
+                    charte.SignatureImageDSI = signatureData;
+                    charte.DateSignatureImageDSI = now;
+                    break;
+            }
+
+            await _db.SaveChangesAsync();
+            await _auditService.LogActionAsync($"SIGNATURE_CHARTE_{role}", "CharteProjet", charteId);
+
+            if (!string.IsNullOrWhiteSpace(charte.SignatureImageCP) &&
+                !string.IsNullOrWhiteSpace(charte.SignatureImageSponsor) &&
+                !string.IsNullOrWhiteSpace(charte.SignatureImageDSI))
+            {
+                var projet = await _db.Projets.FindAsync(charte.ProjetId);
+                if (projet != null)
+                {
+                    projet.CharteValidee = true;
+                    projet.DateCharteValidee = now;
+                    await _db.SaveChangesAsync();
+                }
+                TempData["Success"] = "Signature enregistrée. Toutes les signatures sont complètes — charte validée !";
+            }
+            else
+            {
+                TempData["Success"] = "Signature enregistrée avec succès.";
+            }
+
+            return RedirectToAction(nameof(SignatureCharte), new { id = projetId });
         }
     }
 }

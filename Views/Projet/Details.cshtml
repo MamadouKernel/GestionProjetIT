@@ -1,13 +1,14 @@
-@model GestionProjects.Domain.Models.Projet
+@model GestionProjects.Application.ViewModels.Projet.ProjetDetailsViewModel
 @inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
 
 @{
-    ViewData["Title"] = $"Projet {Model.CodeProjet}";
-    var activeTab = ViewBag.ActiveTab ?? "synthese";
-    var isReadOnly = ViewBag.IsReadOnly as bool? ?? false;
-    var isDemandeurProject = ViewBag.IsDemandeurProject as bool? ?? false;
-    var canAccessCharges = ViewBag.CanAccessCharges as bool? ?? false;
-    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, Model, isReadOnly, isDemandeurProject);
+    var projet = Model.Projet;
+    ViewData["Title"] = $"Projet {projet.CodeProjet}";
+    var activeTab = Model.ActiveTab;
+    var isReadOnly = Model.IsReadOnly;
+    var isDemandeurProject = Model.IsDemandeurProject;
+    var canAccessCharges = Model.CanAccessCharges;
+    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, projet, isReadOnly, isDemandeurProject);
     var canShowDmReadOnlyBanner = isReadOnly && ui.HasProjectValidationAccess && !ui.IsProjectSponsor;
 }
 
@@ -37,7 +38,7 @@
             <div class="project-hero-main">
                 <h2 class="card-title-modern project-hero-title mb-0">
                     <i class="bi bi-folder"></i>
-                    @Model.CodeProjet - @Model.Titre
+                    @projet.CodeProjet - @projet.Titre
                     @if (canShowDmReadOnlyBanner)
                     {
                         <span class="badge-modern badge-modern-secondary">
@@ -52,24 +53,24 @@
                     }
                 </h2>
                 <div class="page-hero-meta mt-2">
-                    <span class="badge-modern badge-modern-@GetPhaseClass(Model.PhaseActuelle)">@Model.PhaseWorkflowLabel</span>
-                    <span class="badge-modern badge-modern-@GetStatutClass(Model.StatutProjet)">@Model.StatutWorkflowLabel</span>
-                    <span class="badge-modern badge-modern-@GetRAGClass(Model.IndicateurRAG)" title="Indicateur RAG calculé automatiquement (Budget, Planning, Risques, Livrables)">
-                        RAG: @GetRAGLabel(Model.IndicateurRAG)
+                    <span class="badge-modern badge-modern-@GetPhaseClass(projet.PhaseActuelle)">@projet.PhaseWorkflowLabel</span>
+                    <span class="badge-modern badge-modern-@GetStatutClass(projet.StatutProjet)">@projet.StatutWorkflowLabel</span>
+                    <span class="badge-modern badge-modern-@GetRAGClass(projet.IndicateurRAG)" title="Indicateur RAG calculé automatiquement (Budget, Planning, Risques, Livrables)">
+                        RAG: @GetRAGLabel(projet.IndicateurRAG)
                     </span>
-                    <span class="badge-modern badge-modern-@GetEtatClass(Model.EtatProjet)">@Model.EtatProjet</span>
+                    <span class="badge-modern badge-modern-@GetEtatClass(projet.EtatProjet)">@projet.EtatProjet</span>
                 </div>
-                @if (Model.DemandeProjet != null)
+                @if (projet.DemandeProjet != null)
                 {
                     <div class="page-hero-meta mt-2">
                         <span class="soft-note" style="font-weight: 700;">
                             Workflow demande initiale :
                         </span>
-                        @if (Model.DemandeProjet.DateValidationDM.HasValue)
+                        @if (projet.DemandeProjet.DateValidationDM.HasValue)
                         {
                             <span class="badge-modern badge-modern-success" title="Validation initiale Directeur Métier enregistrée sur la demande source.">
                                 <i class="bi bi-check-circle"></i>
-                                Demande initiale validée DM le @Model.DemandeProjet.DateValidationDM.Value.ToString("dd/MM/yyyy")
+                                Demande initiale validée DM le @projet.DemandeProjet.DateValidationDM.Value.ToString("dd/MM/yyyy")
                             </span>
                         }
                         else
@@ -79,11 +80,11 @@
                                 Demande initiale en attente DM
                             </span>
                         }
-                        @if (Model.DemandeProjet.DateValidationDSI.HasValue)
+                        @if (projet.DemandeProjet.DateValidationDSI.HasValue)
                         {
                             <span class="badge-modern badge-modern-success" title="Validation initiale DSI enregistrée sur la demande source.">
                                 <i class="bi bi-check-circle"></i>
-                                Demande initiale validée DSI le @Model.DemandeProjet.DateValidationDSI.Value.ToString("dd/MM/yyyy")
+                                Demande initiale validée DSI le @projet.DemandeProjet.DateValidationDSI.Value.ToString("dd/MM/yyyy")
                             </span>
                         }
                         else
@@ -99,18 +100,18 @@
             <div class="project-progress-panel">
                 <div class="project-progress-copy">
                     <div class="project-progress-kicker">Avancement</div>
-                    <div class="project-progress-value">@Model.PourcentageAvancement%</div>
+                    <div class="project-progress-value">@projet.PourcentageAvancement%</div>
                 </div>
                 <div class="project-progress-ring">
                     <svg width="100" height="100">
                         <circle cx="50" cy="50" r="40" fill="none" stroke="var(--gray-200)" stroke-width="8"/>
                         <circle cx="50" cy="50" r="40" fill="none" stroke="var(--primary-blue)" stroke-width="8"
                                 stroke-dasharray="@(2 * Math.PI * 40)" 
-                                stroke-dashoffset="@(2 * Math.PI * 40 * (1 - Model.PourcentageAvancement / 100.0))"
+                                stroke-dashoffset="@(2 * Math.PI * 40 * (1 - projet.PourcentageAvancement / 100.0))"
                                 stroke-linecap="round"/>
                     </svg>
                     <div class="project-progress-ring-value">
-                        @Model.PourcentageAvancement%
+                        @projet.PourcentageAvancement%
                     </div>
                 </div>
             </div>
@@ -122,43 +123,43 @@
         <ul class="nav project-tabs">
             <li class="nav-item">
                 <a class="nav-link @(activeTab == "synthese" ? "active" : "")" 
-                   href="@Url.Action("Details", new { id = Model.Id, tab = "synthese" })">
+                   href="@Url.Action("Details", new { id = projet.Id, tab = "synthese" })">
                     <i class="bi bi-speedometer2"></i> Synthèse
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link @(activeTab == "analyse" ? "active" : "")" 
-                   href="@Url.Action("Details", new { id = Model.Id, tab = "analyse" })">
+                   href="@Url.Action("Details", new { id = projet.Id, tab = "analyse" })">
                     <i class="bi bi-search"></i> Analyse
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link @(activeTab == "planification" ? "active" : "")" 
-                   href="@Url.Action("Details", new { id = Model.Id, tab = "planification" })">
+                   href="@Url.Action("Details", new { id = projet.Id, tab = "planification" })">
                     <i class="bi bi-calendar-check"></i> Planification
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link @(activeTab == "execution" ? "active" : "")" 
-                   href="@Url.Action("Details", new { id = Model.Id, tab = "execution" })">
+                   href="@Url.Action("Details", new { id = projet.Id, tab = "execution" })">
                     <i class="bi bi-play-circle"></i> Exécution
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link @(activeTab == "uat" ? "active" : "")" 
-                   href="@Url.Action("Details", new { id = Model.Id, tab = "uat" })">
+                   href="@Url.Action("Details", new { id = projet.Id, tab = "uat" })">
                     <i class="bi bi-check2-square"></i> UAT & MEP
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link @(activeTab == "collaboration" ? "active" : "")"
-                   href="@Url.Action("Details", new { id = Model.Id, tab = "collaboration" })">
+                   href="@Url.Action("Details", new { id = projet.Id, tab = "collaboration" })">
                     <i class="bi bi-people"></i> Collaboration
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link @(activeTab == "cloture" ? "active" : "")"
-                   href="@Url.Action("Details", new { id = Model.Id, tab = "cloture" })">
+                   href="@Url.Action("Details", new { id = projet.Id, tab = "cloture" })">
                     <i class="bi bi-flag"></i> Clôture
                 </a>
             </li>
@@ -166,14 +167,14 @@
             {
                 <li class="nav-item">
                     <a class="nav-link @(activeTab == "charges" ? "active" : "")" 
-                       href="@Url.Action("Charges", new { id = Model.Id })">
+                       href="@Url.Action("Charges", new { id = projet.Id })">
                         <i class="bi bi-clock-history"></i> Charges
                     </a>
                 </li>
             }
             <li class="nav-item">
                 <a class="nav-link @(activeTab == "historique" ? "active" : "")" 
-                   href="@Url.Action("Details", new { id = Model.Id, tab = "historique" })">
+                   href="@Url.Action("Details", new { id = projet.Id, tab = "historique" })">
                     <i class="bi bi-clock-history"></i> Historique
                 </a>
             </li>
@@ -187,7 +188,7 @@
     }
     else if (activeTab == "analyse")
     {
-        @await Html.PartialAsync("_ProjetAnalyse", Model)
+        @await Html.PartialAsync("_ProjetAnalyse", projet)
     }
     else if (activeTab == "planification")
     {
@@ -227,10 +228,10 @@
 {
     @await Html.PartialAsync("_UploadLivrableModal", Model)
     @await Html.PartialAsync("_AjouterAnomalieModal", Model)
-    @await Html.PartialAsync("_AjouterRisqueModal", Model)
-    @await Html.PartialAsync("_AjouterMembreModal", Model)
-    @await Html.PartialAsync("_ModifierMembreModal", Model)
-    @await Html.PartialAsync("_ModifierRisqueModal", Model)
+    @await Html.PartialAsync("_AjouterRisqueModal", projet)
+    @await Html.PartialAsync("_AjouterMembreModal", projet)
+    @await Html.PartialAsync("_ModifierMembreModal", projet)
+    @await Html.PartialAsync("_ModifierRisqueModal", projet)
 }
 
 @functions {

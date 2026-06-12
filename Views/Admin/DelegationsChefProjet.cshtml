@@ -1,9 +1,9 @@
-@model IEnumerable<GestionProjects.Domain.Models.DelegationChefProjet>
+@model GestionProjects.Application.ViewModels.Admin.DelegationsChefProjetPageViewModel
 
 @{
     ViewData["Title"] = "Délégations ChefProjet";
-    var currentUserId = (Guid)ViewBag.CurrentUserId;
-    var canCreateForOthers = ViewBag.CanAdminDelegations is bool canAdmin && canAdmin;
+    var currentUserId = Model.CurrentUserId;
+    var canCreateForOthers = Model.CanAdminDelegations;
 }
 
 <div class="fade-in">
@@ -25,7 +25,7 @@
                 <h3 class="card-title-modern mb-0">
                     <i class="bi bi-list-ul"></i> Liste des Délégations
                 </h3>
-                <span class="badge-modern badge-modern-info">@Model.Count() délégation(s)</span>
+                <span class="badge-modern badge-modern-info">@Model.Delegations.Count délégation(s)</span>
             </div>
         </div>
         <div class="card-body-modern p-0">
@@ -43,14 +43,14 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @if (Model.Any())
+                        @if (Model.Delegations.Any())
                         {
-                            @foreach (var delegation in Model)
+                            @foreach (var delegation in Model.Delegations)
                             {
                                 var isActive = delegation.EstActive && delegation.DateFin == null && delegation.DateDebut <= DateTime.Now;
                                 var isExpired = delegation.DateFin.HasValue && delegation.DateFin < DateTime.Now;
                                 var isUpcoming = delegation.DateDebut > DateTime.Now;
-                                
+
                                 <tr>
                                     <td>
                                         <div class="d-flex align-items-center gap-2">
@@ -147,7 +147,7 @@
                                                         title="Modifier">
                                                     <i class="bi bi-pencil-square"></i>
                                                 </button>
-                                                <form asp-action="DeleteDelegationChefProjet" asp-route-id="@delegation.Id" method="post" class="d-inline" 
+                                                <form asp-action="DeleteDelegationChefProjet" asp-route-id="@delegation.Id" method="post" class="d-inline"
                                                       onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette délégation ?');">
                                                     @Html.AntiForgeryToken()
                                                     <button type="submit" class="btn-modern btn-modern-danger btn-sm" title="Supprimer">
@@ -202,12 +202,9 @@
                                 </label>
                                 <select name="ProjetId" id="projetId" class="form-control-modern" required>
                                     <option value="">-- Sélectionner un projet --</option>
-                                    @if (ViewBag.Projets != null)
+                                    @foreach (var projet in Model.Projets)
                                     {
-                                        @foreach (var projet in (IEnumerable<GestionProjects.Domain.Models.Projet>)ViewBag.Projets)
-                                        {
-                                            <option value="@projet.Id">@projet.CodeProjet - @projet.Titre</option>
-                                        }
+                                        <option value="@projet.Id">@projet.CodeProjet - @projet.Titre</option>
                                     }
                                 </select>
                                 <small class="text-muted">
@@ -223,13 +220,10 @@
                                 </label>
                                 <select name="DelegantId" id="delegantId" class="form-control-modern" required @(!canCreateForOthers ? "disabled" : "")>
                                     <option value="">-- Sélectionner un délégant --</option>
-                                    @if (ViewBag.Delegants != null)
+                                    @foreach (var delegant in Model.Delegants)
                                     {
-                                        @foreach (var delegant in (IEnumerable<GestionProjects.Domain.Models.Utilisateur>)ViewBag.Delegants)
-                                        {
-                                            var isSelected = !canCreateForOthers && delegant.Id == currentUserId;
-                                            <option value="@delegant.Id" selected="@isSelected">@delegant.Nom @delegant.Prenoms (@(delegant.Role == GestionProjects.Domain.Enums.RoleUtilisateur.DSI ? "DSI" : "ResponsableSolutionsIT"))</option>
-                                        }
+                                        var isSelected = !canCreateForOthers && delegant.Id == currentUserId;
+                                        <option value="@delegant.Id" selected="@isSelected">@delegant.Nom @delegant.Prenoms (@(delegant.Role == GestionProjects.Domain.Enums.RoleUtilisateur.DSI ? "DSI" : "ResponsableSolutionsIT"))</option>
                                     }
                                 </select>
                                 @if (!canCreateForOthers)
@@ -249,12 +243,9 @@
                                 </label>
                                 <select name="DelegueId" id="delegueId" class="form-control-modern" required>
                                     <option value="">-- Sélectionner un délégué --</option>
-                                    @if (ViewBag.Delegues != null)
+                                    @foreach (var delegue in Model.Delegues)
                                     {
-                                        @foreach (var delegue in (IEnumerable<GestionProjects.Domain.Models.Utilisateur>)ViewBag.Delegues)
-                                        {
-                                            <option value="@delegue.Id">@delegue.Nom @delegue.Prenoms (@delegue.Role)</option>
-                                        }
+                                        <option value="@delegue.Id">@delegue.Nom @delegue.Prenoms (@delegue.Role)</option>
                                     }
                                 </select>
                                 <span class="text-danger field-validation-valid" data-valmsg-for="DelegueId" data-valmsg-replace="true"></span>
@@ -336,14 +327,14 @@
                 // Afficher un loader
                 const modal = new bootstrap.Modal(document.getElementById('createDelegationModal'));
                 modal.show();
-                
+
                 document.getElementById('modalTitle').textContent = 'Modifier la Délégation ChefProjet';
                 document.getElementById('delegationId').value = delegationId;
                 document.getElementById('delegationForm').action = '@Url.Action("UpdateDelegationChefProjet")';
 
                 // Charger les données de la délégation via AJAX
                 const response = await fetch('@Url.Action("GetDelegationChefProjet")?id=' + delegationId);
-                
+
                 if (!response.ok) {
                     throw new Error('Erreur lors du chargement des données');
                 }
@@ -354,13 +345,13 @@
                 document.getElementById('projetId').value = delegation.projetId || '';
                 document.getElementById('delegantId').value = delegation.delegantId || '';
                 document.getElementById('delegueId').value = delegation.delegueId || '';
-                
+
                 // Formater les dates pour l'input date (format YYYY-MM-DD)
                 const dateDebut = new Date(delegation.dateDebut);
                 document.getElementById('dateDebut').value = dateDebut.toISOString().split('T')[0];
-                
+
                 document.getElementById('estActive').checked = delegation.estActive || false;
-                
+
             } catch (error) {
                 console.error('Erreur:', error);
                 alert('Erreur lors du chargement des données de la délégation');
@@ -381,4 +372,3 @@
 
     </script>
 }
-

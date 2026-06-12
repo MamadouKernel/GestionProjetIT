@@ -1,17 +1,17 @@
-@model IEnumerable<GestionProjects.Domain.Models.Projet>
+@model GestionProjects.Application.ViewModels.Projet.ValidationsProjetViewModel
 @using GestionProjects.Domain.Enums
 @inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
 
 @{
     ViewData["Title"] = "Validations Projet";
 
-    var projets = Model.ToList();
+    var projets = Model.Projets.ToList();
     var userId = Guid.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Guid.Empty.ToString(), out var currentUserId)
         ? currentUserId
         : Guid.Empty;
     var canValidateDmWorkflow = await PermissionService.CurrentUserHasPermissionAsync("Projet", "ValiderCharteDM");
     var canValidateDsiWorkflow = await PermissionService.CurrentUserHasPermissionAsync("Projet", "ValiderCharteDSI");
-    var canValidateAsDsi = (ViewBag.CanValidateAsDsi as bool?) ?? false;
+    var canValidateAsDsi = Model.CanValidateAsDsi;
     var isDsiWorkflow = canValidateDsiWorkflow || canValidateAsDsi;
 
     var totalProjets = projets.Count;

@@ -1,7 +1,8 @@
+@model GestionProjects.Application.ViewModels.Admin.ImportUsersViewModel
 @{
     ViewData["Title"] = "Importer des Utilisateurs";
-    var resultats = ViewBag.Resultats as List<GestionProjects.Controllers.ImportResultat> ?? new List<GestionProjects.Controllers.ImportResultat>();
-    var erreurs = ViewBag.Erreurs as List<string> ?? new List<string>();
+    var resultats = Model.Resultats;
+    var erreurs = Model.Erreurs;
 }
 
 <div class="fade-in admin-page">

@@ -1,3 +1,4 @@
+@model GestionProjects.Application.ViewModels.Admin.DelegationsPageViewModel
 <!-- Modal Délégation DSI -->
 <div class="modal fade" id="createDelegationDSIModal" tabindex="-1" aria-labelledby="createDelegationDSIModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -24,12 +25,9 @@
                                     <label class="form-label-modern" for="dsiId">DSI *</label>
                                     <select name="DSIId" id="dsiId" class="form-control-modern" required>
                                         <option value="">-- Sélectionner un DSI --</option>
-                                        @if (ViewBag.DSIs != null)
+                                        @foreach (var dsi in Model.DSIs)
                                         {
-                                            @foreach (var dsi in (IEnumerable<GestionProjects.Domain.Models.Utilisateur>)ViewBag.DSIs)
-                                            {
-                                                <option value="@dsi.Id">@dsi.Nom @dsi.Prenoms</option>
-                                            }
+                                            <option value="@dsi.Id">@dsi.Nom @dsi.Prenoms</option>
                                         }
                                     </select>
                                     <span class="text-danger field-validation-valid" data-valmsg-for="DSIId" data-valmsg-replace="true"></span>
@@ -38,12 +36,9 @@
                                     <label class="form-label-modern" for="delegueDSIId">Délégué *</label>
                                     <select name="DelegueId" id="delegueDSIId" class="form-control-modern" required>
                                         <option value="">-- Sélectionner un délégué --</option>
-                                        @if (ViewBag.DeleguesDSI != null)
+                                        @foreach (var delegue in Model.DeleguesDSI)
                                         {
-                                            @foreach (var delegue in (IEnumerable<GestionProjects.Domain.Models.Utilisateur>)ViewBag.DeleguesDSI)
-                                            {
-                                                <option value="@delegue.Id">@delegue.Nom @delegue.Prenoms</option>
-                                            }
+                                            <option value="@delegue.Id">@delegue.Nom @delegue.Prenoms</option>
                                         }
                                     </select>
                                     <span class="text-danger field-validation-valid" data-valmsg-for="DelegueId" data-valmsg-replace="true"></span>

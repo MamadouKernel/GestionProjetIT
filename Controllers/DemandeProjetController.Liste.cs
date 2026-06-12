@@ -1,4 +1,5 @@
 using GestionProjects.Application.Common.Extensions;
+using GestionProjects.Application.ViewModels.DemandeProjet;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -53,14 +54,18 @@ namespace GestionProjects.Controllers
 
             var pagedResult = await query.ToPagedResultAsync(page, pageSize);
 
-            ViewBag.PageNumber = pagedResult.PageNumber;
-            ViewBag.TotalPages = pagedResult.TotalPages;
-            ViewBag.TotalCount = pagedResult.TotalCount;
-            ViewBag.PageSize   = pagedResult.PageSize;
+            var vm = new DemandeProjetIndexViewModel
+            {
+                Demandes   = pagedResult.Items,
+                PageNumber = pagedResult.PageNumber,
+                TotalPages = pagedResult.TotalPages,
+                TotalCount = pagedResult.TotalCount,
+                PageSize   = pagedResult.PageSize
+            };
 
             if (canManageDemandes)
             {
-                ViewBag.Directions = await _db.Directions
+                vm.Directions = await _db.Directions
                     .Where(d => !d.EstSupprime && d.EstActive)
                     .OrderBy(d => d.Libelle)
                     .Select(d => new SelectListItem
@@ -71,7 +76,7 @@ namespace GestionProjects.Controllers
                     })
                     .ToListAsync();
 
-                ViewBag.Demandeurs = await _db.Utilisateurs
+                vm.Demandeurs = await _db.Utilisateurs
                     .Include(u => u.UtilisateurRoles)
                     .Where(u => !u.EstSupprime && u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.Demandeur))
                     .OrderBy(u => u.Nom)
@@ -84,7 +89,7 @@ namespace GestionProjects.Controllers
                     })
                     .ToListAsync();
 
-                ViewBag.DirecteursMetier = await _db.Utilisateurs
+                vm.DirecteursMetier = await _db.Utilisateurs
                     .Include(u => u.UtilisateurRoles)
                     .Where(u => !u.EstSupprime && u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.DirecteurMetier))
                     .OrderBy(u => u.Nom)
@@ -96,13 +101,9 @@ namespace GestionProjects.Controllers
                         Selected = directeurMetierId == u.Id
                     })
                     .ToListAsync();
-
-                ViewBag.SelectedDirectionId      = directionId;
-                ViewBag.SelectedDemandeurId      = demandeurId;
-                ViewBag.SelectedDirecteurMetierId = directeurMetierId;
             }
 
-            return View(pagedResult.Items);
+            return View(vm);
         }
 
         // GET: Liste à valider (pour Directeur Métier)
@@ -263,14 +264,7 @@ namespace GestionProjects.Controllers
             var isDsiDelegue        = await IsActiveDsiDelegateAsync(userId);
             var canActAsDsi         = await CanHandleDsiValidationAsync(isDsiDelegue);
 
-            ViewBag.CanActAsDemandeur   = canActAsDemandeur;
-            ViewBag.CanEditAsDemandeur  = canEditAsDemandeur;
-            ViewBag.CanSubmitDemande    = canSubmitDemande;
-            ViewBag.CanAddDocuments     = canAddDocuments;
-            ViewBag.CanDuplicateDemande = canDuplicateDemande;
-            ViewBag.CanActAsDm          = canActAsDm;
-            ViewBag.CanActAsDsi         = canActAsDsi;
-            ViewBag.BackLinkAction = canManageDemandes
+            var backLinkAction = canManageDemandes
                 ? nameof(ListeValidationDSI)
                 : canActAsDm
                     ? nameof(ListeValidationDM)
@@ -278,6 +272,7 @@ namespace GestionProjects.Controllers
                         ? nameof(Index)
                         : string.Empty;
 
+            var chefsProjetList = new List<Utilisateur>();
             if (canManageDemandes)
             {
                 var chefsProjet = await _db.Utilisateurs
@@ -294,7 +289,7 @@ namespace GestionProjects.Controllers
                     .Where(u => !u.EstSupprime)
                     .ToListAsync();
 
-                var tousChefsProjet = chefsProjet
+                chefsProjetList = chefsProjet
                     .Union(delegationsActives)
                     .GroupBy(u => u.Id)
                     .Select(g => g.First())
@@ -302,10 +297,22 @@ namespace GestionProjects.Controllers
                     .ThenBy(u => u.Prenoms)
                     .ToList();
 
-                ViewBag.ChefsProjet = tousChefsProjet;
+                ViewBag.ChefsProjet = chefsProjetList;
             }
 
-            return View(demande);
+            return View(new DemandeProjetDetailsViewModel
+            {
+                Demande            = demande,
+                CanActAsDemandeur  = canActAsDemandeur,
+                CanEditAsDemandeur = canEditAsDemandeur,
+                CanSubmitDemande   = canSubmitDemande,
+                CanAddDocuments    = canAddDocuments,
+                CanDuplicateDemande = canDuplicateDemande,
+                CanActAsDm         = canActAsDm,
+                CanActAsDsi        = canActAsDsi,
+                BackLinkAction     = backLinkAction,
+                ChefsProjet        = chefsProjetList
+            });
         }
     }
 }

@@ -405,8 +405,8 @@
     </div>
 </div>
 
-@await Html.PartialAsync("_ModalDelegationDSI")
-@await Html.PartialAsync("_ModalDelegationChefProjet")
+@await Html.PartialAsync("_ModalDelegationDSI", Model)
+@await Html.PartialAsync("_ModalDelegationChefProjet", Model)
 
 @section Scripts {
     <script>

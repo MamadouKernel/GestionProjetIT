@@ -1,5 +1,6 @@
 using GestionProjects.Application.Common.Extensions;
 using GestionProjects.Application.Common.Interfaces;
+using GestionProjects.Application.ViewModels.Notification;
 using GestionProjects.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -37,15 +38,20 @@ namespace GestionProjects.Controllers
 
             var pagedResult = await query.ToPagedResultAsync(page, pageSize);
 
-            ViewBag.PageNumber = pagedResult.PageNumber;
-            ViewBag.TotalPages = pagedResult.TotalPages;
-            ViewBag.TotalCount = pagedResult.TotalCount;
-            ViewBag.PageSize = pagedResult.PageSize;
-
-            ViewBag.NonLues = await _db.Notifications
+            var nonLues = await _db.Notifications
                 .CountAsync(n => n.UtilisateurId == userId && !n.EstLue && !n.EstSupprime);
 
-            return View(pagedResult.Items);
+            var vm = new NotificationIndexViewModel
+            {
+                Items      = pagedResult.Items,
+                NonLues    = nonLues,
+                PageNumber = pagedResult.PageNumber,
+                TotalPages = pagedResult.TotalPages,
+                TotalCount = pagedResult.TotalCount,
+                PageSize   = pagedResult.PageSize
+            };
+
+            return View(vm);
         }
 
         // GET: API pour récupérer le nombre de notifications non lues

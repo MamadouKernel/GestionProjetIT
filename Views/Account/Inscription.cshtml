@@ -1,7 +1,8 @@
-﻿@{
+﻿@model GestionProjects.Application.ViewModels.Account.InscriptionViewModel
+@{
     ViewData["Title"] = "Inscription";
     Layout = null;
-    var directions = ViewBag.Directions as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var directions = Model.Directions;
     var cspNonce = Context.Items["CspNonce"] as string ?? string.Empty;
 }
 <!DOCTYPE html>

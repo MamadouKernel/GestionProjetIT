@@ -1,13 +1,13 @@
-@model GestionProjects.Domain.Models.Projet
+@model GestionProjects.Application.ViewModels.Projet.ProjetDetailsViewModel
 @using GestionProjects.Domain.Enums
 @inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
 
 @{
-    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, Model);
+    var projet = Model.Projet;
+    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, Model.Projet);
     var userId = ui.UserId;
     var canEdit = ui.CanManageDossierSignature;
-    var dossiers = ViewBag.DossiersSignature as List<GestionProjects.Domain.Models.DossierSignatureProjet>
-                   ?? new List<GestionProjects.Domain.Models.DossierSignatureProjet>();
+    var dossiers = Model.DossiersSignature;
     var dossierActif = dossiers.FirstOrDefault(d => d.Statut != StatutDossierSignature.Annule && d.Statut != StatutDossierSignature.Expire);
 }
 
@@ -120,7 +120,7 @@
                                                 <div class="record-card-actions">
                                                     <form asp-action="DecisionSignataire" method="post">
                                                         @Html.AntiForgeryToken()
-                                                        <input type="hidden" name="projetId" value="@Model.Id" />
+                                                        <input type="hidden" name="projetId" value="@projet.Id" />
                                                         <input type="hidden" name="dossierId" value="@d.Id" />
                                                         <input type="hidden" name="signataireId" value="@sig.Id" />
                                                         <input type="hidden" name="approuver" value="true" />
@@ -130,7 +130,7 @@
                                                     </form>
                                                     <form asp-action="DecisionSignataire" method="post">
                                                         @Html.AntiForgeryToken()
-                                                        <input type="hidden" name="projetId" value="@Model.Id" />
+                                                        <input type="hidden" name="projetId" value="@projet.Id" />
                                                         <input type="hidden" name="dossierId" value="@d.Id" />
                                                         <input type="hidden" name="signataireId" value="@sig.Id" />
                                                         <input type="hidden" name="approuver" value="false" />
@@ -163,7 +163,7 @@
                                     {
                                         <form asp-action="EnvoyerDossierSignature" method="post">
                                             @Html.AntiForgeryToken()
-                                            <input type="hidden" name="projetId" value="@Model.Id" />
+                                            <input type="hidden" name="projetId" value="@projet.Id" />
                                             <input type="hidden" name="dossierId" value="@d.Id" />
                                             <button type="submit" class="btn-modern btn-modern-primary">
                                                 <i class="bi bi-send"></i> Envoyer pour signature
@@ -176,9 +176,9 @@
                                             <i class="bi bi-download"></i> Télécharger document signé
                                         </a>
                                     }
-                                    @if (Model.CharteProjet != null)
+                                    @if (projet.CharteProjet != null)
                                     {
-                                        <a asp-action="SignatureCharte" asp-route-id="@Model.Id" class="btn-modern btn-modern-secondary">
+                                        <a asp-action="SignatureCharte" asp-route-id="@projet.Id" class="btn-modern btn-modern-secondary">
                                             <i class="bi bi-pen"></i> Apposer ma signature
                                         </a>
                                     }
@@ -203,9 +203,9 @@
                 </div>
                 <form asp-action="InitialiserDossierSignature" method="post">
                     @Html.AntiForgeryToken()
-                    <input type="hidden" name="projetId" value="@Model.Id" />
+                    <input type="hidden" name="projetId" value="@projet.Id" />
                     <div class="modal-body">
-                        @if (Model.CharteProjet == null)
+                        @if (projet.CharteProjet == null)
                         {
                             <div class="alert-modern alert-modern-warning">
                                 <i class="bi bi-exclamation-triangle"></i>

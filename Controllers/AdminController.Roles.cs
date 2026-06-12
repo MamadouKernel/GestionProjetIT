@@ -32,14 +32,6 @@ namespace GestionProjects.Controllers
 
             var paged = await query.ToPagedResultAsync(page, pageSize);
 
-            ViewBag.PageNumber          = paged.PageNumber;
-            ViewBag.TotalPages          = paged.TotalPages;
-            ViewBag.TotalCount          = paged.TotalCount;
-            ViewBag.PageSize            = paged.PageSize;
-            ViewBag.Recherche           = recherche;
-            ViewBag.SelectedDirectionId = directionId;
-            ViewBag.SelectedRole        = role;
-
             var allRoles   = Enum.GetValues(typeof(RoleUtilisateur)).Cast<RoleUtilisateur>().ToList();
             var directions = await _db.Directions
                 .Where(d => !d.EstSupprime && d.EstActive)
@@ -53,10 +45,6 @@ namespace GestionProjects.Controllers
             var roleCounts = Enum.GetValues(typeof(RoleUtilisateur))
                 .Cast<RoleUtilisateur>()
                 .ToDictionary(r => r, r => allUsers.Count(u => u.GetRolesActifs().Contains(r)));
-
-            ViewBag.AllRoles   = allRoles;
-            ViewBag.Directions = directions;
-            ViewBag.RoleCounts = roleCounts;
 
             var vm = new RolesListViewModel
             {
@@ -86,11 +74,13 @@ namespace GestionProjects.Controllers
             if (user == null)
                 return NotFound();
 
-            ViewBag.AllRoles = Enum.GetValues(typeof(RoleUtilisateur))
-                .Cast<RoleUtilisateur>()
-                .ToList();
+            var vm = new GererRolesViewModel
+            {
+                User     = user,
+                AllRoles = Enum.GetValues(typeof(RoleUtilisateur)).Cast<RoleUtilisateur>().ToList()
+            };
 
-            return View(user);
+            return View(vm);
         }
 
         [HttpPost]

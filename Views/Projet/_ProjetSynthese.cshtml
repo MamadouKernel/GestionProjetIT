@@ -1,6 +1,6 @@
 @using Microsoft.AspNetCore.Html
 @using System.Net
-@model GestionProjects.Domain.Models.Projet
+@model GestionProjects.Application.ViewModels.Projet.ProjetDetailsViewModel
 @inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
 
 @functions {
@@ -31,7 +31,8 @@
 }
 
 @{
-    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, Model);
+    var projet = Model.Projet;
+    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, projet);
 }
 
 <div class="phase-shell">
@@ -50,15 +51,15 @@
             <div class="phase-action-row">
                 <span class="phase-chip is-info">
                     <i class="bi bi-signpost"></i>
-                    @Model.PhaseWorkflowLabel
+                    @projet.PhaseWorkflowLabel
                 </span>
                 <span class="phase-chip">
                     <i class="bi bi-bar-chart"></i>
-                    @Model.PourcentageAvancement%
+                    @projet.PourcentageAvancement%
                 </span>
-                <span class="phase-chip @(Model.StatutProjet == GestionProjects.Domain.Enums.StatutProjet.Cloture ? "is-success" : "is-warning")">
+                <span class="phase-chip @(projet.StatutProjet == GestionProjects.Domain.Enums.StatutProjet.Cloture ? "is-success" : "is-warning")">
                     <i class="bi bi-flag"></i>
-                    @Model.StatutWorkflowLabel
+                    @projet.StatutWorkflowLabel
                 </span>
             </div>
         </div>
@@ -82,65 +83,65 @@
             <div class="phase-summary-list">
                 <div class="phase-summary-item">
                     <span>Code Projet</span>
-                    <strong>@Model.CodeProjet</strong>
+                    <strong>@projet.CodeProjet</strong>
                 </div>
                 <div class="phase-summary-item">
                     <span>Direction</span>
-                    <strong>@(Model.Direction?.Libelle ?? "N/A")</strong>
+                    <strong>@(projet.Direction?.Libelle ?? "N/A")</strong>
                 </div>
                 <div class="phase-summary-item">
                     <span>Sponsor</span>
-                    <strong>@Model.Sponsor?.Nom @Model.Sponsor?.Prenoms</strong>
+                    <strong>@projet.Sponsor?.Nom @projet.Sponsor?.Prenoms</strong>
                 </div>
-                @if (Model.DemandeProjet?.AutreSponsor != null)
+                @if (projet.DemandeProjet?.AutreSponsor != null)
                 {
                     <div class="phase-summary-item">
                         <span>Autre sponsor (CODIR)</span>
-                        <strong>@Model.DemandeProjet.AutreSponsor.Nom @Model.DemandeProjet.AutreSponsor.Prenoms</strong>
+                        <strong>@projet.DemandeProjet.AutreSponsor.Nom @projet.DemandeProjet.AutreSponsor.Prenoms</strong>
                     </div>
                 }
                 <div class="phase-summary-item">
                     <span>ResponsableSolutionsIT</span>
-                    <strong>@(Model.ChefProjet != null ? $"{Model.ChefProjet.Nom} {Model.ChefProjet.Prenoms}" : "Non assigne")</strong>
+                    <strong>@(projet.ChefProjet != null ? $"{projet.ChefProjet.Nom} {projet.ChefProjet.Prenoms}" : "Non assigne")</strong>
                 </div>
                 <div class="phase-summary-item">
                     <span>Phase actuelle</span>
-                    <strong>@Model.PhaseWorkflowLabel</strong>
+                    <strong>@projet.PhaseWorkflowLabel</strong>
                 </div>
                 <div class="phase-summary-item">
                     <span>Statut</span>
-                    <strong>@Model.StatutWorkflowLabel</strong>
+                    <strong>@projet.StatutWorkflowLabel</strong>
                 </div>
                 <div class="phase-summary-item">
                     <span>Date de debut</span>
-                    <strong>@(Model.DateDebut?.ToString("dd/MM/yyyy") ?? "Non definie")</strong>
+                    <strong>@(projet.DateDebut?.ToString("dd/MM/yyyy") ?? "Non definie")</strong>
                 </div>
                 <div class="phase-summary-item">
                     <span>Date fin prevue</span>
-                    <strong>@(Model.DateFinPrevue?.ToString("dd/MM/yyyy") ?? "Non definie")</strong>
+                    <strong>@(projet.DateFinPrevue?.ToString("dd/MM/yyyy") ?? "Non definie")</strong>
                 </div>
                 <div class="phase-summary-item">
                     <span>Date fin reelle</span>
-                    <strong>@(Model.DateFinReelle?.ToString("dd/MM/yyyy") ?? "En cours")</strong>
+                    <strong>@(projet.DateFinReelle?.ToString("dd/MM/yyyy") ?? "En cours")</strong>
                 </div>
             </div>
 
             <div class="phase-action-row" style="margin-top: 1rem;">
-                @if (ui.CanReassignChefProjet && Model.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
+                @if (ui.CanReassignChefProjet && projet.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
                 {
                     <button type="button" class="btn-modern btn-modern-secondary" data-bs-toggle="modal" data-bs-target="#updateChefProjetModal">
                         <i class="bi bi-pencil"></i>
                         Modifier le ResponsableSolutionsIT
                     </button>
                 }
-                @if (ui.CanChangePhase && Model.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
+                @if (ui.CanChangePhase && projet.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
                 {
                     <button type="button" class="btn-modern btn-modern-secondary" data-bs-toggle="modal" data-bs-target="#changerPhaseModal">
                         <i class="bi bi-arrow-repeat"></i>
                         Changer la phase
                     </button>
                 }
-                @if (ui.CanForceStatus && Model.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
+                @if (ui.CanForceStatus && projet.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
                 {
                     <button type="button" class="btn-modern btn-modern-warning" data-bs-toggle="modal" data-bs-target="#forcerStatutModal">
                         <i class="bi bi-exclamation-triangle"></i>
@@ -163,17 +164,23 @@
                     </div>
                     <form asp-action="UpdateAvancement" method="post">
                         @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="id" value="@projet.Id" />
                         <div class="form-group-modern">
                             <label class="form-label-modern">Pourcentage d'avancement (calcul automatique)</label>
-                            <input type="text" class="form-control-modern" value="@Model.PourcentageAvancement%" disabled />
+                            <input type="text" class="form-control-modern" value="@projet.PourcentageAvancement%" disabled />
                             <small class="app-modal-note">
                                 Calculé automatiquement depuis les validations de phase, les livrables obligatoires, les tâches du planning et les preuves de clôture.
                             </small>
                         </div>
                         <div class="form-group-modern">
                             <label class="form-label-modern">Etat du projet</label>
-                            <select name="etatProjet" class="form-control-modern" asp-items="Html.GetEnumSelectList<GestionProjects.Domain.Enums.EtatProjet>()" asp-for="EtatProjet"></select>
+                            <select name="etatProjet" class="form-control-modern">
+                                @foreach (var etat in Enum.GetValues<GestionProjects.Domain.Enums.EtatProjet>())
+                                {
+                                    if (etat == projet.EtatProjet) { <option value="@etat" selected>@etat</option> }
+                                    else { <option value="@etat">@etat</option> }
+                                }
+                            </select>
                         </div>
                         <button type="submit" class="btn-modern btn-modern-primary w-100 mt-3">
                             <i class="bi bi-save"></i>
@@ -195,11 +202,11 @@
                     <div class="phase-summary-list">
                         <div class="phase-summary-item">
                             <span>Progression</span>
-                            <strong>@Model.PourcentageAvancement%</strong>
+                            <strong>@projet.PourcentageAvancement%</strong>
                         </div>
                         <div class="phase-summary-item">
                             <span>Etat</span>
-                            <strong>@Model.EtatProjet</strong>
+                            <strong>@projet.EtatProjet</strong>
                         </div>
                     </div>
                 </section>
@@ -215,7 +222,7 @@
                                 "Ce registre sert à identifier les risques majeurs qui peuvent impacter le planning, le budget ou la qualité.",
                                 "Ajoutez un risque par élément significatif, avec une description claire, une probabilité, un impact et un plan de mitigation exploitable.")
                         </div>
-                        <div class="phase-record-meta">@((Model.Risques?.Count ?? 0)) risque(s) suivi(s) sur le projet.</div>
+                        <div class="phase-record-meta">@((projet.Risques?.Count ?? 0)) risque(s) suivi(s) sur le projet.</div>
                     </div>
                     @if (ui.CanAddRisk)
                     {
@@ -226,10 +233,10 @@
                     }
                 </div>
 
-                @if (Model.Risques != null && Model.Risques.Any())
+                @if (projet.Risques != null && projet.Risques.Any())
                 {
                     <div class="record-stack">
-                        @foreach (var risque in Model.Risques.Take(5))
+                        @foreach (var risque in projet.Risques.Take(5))
                         {
                             <article class="record-card">
                                 <div class="record-card-header">
@@ -249,9 +256,9 @@
                             </article>
                         }
                     </div>
-                    @if (Model.Risques.Count > 5)
+                    @if (projet.Risques.Count > 5)
                     {
-                        <div class="phase-record-meta" style="margin-top: 1rem;">... et @(Model.Risques.Count - 5) autre(s) risque(s)</div>
+                        <div class="phase-record-meta" style="margin-top: 1rem;">... et @(projet.Risques.Count - 5) autre(s) risque(s)</div>
                     }
                 }
                 else
@@ -268,7 +275,7 @@
     @await Html.PartialAsync("_ProjetCollaboration", Model)
 </div>
 
-@if (ui.CanReassignChefProjet && Model.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
+@if (ui.CanReassignChefProjet && projet.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
 {
     <div class="modal fade" id="updateChefProjetModal" tabindex="-1" aria-labelledby="updateChefProjetModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -283,23 +290,20 @@
                 <div class="modal-body app-modal-body">
                     <form asp-action="UpdateChefProjet" method="post" id="updateChefProjetForm">
                         @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="id" value="@projet.Id" />
                         <div class="form-group-modern">
                             <label class="form-label-modern">ResponsableSolutionsIT</label>
                             <select name="chefProjetId" class="form-control-modern">
                                 <option value="">-- Aucun --</option>
-                                @if (ViewBag.ChefsProjet != null)
+                                @foreach (var chef in Model.ChefsProjet)
                                 {
-                                    @foreach (var chef in ViewBag.ChefsProjet as List<GestionProjects.Domain.Models.Utilisateur> ?? new List<GestionProjects.Domain.Models.Utilisateur>())
+                                    @if (projet.ChefProjetId == chef.Id)
                                     {
-                                        @if (Model.ChefProjetId == chef.Id)
-                                        {
-                                            <option value="@chef.Id" selected>@chef.Nom @chef.Prenoms</option>
-                                        }
-                                        else
-                                        {
-                                            <option value="@chef.Id">@chef.Nom @chef.Prenoms</option>
-                                        }
+                                        <option value="@chef.Id" selected>@chef.Nom @chef.Prenoms</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@chef.Id">@chef.Nom @chef.Prenoms</option>
                                     }
                                 }
                             </select>
@@ -324,14 +328,14 @@
     </div>
 }
 
-@if (ui.CanChangePhase && Model.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
+@if (ui.CanChangePhase && projet.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
 {
     <div class="modal fade" id="changerPhaseModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content app-modal-content">
                 <form asp-action="ChangerPhase" method="post">
                     @Html.AntiForgeryToken()
-                    <input type="hidden" name="id" value="@Model.Id" />
+                    <input type="hidden" name="id" value="@projet.Id" />
                     <div class="modal-header app-modal-header">
                         <h5 class="modal-title app-modal-title">
                             <i class="bi bi-arrow-repeat"></i>
@@ -343,7 +347,7 @@
                         <div class="alert-modern alert-modern-info document-alert-tight">
                             <i class="bi bi-info-circle-fill"></i>
                             <div>
-                                <strong>Phase actuelle :</strong> @Model.PhaseWorkflowLabel
+                                <strong>Phase actuelle :</strong> @projet.PhaseWorkflowLabel
                             </div>
                         </div>
                         <div class="form-group-modern">
@@ -373,14 +377,14 @@
     </div>
 }
 
-@if (ui.CanForceStatus && Model.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
+@if (ui.CanForceStatus && projet.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
 {
     <div class="modal fade" id="forcerStatutModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content app-modal-content">
                 <form asp-action="ForcerStatutProjet" method="post">
                     @Html.AntiForgeryToken()
-                    <input type="hidden" name="id" value="@Model.Id" />
+                    <input type="hidden" name="id" value="@projet.Id" />
                     <div class="modal-header app-modal-header is-warning">
                         <h5 class="modal-title app-modal-title">
                             <i class="bi bi-exclamation-triangle-fill"></i>
@@ -392,7 +396,7 @@
                         <div class="alert-modern alert-modern-warning document-alert-tight">
                             <i class="bi bi-exclamation-triangle-fill"></i>
                             <div>
-                                <strong>Attention :</strong> Cette action permet de forcer manuellement le statut du projet. Le statut actuel est : <strong>@Model.StatutWorkflowLabel</strong>
+                                <strong>Attention :</strong> Cette action permet de forcer manuellement le statut du projet. Le statut actuel est : <strong>@projet.StatutWorkflowLabel</strong>
                             </div>
                         </div>
                         <div class="form-group-modern">

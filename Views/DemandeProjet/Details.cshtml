@@ -1,17 +1,18 @@
-@model GestionProjects.Domain.Models.DemandeProjet
+@model GestionProjects.Application.ViewModels.DemandeProjet.DemandeProjetDetailsViewModel
 
 @{
     ViewData["Title"] = "Détails de la demande";
-    var canActAsDemandeur = ViewBag.CanActAsDemandeur is bool canDemandeur && canDemandeur;
-    var canEditAsDemandeur = ViewBag.CanEditAsDemandeur is bool canEditDemandeur && canEditDemandeur;
-    var canSubmitDemande = ViewBag.CanSubmitDemande is bool canSoumettre && canSoumettre;
-    var canAddDocuments = ViewBag.CanAddDocuments is bool canAjouterDocs && canAjouterDocs;
-    var canDuplicateDemande = ViewBag.CanDuplicateDemande is bool canDupliquer && canDupliquer;
-    var canActAsDm = ViewBag.CanActAsDm is bool canDm && canDm;
-    var canActAsDsi = ViewBag.CanActAsDsi is bool canDsi && canDsi;
-    var backLinkAction = ViewBag.BackLinkAction as string;
-    var cahierDocument = Model.CahierChargesDocument;
-    var annexes = Model.DocumentsAnnexes.ToList();
+    var demande = Model.Demande;
+    var canActAsDemandeur = Model.CanActAsDemandeur;
+    var canEditAsDemandeur = Model.CanEditAsDemandeur;
+    var canSubmitDemande = Model.CanSubmitDemande;
+    var canAddDocuments = Model.CanAddDocuments;
+    var canDuplicateDemande = Model.CanDuplicateDemande;
+    var canActAsDm = Model.CanActAsDm;
+    var canActAsDsi = Model.CanActAsDsi;
+    var backLinkAction = Model.BackLinkAction;
+    var cahierDocument = demande.CahierChargesDocument;
+    var annexes = demande.DocumentsAnnexes.ToList();
 }
 
 <div class="fade-in app-page">
@@ -19,16 +20,16 @@
         <div class="card-header-modern page-hero">
             <div class="page-hero-main">
                 <span class="page-kicker">Demande de projet</span>
-                <h1 class="page-hero-title">@Model.Titre</h1>
+                <h1 class="page-hero-title">@demande.Titre</h1>
                 <p class="page-hero-subtitle">
-                    Dossier soumis par @(Model.Demandeur != null ? $"{Model.Demandeur.Nom} {Model.Demandeur.Prenoms}" : "N/A")
-                    pour la direction @(Model.Direction?.Libelle ?? "N/A").
+                    Dossier soumis par @(demande.Demandeur != null ? $"{demande.Demandeur.Nom} {demande.Demandeur.Prenoms}" : "N/A")
+                    pour la direction @(demande.Direction?.Libelle ?? "N/A").
                 </p>
                 <div class="page-hero-meta">
-                    <span class="badge-modern badge-modern-@GetBadgeClass(Model.StatutDemande)">@Model.StatutWorkflowLabel</span>
-                    <span class="badge-modern badge-modern-@Model.PrioriteBadgeClass">Priorité @Model.PrioriteCode</span>
-                    <span class="badge-modern badge-modern-@GetUrgenceClass(Model.Urgence)">Urgence @Model.Urgence</span>
-                    <span class="badge-modern badge-modern-@GetCriticiteClass(Model.Criticite)">Criticité @Model.Criticite</span>
+                    <span class="badge-modern badge-modern-@GetBadgeClass(demande.StatutDemande)">@demande.StatutWorkflowLabel</span>
+                    <span class="badge-modern badge-modern-@demande.PrioriteBadgeClass">Priorité @demande.PrioriteCode</span>
+                    <span class="badge-modern badge-modern-@GetUrgenceClass(demande.Urgence)">Urgence @demande.Urgence</span>
+                    <span class="badge-modern badge-modern-@GetCriticiteClass(demande.Criticite)">Criticité @demande.Criticite</span>
                 </div>
             </div>
         </div>
@@ -47,70 +48,70 @@
                     <div class="detail-grid">
                         <div class="detail-item">
                             <span class="detail-label">Direction</span>
-                            <div class="detail-value">@(Model.Direction?.Libelle ?? "N/A")</div>
+                            <div class="detail-value">@(demande.Direction?.Libelle ?? "N/A")</div>
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Demandeur</span>
-                            <div class="detail-value">@(Model.Demandeur != null ? $"{Model.Demandeur.Nom} {Model.Demandeur.Prenoms}" : "N/A")</div>
+                            <div class="detail-value">@(demande.Demandeur != null ? $"{demande.Demandeur.Nom} {demande.Demandeur.Prenoms}" : "N/A")</div>
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Directeur métier</span>
-                            <div class="detail-value">@(Model.DirecteurMetier != null ? $"{Model.DirecteurMetier.Nom} {Model.DirecteurMetier.Prenoms}" : "N/A")</div>
+                            <div class="detail-value">@(demande.DirecteurMetier != null ? $"{demande.DirecteurMetier.Nom} {demande.DirecteurMetier.Prenoms}" : "N/A")</div>
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Priorité calculée</span>
-                            <div class="detail-value">@Model.PrioriteCode - @Model.PrioriteLibelle</div>
-                            <div class="detail-value muted">Score @Model.PrioriteScore/7</div>
+                            <div class="detail-value">@demande.PrioriteCode - @demande.PrioriteLibelle</div>
+                            <div class="detail-value muted">Score @demande.PrioriteScore/7</div>
                         </div>
-                        @if (Model.AutreSponsor != null)
+                        @if (demande.AutreSponsor != null)
                         {
                             <div class="detail-item">
                                 <span class="detail-label">Autre sponsor (CODIR)</span>
-                                <div class="detail-value">@Model.AutreSponsor.Nom @Model.AutreSponsor.Prenoms</div>
+                                <div class="detail-value">@demande.AutreSponsor.Nom @demande.AutreSponsor.Prenoms</div>
                             </div>
                         }
                         <div class="detail-item">
                             <span class="detail-label">Date de soumission</span>
-                            <div class="detail-value">@Model.DateSoumission.ToString("dd/MM/yyyy HH:mm")</div>
+                            <div class="detail-value">@demande.DateSoumission.ToString("dd/MM/yyyy HH:mm")</div>
                         </div>
                     </div>
 
                     <div class="stack-sections mt-4">
                         <div class="prose-card">
                             <h4 class="prose-card-title">Description</h4>
-                            <p class="prose-card-body">@Model.Description</p>
+                            <p class="prose-card-body">@demande.Description</p>
                         </div>
                         <div class="prose-card">
                             <h4 class="prose-card-title">Contexte</h4>
-                            <p class="prose-card-body">@Model.Contexte</p>
+                            <p class="prose-card-body">@demande.Contexte</p>
                         </div>
                         <div class="prose-card">
                             <h4 class="prose-card-title">Objectifs</h4>
-                            <p class="prose-card-body">@Model.Objectifs</p>
+                            <p class="prose-card-body">@demande.Objectifs</p>
                         </div>
-                        @if (!string.IsNullOrEmpty(Model.AvantagesAttendus))
+                        @if (!string.IsNullOrEmpty(demande.AvantagesAttendus))
                         {
                             <div class="prose-card">
                                 <h4 class="prose-card-title">Avantages attendus</h4>
-                                <p class="prose-card-body">@Model.AvantagesAttendus</p>
+                                <p class="prose-card-body">@demande.AvantagesAttendus</p>
                             </div>
                         }
-                        @if (!string.IsNullOrEmpty(Model.Perimetre))
+                        @if (!string.IsNullOrEmpty(demande.Perimetre))
                         {
                             <div class="prose-card">
                                 <h4 class="prose-card-title">Périmètre</h4>
-                                <p class="prose-card-body">@Model.Perimetre</p>
+                                <p class="prose-card-body">@demande.Perimetre</p>
                             </div>
                         }
                     </div>
                 </div>
             </div>
 
-            @if (!string.IsNullOrEmpty(Model.CommentaireDirecteurMetier) || !string.IsNullOrEmpty(Model.CommentaireDSI) ||
-                 Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier ||
-                 Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RejeteeParDirecteurMetier ||
-                 Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDemandeurParDSI ||
-                 Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RejeteeParDSI)
+            @if (!string.IsNullOrEmpty(demande.CommentaireDirecteurMetier) || !string.IsNullOrEmpty(demande.CommentaireDSI) ||
+                 demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier ||
+                 demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RejeteeParDirecteurMetier ||
+                 demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDemandeurParDSI ||
+                 demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RejeteeParDSI)
             {
                 <div class="card-modern">
                     <div class="card-header-modern">
@@ -121,21 +122,21 @@
                     </div>
                     <div class="card-body-modern">
                         <div class="feedback-list">
-                            @if (!string.IsNullOrEmpty(Model.CommentaireDirecteurMetier))
+                            @if (!string.IsNullOrEmpty(demande.CommentaireDirecteurMetier))
                             {
                                 var statutDM = "";
                                 var badgeDM = "badge-modern-info";
-                                if (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier)
+                                if (demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier)
                                 {
                                     statutDM = "Correction demandée";
                                     badgeDM = "badge-modern-warning";
                                 }
-                                else if (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RejeteeParDirecteurMetier)
+                                else if (demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RejeteeParDirecteurMetier)
                                 {
                                     statutDM = "Rejetée";
                                     badgeDM = "badge-modern-danger";
                                 }
-                                else if (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.EnAttenteValidationDSI)
+                                else if (demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.EnAttenteValidationDSI)
                                 {
                                     statutDM = "Validée";
                                     badgeDM = "badge-modern-success";
@@ -149,38 +150,38 @@
                                         {
                                             <span class="badge-modern @badgeDM">@statutDM</span>
                                         }
-                                        @if (Model.DateValidationDM.HasValue)
+                                        @if (demande.DateValidationDM.HasValue)
                                         {
                                             <span class="feedback-meta meta-spacer">
                                                 <i class="bi bi-calendar3"></i>
-                                                @Model.DateValidationDM.Value.ToString("dd/MM/yyyy HH:mm")
+                                                @demande.DateValidationDM.Value.ToString("dd/MM/yyyy HH:mm")
                                             </span>
                                         }
                                     </div>
-                                    <p class="feedback-body">@Model.CommentaireDirecteurMetier</p>
+                                    <p class="feedback-body">@demande.CommentaireDirecteurMetier</p>
                                 </article>
                             }
 
-                            @if (!string.IsNullOrEmpty(Model.CommentaireDSI))
+                            @if (!string.IsNullOrEmpty(demande.CommentaireDSI))
                             {
                                 var statutDSI = "";
                                 var badgeDSI = "badge-modern-info";
-                                if (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDemandeurParDSI)
+                                if (demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDemandeurParDSI)
                                 {
                                     statutDSI = "Retournée au demandeur";
                                     badgeDSI = "badge-modern-warning";
                                 }
-                                else if (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RejeteeParDSI)
+                                else if (demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RejeteeParDSI)
                                 {
                                     statutDSI = "Rejetée";
                                     badgeDSI = "badge-modern-danger";
                                 }
-                                else if (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.ValideeParDSI)
+                                else if (demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.ValideeParDSI)
                                 {
                                     statutDSI = "Validée";
                                     badgeDSI = "badge-modern-success";
                                 }
-                                else if (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDirecteurMetierParDSI)
+                                else if (demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDirecteurMetierParDSI)
                                 {
                                     statutDSI = "Retournée au Directeur métier";
                                     badgeDSI = "badge-modern-info";
@@ -194,15 +195,15 @@
                                         {
                                             <span class="badge-modern @badgeDSI">@statutDSI</span>
                                         }
-                                        @if (Model.DateValidationDSI.HasValue)
+                                        @if (demande.DateValidationDSI.HasValue)
                                         {
                                             <span class="feedback-meta meta-spacer">
                                                 <i class="bi bi-calendar3"></i>
-                                                @Model.DateValidationDSI.Value.ToString("dd/MM/yyyy HH:mm")
+                                                @demande.DateValidationDSI.Value.ToString("dd/MM/yyyy HH:mm")
                                             </span>
                                         }
                                     </div>
-                                    <p class="feedback-body">@Model.CommentaireDSI</p>
+                                    <p class="feedback-body">@demande.CommentaireDSI</p>
                                 </article>
                             }
                         </div>
@@ -210,7 +211,7 @@
                 </div>
             }
 
-            @if (cahierDocument != null || !string.IsNullOrEmpty(Model.CahierChargesPath))
+            @if (cahierDocument != null || !string.IsNullOrEmpty(demande.CahierChargesPath))
             {
                 <div class="card-modern">
                     <div class="card-header-modern">
@@ -230,9 +231,9 @@
                                         <div class="document-name">
                                             <a asp-controller="Document"
                                                asp-action="PreviewDemandeCahier"
-                                               asp-route-demandeId="@Model.Id"
+                                               asp-route-demandeId="@demande.Id"
                                                target="_blank">
-                                                @(cahierDocument?.NomFichier ?? System.IO.Path.GetFileName(Model.CahierChargesPath))
+                                                @(cahierDocument?.NomFichier ?? System.IO.Path.GetFileName(demande.CahierChargesPath))
                                             </a>
                                         </div>
                                         <div class="document-meta">Document principal de cadrage de la demande.</div>
@@ -241,7 +242,7 @@
                                 <div class="document-actions">
                                     <a asp-controller="Document"
                                        asp-action="PreviewDemandeCahier"
-                                       asp-route-demandeId="@Model.Id"
+                                       asp-route-demandeId="@demande.Id"
                                        target="_blank"
                                        class="btn-modern btn-modern-primary btn-icon"
                                        title="Aperçu du cahier des charges"
@@ -250,7 +251,7 @@
                                     </a>
                                     <a asp-controller="Document"
                                        asp-action="StreamDemandeCahier"
-                                       asp-route-demandeId="@Model.Id"
+                                       asp-route-demandeId="@demande.Id"
                                        asp-route-download="true"
                                        class="btn-modern btn-modern-secondary btn-icon"
                                        title="Télécharger le cahier des charges"
@@ -272,8 +273,8 @@
                             Annexes (@annexes.Count)
                         </h3>
                         @if (canAddDocuments &&
-                             (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier ||
-                              Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDemandeurParDSI))
+                             (demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier ||
+                              demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDemandeurParDSI))
                         {
                             <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#ajouterDocumentsModal">
                                 <i class="bi bi-plus-circle"></i>
@@ -297,7 +298,7 @@
                                             <div class="document-name">
                                                 <a asp-controller="Document"
                                                    asp-action="PreviewDemandeAnnexe"
-                                                   asp-route-demandeId="@Model.Id"
+                                                   asp-route-demandeId="@demande.Id"
                                                    asp-route-documentId="@annexe.Id"
                                                    target="_blank">
                                                     @annexe.NomFichier
@@ -309,7 +310,7 @@
                                     <div class="document-actions">
                                         <a asp-controller="Document"
                                            asp-action="PreviewDemandeAnnexe"
-                                           asp-route-demandeId="@Model.Id"
+                                           asp-route-demandeId="@demande.Id"
                                            asp-route-documentId="@annexe.Id"
                                            target="_blank"
                                            class="btn-modern btn-modern-primary btn-icon"
@@ -319,7 +320,7 @@
                                         </a>
                                         <a asp-controller="Document"
                                            asp-action="StreamDemandeAnnexe"
-                                           asp-route-demandeId="@Model.Id"
+                                           asp-route-demandeId="@demande.Id"
                                            asp-route-documentId="@annexe.Id"
                                            asp-route-download="true"
                                            class="btn-modern btn-modern-secondary btn-icon"
@@ -342,7 +343,7 @@
                 </div>
             </div>
 
-            @if (Model.Projet != null)
+            @if (demande.Projet != null)
             {
                 <div class="card-modern card-accent success">
                     <div class="card-body-modern success-banner">
@@ -353,10 +354,10 @@
                         <p>La demande a été transformée en projet et reste traçable dans le portefeuille DSI.</p>
                         <a asp-controller="Projet"
                            asp-action="Details"
-                           asp-route-id="@Model.Projet.Id"
+                           asp-route-id="@demande.Projet.Id"
                            class="btn-modern btn-modern-secondary mt-3">
                             <i class="bi bi-folder"></i>
-                            Ouvrir le projet @Model.Projet.CodeProjet
+                            Ouvrir le projet @demande.Projet.CodeProjet
                         </a>
                     </div>
                 </div>
@@ -375,18 +376,18 @@
                     <div class="action-stack">
                         @if (canActAsDemandeur)
                         {
-                            @if (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.Brouillon)
+                            @if (demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.Brouillon)
                             {
                                 @if (canEditAsDemandeur)
                                 {
-                                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-modern btn-modern-gold w-100">
+                                    <a asp-action="Edit" asp-route-id="@demande.Id" class="btn-modern btn-modern-gold w-100">
                                         <i class="bi bi-pencil"></i>
                                         Modifier
                                     </a>
                                 }
                                 @if (canSubmitDemande)
                                 {
-                                    <form asp-action="Soumettre" asp-route-id="@Model.Id" method="post">
+                                    <form asp-action="Soumettre" asp-route-id="@demande.Id" method="post">
                                         @Html.AntiForgeryToken()
                                         <button type="submit" class="btn-modern btn-modern-success w-100" onclick="return confirm('Soumettre cette demande ?');">
                                             <i class="bi bi-send"></i>
@@ -395,12 +396,12 @@
                                     </form>
                                 }
                             }
-                            @if (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier ||
-                                 Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDemandeurParDSI)
+                            @if (demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier ||
+                                 demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDemandeurParDSI)
                             {
                                 @if (canEditAsDemandeur)
                                 {
-                                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-modern btn-modern-warning w-100">
+                                    <a asp-action="Edit" asp-route-id="@demande.Id" class="btn-modern btn-modern-warning w-100">
                                         <i class="bi bi-arrow-counterclockwise"></i>
                                         Corriger la demande
                                     </a>
@@ -409,10 +410,10 @@
                         }
 
                         @if (canActAsDm &&
-                             (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.EnAttenteValidationDirecteurMetier ||
-                              Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDirecteurMetierParDSI))
+                             (demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.EnAttenteValidationDirecteurMetier ||
+                              demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDirecteurMetierParDSI))
                         {
-                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-modern btn-modern-gold w-100">
+                            <a asp-action="Edit" asp-route-id="@demande.Id" class="btn-modern btn-modern-gold w-100">
                                 <i class="bi bi-pencil"></i>
                                 Modifier avant validation
                             </a>
@@ -430,7 +431,7 @@
                             </button>
                         }
 
-                        @if (canActAsDsi && Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.EnAttenteValidationDSI)
+                        @if (canActAsDsi && demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.EnAttenteValidationDSI)
                         {
                             <button type="button" class="btn-modern btn-modern-success w-100" data-bs-toggle="modal" data-bs-target="#validerDSIModal">
                                 <i class="bi bi-check-circle"></i>
@@ -454,12 +455,12 @@
 
                         @if (canActAsDemandeur)
                         {
-                            @if (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RejeteeParDirecteurMetier ||
-                                 Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RejeteeParDSI)
+                            @if (demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RejeteeParDirecteurMetier ||
+                                 demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RejeteeParDSI)
                             {
                                 @if (canDuplicateDemande)
                                 {
-                                    <form asp-action="DupliquerDemande" asp-route-id="@Model.Id" method="post">
+                                    <form asp-action="DupliquerDemande" asp-route-id="@demande.Id" method="post">
                                     @Html.AntiForgeryToken()
                                     <button type="submit" class="btn-modern btn-modern-info w-100" onclick="return confirm('Voulez-vous créer une nouvelle demande basée sur celle-ci ?');">
                                         <i class="bi bi-files"></i>
@@ -503,22 +504,22 @@
 
 @if (canActAsDm)
 {
-    @await Html.PartialAsync("_ModalValiderDM", Model)
-    @await Html.PartialAsync("_ModalRejeterDM", Model)
-    @await Html.PartialAsync("_ModalCorrectionDM", Model)
+    @await Html.PartialAsync("_ModalValiderDM", demande)
+    @await Html.PartialAsync("_ModalRejeterDM", demande)
+    @await Html.PartialAsync("_ModalCorrectionDM", demande)
 }
 
 @if (canActAsDsi)
 {
-    @await Html.PartialAsync("_ModalValiderDSI", Model)
-    @await Html.PartialAsync("_ModalRejeterDSI", Model)
-    @await Html.PartialAsync("_ModalRenvoyerDemandeur", Model)
-    @await Html.PartialAsync("_ModalRenvoyerDM", Model)
+    @await Html.PartialAsync("_ModalValiderDSI", demande)
+    @await Html.PartialAsync("_ModalRejeterDSI", demande)
+    @await Html.PartialAsync("_ModalRenvoyerDemandeur", demande)
+    @await Html.PartialAsync("_ModalRenvoyerDM", demande)
 }
 
 @if (canAddDocuments &&
-     (Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier ||
-      Model.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDemandeurParDSI))
+     (demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.CorrectionDemandeeParDirecteurMetier ||
+      demande.StatutDemande == GestionProjects.Domain.Enums.StatutDemande.RetourneeAuDemandeurParDSI))
 {
     <div class="modal fade" id="ajouterDocumentsModal" tabindex="-1" aria-labelledby="ajouterDocumentsModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -532,7 +533,7 @@
                 </div>
                 <form asp-action="AjouterDocumentsComplementaires" method="post" enctype="multipart/form-data">
                     @Html.AntiForgeryToken()
-                    <input type="hidden" name="id" value="@Model.Id" />
+                    <input type="hidden" name="id" value="@demande.Id" />
                     <div class="modal-body">
                         <div class="alert-modern alert-modern-info">
                             <i class="bi bi-info-circle-fill"></i>

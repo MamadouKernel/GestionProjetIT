@@ -1,14 +1,15 @@
-@model GestionProjects.Domain.Models.Projet
+@model GestionProjects.Application.ViewModels.Projet.ProjetDetailsViewModel
 @using GestionProjects.Domain.Enums
 @inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
 
 @{
-    var isReadOnly = ViewBag.IsReadOnly as bool? ?? false;
-    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, Model, isReadOnly);
+    var projet = Model.Projet;
+    var isReadOnly = Model.IsReadOnly;
+    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, Model.Projet, isReadOnly);
     var canEdit = ui.CanEditUat && !isReadOnly;
 
-    var casTests = ViewBag.CasTests as List<GestionProjects.Domain.Models.CasTestProjet> ?? new List<GestionProjects.Domain.Models.CasTestProjet>();
-    var campagnes = ViewBag.Campagnes as List<GestionProjects.Domain.Models.CampagneTestProjet> ?? new List<GestionProjects.Domain.Models.CampagneTestProjet>();
+    var casTests = Model.CasTests;
+    var campagnes = Model.Campagnes;
 
     int total = casTests.Count;
     int reussie = casTests.Count(c => c.Executions.Any() && c.Executions.OrderByDescending(e => e.DateExecution).First().Statut == StatutExecutionTest.Reussie);
@@ -151,7 +152,7 @@
                                     {
                                         <form asp-action="SupprimerCasTest" method="post" class="d-inline">
                                             @Html.AntiForgeryToken()
-                                            <input type="hidden" name="projetId" value="@Model.Id" />
+                                            <input type="hidden" name="projetId" value="@projet.Id" />
                                             <input type="hidden" name="casTestId" value="@ct.Id" />
                                             <button type="submit"
                                                     class="btn-modern btn-modern-danger"
@@ -193,7 +194,7 @@
                 </div>
                 <form asp-action="AjouterCampagneTest" method="post">
                     @Html.AntiForgeryToken()
-                    <input type="hidden" name="projetId" value="@Model.Id" />
+                    <input type="hidden" name="projetId" value="@projet.Id" />
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Nom *</label>
@@ -235,7 +236,7 @@
                 </div>
                 <form asp-action="AjouterCasTest" method="post">
                     @Html.AntiForgeryToken()
-                    <input type="hidden" name="projetId" value="@Model.Id" />
+                    <input type="hidden" name="projetId" value="@projet.Id" />
                     <div class="modal-body">
                         <div class="row g-3">
                             <div class="col-md-8">
@@ -296,7 +297,7 @@
             </div>
             <form asp-action="ExecuterCasTest" method="post">
                 @Html.AntiForgeryToken()
-                <input type="hidden" name="projetId" value="@Model.Id" />
+                <input type="hidden" name="projetId" value="@projet.Id" />
                 <input type="hidden" name="casTestId" id="execCasTestId" />
                 <input type="hidden" name="campagneId" id="execCampagneId" />
                 <div class="modal-body">

@@ -14,17 +14,6 @@ namespace GestionProjects.Controllers
         public async Task<IActionResult> Users(string? recherche = null, Guid? directionId = null, RoleUtilisateur? role = null, int page = 1, int pageSize = 5)
         {
             var vm = await BuildUsersListViewModelAsync(recherche, directionId, role, page, pageSize);
-
-            ViewBag.PageNumber          = vm.PageNumber;
-            ViewBag.TotalPages          = vm.TotalPages;
-            ViewBag.TotalCount          = vm.TotalCount;
-            ViewBag.PageSize            = vm.PageSize;
-            ViewBag.Recherche           = vm.Recherche;
-            ViewBag.SelectedDirectionId = vm.SelectedDirectionId;
-            ViewBag.SelectedRole        = vm.SelectedRole;
-            ViewBag.Directions          = vm.Directions;
-            ViewBag.AllRoles            = vm.AllRoles;
-
             return View(vm);
         }
 
@@ -83,17 +72,9 @@ namespace GestionProjects.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> ImportUsers()
+        public IActionResult ImportUsers()
         {
-            ViewBag.Directions = await _db.Directions
-                .Where(d => !d.EstSupprime && d.EstActive)
-                .OrderBy(d => d.Libelle)
-                .ToListAsync();
-
-            ViewBag.Resultats = new List<ImportResultat>();
-            ViewBag.Erreurs = new List<string>();
-
-            return View();
+            return View(new ImportUsersViewModel());
         }
 
         [HttpGet]
@@ -171,40 +152,33 @@ namespace GestionProjects.Controllers
             var resultats = new List<ImportResultat>();
             var erreurs   = new List<string>();
 
-            ViewBag.Directions = await _db.Directions
-                .Where(d => !d.EstSupprime && d.EstActive)
-                .OrderBy(d => d.Libelle)
-                .ToListAsync();
+            ImportUsersViewModel BuildVm() => new ImportUsersViewModel { Resultats = resultats, Erreurs = erreurs };
 
             if (fichierExcel == null || fichierExcel.Length == 0)
             {
                 erreurs.Add("Aucun fichier n'a été sélectionné.");
-                ViewBag.Resultats = resultats; ViewBag.Erreurs = erreurs;
-                return View();
+                return View(BuildVm());
             }
 
             const long MaxFileSize = 5 * 1024 * 1024;
             if (fichierExcel.Length > MaxFileSize)
             {
                 erreurs.Add("Le fichier dépasse la taille maximale autorisée (5 Mo).");
-                ViewBag.Resultats = resultats; ViewBag.Erreurs = erreurs;
-                return View();
+                return View(BuildVm());
             }
 
             if (string.IsNullOrWhiteSpace(motDePasseParDefaut) || motDePasseParDefaut.Length < 12 ||
                 !motDePasseParDefaut.Any(char.IsUpper) || !motDePasseParDefaut.Any(char.IsDigit))
             {
                 erreurs.Add("Le mot de passe par défaut doit contenir au moins 12 caractères, une majuscule et un chiffre.");
-                ViewBag.Resultats = resultats; ViewBag.Erreurs = erreurs;
-                return View();
+                return View(BuildVm());
             }
 
             var extension = Path.GetExtension(fichierExcel.FileName).ToLowerInvariant();
             if (extension != ".xlsx" && extension != ".xls")
             {
                 erreurs.Add("Le fichier doit être au format Excel (.xlsx ou .xls).");
-                ViewBag.Resultats = resultats; ViewBag.Erreurs = erreurs;
-                return View();
+                return View(BuildVm());
             }
 
             try
@@ -220,16 +194,14 @@ namespace GestionProjects.Controllers
                 if (worksheet == null)
                 {
                     erreurs.Add("Le fichier Excel ne contient aucune feuille de calcul.");
-                    ViewBag.Resultats = resultats; ViewBag.Erreurs = erreurs;
-                    return View();
+                    return View(BuildVm());
                 }
 
                 var rowCount = worksheet.Dimension?.Rows ?? 0;
                 if (rowCount < 2)
                 {
                     erreurs.Add("Le fichier Excel doit contenir au moins une ligne de données (en plus de l'en-tête).");
-                    ViewBag.Resultats = resultats; ViewBag.Erreurs = erreurs;
-                    return View();
+                    return View(BuildVm());
                 }
 
                 var existingMatricules = await _db.Utilisateurs
@@ -399,9 +371,7 @@ namespace GestionProjects.Controllers
                 erreurs.Add("Erreur lors de la lecture du fichier Excel. Vérifiez que le fichier n'est pas corrompu.");
             }
 
-            ViewBag.Resultats = resultats;
-            ViewBag.Erreurs   = erreurs;
-            return View();
+            return View(BuildVm());
         }
 
         [HttpGet]

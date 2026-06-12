@@ -1,4 +1,5 @@
 using GestionProjects.Application.Common.Extensions;
+using GestionProjects.Application.ViewModels.Projet;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -49,75 +50,67 @@ namespace GestionProjects.Controllers
                 return Forbid();
             }
 
-            ViewBag.IsReadOnly = ui.HasDmGovernanceAccess && !ui.IsProjectSponsor;
+            var isReadOnly = ui.HasDmGovernanceAccess && !ui.IsProjectSponsor;
 
             await RecalculateProjectProgressAsync(projet, persistChanges: true);
 
-            // Charger les cas de test pour l'onglet UAT
+            List<CasTestProjet> casTests = new();
+            List<CampagneTestProjet> campagnes = new();
+            CollaborationProjet? collaboration = null;
+            List<DossierSignatureProjet> dossiersSignature = new();
+            IEnumerable<AuditLog> auditLogs = Enumerable.Empty<AuditLog>();
+            List<Utilisateur> chefsProjet = new();
+
             if (tab == "uat")
             {
-                var casTests = await _db.CasTestsProjets
+                casTests = await _db.CasTestsProjets
                     .Include(c => c.Executions.OrderByDescending(e => e.DateExecution))
                     .Include(c => c.CampagneTestProjet)
                     .Where(c => c.ProjetId == id && !c.EstSupprime)
                     .OrderBy(c => c.Reference)
                     .ToListAsync();
 
-                var campagnes = await _db.CampagnesTestsProjets
+                campagnes = await _db.CampagnesTestsProjets
                     .Where(c => c.ProjetId == id && !c.EstSupprime)
                     .OrderByDescending(c => c.DateLancement)
                     .ToListAsync();
-
-                ViewBag.CasTests = casTests;
-                ViewBag.Campagnes = campagnes;
             }
 
-            // Charger la collaboration pour les onglets collaboration et exécution
             if (tab == "collaboration" || tab == "execution")
             {
-                var collaboration = await _db.CollaborationsProjets
+                collaboration = await _db.CollaborationsProjets
                     .Include(c => c.Taches.OrderBy(t => t.Phase))
                     .FirstOrDefaultAsync(c => c.ProjetId == id && !c.EstSupprime);
-
-                ViewBag.Collaboration = collaboration;
             }
 
-            // Charger les dossiers de signature pour l'onglet planification
             if (tab == "planification")
             {
-                var dossiers = await _db.DossiersSignatureProjets
+                dossiersSignature = await _db.DossiersSignatureProjets
                     .Include(d => d.Signataires.OrderBy(s => s.OrdreSignature))
                         .ThenInclude(s => s.Utilisateur)
                     .Where(d => d.ProjetId == id && !d.EstSupprime)
                     .OrderByDescending(d => d.DateCreation)
                     .ToListAsync();
-
-                ViewBag.DossiersSignature = dossiers;
             }
 
-            // Charger l'historique complet (logs d'audit) pour l'onglet historique
             if (tab == "historique")
             {
-                var auditLogs = await _db.AuditLogs
+                auditLogs = await _db.AuditLogs
                     .Include(a => a.Utilisateur)
                     .Where(a => a.Entite == "Projet" && a.EntiteId == id.ToString())
                     .OrderByDescending(a => a.DateAction)
                     .ToListAsync();
-
-                ViewBag.AuditLogs = auditLogs;
             }
 
             if (ui.CanReassignChefProjet)
             {
-                // Récupérer les chefs de projet (utilisateurs avec rôle ChefDeProjet)
-                var chefsProjet = await _db.Utilisateurs
+                var chefsProjetBase = await _db.Utilisateurs
                     .Include(u => u.UtilisateurRoles)
                     .Where(u => !u.EstSupprime && u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.ChefDeProjet))
                     .OrderBy(u => u.Nom)
                     .ThenBy(u => u.Prenoms)
                     .ToListAsync();
 
-                // Récupérer les utilisateurs avec délégation active ChefProjet pour ce projet
                 var delegationsActives = await _db.DelegationsChefProjet
                     .Include(d => d.Delegue)
                     .Where(d => !d.EstSupprime &&
@@ -129,21 +122,17 @@ namespace GestionProjects.Controllers
                     .Where(u => !u.EstSupprime)
                     .ToListAsync();
 
-                // Combiner les deux listes et supprimer les doublons
-                var tousChefsProjet = chefsProjet
+                chefsProjet = chefsProjetBase
                     .Union(delegationsActives)
                     .GroupBy(u => u.Id)
                     .Select(g => g.First())
                     .OrderBy(u => u.Nom)
                     .ThenBy(u => u.Prenoms)
                     .ToList();
-
-                ViewBag.ChefsProjet = tousChefsProjet;
             }
 
             if (ui.IsAssignedChefProjet)
             {
-                // Vérifier s'il existe déjà un log de prise en charge pour ce projet et ce chef
                 var priseEnChargeExiste = await _db.AuditLogs
                     .AnyAsync(a => a.Entite == "Projet" &&
                                   a.EntiteId == id.ToString() &&
@@ -158,8 +147,25 @@ namespace GestionProjects.Controllers
                 }
             }
 
-            ViewBag.ActiveTab = tab;
-            return View(projet);
+            var isDemandeurProject = projet.DemandeProjet?.DemandeurId == userId;
+            var canAccessCharges = ui.CanOpenChargesTab;
+
+            var vm = new ProjetDetailsViewModel
+            {
+                Projet             = projet,
+                ActiveTab          = tab ?? "synthese",
+                IsReadOnly         = isReadOnly,
+                IsDemandeurProject = isDemandeurProject,
+                CanAccessCharges   = canAccessCharges,
+                CasTests           = casTests,
+                Campagnes          = campagnes,
+                Collaboration      = collaboration,
+                DossiersSignature  = dossiersSignature,
+                AuditLogs          = auditLogs,
+                ChefsProjet        = chefsProjet,
+            };
+
+            return View(vm);
         }
 
         // POST: Mettre à jour le ResponsableSolutionsIT (ChefProjet)
