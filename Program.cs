@@ -16,10 +16,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Serilog;
 
-// Configuration Serilog
+// Configuration Serilog — chemin absolu pour fonctionner sous IIS (app pool sans droits relatifs)
+var logPath = Path.Combine(AppContext.BaseDirectory, "logs", "gestion-projets-.txt");
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
-    .WriteTo.File("logs/gestion-projets-.txt", rollingInterval: RollingInterval.Day)
+    .WriteTo.File(logPath, rollingInterval: RollingInterval.Day)
     .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);

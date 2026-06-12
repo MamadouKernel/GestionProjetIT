@@ -60,7 +60,7 @@ namespace GestionProjects.Infrastructure.Middleware
             {
                 context.Items["ErrorStatusCode"] = statusCode;
                 context.Items["ErrorOriginalPath"] = $"{context.Request.Path}{context.Request.QueryString}";
-                context.Items["ErrorDetail"] = _environment.IsDevelopment() ? exception.Message : null;
+                context.Items["ErrorDetail"] = $"{exception.GetType().Name}: {exception.Message}";
                 context.Response.Clear();
                 context.Response.StatusCode = statusCode;
                 return;
