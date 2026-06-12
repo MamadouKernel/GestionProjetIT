@@ -643,5 +643,70 @@ namespace GestionProjects.Controllers
             TempData["Error"] = "Erreur lors de l'ajout de l'anomalie.";
             return RedirectToAction(nameof(Details), new { id = projetId, tab = "execution" });
         }
+
+        // POST: Modifier une anomalie
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
+        public async Task<IActionResult> UpdateAnomalie(Guid projetId, Guid anomalieId,
+            StatutAnomalie statut, PrioriteAnomalie? priorite,
+            string? assigneeA, string? moduleConcerne, string? commentaireResolution)
+        {
+            var projet = await _db.Projets.FindAsync(projetId);
+            if (projet == null) return NotFound();
+
+            if (!await CanManageExecutionAsync(projet))
+                return Forbid();
+
+            var anomalie = await _db.AnomaliesProjets.FindAsync(anomalieId);
+            if (anomalie == null || anomalie.ProjetId != projetId || anomalie.EstSupprime)
+                return NotFound();
+
+            anomalie.Statut = statut;
+            if (priorite.HasValue) anomalie.Priorite = priorite.Value;
+            if (!string.IsNullOrWhiteSpace(assigneeA)) anomalie.AssigneeA = assigneeA.Trim();
+            if (!string.IsNullOrWhiteSpace(moduleConcerne)) anomalie.ModuleConcerne = moduleConcerne.Trim();
+            if (commentaireResolution != null) anomalie.CommentaireResolution = commentaireResolution.Trim();
+
+            if ((statut == StatutAnomalie.Corrigee || statut == StatutAnomalie.Fermee) && !anomalie.DateResolution.HasValue)
+                anomalie.DateResolution = DateTime.Now;
+
+            anomalie.DateModification = DateTime.Now;
+            anomalie.ModifiePar = _currentUserService.Matricule;
+
+            await _db.SaveChangesAsync();
+            await _auditService.LogActionAsync("MISE_A_JOUR_ANOMALIE", "AnomalieProjet", anomalie.Id,
+                null, new { Statut = statut });
+
+            TempData["Success"] = "Anomalie mise à jour.";
+            return RedirectToAction(nameof(Details), new { id = projetId, tab = "execution" });
+        }
+
+        // POST: Supprimer une anomalie (soft delete)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
+        public async Task<IActionResult> SupprimerAnomalie(Guid projetId, Guid anomalieId)
+        {
+            var projet = await _db.Projets.FindAsync(projetId);
+            if (projet == null) return NotFound();
+
+            if (!await CanManageExecutionAsync(projet))
+                return Forbid();
+
+            var anomalie = await _db.AnomaliesProjets.FindAsync(anomalieId);
+            if (anomalie == null || anomalie.ProjetId != projetId || anomalie.EstSupprime)
+                return NotFound();
+
+            anomalie.EstSupprime = true;
+            anomalie.DateModification = DateTime.Now;
+            anomalie.ModifiePar = _currentUserService.Matricule;
+
+            await _db.SaveChangesAsync();
+            await _auditService.LogActionAsync("SUPPRESSION_ANOMALIE", "AnomalieProjet", anomalie.Id);
+
+            TempData["Success"] = "Anomalie supprimée.";
+            return RedirectToAction(nameof(Details), new { id = projetId, tab = "execution" });
+        }
     }
 }

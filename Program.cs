@@ -167,7 +167,7 @@ builder.Services.AddScoped<PermissionMatrixAuthorizationFilter>();
 //     });
 
 // Authentification par cookies
-builder.Services
+var authBuilder = builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -182,19 +182,22 @@ builder.Services
         // Passer à Always uniquement si un reverse proxy avec certificat TLS est en place
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         options.Cookie.SameSite = SameSiteMode.Lax;
-    })
-    .AddOpenIdConnect("AzureAd", options =>
+    });
+
+var oidcClientId = builder.Configuration["AzureAd:ClientId"]?.Trim();
+if (!string.IsNullOrWhiteSpace(oidcClientId))
+{
+    authBuilder.AddOpenIdConnect("AzureAd", options =>
     {
         var instance = builder.Configuration["AzureAd:Instance"]?.Trim();
         var tenantId = builder.Configuration["AzureAd:TenantId"]?.Trim();
-        var clientId = builder.Configuration["AzureAd:ClientId"]?.Trim();
         var clientSecret = builder.Configuration["AzureAd:ClientSecret"]?.Trim();
         var callbackPath = builder.Configuration["AzureAd:CallbackPath"]?.Trim();
         var signedOutCallbackPath = builder.Configuration["AzureAd:SignedOutCallbackPath"]?.Trim();
 
         options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
         options.Authority = $"{(string.IsNullOrWhiteSpace(instance) ? "https://login.microsoftonline.com/" : instance.TrimEnd('/') + "/")}{tenantId}/v2.0";
-        options.ClientId = clientId ?? string.Empty;
+        options.ClientId = oidcClientId;
         options.ClientSecret = clientSecret ?? string.Empty;
         options.CallbackPath = string.IsNullOrWhiteSpace(callbackPath) ? "/signin-oidc" : callbackPath;
         options.SignedOutCallbackPath = string.IsNullOrWhiteSpace(signedOutCallbackPath) ? "/signout-callback-oidc" : signedOutCallbackPath;
@@ -216,6 +219,7 @@ builder.Services
             }
         };
     });
+}
 
 builder.Services.AddHsts(options =>
 {

@@ -1082,6 +1082,40 @@ namespace GestionProjects.Controllers
             return RedirectToAction(nameof(ValidationsProjet));
         }
 
+        // POST: Annuler un dossier de signature électronique
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
+        public async Task<IActionResult> AnnulerDossierSignature(Guid id, Guid dossierSignatureId)
+        {
+            var projet = await _db.Projets.FindAsync(id);
+            if (projet == null) return NotFound();
+
+            var ui = await BuildProjectUiAsync(projet);
+            if (!ui.CanManageDossierSignature)
+                return Forbid();
+
+            var dossier = await _db.DossiersSignatureProjets.FindAsync(dossierSignatureId);
+            if (dossier == null || dossier.ProjetId != id)
+                return NotFound();
+
+            if (dossier.Statut == StatutDossierSignature.Signe)
+            {
+                TempData["Error"] = "Un dossier déjà signé ne peut pas être annulé.";
+                return RedirectToAction(nameof(Details), new { id, tab = "analyse" });
+            }
+
+            dossier.Statut = StatutDossierSignature.Annule;
+            dossier.DateModification = DateTime.Now;
+            dossier.ModifiePar = _currentUserService.Matricule;
+
+            await _db.SaveChangesAsync();
+            await _auditService.LogActionAsync("ANNULATION_DOSSIER_SIGNATURE", "DossierSignatureProjet", dossier.Id);
+
+            TempData["Success"] = "Dossier de signature annulé.";
+            return RedirectToAction(nameof(Details), new { id, tab = "analyse" });
+        }
+
         // GET: Page de signature électronique de la charte
         [Authorize]
         public async Task<IActionResult> SignatureCharte(Guid id)
