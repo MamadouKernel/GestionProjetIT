@@ -58,16 +58,34 @@ namespace GestionProjects.Infrastructure.Services
             var desiredRoles = selectedRoles.Distinct().ToList();
             var operateur = _currentUserService.Matricule ?? "SYSTEM";
 
+            // Charger tous les rôles (y compris soft-deleted) en ignorant le filtre global.
+            // Cela évite les problèmes de tracking EF Core liés à la navigation collection
+            // filtrée, et permet de réactiver un rôle précédemment supprimé au lieu
+            // d'en insérer un doublon.
+            var allExistingRoles = await _db.UtilisateurRoles
+                .IgnoreQueryFilters()
+                .Where(ur => ur.UtilisateurId == user.Id)
+                .ToListAsync();
+
             // Activer ou créer les rôles désirés
             foreach (var role in desiredRoles)
             {
-                var existingRole = user.UtilisateurRoles.FirstOrDefault(ur => ur.Role == role);
-                if (existingRole == null)
+                var activeRole = allExistingRoles.FirstOrDefault(ur => ur.Role == role && !ur.EstSupprime);
+                if (activeRole != null)
+                    continue;
+
+                var deletedRole = allExistingRoles.FirstOrDefault(ur => ur.Role == role && ur.EstSupprime);
+                if (deletedRole != null)
                 {
-                    // L'index unique sur (UtilisateurId, Role) est filtré WHERE EstSupprime=0,
-                    // donc on peut insérer une nouvelle ligne active même si une ancienne
-                    // supprimée existe pour la même combinaison.
-                    user.UtilisateurRoles.Add(new UtilisateurRole
+                    deletedRole.EstSupprime = false;
+                    deletedRole.DateDebut = DateTime.Now;
+                    deletedRole.DateFin = null;
+                    deletedRole.DateModification = DateTime.Now;
+                    deletedRole.ModifiePar = operateur;
+                }
+                else
+                {
+                    _db.UtilisateurRoles.Add(new UtilisateurRole
                     {
                         Id = Guid.NewGuid(),
                         UtilisateurId = user.Id,
@@ -78,27 +96,21 @@ namespace GestionProjects.Infrastructure.Services
                         EstSupprime = false
                     });
                 }
-                else if (existingRole.EstSupprime)
-                {
-                    existingRole.EstSupprime = false;
-                    existingRole.DateDebut = DateTime.Now;
-                    existingRole.DateFin = null;
-                    existingRole.DateModification = DateTime.Now;
-                    existingRole.ModifiePar = operateur;
-                }
             }
 
-            // Désactiver les rôles retirés
-            foreach (var existingRole in user.UtilisateurRoles
-                .Where(ur => !ur.EstSupprime && !desiredRoles.Contains(ur.Role)))
+            // Désactiver les rôles retirés (source matérialisée pour éviter
+            // toute interaction avec le change tracker durant l'itération)
+            var rolesToRemove = allExistingRoles
+                .Where(ur => !ur.EstSupprime && !desiredRoles.Contains(ur.Role))
+                .ToList();
+
+            foreach (var existingRole in rolesToRemove)
             {
                 existingRole.EstSupprime = true;
                 existingRole.DateFin = DateTime.Now;
                 existingRole.DateModification = DateTime.Now;
                 existingRole.ModifiePar = operateur;
             }
-
-            await Task.CompletedTask;
         }
 
         /// <inheritdoc/>

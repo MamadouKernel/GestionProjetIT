@@ -93,7 +93,7 @@ namespace GestionProjects.Controllers
         public async Task<IActionResult> UpdateRoles(Guid id, string Roles)
         {
             var user = await _db.Utilisateurs
-                .Include(u => u.UtilisateurRoles)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == id && !u.EstSupprime);
 
             if (user == null)
