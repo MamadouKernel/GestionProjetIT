@@ -1,6 +1,7 @@
 @model GestionProjects.Application.ViewModels.ErrorViewModel
 @{
     ViewData["Title"] = $"Erreur {Model.StatusCode}";
+    var cspNonce = Context.Items["CspNonce"] as string ?? string.Empty;
 }
 
 <div class="fade-in error-experience-shell">
@@ -53,15 +54,40 @@
                     <i class="bi bi-house-door"></i>
                     @Model.PrimaryActionText
                 </a>
-                <button type="button" class="btn-modern btn-modern-secondary" onclick="window.history.back();">
+                <button type="button" id="btn-error-back" class="btn-modern btn-modern-secondary">
                     <i class="bi bi-arrow-left"></i>
                     @Model.SecondaryActionText
                 </button>
-                <a asp-controller="Aide" asp-action="Index" class="btn-modern btn-modern-secondary">
-                    <i class="bi bi-question-circle"></i>
-                    Consulter l'aide
-                </a>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <a asp-controller="Aide" asp-action="Index" class="btn-modern btn-modern-secondary">
+                        <i class="bi bi-question-circle"></i>
+                        Consulter l'aide
+                    </a>
+                }
+                else
+                {
+                    <a asp-action="Login" asp-controller="Account" class="btn-modern btn-modern-secondary">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                        Se reconnecter
+                    </a>
+                }
             </div>
         </div>
     </section>
 </div>
+
+@section Scripts {
+    <script nonce="@cspNonce">
+        var btnBack = document.getElementById('btn-error-back');
+        if (btnBack) {
+            btnBack.addEventListener('click', function () {
+                if (window.history.length > 1) {
+                    window.history.back();
+                } else {
+                    window.location.href = '@(Model.PrimaryActionUrl ?? "/")';
+                }
+            });
+        }
+    </script>
+}
