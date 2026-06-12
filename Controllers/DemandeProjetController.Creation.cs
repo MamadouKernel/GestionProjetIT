@@ -291,7 +291,7 @@ namespace GestionProjects.Controllers
 
             var directionsEdit = await _db.Directions.Where(d => !d.EstSupprime && d.EstActive).OrderBy(d => d.Libelle).ToListAsync();
             var directeursMetierEdit = await _db.Utilisateurs
-                .Where(u => !u.EstSupprime && u.Role == RoleUtilisateur.DirecteurMetier)
+                .Where(u => !u.EstSupprime && u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.DirecteurMetier))
                 .OrderBy(u => u.Nom)
                 .ToListAsync();
 
@@ -420,7 +420,7 @@ namespace GestionProjects.Controllers
             }
 
             var directionsPostErr = await _db.Directions.Where(d => !d.EstSupprime && d.EstActive).OrderBy(d => d.Libelle).ToListAsync();
-            var dmsPostErr = await _db.Utilisateurs.Where(u => !u.EstSupprime && u.Role == RoleUtilisateur.DirecteurMetier).OrderBy(u => u.Nom).ToListAsync();
+            var dmsPostErr = await _db.Utilisateurs.Where(u => !u.EstSupprime && u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.DirecteurMetier)).OrderBy(u => u.Nom).ToListAsync();
             return View(new DemandeProjetEditViewModel
             {
                 Demande = existingDemande,
