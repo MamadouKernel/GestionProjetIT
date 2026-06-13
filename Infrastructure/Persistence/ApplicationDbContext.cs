@@ -100,6 +100,22 @@ namespace GestionProjects.Infrastructure.Persistence
                 .HasForeignKey(u => u.DirectionId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // ---- Index identité Utilisateur (login / recherche) ----
+            // Matricule = identifiant de connexion -> unique (filtré pour autoriser
+            // la réutilisation après soft-delete, comme UtilisateurRole).
+            modelBuilder.Entity<Utilisateur>()
+                .Property(u => u.Matricule).HasMaxLength(256);
+            modelBuilder.Entity<Utilisateur>()
+                .HasIndex(u => u.Matricule)
+                .IsUnique()
+                .HasFilter("[EstSupprime] = 0");
+
+            // Email = utilisé pour les recherches et le rapprochement membres.
+            modelBuilder.Entity<Utilisateur>()
+                .Property(u => u.Email).HasMaxLength(256);
+            modelBuilder.Entity<Utilisateur>()
+                .HasIndex(u => u.Email);
+
             modelBuilder.Entity<DemandeProjet>()
                 .HasOne(d => d.Direction)
                 .WithMany()
@@ -476,6 +492,11 @@ namespace GestionProjects.Infrastructure.Persistence
             // Configuration ModifiePar nullable pour toutes les entités
             // ==========================
             ConfigurerModifieParNullable(modelBuilder);
+
+            // ==========================
+            // Longueurs de chaînes : nvarchar(4000) par défaut (hors texte long / index)
+            // ==========================
+            BornerLongueursChaines(modelBuilder);
         }
 
         /// <summary>
@@ -515,6 +536,46 @@ namespace GestionProjects.Infrastructure.Persistence
                 var lambda = Expression.Lambda(condition, parameter);
 
                 entityType.SetQueryFilter(lambda);
+            }
+        }
+
+        /// <summary>
+        /// Borne les colonnes string à nvarchar(4000) au lieu de nvarchar(max)
+        /// (stockage in-row, meilleures estimations de cardinalité).
+        /// Sont laissées intactes : les clés / colonnes indexées (gérées par EF à 450
+        /// pour respecter la limite d'index) et les champs de texte long / base64.
+        /// Erre du côté sûr : ne touche jamais une colonne indexée ni un champ long.
+        /// </summary>
+        private void BornerLongueursChaines(ModelBuilder modelBuilder)
+        {
+            string[] motsClesTexteLong =
+            {
+                "Bilan", "Commentaire", "Contexte", "Description", "Justification",
+                "Notes", "Objectif", "Perimetre", "Resultat", "SignatureImage",
+                // Ajouts après audit des données réelles (champs narratifs / sérialisés) :
+                "Valeurs",     // AuditLogs.Anciennes/NouvellesValeurs : JSON d'entités sérialisées
+                "Avantages",   // AvantagesAttendus : narratif long
+                "Mitigation"   // RisquesEtMitigations : narratif long
+            };
+
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                foreach (var property in entityType.GetProperties())
+                {
+                    if (property.ClrType != typeof(string))
+                        continue;
+                    if (property.GetMaxLength() != null)
+                        continue; // déjà borné explicitement
+                    if (property.IsKey() || property.IsForeignKey())
+                        continue;
+                    if (property.GetContainingIndexes().Any())
+                        continue; // colonne indexée -> laissée à EF (nvarchar(450))
+                    if (motsClesTexteLong.Any(mc =>
+                            property.Name.Contains(mc, StringComparison.Ordinal)))
+                        continue; // texte long / base64 -> reste nvarchar(max)
+
+                    property.SetMaxLength(4000);
+                }
             }
         }
 

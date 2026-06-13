@@ -4,6 +4,7 @@ using GestionProjects.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GestionProjects.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260613155817_BornerLongueursChaines")]
+    partial class BornerLongueursChaines
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3085,16 +3088,16 @@ namespace GestionProjects.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
 
                     b.Property<bool>("EstSupprime")
                         .HasColumnType("bit");
 
                     b.Property<string>("Matricule")
                         .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
 
                     b.Property<string>("ModifiePar")
                         .HasMaxLength(4000)
@@ -3127,12 +3130,6 @@ namespace GestionProjects.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DirectionId");
-
-                    b.HasIndex("Email");
-
-                    b.HasIndex("Matricule")
-                        .IsUnique()
-                        .HasFilter("[EstSupprime] = 0");
 
                     b.ToTable("Utilisateurs");
                 });
