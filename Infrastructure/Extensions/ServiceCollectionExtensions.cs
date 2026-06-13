@@ -45,6 +45,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDemandeProjetQueryService, DemandeProjetQueryService>();
         services.AddScoped<IDemandeProjetWorkflowService, DemandeProjetWorkflowService>();
         services.AddScoped<IClotureProjetWorkflowService, ClotureProjetWorkflowService>();
+        services.AddScoped<ICharteProjetWorkflowService, CharteProjetWorkflowService>();
         services.AddScoped<PermissionMatrixAuthorizationFilter>();
 
         services.AddHttpClient("Teams")

@@ -1,4 +1,5 @@
 using GestionProjects.Application.Common.Extensions;
+using GestionProjects.Application.Common.Results;
 using GestionProjects.Application.ViewModels.Projet;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
@@ -905,38 +906,8 @@ namespace GestionProjects.Controllers
             if (!await CanValidateCharteAsDirecteurMetierAsync(projet, userId))
                 return Forbid();
 
-            if (projet.PhaseActuelle != PhaseProjet.AnalyseClarification)
-            {
-                TempData["Error"] = "La charte ne peut être validée qu'en phase Analyse.";
-                return RedirectToAction(nameof(ValidationsProjet));
-            }
-
-            if (!HasCompleteSignedCharte(projet))
-            {
-                TempData["Error"] = "La charte signée complète doit être déposée avant la validation DM.";
-                return RedirectToAction(nameof(ValidationsProjet));
-            }
-
-            projet.CharteValideeParDM = true;
-            projet.DateCharteValideeParDM = DateTime.Now;
-            projet.CharteValideeParDMId = userId;
-            projet.CommentaireRefusCharteDM = null;
-            projet.DateModification = DateTime.Now;
-            projet.ModifiePar = _currentUserService.Matricule;
-
-            // Si DM et DSI ont validé, la charte est complètement validée
-            if (projet.CharteValideeParDM && projet.CharteValideeParDSI)
-            {
-                projet.CharteValidee = true;
-                projet.DateCharteValidee = DateTime.Now;
-            }
-
-            await _db.SaveChangesAsync();
-
-            await _auditService.LogActionAsync("VALIDATION_CHARTE_DM", "Projet", projet.Id);
-
-            TempData["Success"] = "Charte validée par le Directeur Métier.";
-            return RedirectToAction(nameof(ValidationsProjet));
+            var result = await _charteWorkflow.ValiderDmAsync(id, userId);
+            return MapCharteWorkflowToValidationsProjet(result);
         }
 
         // POST: Rejeter Charte par DM
@@ -957,28 +928,8 @@ namespace GestionProjects.Controllers
             if (!await CanValidateCharteAsDirecteurMetierAsync(projet, userId))
                 return Forbid();
 
-            if (string.IsNullOrWhiteSpace(commentaire))
-            {
-                TempData["Error"] = "Le commentaire est obligatoire pour rejeter la charte.";
-                return RedirectToAction(nameof(ValidationsProjet));
-            }
-
-            projet.CharteValideeParDM = false;
-            projet.DateCharteValideeParDM = null;
-            projet.CharteValideeParDMId = null;
-            projet.CommentaireRefusCharteDM = commentaire.Trim();
-            projet.CharteValidee = false;
-            projet.DateCharteValidee = null;
-            projet.DateModification = DateTime.Now;
-            projet.ModifiePar = _currentUserService.Matricule;
-
-            await _db.SaveChangesAsync();
-
-            await _auditService.LogActionAsync("REJET_CHARTE_DM", "Projet", projet.Id,
-                new { Commentaire = commentaire });
-
-            TempData["Success"] = "Charte rejetée par le Directeur Métier.";
-            return RedirectToAction(nameof(ValidationsProjet));
+            var result = await _charteWorkflow.RejeterDmAsync(id, commentaire);
+            return MapCharteWorkflowToValidationsProjet(result);
         }
 
         // POST: Valider Charte par DSI
@@ -995,50 +946,14 @@ namespace GestionProjects.Controllers
             if (projet == null)
                 return NotFound();
 
-            if (projet.PhaseActuelle != PhaseProjet.AnalyseClarification)
-            {
-                TempData["Error"] = "La charte ne peut être validée qu'en phase Analyse.";
-                return RedirectToAction(nameof(ValidationsProjet));
-            }
-
             var userId = User.GetUserIdOrThrow();
             if (!await CanValidateCharteAsDsiAsync(userId))
             {
                 return Forbid();
             }
 
-            if (!projet.CharteValideeParDM)
-            {
-                TempData["Error"] = "La charte doit d'abord être validée par le Directeur Métier.";
-                return RedirectToAction(nameof(ValidationsProjet));
-            }
-
-            if (!HasCompleteSignedCharte(projet))
-            {
-                TempData["Error"] = "La charte signée complète doit être déposée avant la validation DSI.";
-                return RedirectToAction(nameof(ValidationsProjet));
-            }
-
-            projet.CharteValideeParDSI = true;
-            projet.DateCharteValideeParDSI = DateTime.Now;
-            projet.CharteValideeParDSIId = userId;
-            projet.CommentaireRefusCharteDSI = null;
-            projet.DateModification = DateTime.Now;
-            projet.ModifiePar = _currentUserService.Matricule;
-
-            // Si DM et DSI ont validé, la charte est complètement validée
-            if (projet.CharteValideeParDM && projet.CharteValideeParDSI)
-            {
-                projet.CharteValidee = true;
-                projet.DateCharteValidee = DateTime.Now;
-            }
-
-            await _db.SaveChangesAsync();
-
-            await _auditService.LogActionAsync("VALIDATION_CHARTE_DSI", "Projet", projet.Id);
-
-            TempData["Success"] = "Charte validée par la DSI.";
-            return RedirectToAction(nameof(ValidationsProjet));
+            var result = await _charteWorkflow.ValiderDsiAsync(id, userId);
+            return MapCharteWorkflowToValidationsProjet(result);
         }
 
         // POST: Rejeter Charte par DSI
@@ -1052,34 +967,14 @@ namespace GestionProjects.Controllers
             if (projet == null)
                 return NotFound();
 
-            if (string.IsNullOrWhiteSpace(commentaire))
-            {
-                TempData["Error"] = "Le commentaire est obligatoire pour rejeter la charte.";
-                return RedirectToAction(nameof(ValidationsProjet));
-            }
-
             var userId = User.GetUserIdOrThrow();
             if (!await CanValidateCharteAsDsiAsync(userId))
             {
                 return Forbid();
             }
 
-            projet.CharteValideeParDSI = false;
-            projet.DateCharteValideeParDSI = null;
-            projet.CharteValideeParDSIId = null;
-            projet.CommentaireRefusCharteDSI = commentaire.Trim();
-            projet.CharteValidee = false;
-            projet.DateCharteValidee = null;
-            projet.DateModification = DateTime.Now;
-            projet.ModifiePar = _currentUserService.Matricule;
-
-            await _db.SaveChangesAsync();
-
-            await _auditService.LogActionAsync("REJET_CHARTE_DSI", "Projet", projet.Id,
-                new { Commentaire = commentaire });
-
-            TempData["Success"] = "Charte rejetée par la DSI.";
-            return RedirectToAction(nameof(ValidationsProjet));
+            var result = await _charteWorkflow.RejeterDsiAsync(id, commentaire);
+            return MapCharteWorkflowToValidationsProjet(result);
         }
 
         // POST: Annuler un dossier de signature électronique
@@ -1212,6 +1107,22 @@ namespace GestionProjects.Controllers
             }
 
             return RedirectToAction(nameof(SignatureCharte), new { id = projetId });
+        }
+
+        private IActionResult MapCharteWorkflowToValidationsProjet(WorkflowResult result)
+        {
+            if (result.IsNotFound)
+                return NotFound();
+
+            if (result.IsForbidden)
+                return Forbid();
+
+            if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
+                TempData["Error"] = result.ErrorMessage;
+            else if (!string.IsNullOrWhiteSpace(result.SuccessMessage))
+                TempData["Success"] = result.SuccessMessage;
+
+            return RedirectToAction(nameof(ValidationsProjet));
         }
     }
 }
