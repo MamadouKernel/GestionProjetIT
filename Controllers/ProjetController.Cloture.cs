@@ -1,4 +1,5 @@
 using GestionProjects.Application.Common.Extensions;
+using GestionProjects.Application.Common.Results;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -30,74 +31,8 @@ namespace GestionProjects.Controllers
                 return RedirectToAction(nameof(Details), new { id });
             }
 
-            // Vérifier que le projet est en phase Clôture et que les prérequis UAT/MEP sont soldés
-            if (projet.PhaseActuelle != PhaseProjet.ClotureLeconsApprises || !projet.RecetteValidee || !projet.MepEffectuee)
-            {
-                TempData["Error"] = "Le projet doit être en phase Clôture avec recette validée et MEP effectuée avant de demander la clôture.";
-                return RedirectToAction(nameof(Details), new { id });
-            }
-
-            // Vérifier que les livrables de clôture, bilan et leçons apprises sont renseignés
-            var livrablesCloture = await _db.LivrablesProjets
-                .Where(l => l.ProjetId == projet.Id && l.Phase == PhaseProjet.ClotureLeconsApprises)
-                .AnyAsync();
-
-            if (!livrablesCloture)
-            {
-                TempData["Error"] = "Veuillez d'abord déposer les livrables de clôture avant de soumettre la demande.";
-                return RedirectToAction(nameof(Details), new { id, tab = "cloture" });
-            }
-
-            if (string.IsNullOrWhiteSpace(projet.BilanPerimetre) ||
-                string.IsNullOrWhiteSpace(projet.BilanPlanning) ||
-                string.IsNullOrWhiteSpace(projet.BilanBudget) ||
-                string.IsNullOrWhiteSpace(projet.LeconsReussites) ||
-                string.IsNullOrWhiteSpace(projet.LeconsRecommandations))
-            {
-                TempData["Error"] = "Veuillez renseigner le bilan de clôture et les leçons apprises avant de soumettre la demande.";
-                return RedirectToAction(nameof(Details), new { id, tab = "cloture" });
-            }
-
-            if (projet.FicheProjet == null ||
-                !projet.FicheProjet.TransfertRunDocumentation ||
-                !projet.FicheProjet.TransfertRunSupportInforme ||
-                !projet.FicheProjet.TransfertRunExploitationPrete)
-            {
-                TempData["Error"] = "Le transfert RUN doit être entièrement renseigné avant la soumission de la clôture.";
-                return RedirectToAction(nameof(Details), new { id, tab = "cloture" });
-            }
-
-            var demande = new DemandeClotureProjet
-            {
-                Id = Guid.NewGuid(),
-                ProjetId = projet.Id,
-                DemandeParId = userId,
-                DateDemande = DateTime.Now,
-                DateSouhaiteeCloture = dateSouhaiteeCloture,
-                StatutValidationDemandeur = StatutValidationCloture.EnAttente,
-                StatutValidationDirecteurMetier = StatutValidationCloture.EnAttente,
-                StatutValidationDSI = StatutValidationCloture.EnAttente,
-                EstTerminee = false,
-                DateCreation = DateTime.Now,
-                CreePar = _currentUserService.Matricule,
-                CommentaireInitiateur = commentaire ?? string.Empty,
-                CommentaireDemandeur = string.Empty,
-                CommentaireDirecteurMetier = string.Empty,
-                CommentaireDSI = string.Empty
-            };
-
-            _db.DemandesClotureProjets.Add(demande);
-
-            projet.StatutProjet = StatutProjet.ClotureEnCours;
-            await _db.SaveChangesAsync();
-
-            await _auditService.LogActionAsync("DEMANDE_CLOTURE", "Projet", projet.Id);
-            await _auditService.LogActionAsync("SOUMISSION_DEMANDE_CLOTURE", "DemandeClotureProjet", demande.Id,
-                new { ProjetId = projet.Id, DemandeParId = userId },
-                new { StatutValidationDemandeur = StatutValidationCloture.EnAttente, StatutValidationDirecteurMetier = StatutValidationCloture.EnAttente, StatutValidationDSI = StatutValidationCloture.EnAttente });
-
-            TempData["Success"] = "Demande de clôture créée.";
-            return RedirectToAction(nameof(Details), new { id, tab = "cloture" });
+            var result = await _clotureWorkflow.DemanderClotureAsync(id, userId, commentaire, dateSouhaiteeCloture);
+            return MapClotureWorkflowToProjectDetails(result, id, "cloture");
         }
 
         // GET: Liste des demandes de clôture à valider (Demandeur)
@@ -154,23 +89,8 @@ namespace GestionProjects.Controllers
                 demande.Projet.DemandeProjet?.DemandeurId != userId)
                 return Forbid();
 
-            if (demande.StatutValidationDemandeur != StatutValidationCloture.EnAttente)
-            {
-                TempData["Error"] = "Cette validation a déjà été effectuée.";
-                return RedirectToAction(nameof(Details), new { id = demande.ProjetId, tab = "cloture" });
-            }
-
-            demande.StatutValidationDemandeur = StatutValidationCloture.Validee;
-            demande.DateValidationDemandeur = DateTime.Now;
-
-            await VerifierClotureComplete(demande);
-
-            await _db.SaveChangesAsync();
-
-            await _auditService.LogActionAsync("VALIDATION_CLOTURE_DEMANDEUR", "DemandeClotureProjet", demande.Id);
-
-            TempData["Success"] = "Clôture validée par le demandeur.";
-            return RedirectToAction(nameof(Details), new { id = demande.ProjetId, tab = "cloture" });
+            var result = await _clotureWorkflow.ValiderClotureDemandeurAsync(demandeClotureId);
+            return MapClotureWorkflowToProjectDetails(result, demande.ProjetId, "cloture");
         }
 
         // GET: Liste des demandes de clôture à valider (Directeur Métier)
@@ -235,26 +155,8 @@ namespace GestionProjects.Controllers
             if (!await CanValidateClotureDmAsync(demande, userId))
                 return Forbid();
 
-            if (demande.StatutValidationDirecteurMetier != StatutValidationCloture.EnAttente)
-            {
-                TempData["Error"] = "Cette validation a déjà été effectuée.";
-                return RedirectToAction(nameof(Details), new { id = demande.ProjetId, tab = "cloture" });
-            }
-
-            demande.StatutValidationDirecteurMetier = StatutValidationCloture.Validee;
-            demande.DateValidationDirecteurMetier = DateTime.Now;
-            demande.DateModification = DateTime.Now;
-            demande.ModifiePar = _currentUserService.Matricule;
-
-            await VerifierClotureComplete(demande);
-
-            await _db.SaveChangesAsync();
-
-            await _auditService.LogActionAsync("VALIDATION_CLOTURE_DM", "DemandeClotureProjet", demande.Id,
-                new { Decision = "Validee", Commentaire = demande.CommentaireDirecteurMetier });
-
-            TempData["Success"] = "Clôture validée par le Directeur Métier.";
-            return RedirectToAction(nameof(Details), new { id = demande.ProjetId, tab = "cloture" });
+            var result = await _clotureWorkflow.ValiderClotureDmAsync(demandeClotureId);
+            return MapClotureWorkflowToProjectDetails(result, demande.ProjetId, "cloture");
         }
 
         // POST: Rejeter Clôture - Directeur Métier
@@ -274,32 +176,8 @@ namespace GestionProjects.Controllers
             if (!await CanValidateClotureDmAsync(demande, userId))
                 return Forbid();
 
-            // Le commentaire est obligatoire pour le rejet
-            if (string.IsNullOrWhiteSpace(commentaire))
-            {
-                TempData["Error"] = "Le commentaire est obligatoire pour rejeter la clôture.";
-                return RedirectToAction(nameof(Details), new { id = demande.ProjetId, tab = "cloture" });
-            }
-
-            if (demande.StatutValidationDirecteurMetier != StatutValidationCloture.EnAttente)
-            {
-                TempData["Error"] = "Cette validation a déjà été effectuée.";
-                return RedirectToAction(nameof(Details), new { id = demande.ProjetId, tab = "cloture" });
-            }
-
-            demande.StatutValidationDirecteurMetier = StatutValidationCloture.Rejetee;
-            demande.DateValidationDirecteurMetier = DateTime.Now;
-            demande.CommentaireDirecteurMetier = commentaire.Trim();
-            demande.DateModification = DateTime.Now;
-            demande.ModifiePar = _currentUserService.Matricule;
-
-            await _db.SaveChangesAsync();
-
-            await _auditService.LogActionAsync("REJET_CLOTURE_DM", "DemandeClotureProjet", demande.Id,
-                new { Commentaire = commentaire, Decision = "Rejetee" });
-
-            TempData["Success"] = "Clôture rejetée par le Directeur Métier.";
-            return RedirectToAction(nameof(Details), new { id = demande.ProjetId, tab = "cloture" });
+            var result = await _clotureWorkflow.RejeterClotureDmAsync(demandeClotureId, commentaire);
+            return MapClotureWorkflowToProjectDetails(result, demande.ProjetId, "cloture");
         }
 
         // GET: Liste des demandes de clôture à valider (DSI)
@@ -355,23 +233,8 @@ namespace GestionProjects.Controllers
                 return Forbid();
             }
 
-            if (demande.StatutValidationDSI != StatutValidationCloture.EnAttente)
-            {
-                TempData["Error"] = "Cette validation a déjà été effectuée.";
-                return RedirectToAction(nameof(Details), new { id = demande.ProjetId, tab = "cloture" });
-            }
-
-            demande.StatutValidationDSI = StatutValidationCloture.Validee;
-            demande.DateValidationDSI = DateTime.Now;
-
-            await VerifierClotureComplete(demande);
-
-            await _db.SaveChangesAsync();
-
-            await _auditService.LogActionAsync("VALIDATION_CLOTURE_DSI", "DemandeClotureProjet", demande.Id);
-
-            TempData["Success"] = "Clôture validée par la DSI.";
-            return RedirectToAction(nameof(Details), new { id = demande.ProjetId, tab = "cloture" });
+            var result = await _clotureWorkflow.ValiderClotureDsiAsync(demandeClotureId);
+            return MapClotureWorkflowToProjectDetails(result, demande.ProjetId, "cloture");
         }
 
         // POST: Ajouter/Modifier commentaire technique (Responsable Solutions IT)
@@ -390,21 +253,8 @@ namespace GestionProjects.Controllers
             }
 
             var userId = User.GetUserIdOrThrow();
-
-            projet.CommentaireTechnique = commentaireTechnique?.Trim() ?? string.Empty;
-            projet.DateDernierCommentaireTechnique = DateTime.Now;
-            projet.DernierCommentaireTechniqueParId = userId;
-            projet.DateModification = DateTime.Now;
-            projet.ModifiePar = _currentUserService.Matricule;
-
-            await _db.SaveChangesAsync();
-
-            await _auditService.LogActionAsync("AJOUT_COMMENTAIRE_TECHNIQUE", "Projet", projet.Id,
-                null,
-                new { CommentaireTechnique = commentaireTechnique });
-
-            TempData["Success"] = "Commentaire technique enregistré avec succès.";
-            return RedirectToAction(nameof(Details), new { id, tab = "analyse" });
+            var result = await _clotureWorkflow.AjouterCommentaireTechniqueAsync(id, userId, commentaireTechnique);
+            return MapClotureWorkflowToProjectDetails(result, id, "analyse");
         }
 
         // POST: Rejeter Clôture - DSI
@@ -426,46 +276,8 @@ namespace GestionProjects.Controllers
                 return Forbid();
             }
 
-            if (demande.StatutValidationDSI != StatutValidationCloture.EnAttente)
-            {
-                TempData["Error"] = "Cette validation a déjà été effectuée.";
-                return RedirectToAction(nameof(Details), new { id = demande.ProjetId, tab = "cloture" });
-            }
-
-            // Le commentaire est obligatoire
-            if (string.IsNullOrWhiteSpace(commentaire))
-            {
-                TempData["Error"] = "Le commentaire est obligatoire pour rejeter la clôture.";
-                return RedirectToAction(nameof(Details), new { id = demande.ProjetId, tab = "cloture" });
-            }
-
-            // Rejeter la clôture : retour en attente de clôture
-            demande.StatutValidationDSI = StatutValidationCloture.Rejetee;
-            demande.CommentaireDSI = commentaire.Trim();
-            demande.DateModification = DateTime.Now;
-            demande.ModifiePar = _currentUserService.Matricule;
-
-            // Remettre les validations Demandeur et DM en attente pour permettre une nouvelle soumission
-            demande.StatutValidationDemandeur = StatutValidationCloture.EnAttente;
-            demande.StatutValidationDirecteurMetier = StatutValidationCloture.EnAttente;
-            demande.DateValidationDemandeur = null;
-            demande.DateValidationDirecteurMetier = null;
-            demande.CommentaireDemandeur = string.Empty;
-            demande.CommentaireDirecteurMetier = string.Empty;
-
-            // Le projet reste en phase UAT/MEP ou Clôture selon son état
-            if (demande.Projet.PhaseActuelle == PhaseProjet.ClotureLeconsApprises)
-            {
-                demande.Projet.PhaseActuelle = PhaseProjet.UatMep;
-            }
-
-            await _db.SaveChangesAsync();
-
-            await _auditService.LogActionAsync("REJET_CLOTURE_DSI", "DemandeClotureProjet", demande.Id,
-                new { Commentaire = commentaire });
-
-            TempData["Success"] = "Clôture rejetée. Le projet est retourné en attente de clôture.";
-            return RedirectToAction(nameof(Details), new { id = demande.ProjetId, tab = "cloture" });
+            var result = await _clotureWorkflow.RejeterClotureDsiAsync(demandeClotureId, commentaire);
+            return MapClotureWorkflowToProjectDetails(result, demande.ProjetId, "cloture");
         }
 
         // POST: Forcer Statut Projet (Clôture ou Abandon)
@@ -484,127 +296,24 @@ namespace GestionProjects.Controllers
                 return Forbid();
             }
 
-            if (string.IsNullOrWhiteSpace(actionType) || string.IsNullOrWhiteSpace(commentaire))
-            {
-                TempData["Error"] = "L'action et le commentaire sont obligatoires.";
-                return RedirectToAction(nameof(Details), new { id, tab = "synthese" });
-            }
-
-            var ancienStatut = projet.StatutProjet;
-            var anciennePhase = projet.PhaseActuelle;
-
-            if (actionType == "Cloture")
-            {
-                // Clôturer le projet (projet terminé avec succès)
-                projet.StatutProjet = StatutProjet.Cloture;
-                projet.DateFinReelle = DateTime.Now;
-                projet.PhaseActuelle = PhaseProjet.ClotureLeconsApprises;
-
-                // Mettre à jour les délégations ChefProjet actives
-                var delegationsActives = await _db.DelegationsChefProjet
-                    .Where(d => d.ProjetId == projet.Id &&
-                               d.EstActive &&
-                               d.DateFin == null &&
-                               !d.EstSupprime)
-                    .ToListAsync();
-
-                foreach (var delegation in delegationsActives)
-                {
-                    delegation.DateFin = DateTime.Now;
-                    delegation.EstActive = false;
-                    delegation.DateModification = DateTime.Now;
-                    delegation.ModifiePar = _currentUserService.Matricule;
-                }
-
-                await _auditService.LogActionAsync("FORCER_CLOTURE_PROJET", "Projet", projet.Id,
-                    new { AncienStatut = ancienStatut, AnciennePhase = anciennePhase, Commentaire = commentaire },
-                    new { NouveauStatut = projet.StatutProjet, NouvellePhase = projet.PhaseActuelle });
-            }
-            else if (actionType == "Abandon")
-            {
-                // Abandonner le projet (travaux arrêtés ou changement d'avis)
-                projet.StatutProjet = StatutProjet.Annule;
-                projet.DateFinReelle = DateTime.Now;
-
-                // Mettre à jour les délégations ChefProjet actives
-                var delegationsActives = await _db.DelegationsChefProjet
-                    .Where(d => d.ProjetId == projet.Id &&
-                               d.EstActive &&
-                               d.DateFin == null &&
-                               !d.EstSupprime)
-                    .ToListAsync();
-
-                foreach (var delegation in delegationsActives)
-                {
-                    delegation.DateFin = DateTime.Now;
-                    delegation.EstActive = false;
-                    delegation.DateModification = DateTime.Now;
-                    delegation.ModifiePar = _currentUserService.Matricule;
-                }
-
-                await _auditService.LogActionAsync("FORCER_ABANDON_PROJET", "Projet", projet.Id,
-                    new { AncienStatut = ancienStatut, AnciennePhase = anciennePhase, Commentaire = commentaire },
-                    new { NouveauStatut = projet.StatutProjet });
-            }
-            else
-            {
-                TempData["Error"] = "Action invalide. Veuillez choisir Clôture ou Abandon.";
-                return RedirectToAction(nameof(Details), new { id, tab = "synthese" });
-            }
-
-            await _db.SaveChangesAsync();
-
-            TempData["Success"] = $"Projet {actionType.ToLower()} avec succès.";
-            return RedirectToAction(nameof(Details), new { id, tab = "synthese" });
+            var result = await _clotureWorkflow.ForcerStatutProjetAsync(id, actionType, commentaire);
+            return MapClotureWorkflowToProjectDetails(result, id, "synthese");
         }
 
-        // Méthode privée pour vérifier si la clôture est complète
-        // Validation stricte : Demandeur + Directeur Métier + DSI
-        private async Task VerifierClotureComplete(DemandeClotureProjet demande)
+        private IActionResult MapClotureWorkflowToProjectDetails(WorkflowResult result, Guid projetId, string tab)
         {
-            if (demande.Projet.FicheProjet == null)
-            {
-                await _db.Entry(demande.Projet)
-                    .Reference(p => p.FicheProjet)
-                    .LoadAsync();
-            }
+            if (result.IsNotFound)
+                return NotFound();
 
-            var validationComplete =
-                demande.StatutValidationDemandeur == StatutValidationCloture.Validee &&
-                demande.StatutValidationDirecteurMetier == StatutValidationCloture.Validee &&
-                demande.StatutValidationDSI == StatutValidationCloture.Validee;
+            if (result.IsForbidden)
+                return Forbid();
 
-            if (validationComplete && !demande.EstTerminee)
-            {
-                demande.EstTerminee = true;
-                demande.DateClotureFinale = DateTime.Now;
+            if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
+                TempData["Error"] = result.ErrorMessage;
+            else if (!string.IsNullOrWhiteSpace(result.SuccessMessage))
+                TempData["Success"] = result.SuccessMessage;
 
-                var projet = demande.Projet;
-                var statutFinal = demande.Projet.FicheProjet?.StatutFinalCloture?.Trim();
-                projet.StatutProjet = string.Equals(statutFinal, "Abandonné", StringComparison.OrdinalIgnoreCase)
-                    ? StatutProjet.Annule
-                    : StatutProjet.Cloture;
-                projet.DateFinReelle = DateTime.Now;
-                projet.PhaseActuelle = PhaseProjet.ClotureLeconsApprises;
-
-                // Mettre à jour les délégations ChefProjet actives pour ce projet
-                var delegationsActives = await _db.DelegationsChefProjet
-                    .Where(d => d.ProjetId == projet.Id &&
-                               d.EstActive &&
-                               d.DateFin == null &&
-                               !d.EstSupprime)
-                    .ToListAsync();
-
-                foreach (var delegation in delegationsActives)
-                {
-                    delegation.DateFin = DateTime.Now;
-                    delegation.EstActive = false;
-                    delegation.DateModification = DateTime.Now;
-                    delegation.ModifiePar = _currentUserService.Matricule;
-                }
-
-                await _auditService.LogActionAsync("CLOTURE_PROJET", "Projet", projet.Id);
-            }
+            return RedirectToAction(nameof(Details), new { id = projetId, tab });
         }
     }
 }
