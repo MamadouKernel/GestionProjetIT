@@ -1670,6 +1670,54 @@ namespace GestionProjects.Migrations
                     b.ToTable("JalonsCharte");
                 });
 
+            modelBuilder.Entity("GestionProjects.Domain.Models.JetonInitialisationMotDePasse", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CreePar")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("DateCreation")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DateExpiration")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DateModification")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DateUtilisation")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("EstSupprime")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ModifiePar")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<Guid>("UtilisateurId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("UtiliseDepuisIp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UtilisateurId", "DateUtilisation", "EstSupprime");
+
+                    b.ToTable("JetonsInitialisationMotDePasse");
+                });
+
             modelBuilder.Entity("GestionProjects.Domain.Models.LigneBudgetPlanificationProjet", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3306,6 +3354,17 @@ namespace GestionProjects.Migrations
                         .IsRequired();
 
                     b.Navigation("CharteProjet");
+                });
+
+            modelBuilder.Entity("GestionProjects.Domain.Models.JetonInitialisationMotDePasse", b =>
+                {
+                    b.HasOne("GestionProjects.Domain.Models.Utilisateur", "Utilisateur")
+                        .WithMany()
+                        .HasForeignKey("UtilisateurId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Utilisateur");
                 });
 
             modelBuilder.Entity("GestionProjects.Domain.Models.LigneBudgetPlanificationProjet", b =>

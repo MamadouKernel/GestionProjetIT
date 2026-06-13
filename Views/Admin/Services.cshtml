@@ -2,8 +2,12 @@
 
 @{
     ViewData["Title"] = "Gestion des Services";
-    var directions  = Model.Directions;
-    var activeCount = Model.Services.Count(s => !s.EstSupprime && s.EstActive);
+    var directions         = Model.Directions;
+    var recherche          = Model.Recherche ?? string.Empty;
+    var statut             = Model.Statut ?? string.Empty;
+    var selectedDirId      = Model.SelectedDirectionId;
+    var pageSize           = Model.PageSize;
+    var filtreActif        = !string.IsNullOrWhiteSpace(recherche) || selectedDirId.HasValue || !string.IsNullOrWhiteSpace(statut);
 }
 
 <div class="fade-in admin-page">
@@ -16,14 +20,13 @@
                     Structurez les services rattachés aux directions métier et gardez un référentiel propre pour les affectations.
                 </p>
                 <div class="page-hero-meta">
-                    <span class="badge-modern badge-modern-info">@Model.Services.Count() service(s)</span>
-                    <span class="badge-modern badge-modern-success">@activeCount actif(s)</span>
+                    <span class="badge-modern badge-modern-info">@Model.TotalCount service(s)</span>
                 </div>
             </div>
         </div>
 
         <div class="admin-hero-actions">
-            <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#createServiceModal" onclick="resetServiceForm()">
+            <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#createServiceModal">
                 <i class="bi bi-plus-circle"></i>
                 Nouveau service
             </button>
@@ -39,12 +42,58 @@
         <a asp-action="Services" class="nav-link active">Services</a>
         <a asp-action="Delegations" class="nav-link">Délégations</a>
         <a asp-action="Parametres" class="nav-link">Paramètres</a>
-        <span class="ms-auto d-flex align-items-center">
-            <a asp-controller="DemandeProjet" asp-action="Create" class="btn-modern btn-modern-success" style="white-space:nowrap">
-                <i class="bi bi-plus-circle"></i>
-                Nouvelle demande
-            </a>
-        </span>
+    </div>
+
+    <div class="card-modern mb-4">
+        <div class="card-body-modern">
+            <form method="get" asp-action="Services">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label-modern" for="recherche">Recherche</label>
+                        <input type="text" id="recherche" name="recherche" value="@recherche"
+                               class="form-control-modern" placeholder="Libellé ou code du service..." />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label-modern" for="directionId">Direction</label>
+                        <select id="directionId" name="directionId" class="form-control-modern">
+                            <option value="">Toutes les directions</option>
+                            @foreach (var dir in directions)
+                            {
+                                <option value="@dir.Id" selected="@(selectedDirId == dir.Id)">@dir.Libelle</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label-modern" for="statut">Statut</label>
+                        <select id="statut" name="statut" class="form-control-modern">
+                            <option value="" selected="@(statut == "")">Tous les statuts</option>
+                            <option value="active" selected="@(statut == "active")">Actifs uniquement</option>
+                            <option value="inactive" selected="@(statut == "inactive")">Inactifs uniquement</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label-modern" for="pageSize">Lignes</label>
+                        <select id="pageSize" name="pageSize" class="form-control-modern">
+                            @foreach (var ps in new[] { 5, 10, 20, 50, 100 })
+                            {
+                                <option value="@ps" selected="@(pageSize == ps)">@ps</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn-modern btn-modern-primary flex-fill">
+                            <i class="bi bi-search"></i> Filtrer
+                        </button>
+                        @if (filtreActif)
+                        {
+                            <a asp-action="Services" class="btn-modern btn-modern-secondary" title="Effacer les filtres">
+                                <i class="bi bi-x-circle"></i>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
 
     <div class="card-modern">
@@ -57,11 +106,11 @@
                     </h3>
                     <p class="soft-note mb-0">Chaque service peut être activé, édité et rattaché à une direction.</p>
                 </div>
-                <span class="badge-modern badge-modern-info">@activeCount actif(s)</span>
+                <span class="badge-modern badge-modern-info">@Model.TotalCount résultat(s)</span>
             </div>
         </div>
 
-        @if (Model.Services.Any(s => !s.EstSupprime))
+        @if (Model.Services.Any())
         {
             <div class="card-body-modern p-0">
                 <div class="table-responsive">
@@ -76,7 +125,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var service in Model.Services.Where(s => !s.EstSupprime))
+                            @foreach (var service in Model.Services)
                             {
                                 <tr>
                                     <td class="table-code">@service.Code</td>
@@ -109,12 +158,13 @@
                                         <div class="table-actions justify-content-center">
                                             <button type="button"
                                                     class="btn-modern btn-modern-gold btn-icon"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#createServiceModal"
                                                     data-id="@service.Id"
                                                     data-code="@service.Code"
                                                     data-libelle="@service.Libelle"
                                                     data-direction="@service.DirectionId"
                                                     data-active="@service.EstActive.ToString().ToLowerInvariant()"
-                                                    onclick="editServiceFromBtn(this)"
                                                     title="Modifier le service"
                                                     aria-label="Modifier le service">
                                                 <i class="bi bi-pencil"></i>
@@ -141,7 +191,17 @@
         {
             <div class="card-body-modern empty-state-soft">
                 <i class="bi bi-inbox"></i>
-                <p>Aucun service enregistré.</p>
+                @if (filtreActif)
+                {
+                    <p>Aucun service ne correspond aux filtres sélectionnés.</p>
+                    <a asp-action="Services" class="btn-modern btn-modern-secondary mt-2">
+                        <i class="bi bi-x-circle"></i> Effacer les filtres
+                    </a>
+                }
+                else
+                {
+                    <p>Aucun service enregistré.</p>
+                }
             </div>
         }
     </div>
@@ -156,7 +216,7 @@
                 <div class="modal-header admin-modal-header">
                     <h5 class="modal-title">
                         <i class="bi bi-boxes"></i>
-                        <span id="modalTitle">Nouveau service</span>
+                        <span id="serviceModalTitle">Nouveau service</span>
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -167,8 +227,8 @@
                             Informations du service
                         </h6>
                         <div class="form-group-modern">
-                            <label class="form-label-modern" for="directionId">Direction *</label>
-                            <select name="DirectionId" id="directionId" class="form-control-modern" required>
+                            <label class="form-label-modern" for="serviceDirectionId">Direction *</label>
+                            <select name="DirectionId" id="serviceDirectionId" class="form-control-modern" required>
                                 <option value="">-- Sélectionner une direction --</option>
                                 @foreach (var dir in directions)
                                 {
@@ -178,23 +238,23 @@
                             <span class="text-danger field-validation-valid" data-valmsg-for="DirectionId" data-valmsg-replace="true"></span>
                         </div>
                         <div class="form-group-modern">
-                            <label class="form-label-modern" for="libelle">Libellé *</label>
-                            <input type="text" name="Libelle" id="libelle" class="form-control-modern" required maxlength="200" value="" />
+                            <label class="form-label-modern" for="serviceLibelle">Libellé *</label>
+                            <input type="text" name="Libelle" id="serviceLibelle" class="form-control-modern" required maxlength="200" value="" />
                             <small class="text-muted">Le code est généré automatiquement à partir de la direction et du libellé.</small>
                             <span class="text-danger field-validation-valid" data-valmsg-for="Libelle" data-valmsg-replace="true"></span>
                         </div>
                         <div class="form-group-modern">
-                            <label class="form-label-modern" for="code">Code *</label>
-                            <input type="text" name="Code" id="code" class="form-control-modern" required maxlength="50" value="" readonly />
-                            <small class="text-muted">Le code reste modifiable côté back-office si nécessaire.</small>
+                            <label class="form-label-modern" for="serviceCode">Code *</label>
+                            <input type="text" name="Code" id="serviceCode" class="form-control-modern" required maxlength="50" value="" readonly style="background-color: var(--gray-50); cursor: not-allowed;" />
+                            <small class="text-muted">Généré automatiquement, modifiable si nécessaire.</small>
                             <span class="text-danger field-validation-valid" data-valmsg-for="Code" data-valmsg-replace="true"></span>
                         </div>
                         <div class="admin-permission-card">
-                            <input type="checkbox" name="EstActive" id="estActive" value="true" class="form-check-input" checked />
+                            <input type="checkbox" name="EstActive" id="serviceEstActive" value="true" class="form-check-input" checked />
                             <input type="hidden" name="EstActive" value="false" />
-                            <label class="form-check-label m-0" for="estActive">
+                            <label class="form-check-label m-0" for="serviceEstActive">
                                 <strong>Service actif</strong>
-                                <small class="d-block text-muted">Un service actif est proposé dans les formulaires et référentiels de l'application.</small>
+                                <small class="d-block text-muted">Un service actif est proposé dans les formulaires et référentiels.</small>
                             </label>
                         </div>
                     </div>
@@ -214,79 +274,73 @@
     </div>
 </div>
 
+@section Scripts {
 <script>
-    function generateInitialesFromLibelle(libelle) {
-        if (!libelle || libelle.trim() === '') {
-            return '';
-        }
+    function generateCodeService() {
+        var serviceId = document.getElementById('serviceId').value;
+        if (serviceId) return;
+        var dirSelect = document.getElementById('serviceDirectionId');
+        var libelleInput = document.getElementById('serviceLibelle');
+        var codeInput = document.getElementById('serviceCode');
+        if (!dirSelect || !libelleInput || !codeInput) return;
 
-        const motsIgnorer = ['de', 'des', 'du', "d'", 'le', 'la', 'les', 'un', 'une',
-            'et', 'ou', 'à', 'au', 'aux', 'en', 'pour', 'par', 'avec',
-            'sans', 'sous', 'sur', 'dans', 'entre', 'vers'];
+        var selectedOption = dirSelect.options[dirSelect.selectedIndex];
+        var dirCode = selectedOption ? selectedOption.getAttribute('data-code') : '';
+        var libelle = libelleInput.value || '';
+        if (!dirCode || !libelle) return;
 
-        const mots = libelle
-            .replace(/'/g, ' ')
-            .replace(/-/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim()
-            .split(' ')
-            .filter(mot => mot.trim() !== '');
-
-        let initiales = '';
-        for (const mot of mots) {
-            if (mot.length >= 2 && !motsIgnorer.includes(mot.toLowerCase())) {
-                initiales += mot[0].toUpperCase();
-            }
-        }
-
-        return initiales;
-    }
-
-    function generateServiceCode() {
-        const serviceId = document.getElementById('serviceId').value;
-        const directionSelect = document.getElementById('directionId');
-        const libelleInput = document.getElementById('libelle');
-        const codeInput = document.getElementById('code');
-
-        if (!serviceId && directionSelect && libelleInput && codeInput) {
-            const selectedOption = directionSelect.options[directionSelect.selectedIndex];
-            const directionCode = selectedOption ? selectedOption.getAttribute('data-code') : '';
-            const libelle = libelleInput.value || '';
-
-            if (directionCode && libelle) {
-                const initialesService = generateInitialesFromLibelle(libelle);
-                if (initialesService) {
-                    codeInput.value = directionCode + '-' + initialesService;
-                }
-            }
-        }
+        var ignore = ['de','des','du','le','la','les','un','une','et','ou','a','au','aux','en','pour','par','avec','sans','sous','sur','dans','entre','vers'];
+        var initiales = libelle.replace(/'/g,' ').replace(/-/g,' ').replace(/\s+/g,' ').trim()
+            .split(' ').filter(function(m) { return m.length >= 2 && !ignore.includes(m.toLowerCase()); })
+            .map(function(m) { return m[0].toUpperCase(); }).join('');
+        if (initiales) codeInput.value = dirCode + '-' + initiales;
     }
 
     function resetServiceForm() {
         document.getElementById('serviceForm').reset();
-        document.getElementById('serviceId').value = '';
         document.getElementById('serviceForm').action = '@Url.Action("CreateService")';
-        document.getElementById('modalTitle').textContent = 'Nouveau service';
-        document.getElementById('code').value = '';
-        document.getElementById('estActive').checked = true;
-    }
-
-    function editServiceFromBtn(button) {
-        document.getElementById('serviceId').value = button.dataset.id || '';
-        document.getElementById('directionId').value = button.dataset.direction || '';
-        document.getElementById('libelle').value = button.dataset.libelle || '';
-        document.getElementById('code').value = button.dataset.code || '';
-        document.getElementById('estActive').checked = button.dataset.active === 'true';
-        document.getElementById('serviceForm').action = '@Url.Action("UpdateService")';
-        document.getElementById('modalTitle').textContent = 'Modifier le service';
-
-        const modal = new bootstrap.Modal(document.getElementById('createServiceModal'));
-        modal.show();
+        document.getElementById('serviceId').value = '';
+        document.getElementById('serviceModalTitle').textContent = 'Nouveau service';
+        document.getElementById('serviceCode').value = '';
+        document.getElementById('serviceCode').readOnly = true;
+        document.getElementById('serviceCode').style.backgroundColor = 'var(--gray-50)';
+        document.getElementById('serviceCode').style.cursor = 'not-allowed';
+        document.getElementById('serviceEstActive').checked = true;
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-        document.getElementById('directionId')?.addEventListener('change', generateServiceCode);
-        document.getElementById('libelle')?.addEventListener('input', generateServiceCode);
-        document.getElementById('createServiceModal')?.addEventListener('hidden.bs.modal', resetServiceForm);
+        var modal = document.getElementById('createServiceModal');
+
+        modal.addEventListener('show.bs.modal', function (event) {
+            var btn = event.relatedTarget;
+            if (btn && btn.dataset.id) {
+                document.getElementById('serviceForm').action = '@Url.Action("UpdateService")';
+                document.getElementById('serviceId').value = btn.dataset.id;
+                document.getElementById('serviceDirectionId').value = btn.dataset.direction || '';
+                document.getElementById('serviceLibelle').value = btn.dataset.libelle || '';
+                document.getElementById('serviceCode').value = btn.dataset.code || '';
+                document.getElementById('serviceEstActive').checked = btn.dataset.active === 'true';
+                document.getElementById('serviceModalTitle').textContent = 'Modifier le service';
+                document.getElementById('serviceCode').removeAttribute('readonly');
+                document.getElementById('serviceCode').style.backgroundColor = '';
+                document.getElementById('serviceCode').style.cursor = '';
+            } else {
+                resetServiceForm();
+            }
+        });
+
+        modal.addEventListener('hidden.bs.modal', function () {
+            resetServiceForm();
+        });
+
+        document.getElementById('serviceDirectionId').addEventListener('change', generateCodeService);
+        document.getElementById('serviceLibelle').addEventListener('input', generateCodeService);
+
+        document.getElementById('serviceCode').addEventListener('focus', function () {
+            this.removeAttribute('readonly');
+            this.style.backgroundColor = '';
+            this.style.cursor = '';
+        });
     });
 </script>
+}

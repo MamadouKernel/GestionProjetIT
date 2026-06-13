@@ -1,0 +1,95 @@
+@model GestionProjects.Application.ViewModels.InitialiserMotDePasseViewModel
+@{
+    ViewData["Title"] = "Initialiser le mot de passe";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Initialiser le mot de passe - Z&eacute;&iuml;nab</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="auth-premium-page" data-controller="Account" data-action="InitialiserMotDePasse" data-page-title="Initialiser le mot de passe">
+    <section class="auth-premium-left">
+        <div class="auth-premium-blob is-one"></div>
+        <div class="auth-premium-blob is-two"></div>
+
+        <div class="auth-premium-brand">
+            <img src="~/images/logo_cit.jpeg" alt="C&ocirc;te d'Ivoire Terminal" />
+        </div>
+
+        <div class="auth-premium-copy">
+            <h1>Z&eacute;&iuml;nab</h1>
+            <p>Finalisez l'activation de votre compte avec un mot de passe personnel conforme aux exigences de securite.</p>
+        </div>
+    </section>
+
+    <section class="auth-premium-right">
+        <div class="auth-premium-panel">
+            <div class="auth-premium-header">
+                <div class="auth-premium-brand-fallback">
+                    <div class="auth-premium-brand-fallback-icon">ZE</div>
+                    <div class="auth-premium-brand-fallback-copy">
+                        <strong>Z&eacute;&iuml;nab</strong>
+                        <span>CIT · Portefeuille IT</span>
+                    </div>
+                </div>
+                <h2 class="auth-premium-title">Initialiser le mot de passe</h2>
+                <p class="auth-premium-subtitle">Choisissez un mot de passe d'au moins 12 caracteres, avec une majuscule et un chiffre.</p>
+            </div>
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="auth-premium-alert is-danger">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <div>
+                        @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            if (!string.IsNullOrWhiteSpace(err.ErrorMessage))
+                            {
+                                <div>@err.ErrorMessage</div>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+
+            <form asp-action="InitialiserMotDePasse" method="post" autocomplete="off" class="auth-premium-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="UtilisateurId" />
+                <input type="hidden" asp-for="Token" />
+
+                <div class="auth-premium-field">
+                    <label asp-for="NouveauMotDePasse" class="form-label-modern"></label>
+                    <div class="auth-premium-input-wrap">
+                        <i class="bi bi-key auth-premium-field-icon"></i>
+                        <input asp-for="NouveauMotDePasse" class="form-control-modern" autocomplete="new-password" />
+                    </div>
+                </div>
+
+                <div class="auth-premium-field">
+                    <label asp-for="ConfirmerMotDePasse" class="form-label-modern"></label>
+                    <div class="auth-premium-input-wrap">
+                        <i class="bi bi-shield-check auth-premium-field-icon"></i>
+                        <input asp-for="ConfirmerMotDePasse" class="form-control-modern" autocomplete="new-password" />
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-premium-login">
+                    <i class="bi bi-check-circle"></i>
+                    Activer mon compte
+                </button>
+            </form>
+
+            <p class="auth-premium-register">
+                Lien expire ou invalide ?
+                <a asp-action="Login">Retour a la connexion</a>
+            </p>
+        </div>
+    </section>
+</body>
+</html>

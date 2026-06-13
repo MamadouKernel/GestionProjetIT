@@ -1,216 +1,75 @@
-using GestionProjects.Application.Common.Extensions;
+using GestionProjects.Application.Common.Results;
+using GestionProjects.Application.Validators.Admin;
 using GestionProjects.Application.ViewModels.Admin;
-using GestionProjects.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace GestionProjects.Controllers
 {
     public partial class AdminController
     {
-        public async Task<IActionResult> Services(string? recherche = null, Guid? directionId = null, int page = 1, int pageSize = 20)
+        public async Task<IActionResult> Services(string? recherche = null, Guid? directionId = null, string? statut = null, int page = 1, int pageSize = 20)
         {
-            var vm = await BuildServicesListViewModelAsync(recherche, directionId, page, pageSize);
-
-            ViewBag.PageNumber          = vm.PageNumber;
-            ViewBag.TotalPages          = vm.TotalPages;
-            ViewBag.TotalCount          = vm.TotalCount;
-            ViewBag.PageSize            = vm.PageSize;
-            ViewBag.Recherche           = vm.Recherche;
-            ViewBag.SelectedDirectionId = vm.SelectedDirectionId;
-            ViewBag.Directions          = vm.Directions;
-
+            var vm = await _serviceService.GetListAsync(recherche, directionId, statut, page, pageSize);
+            PopulateServiceViewBag(vm);
             return View(vm);
-        }
-
-        private async Task<ServicesListViewModel> BuildServicesListViewModelAsync(
-            string? recherche = null,
-            Guid? directionId = null,
-            int page = 1,
-            int pageSize = 20)
-        {
-            page     = Math.Max(1, page);
-            pageSize = Math.Clamp(pageSize, 10, 100);
-
-            var query = _db.Services
-                .Include(s => s.Direction)
-                .Where(s => !s.EstSupprime)
-                .AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(recherche))
-                query = query.Where(s => s.Libelle.Contains(recherche) || s.Code.Contains(recherche));
-
-            if (directionId.HasValue)
-                query = query.Where(s => s.DirectionId == directionId.Value);
-
-            query = query.OrderBy(s => s.Libelle);
-
-            var paged = await query.ToPagedResultAsync(page, pageSize);
-
-            var directions = await _db.Directions
-                .Where(d => !d.EstSupprime && d.EstActive)
-                .OrderBy(d => d.Libelle)
-                .ToListAsync();
-
-            return new ServicesListViewModel
-            {
-                Services            = paged.Items,
-                Directions          = directions,
-                TotalCount          = paged.TotalCount,
-                PageNumber          = paged.PageNumber,
-                TotalPages          = paged.TotalPages,
-                PageSize            = paged.PageSize,
-                Recherche           = recherche,
-                SelectedDirectionId = directionId
-            };
-        }
-
-        private async Task<string> GenerateServiceCodeAsync(string libelle, Guid? directionId)
-        {
-            if (string.IsNullOrWhiteSpace(libelle) || !directionId.HasValue)
-                return string.Empty;
-
-            var direction = await _db.Directions.FindAsync(directionId.Value);
-            if (direction == null || string.IsNullOrWhiteSpace(direction.Code))
-                return string.Empty;
-
-            var initialesService = GenerateCodeFromLibelle(libelle);
-
-            return $"{direction.Code}-{initialesService}";
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateService(string Code, string Libelle, string DirectionId)
         {
-            if (string.IsNullOrWhiteSpace(Libelle))
-            {
-                ModelState.AddModelError("Libelle", "Le libellé est requis.");
-            }
-
-            if (string.IsNullOrWhiteSpace(DirectionId) || !Guid.TryParse(DirectionId, out var directionGuid))
-            {
-                ModelState.AddModelError("DirectionId", "La direction est requise.");
-            }
-
-            string codeFinal = Code?.Trim() ?? string.Empty;
-            if (string.IsNullOrWhiteSpace(codeFinal) && !string.IsNullOrWhiteSpace(Libelle) && Guid.TryParse(DirectionId, out directionGuid))
-            {
-                codeFinal = await GenerateServiceCodeAsync(Libelle, directionGuid);
-            }
-
-            if (string.IsNullOrWhiteSpace(codeFinal))
-            {
-                ModelState.AddModelError("Code", "Le code est requis.");
-            }
-
-            if (!string.IsNullOrWhiteSpace(codeFinal))
-            {
-                var codeExists = await _db.Services
-                    .AnyAsync(s => s.Code == codeFinal && !s.EstSupprime);
-                if (codeExists)
-                {
-                    ModelState.AddModelError("Code", "Ce code de service existe déjà.");
-                }
-            }
-
-            if (ModelState.IsValid && Guid.TryParse(DirectionId, out directionGuid))
-            {
-                var service = new Service
-                {
-                    Id = Guid.NewGuid(),
-                    Code = codeFinal,
-                    Libelle = Libelle.Trim(),
-                    DirectionId = directionGuid,
-                    EstActive = true,
-                    DateCreation = DateTime.Now,
-                    CreePar = _currentUserService.Matricule ?? "SYSTEM",
-                    EstSupprime = false
-                };
-
-                _db.Services.Add(service);
-                await _db.SaveChangesAsync();
-
-                await _auditService.LogActionAsync("CREATION_SERVICE", "Service", service.Id,
-                    null,
-                    new { Code = service.Code, Libelle = service.Libelle, DirectionId = directionGuid });
-
-                TempData["Success"] = "Service créé avec succès.";
-                return RedirectToAction(nameof(Services));
-            }
-
-            return View("Services", await BuildServicesListViewModelAsync());
+            var input  = new CreateServiceInput(Code, Libelle, DirectionId, true);
+            var result = await _serviceService.CreateAsync(input);
+            return await HandleServiceResultAsync(result);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateService(Guid id, string Code, string Libelle, string DirectionId)
         {
-            var existingService = await _db.Services.FindAsync(id);
-            if (existingService == null)
-                return NotFound();
-
-            if (string.IsNullOrWhiteSpace(Code))
-            {
-                ModelState.AddModelError("Code", "Le code est requis.");
-            }
-
-            if (string.IsNullOrWhiteSpace(Libelle))
-            {
-                ModelState.AddModelError("Libelle", "Le libellé est requis.");
-            }
-
-            if (string.IsNullOrWhiteSpace(DirectionId) || !Guid.TryParse(DirectionId, out var directionGuid))
-            {
-                ModelState.AddModelError("DirectionId", "La direction est requise.");
-            }
-
-            if (!string.IsNullOrWhiteSpace(Code) && Code != existingService.Code)
-            {
-                var codeExists = await _db.Services
-                    .AnyAsync(s => s.Code == Code && s.Id != id && !s.EstSupprime);
-                if (codeExists)
-                {
-                    ModelState.AddModelError("Code", "Ce code de service existe déjà.");
-                }
-            }
-
-            if (ModelState.IsValid && Guid.TryParse(DirectionId, out directionGuid))
-            {
-                existingService.Code = Code.Trim();
-                existingService.Libelle = Libelle.Trim();
-                existingService.DirectionId = directionGuid;
-                existingService.DateModification = DateTime.Now;
-                existingService.ModifiePar = _currentUserService.Matricule;
-
-                await _db.SaveChangesAsync();
-
-                await _auditService.LogActionAsync("MODIFICATION_SERVICE", "Service", existingService.Id,
-                    new { AncienCode = existingService.Code, AncienLibelle = existingService.Libelle },
-                    new { NouveauCode = Code, NouveauLibelle = Libelle });
-
-                TempData["Success"] = "Service modifié avec succès.";
-                return RedirectToAction(nameof(Services));
-            }
-
-            return View("Services", await BuildServicesListViewModelAsync());
+            var input  = new UpdateServiceInput(id, Code, Libelle, DirectionId, true);
+            var result = await _serviceService.UpdateAsync(input);
+            return await HandleServiceResultAsync(result);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteService(Guid id)
         {
-            var service = await _db.Services.FindAsync(id);
-            if (service == null)
+            var result = await _serviceService.DeleteAsync(id);
+            return await HandleServiceResultAsync(result);
+        }
+
+        // ── Helpers HTTP (présentation uniquement) ────────────────────────────
+        private async Task<IActionResult> HandleServiceResultAsync(OperationResult result)
+        {
+            if (result.IsNotFound)
                 return NotFound();
 
-            service.EstSupprime = true;
-            await _db.SaveChangesAsync();
+            if (result.Succeeded)
+            {
+                TempData["Success"] = result.SuccessMessage;
+                return RedirectToAction(nameof(Services));
+            }
 
-            await _auditService.LogActionAsync("SUPPRESSION_SERVICE", "Service", service.Id);
+            foreach (var error in result.Errors)
+                ModelState.AddModelError(error.Field, error.Message);
 
-            TempData["Success"] = "Service supprimé.";
-            return RedirectToAction(nameof(Services));
+            var vm = await _serviceService.GetListAsync(null, null, null, 1, 20);
+            PopulateServiceViewBag(vm);
+            return View("Services", vm);
+        }
+
+        private void PopulateServiceViewBag(ServicesListViewModel vm)
+        {
+            ViewBag.PageNumber          = vm.PageNumber;
+            ViewBag.TotalPages          = vm.TotalPages;
+            ViewBag.TotalCount          = vm.TotalCount;
+            ViewBag.PageSize            = vm.PageSize;
+            ViewBag.Recherche           = vm.Recherche;
+            ViewBag.SelectedDirectionId = vm.SelectedDirectionId;
+            ViewBag.Statut              = vm.Statut;
+            ViewBag.Directions          = vm.Directions;
         }
     }
 }

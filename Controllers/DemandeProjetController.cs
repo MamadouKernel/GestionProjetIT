@@ -22,6 +22,8 @@ namespace GestionProjects.Controllers
         private readonly ITeamsNotificationService _teams;
         private readonly IEmailService _email;
         private readonly IPermissionService _permissionService;
+        private readonly IDemandeProjetQueryService _demandeQueryService;
+        private readonly IDemandeProjetWorkflowService _demandeWorkflowService;
 
         public DemandeProjetController(
             ApplicationDbContext db,
@@ -30,7 +32,9 @@ namespace GestionProjects.Controllers
             ICurrentUserService currentUserService,
             ITeamsNotificationService teams,
             IEmailService email,
-            IPermissionService permissionService)
+            IPermissionService permissionService,
+            IDemandeProjetQueryService demandeQueryService,
+            IDemandeProjetWorkflowService demandeWorkflowService)
         {
             _db = db;
             _fileStorage = fileStorage;
@@ -39,6 +43,8 @@ namespace GestionProjects.Controllers
             _teams = teams;
             _email = email;
             _permissionService = permissionService;
+            _demandeQueryService = demandeQueryService;
+            _demandeWorkflowService = demandeWorkflowService;
         }
 
         private async Task<bool> IsActiveDsiDelegateAsync(Guid userId)

@@ -11,4 +11,5 @@ public class DirectionsListViewModel
     public int TotalPages { get; set; }
     public int PageSize { get; set; }
     public string? Recherche { get; set; }
+    public string? Statut { get; set; }
 }

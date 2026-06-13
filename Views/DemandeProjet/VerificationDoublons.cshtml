@@ -3,7 +3,7 @@
 
 @{
     ViewData["Title"] = "Vérification des Doublons";
-    var demandeCourante = Model.DemandeCourante;
+    var demandeCourante = Model.DemandeCourante ?? throw new InvalidOperationException("La demande courante est requise.");
     var demandesSimilaires = Model.DemandesSimilaires;
 }
 
@@ -172,7 +172,7 @@
 
                     <form asp-action="ConfirmerSoumission" method="post" class="d-inline">
                         @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@demandeCourante.Id" />
+                        <input type="hidden" name="id" value="@demandeCourante!.Id" />
                         <input type="hidden" name="confirmerMalgreDoublons" value="true" />
 
                         <div class="d-flex gap-3">
@@ -180,7 +180,7 @@
                                 <i class="bi bi-check-circle"></i>
                                 Confirmer la Soumission Malgré les Doublons
                             </button>
-                            <a asp-action="Details" asp-route-id="@demandeCourante.Id" class="btn-modern btn-modern-secondary">
+                            <a asp-action="Details" asp-route-id="@demandeCourante!.Id" class="btn-modern btn-modern-secondary">
                                 <i class="bi bi-x-circle"></i>
                                 Annuler et Revenir à la Demande
                             </a>

@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Security.Claims;
@@ -56,6 +57,34 @@ namespace GestionProjects.Tests.Controllers
                 .Setup(x => x.CurrentUserHasPermissionAsync(It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(true);
 
+            // Vrais services (pas des mocks) branchés sur la DB in-memory : les
+            // tests admin exercent ainsi la logique réelle déplacée dans les services.
+            var directionService = new DirectionAdminService(
+                _db, _currentUserMock.Object, _auditMock.Object);
+            var serviceService = new ServiceAdminService(
+                _db, _currentUserMock.Object, _auditMock.Object);
+            var userService = new UserAdminService(
+                _db, _currentUserMock.Object, _auditMock.Object, _utilisateurMock.Object);
+            var roleService = new RoleAdminService(
+                _db, _auditMock.Object, _utilisateurMock.Object);
+            var parametreService = new ParametreAdminService(
+                _db, _currentUserMock.Object, _auditMock.Object);
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["SmtpSettings:BaseUrl"] = "http://localhost"
+                })
+                .Build();
+            var demandeCompteService = new DemandeCompteAdminService(
+                _db,
+                _currentUserMock.Object,
+                _auditMock.Object,
+                _emailMock.Object,
+                new PasswordSetupTokenService(_db, configuration),
+                configuration);
+            var delegationService = new DelegationAdminService(
+                _db, _currentUserMock.Object, _auditMock.Object);
+
             _controller = new AdminController(
                 _db,
                 _auditMock.Object,
@@ -63,6 +92,13 @@ namespace GestionProjects.Tests.Controllers
                 _emailMock.Object,
                 _permissionMock.Object,
                 _utilisateurMock.Object,
+                directionService,
+                serviceService,
+                userService,
+                roleService,
+                parametreService,
+                demandeCompteService,
+                delegationService,
                 _loggerMock.Object);
 
             SetupControllerContext(_controller, AdminUserId, RoleUtilisateur.AdminIT);

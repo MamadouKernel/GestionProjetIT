@@ -1,5 +1,6 @@
 ﻿using GestionProjects.Application.Common.Constants;
 using GestionProjects.Application.Common.Extensions;
+using GestionProjects.Application.Common.Helpers;
 using GestionProjects.Application.Common.Interfaces;
 using GestionProjects.Application.ViewModels;
 using GestionProjects.Application.ViewModels.Account;
@@ -21,12 +22,18 @@ namespace GestionProjects.Controllers
         private readonly ApplicationDbContext _db;
         private readonly IEmailService _email;
         private readonly IPermissionService _permissionService;
+        private readonly IPasswordSetupTokenService _passwordSetupTokenService;
 
-        public AccountController(ApplicationDbContext db, IEmailService email, IPermissionService permissionService)
+        public AccountController(
+            ApplicationDbContext db,
+            IEmailService email,
+            IPermissionService permissionService,
+            IPasswordSetupTokenService passwordSetupTokenService)
         {
             _db = db;
             _email = email;
             _permissionService = permissionService;
+            _passwordSetupTokenService = passwordSetupTokenService;
         }
 
         // GET: /Account/Login
@@ -81,7 +88,7 @@ namespace GestionProjects.Controllers
             // Vérifier que le mot de passe n'est pas vide
             if (string.IsNullOrEmpty(user.MotDePasse))
             {
-                ModelState.AddModelError(string.Empty, "Erreur : le mot de passe de l'utilisateur n'est pas configuré. Veuillez contacter l'administrateur.");
+                ModelState.AddModelError(string.Empty, "Ce compte est en attente d'activation. Utilisez le lien recu par email ou contactez la DSI.");
                 return View(model);
             }
 
@@ -275,6 +282,64 @@ namespace GestionProjects.Controllers
         public IActionResult AccessDenied()
         {
             return View();
+        }
+
+        [AllowAnonymous]
+        [HttpGet]
+        public IActionResult InitialiserMotDePasse(Guid utilisateurId, string token)
+        {
+            if (utilisateurId == Guid.Empty || string.IsNullOrWhiteSpace(token))
+            {
+                TempData["Error"] = "Lien d'activation invalide.";
+                return RedirectToAction(nameof(Login));
+            }
+
+            return View(new InitialiserMotDePasseViewModel
+            {
+                UtilisateurId = utilisateurId,
+                Token = token
+            });
+        }
+
+        [AllowAnonymous]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("LoginPolicy")]
+        public async Task<IActionResult> InitialiserMotDePasse(InitialiserMotDePasseViewModel model)
+        {
+            if (!ValidationHelper.IsStrongPassword(model.NouveauMotDePasse))
+            {
+                ModelState.AddModelError(
+                    nameof(model.NouveauMotDePasse),
+                    ValidationHelper.StrongPasswordPolicyMessage);
+            }
+
+            if (!ModelState.IsValid)
+            {
+                model.NouveauMotDePasse = string.Empty;
+                model.ConfirmerMotDePasse = string.Empty;
+                return View(model);
+            }
+
+            var result = await _passwordSetupTokenService.InitialiserMotDePasseAsync(
+                model.UtilisateurId,
+                model.Token,
+                model.NouveauMotDePasse,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                "ACTIVATION_COMPTE");
+
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                    ModelState.AddModelError(error.Field, error.Message);
+
+                model.NouveauMotDePasse = string.Empty;
+                model.ConfirmerMotDePasse = string.Empty;
+                return View(model);
+            }
+
+            TempData["Success"] = "Votre mot de passe a ete initialise. Vous pouvez maintenant vous connecter.";
+            return RedirectToAction(nameof(Login));
         }
 
         // GET: /Account/LoginMicrosoft
@@ -571,7 +636,7 @@ namespace GestionProjects.Controllers
 
             // Email au DM
             if (dm?.Email != null)
-                _ = _email.EnvoyerDemandeCreationCompteAuDMAsync(
+                await _email.EnvoyerDemandeCreationCompteAuDMAsync(
                     dm.Email,
                     $"{dm.Nom} {dm.Prenoms}".Trim(),
                     $"{nom.Trim()} {prenoms.Trim()}",
@@ -644,7 +709,7 @@ namespace GestionProjects.Controllers
 
             var nomComplet = $"{nom.Trim()} {prenoms.Trim()}";
             if (admin?.Email != null)
-                _ = _email.EnvoyerDemandeAccesAsync(admin.Email, nomComplet, email.Trim(), rolesSouhaites.Trim());
+                await _email.EnvoyerDemandeAccesAsync(admin.Email, nomComplet, email.Trim(), rolesSouhaites.Trim());
 
             TempData["Success"] = "Votre demande d'accès a été envoyée à l'administrateur. Vous serez contacté prochainement.";
             return RedirectToAction(nameof(Login));

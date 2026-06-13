@@ -33,9 +33,9 @@ public class ProjetQueryServiceTests
             .Setup(c => c.GetOrSetAsync(
                 It.IsAny<string>(),
                 It.IsAny<Func<Task<List<SelectListItem>>>>(),
-                It.IsAny<TimeSpan>()))
-            .Returns<string, Func<Task<List<SelectListItem>>>, TimeSpan>(
-                (_, factory, _) => factory());
+                It.IsAny<TimeSpan?>()))
+            .Returns<string, Func<Task<List<SelectListItem>>>, TimeSpan?>(
+                async (_, factory, _) => (List<SelectListItem>?)await factory());
 
         var svc = new ProjetQueryService(ctx, mockCache.Object);
         return (ctx, svc);

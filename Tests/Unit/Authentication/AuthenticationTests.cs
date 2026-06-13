@@ -29,7 +29,8 @@ public class AuthenticationTests : IDisposable
         _context = TestDbContextFactory.CreateContextWithSeedDataAsync(Guid.NewGuid().ToString()).Result;
         var emailService = new Mock<IEmailService>().Object;
         var permissionService = new Mock<IPermissionService>().Object;
-        _controller = new AccountController(_context, emailService, permissionService);
+        var passwordSetupTokenService = new Mock<IPasswordSetupTokenService>().Object;
+        _controller = new AccountController(_context, emailService, permissionService, passwordSetupTokenService);
 
         // Construire un HttpContext avec tous les services MVC nécessaires
         var authService = new Mock<IAuthenticationService>();

@@ -241,21 +241,22 @@ namespace GestionProjects.Infrastructure.Services
                     "Action DSI",
                     "Ouvrir le dossier"));
 
-        public Task EnvoyerCredentielsAsync(string email, string nomComplet, string username, string motDePasse)
+        public Task EnvoyerActivationCompteAsync(string email, string nomComplet, string username, string lienActivation, DateTime dateExpiration)
             => EnvoyerAsync(
                 email,
-                $"Vos acces a {DocumentBrandingHelper.ApplicationName}",
+                $"Activez votre acces a {DocumentBrandingHelper.ApplicationName}",
                 CorpsHtml(
                     $"Bienvenue sur {DocumentBrandingHelper.ApplicationName} - <strong>{nomComplet}</strong>",
                     $"<p>Bonjour <strong>{nomComplet}</strong>,</p>" +
-                    "<p>Votre compte a ete cree avec succes. Voici vos identifiants de connexion :</p>" +
+                    "<p>Votre compte a ete cree avec succes. Pour finaliser l'activation, definissez votre mot de passe via le lien securise ci-dessous.</p>" +
                     "<div style=\"background:#0f172a;border-radius:20px;padding:20px 22px;margin:20px 0;color:#e2e8f0;\">" +
                     $"<p style=\"margin:0 0 10px 0;\"><strong>Identifiant</strong><br/><span style=\"font-size:18px;color:#ffffff;\">{username}</span></p>" +
-                    $"<p style=\"margin:0;\"><strong>Mot de passe temporaire</strong><br/><span style=\"font-size:18px;color:#ffffff;\">{motDePasse}</span></p>" +
+                    $"<p style=\"margin:0;\"><strong>Expiration du lien</strong><br/><span style=\"font-size:18px;color:#ffffff;\">{dateExpiration:dd/MM/yyyy HH:mm}</span></p>" +
                     "</div>" +
-                    "<p><strong>Important :</strong> changez votre mot de passe des votre premiere connexion.</p>",
+                    "<p>Si vous n'etes pas a l'origine de cette demande, ignorez ce message et contactez la DSI.</p>",
                     "Acces utilisateur",
-                    "Se connecter"));
+                    "Definir mon mot de passe",
+                    lienActivation));
 
         public Task EnvoyerConfirmationCreationCompteAuDMAsync(string emailDM, string nomDM, string nomNouvelUtilisateur)
             => EnvoyerAsync(
@@ -265,7 +266,7 @@ namespace GestionProjects.Infrastructure.Services
                     $"Compte cree - <strong>{nomNouvelUtilisateur}</strong>",
                     $"<p>Bonjour <strong>{nomDM}</strong>,</p>" +
                     $"<p>Le compte de <strong>{nomNouvelUtilisateur}</strong> a ete cree avec succes.</p>" +
-                    "<p>Les identifiants de connexion ont ete transmis directement a l'utilisateur.</p>",
+                    "<p>Un lien d'activation securise a ete transmis directement a l'utilisateur.</p>",
                     "Compte active",
                     "Ouvrir Zéïnab"));
 

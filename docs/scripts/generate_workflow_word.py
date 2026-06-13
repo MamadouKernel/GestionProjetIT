@@ -473,8 +473,8 @@ def build_document():
         (3, "Demandeur", "Remplir le formulaire : nom, prenom, email, direction, service, role souhaite"),
         (4, "Systeme",   "Email automatique envoye au Directeur Metier (DM) de la direction"),
         (5, "DM",        "Valide la demande de compte => DSI cree le compte"),
-        (6, "Systeme",   "Email envoye au Demandeur avec ses identifiants (matricule + mot de passe temporaire)"),
-        (7, "Demandeur", "Se connecter et changer son mot de passe"),
+        (6, "Systeme",   "Email envoye au Demandeur avec son matricule et un lien d'activation securise"),
+        (7, "Demandeur", "Definir son mot de passe via le lien d'activation puis se connecter"),
     ])
 
     add_heading(doc, "B. Soumettre une demande de projet", level=2)
@@ -698,7 +698,7 @@ def build_document():
         (2, "AdminIT", "Cliquer sur 'Nouvel utilisateur'"),
         (3, "AdminIT", "Remplir : nom, prenom, email, matricule, direction, role"),
         (4, "AdminIT", "Enregistrer"),
-        (5, "Systeme",  "Mot de passe temporaire genere et envoye par email"),
+        (5, "Systeme",  "Lien d'activation securise genere et envoye par email"),
     ])
 
     add_heading(doc, "B. Modifier ou desactiver un utilisateur", level=2)

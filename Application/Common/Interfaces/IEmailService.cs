@@ -13,7 +13,7 @@ namespace GestionProjects.Application.Common.Interfaces
         Task EnvoyerDemandeAccesAsync(string emailAdmin, string nomDemandeur, string emailDemandeur, string rolesSouhaites);
         Task EnvoyerDemandeCreationCompteAuDMAsync(string emailDM, string nomDM, string nomComplet, string direction, string service, string emailDemandeur);
         Task EnvoyerDemandeCreationCompteAuDSIAsync(string emailDSI, string nomComplet, string nomDM, string direction, string service);
-        Task EnvoyerCredentielsAsync(string email, string nomComplet, string username, string motDePasse);
+        Task EnvoyerActivationCompteAsync(string email, string nomComplet, string username, string lienActivation, DateTime dateExpiration);
         Task EnvoyerConfirmationCreationCompteAuDMAsync(string emailDM, string nomDM, string nomNouvelUtilisateur);
         Task EnvoyerRefusCreationCompteAsync(string emailDemandeur, string nomComplet, string acteur, string? commentaire);
         Task SendEmailAsync(string to, string subject, string htmlBody, string? textBody = null);

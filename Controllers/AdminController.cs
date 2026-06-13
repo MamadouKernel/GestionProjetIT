@@ -20,6 +20,13 @@ namespace GestionProjects.Controllers
         private readonly IEmailService _email;
         private readonly IPermissionService _permissionService;
         private readonly IUtilisateurService _utilisateurService;
+        private readonly IDirectionAdminService _directionService;
+        private readonly IServiceAdminService _serviceService;
+        private readonly IUserAdminService _userService;
+        private readonly IRoleAdminService _roleService;
+        private readonly IParametreAdminService _parametreService;
+        private readonly IDemandeCompteAdminService _demandeCompteService;
+        private readonly IDelegationAdminService _delegationService;
         private readonly ILogger<AdminController> _logger;
 
         public AdminController(
@@ -29,6 +36,13 @@ namespace GestionProjects.Controllers
             IEmailService email,
             IPermissionService permissionService,
             IUtilisateurService utilisateurService,
+            IDirectionAdminService directionService,
+            IServiceAdminService serviceService,
+            IUserAdminService userService,
+            IRoleAdminService roleService,
+            IParametreAdminService parametreService,
+            IDemandeCompteAdminService demandeCompteService,
+            IDelegationAdminService delegationService,
             ILogger<AdminController> logger)
         {
             _db = db;
@@ -37,6 +51,13 @@ namespace GestionProjects.Controllers
             _email = email;
             _permissionService = permissionService;
             _utilisateurService = utilisateurService;
+            _directionService = directionService;
+            _serviceService = serviceService;
+            _userService = userService;
+            _roleService = roleService;
+            _parametreService = parametreService;
+            _demandeCompteService = demandeCompteService;
+            _delegationService = delegationService;
             _logger = logger;
         }
 
@@ -67,31 +88,6 @@ namespace GestionProjects.Controllers
         private async Task SynchronizeUserRolesAsync(Utilisateur user, IEnumerable<RoleUtilisateur> selectedRoles)
         {
             await _utilisateurService.SynchronizeUserRolesAsync(user, selectedRoles);
-        }
-
-        private async Task UpsertParametreSystemeAsync(string cle, string valeur, string description)
-        {
-            var parametre = await _db.ParametresSysteme.FirstOrDefaultAsync(p => p.Cle == cle && !p.EstSupprime);
-            if (parametre == null)
-            {
-                _db.ParametresSysteme.Add(new ParametreSysteme
-                {
-                    Id = Guid.NewGuid(),
-                    Cle = cle,
-                    Valeur = valeur,
-                    Description = description,
-                    DateCreation = DateTime.Now,
-                    CreePar = _currentUserService.Matricule ?? "SYSTEM",
-                    EstSupprime = false
-                });
-            }
-            else
-            {
-                parametre.Valeur = valeur;
-                parametre.Description = description;
-                parametre.DateModification = DateTime.Now;
-                parametre.ModifiePar = _currentUserService.Matricule;
-            }
         }
 
         public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)

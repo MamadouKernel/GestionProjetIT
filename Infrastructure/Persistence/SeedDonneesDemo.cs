@@ -1,6 +1,7 @@
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Serilog;
 
 namespace GestionProjects.Infrastructure.Persistence
@@ -12,13 +13,20 @@ namespace GestionProjects.Infrastructure.Persistence
     /// </summary>
     public static class SeedDonneesDemo
     {
-        // ─── Mot de passe commun à tous les comptes de démo ─────────────────
-        // À changer en production / communiquer aux testeurs via canal sécurisé
-        private const string MotDePasseDemo = "Zeinab@2024!";
+        // Secret local obligatoire: ne jamais stocker le mot de passe de demo dans le depot.
+        private const string DemoPasswordConfigKey = "SeedDemo:Password";
 
-        public static async Task ExecuterAsync(ApplicationDbContext db)
+        public static async Task ExecuterAsync(ApplicationDbContext db, IConfiguration configuration)
         {
             Log.Information("🌱 Vérification du seed de démonstration...");
+            var motDePasseDemo = configuration[DemoPasswordConfigKey];
+            if (string.IsNullOrWhiteSpace(motDePasseDemo))
+            {
+                Log.Warning(
+                    "Seed de demonstration ignore : configurez {ConfigKey} via user-secrets ou variable d'environnement SeedDemo__Password.",
+                    DemoPasswordConfigKey);
+                return;
+            }
 
             // ── Directions ──────────────────────────────────────────────────
             var dirDSI  = await UpsertDirectionAsync(db, "DSI",  "Direction des Systèmes d'Information");
@@ -29,17 +37,17 @@ namespace GestionProjects.Infrastructure.Persistence
             await db.SaveChangesAsync();
 
             // ── Utilisateurs & rôles ─────────────────────────────────────────
-            var dsi  = await UpsertUtilisateurAsync(db, "DSI001",  "Koffi",   "Paul",     "paul.koffi@cit.ci",     dirDSI.Id,  RoleUtilisateur.DSI);
-            var rsi  = await UpsertUtilisateurAsync(db, "RSI001",  "Bamba",   "Seydou",   "seydou.bamba@cit.ci",   dirDSI.Id,  RoleUtilisateur.ResponsableSolutionsIT);
-            var cp1  = await UpsertUtilisateurAsync(db, "CP001",   "Diallo",  "Fatou",    "fatou.diallo@cit.ci",   dirDSI.Id,  RoleUtilisateur.ChefDeProjet);
-            var cp2  = await UpsertUtilisateurAsync(db, "CP002",   "Touré",   "Ibrahim",  "ibrahim.toure@cit.ci",  dirDSI.Id,  RoleUtilisateur.ChefDeProjet);
-            var dm1  = await UpsertUtilisateurAsync(db, "DM001",   "Yao",     "Marie",    "marie.yao@cit.ci",      dirFin.Id,  RoleUtilisateur.DirecteurMetier);
-            var dm2  = await UpsertUtilisateurAsync(db, "DM002",   "Kouamé",  "Serge",    "serge.kouame@cit.ci",   dirOps.Id,  RoleUtilisateur.DirecteurMetier);
-            var dm3  = await UpsertUtilisateurAsync(db, "DM003",   "Assi",    "Blanche",  "blanche.assi@cit.ci",   dirRH.Id,   RoleUtilisateur.DirecteurMetier);
-            var dem1 = await UpsertUtilisateurAsync(db, "DEM001",  "Kouassi", "Jean",     "jean.kouassi@cit.ci",   dirFin.Id,  RoleUtilisateur.Demandeur);
-            var dem2 = await UpsertUtilisateurAsync(db, "DEM002",  "Traoré",  "Aminata",  "aminata.traore@cit.ci", dirOps.Id,  RoleUtilisateur.Demandeur);
-            var dem3 = await UpsertUtilisateurAsync(db, "DEM003",  "Fofana",  "Moussa",   "moussa.fofana@cit.ci",  dirRH.Id,   RoleUtilisateur.Demandeur);
-            var dem4 = await UpsertUtilisateurAsync(db, "DEM004",  "Aka",     "Cécile",   "cecile.aka@cit.ci",     dirCom.Id,  RoleUtilisateur.Demandeur);
+            var dsi  = await UpsertUtilisateurAsync(db, "DSI001",  "Koffi",   "Paul",     "paul.koffi@cit.ci",     dirDSI.Id,  RoleUtilisateur.DSI, motDePasseDemo);
+            var rsi  = await UpsertUtilisateurAsync(db, "RSI001",  "Bamba",   "Seydou",   "seydou.bamba@cit.ci",   dirDSI.Id,  RoleUtilisateur.ResponsableSolutionsIT, motDePasseDemo);
+            var cp1  = await UpsertUtilisateurAsync(db, "CP001",   "Diallo",  "Fatou",    "fatou.diallo@cit.ci",   dirDSI.Id,  RoleUtilisateur.ChefDeProjet, motDePasseDemo);
+            var cp2  = await UpsertUtilisateurAsync(db, "CP002",   "Touré",   "Ibrahim",  "ibrahim.toure@cit.ci",  dirDSI.Id,  RoleUtilisateur.ChefDeProjet, motDePasseDemo);
+            var dm1  = await UpsertUtilisateurAsync(db, "DM001",   "Yao",     "Marie",    "marie.yao@cit.ci",      dirFin.Id,  RoleUtilisateur.DirecteurMetier, motDePasseDemo);
+            var dm2  = await UpsertUtilisateurAsync(db, "DM002",   "Kouamé",  "Serge",    "serge.kouame@cit.ci",   dirOps.Id,  RoleUtilisateur.DirecteurMetier, motDePasseDemo);
+            var dm3  = await UpsertUtilisateurAsync(db, "DM003",   "Assi",    "Blanche",  "blanche.assi@cit.ci",   dirRH.Id,   RoleUtilisateur.DirecteurMetier, motDePasseDemo);
+            var dem1 = await UpsertUtilisateurAsync(db, "DEM001",  "Kouassi", "Jean",     "jean.kouassi@cit.ci",   dirFin.Id,  RoleUtilisateur.Demandeur, motDePasseDemo);
+            var dem2 = await UpsertUtilisateurAsync(db, "DEM002",  "Traoré",  "Aminata",  "aminata.traore@cit.ci", dirOps.Id,  RoleUtilisateur.Demandeur, motDePasseDemo);
+            var dem3 = await UpsertUtilisateurAsync(db, "DEM003",  "Fofana",  "Moussa",   "moussa.fofana@cit.ci",  dirRH.Id,   RoleUtilisateur.Demandeur, motDePasseDemo);
+            var dem4 = await UpsertUtilisateurAsync(db, "DEM004",  "Aka",     "Cécile",   "cecile.aka@cit.ci",     dirCom.Id,  RoleUtilisateur.Demandeur, motDePasseDemo);
             await db.SaveChangesAsync();
 
             Log.Information("✅ Utilisateurs de démonstration créés/vérifiés ({Count} comptes)", 11);
@@ -104,7 +112,7 @@ namespace GestionProjects.Infrastructure.Persistence
 
             await db.SaveChangesAsync();
             Log.Information("✅ Demandes et projets de démonstration créés/vérifiés");
-            Log.Information("📋 Comptes testeurs disponibles — mot de passe : {MDP}", MotDePasseDemo);
+            Log.Information("📋 Comptes testeurs disponibles. Mot de passe fourni via {ConfigKey}.", DemoPasswordConfigKey);
         }
 
         // ════════════════════════════════════════════════════════════════════
@@ -133,7 +141,7 @@ namespace GestionProjects.Infrastructure.Persistence
 
         private static async Task<Utilisateur> UpsertUtilisateurAsync(
             ApplicationDbContext db, string matricule, string nom, string prenoms,
-            string email, Guid directionId, RoleUtilisateur role)
+            string email, Guid directionId, RoleUtilisateur role, string motDePasseDemo)
         {
             var existing = await db.Utilisateurs
                 .Include(u => u.UtilisateurRoles)
@@ -167,7 +175,7 @@ namespace GestionProjects.Infrastructure.Persistence
                 Prenoms      = prenoms,
                 Email        = email,
                 DirectionId  = directionId,
-                MotDePasse   = BCrypt.Net.BCrypt.HashPassword(MotDePasseDemo),
+                MotDePasse   = BCrypt.Net.BCrypt.HashPassword(motDePasseDemo),
                 NombreConnexion = 0,
                 DateCreation = DateTime.Now,
                 CreePar      = "SEED_DEMO",

@@ -3,6 +3,10 @@
 
 @{
     ViewData["Title"] = "Gestion des Directions";
+    var recherche   = Model.Recherche ?? string.Empty;
+    var statut      = Model.Statut ?? string.Empty;
+    var pageSize    = Model.PageSize;
+    var filtreActif = !string.IsNullOrWhiteSpace(recherche) || !string.IsNullOrWhiteSpace(statut);
 }
 
 <div class="fade-in admin-page">
@@ -15,13 +19,13 @@
                     Gérez les directions métier, leurs responsables et leur statut d'activation.
                 </p>
                 <div class="page-hero-meta">
-                    <span class="badge-modern badge-modern-info">@Model.Directions.Count(d => !d.EstSupprime) direction(s)</span>
+                    <span class="badge-modern badge-modern-info">@Model.TotalCount direction(s)</span>
                 </div>
             </div>
         </div>
 
         <div class="admin-hero-actions">
-            <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#createDirectionModal" onclick="resetDirectionForm()">
+            <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#createDirectionModal">
                 <i class="bi bi-plus-circle"></i>
                 Nouvelle direction
             </button>
@@ -30,6 +34,57 @@
 
     @await Html.PartialAsync("_ValidationSummary")
 
+    <div class="admin-tabset nav nav-pills mb-4">
+        <a asp-action="Users" class="nav-link">Utilisateurs</a>
+        <a asp-action="ListeRoles" class="nav-link">Rôles</a>
+        <a asp-action="Directions" class="nav-link active">Directions</a>
+        <a asp-action="Services" class="nav-link">Services</a>
+        <a asp-action="Delegations" class="nav-link">Délégations</a>
+        <a asp-action="Parametres" class="nav-link">Paramètres</a>
+    </div>
+
+    <div class="card-modern mb-4">
+        <div class="card-body-modern">
+            <form method="get" asp-action="Directions">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label-modern" for="recherche">Recherche</label>
+                        <input type="text" id="recherche" name="recherche" value="@recherche"
+                               class="form-control-modern" placeholder="Libellé ou code de la direction..." />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label-modern" for="statut">Statut</label>
+                        <select id="statut" name="statut" class="form-control-modern">
+                            <option value="" selected="@(statut == "")">Tous les statuts</option>
+                            <option value="active" selected="@(statut == "active")">Actives uniquement</option>
+                            <option value="inactive" selected="@(statut == "inactive")">Inactives uniquement</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label-modern" for="pageSize">Lignes / page</label>
+                        <select id="pageSize" name="pageSize" class="form-control-modern">
+                            @foreach (var ps in new[] { 5, 10, 20, 50, 100 })
+                            {
+                                <option value="@ps" selected="@(pageSize == ps)">@ps par page</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn-modern btn-modern-primary flex-fill">
+                            <i class="bi bi-search"></i> Filtrer
+                        </button>
+                        @if (filtreActif)
+                        {
+                            <a asp-action="Directions" class="btn-modern btn-modern-secondary" title="Effacer les filtres">
+                                <i class="bi bi-x-circle"></i>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="card-modern">
         <div class="card-header-modern">
             <div class="page-toolbar w-100">
@@ -37,11 +92,11 @@
                     <i class="bi bi-building"></i>
                     Référentiel des directions
                 </h3>
-                <span class="badge-modern badge-modern-info">@Model.Directions.Count(d => !d.EstSupprime) active(s)</span>
+                <span class="badge-modern badge-modern-info">@Model.TotalCount résultat(s)</span>
             </div>
         </div>
 
-        @if (Model.Directions.Any(d => !d.EstSupprime))
+        @if (Model.Directions.Any())
         {
             <div class="card-body-modern p-0">
                 <div class="table-responsive">
@@ -56,7 +111,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var direction in Model.Directions.Where(d => !d.EstSupprime))
+                            @foreach (var direction in Model.Directions)
                             {
                                 <tr>
                                     <td class="table-code">@direction.Code</td>
@@ -95,12 +150,13 @@
                                         <div class="table-actions justify-content-center">
                                             <button type="button"
                                                     class="btn-modern btn-modern-gold btn-icon"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#createDirectionModal"
                                                     data-id="@direction.Id"
                                                     data-code="@direction.Code"
                                                     data-libelle="@direction.Libelle"
                                                     data-dsi="@(direction.DSIId?.ToString() ?? string.Empty)"
                                                     data-active="@direction.EstActive.ToString().ToLowerInvariant()"
-                                                    onclick="editDirectionFromBtn(this)"
                                                     title="Modifier la direction"
                                                     aria-label="Modifier la direction">
                                                 <i class="bi bi-pencil"></i>
@@ -127,7 +183,17 @@
         {
             <div class="card-body-modern empty-state-soft">
                 <i class="bi bi-inbox"></i>
-                <p>Aucune direction enregistrée.</p>
+                @if (filtreActif)
+                {
+                    <p>Aucune direction ne correspond aux filtres sélectionnés.</p>
+                    <a asp-action="Directions" class="btn-modern btn-modern-secondary mt-2">
+                        <i class="bi bi-x-circle"></i> Effacer les filtres
+                    </a>
+                }
+                else
+                {
+                    <p>Aucune direction enregistrée.</p>
+                }
             </div>
         }
     </div>
@@ -208,105 +274,8 @@
     </div>
 </div>
 
+@section Scripts {
 <script>
-    function getInitiales(nom, prenoms) {
-        const initialNom = nom && nom.length ? nom[0].toUpperCase() : "?";
-        const initialPrenoms = prenoms && prenoms.length ? prenoms[0].toUpperCase() : "";
-        return `${initialNom}${initialPrenoms}`;
-    }
-
-    function editDirectionFromBtn(btn) {
-        editDirection(btn.dataset.id, btn.dataset.code, btn.dataset.libelle, btn.dataset.dsi, btn.dataset.active === 'true');
-    }
-
-    function editDirection(id, code, libelle, dsiId, estActive) {
-        document.getElementById('directionForm').action = '@Url.Action("UpdateDirection")';
-        document.getElementById('directionId').value = id;
-        document.getElementById('code').value = code;
-        document.getElementById('libelle').value = libelle;
-        document.getElementById('dsiId').value = dsiId || '';
-        document.getElementById('estActive').checked = estActive === true || estActive === 'true';
-        document.getElementById('modalTitle').textContent = 'Modifier la direction';
-
-        const codeInput = document.getElementById('code');
-        if (codeInput) {
-            codeInput.removeAttribute('readonly');
-            codeInput.style.backgroundColor = '';
-            codeInput.style.cursor = '';
-        }
-
-        $('#createDirectionModal').modal('show');
-    }
-
-    document.getElementById('directionForm').addEventListener('submit', function() {
-        if (!this.action.includes('UpdateDirection')) {
-            this.action = '@Url.Action("CreateDirection")';
-        }
-    });
-
-    function generateCodeFromLibelle(libelle) {
-        if (!libelle || libelle.trim() === '') {
-            return '';
-        }
-
-        let libelleNormalise = libelle.trim().toLowerCase()
-            .replace(/'/g, ' ')
-            .replace(/-/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
-
-        if (libelleNormalise.includes('direction') && libelleNormalise.includes('exploitation')) {
-            return 'DEX';
-        }
-
-        const motsIgnorer = ['de', 'des', 'du', "d'", 'le', 'la', 'les', 'un', 'une', 'et', 'ou', 'à', 'au', 'aux', 'en', 'pour', 'par', 'avec', 'sans', 'sous', 'sur', 'dans', 'entre', 'vers'];
-
-        let texteNettoye = libelle
-            .replace(/'/g, ' ')
-            .replace(/-/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
-
-        const mots = texteNettoye.split(' ').filter(m => m.trim() !== '');
-        let code = '';
-        for (const mot of mots) {
-            const motNettoye = mot.trim();
-            if (motNettoye.length >= 2 && !motsIgnorer.includes(motNettoye.toLowerCase())) {
-                code += motNettoye[0].toUpperCase();
-            }
-        }
-
-        return code;
-    }
-
-    document.getElementById('libelle')?.addEventListener('input', function() {
-        const directionId = document.getElementById('directionId').value;
-        const codeInput = document.getElementById('code');
-        if (!directionId && codeInput) {
-            const codeGenere = generateCodeFromLibelle(this.value);
-            if (codeGenere) {
-                codeInput.value = codeGenere;
-            }
-        }
-    });
-
-    document.getElementById('code')?.addEventListener('focus', function() {
-        this.removeAttribute('readonly');
-        this.style.backgroundColor = '';
-        this.style.cursor = '';
-    });
-
-    $('#createDirectionModal').on('hidden.bs.modal', function () {
-        resetDirectionForm();
-    });
-
-    $('#createDirectionModal').on('show.bs.modal', function (e) {
-        const triggerButton = e.relatedTarget;
-        if (!triggerButton || !triggerButton.hasAttribute('onclick') || !triggerButton.getAttribute('onclick').includes('editDirection')) {
-            resetDirectionForm();
-        }
-    });
-
     function resetDirectionForm() {
         document.getElementById('directionForm').reset();
         document.getElementById('directionForm').action = '@Url.Action("CreateDirection")';
@@ -316,25 +285,69 @@
         document.getElementById('code').value = '';
         document.getElementById('dsiId').value = '';
         document.getElementById('estActive').checked = true;
-
-        const codeInput = document.getElementById('code');
+        var codeInput = document.getElementById('code');
         if (codeInput) {
             codeInput.readOnly = true;
             codeInput.style.backgroundColor = 'var(--gray-50)';
             codeInput.style.cursor = 'not-allowed';
         }
+    }
 
-        const errorSpans = document.querySelectorAll('.field-validation-valid');
-        errorSpans.forEach(span => {
-            span.textContent = '';
-            span.classList.remove('field-validation-error');
+    function generateCodeFromLibelle(libelle) {
+        if (!libelle || libelle.trim() === '') return '';
+        var normalise = libelle.trim().toLowerCase().replace(/'/g, ' ').replace(/-/g, ' ').replace(/\s+/g, ' ');
+        if (normalise.includes('direction') && normalise.includes('exploitation')) return 'DEX';
+        var ignore = ['de','des','du','le','la','les','un','une','et','ou','a','au','aux','en','pour','par','avec','sans','sous','sur','dans','entre','vers'];
+        return libelle.replace(/'/g,' ').replace(/-/g,' ').replace(/\s+/g,' ').trim()
+            .split(' ').filter(function(m) { return m.length >= 2 && !ignore.includes(m.toLowerCase()); })
+            .map(function(m) { return m[0].toUpperCase(); }).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var modal = document.getElementById('createDirectionModal');
+
+        modal.addEventListener('show.bs.modal', function (event) {
+            var btn = event.relatedTarget;
+            if (btn && btn.dataset.id) {
+                // Mode édition : pré-remplir depuis les data-* du bouton
+                document.getElementById('directionForm').action = '@Url.Action("UpdateDirection")';
+                document.getElementById('directionId').value = btn.dataset.id;
+                document.getElementById('code').value = btn.dataset.code || '';
+                document.getElementById('libelle').value = btn.dataset.libelle || '';
+                document.getElementById('dsiId').value = btn.dataset.dsi || '';
+                document.getElementById('estActive').checked = btn.dataset.active === 'true';
+                document.getElementById('modalTitle').textContent = 'Modifier la direction';
+                var codeInput = document.getElementById('code');
+                if (codeInput) {
+                    codeInput.removeAttribute('readonly');
+                    codeInput.style.backgroundColor = '';
+                    codeInput.style.cursor = '';
+                }
+            } else {
+                // Mode création
+                resetDirectionForm();
+            }
         });
-    }
 
-    function GetInitiales(nom, prenoms) {
-        return getInitiales(nom, prenoms);
-    }
+        modal.addEventListener('hidden.bs.modal', function () {
+            resetDirectionForm();
+        });
+
+        document.getElementById('libelle').addEventListener('input', function () {
+            if (!document.getElementById('directionId').value) {
+                var code = generateCodeFromLibelle(this.value);
+                if (code) document.getElementById('code').value = code;
+            }
+        });
+
+        document.getElementById('code').addEventListener('focus', function () {
+            this.removeAttribute('readonly');
+            this.style.backgroundColor = '';
+            this.style.cursor = '';
+        });
+    });
 </script>
+}
 
 @functions {
     string GetInitiales(string? nom, string? prenoms)

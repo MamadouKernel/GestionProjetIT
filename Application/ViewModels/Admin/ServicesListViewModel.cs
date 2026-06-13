@@ -12,4 +12,5 @@ public class ServicesListViewModel
     public int PageSize { get; set; }
     public string? Recherche { get; set; }
     public Guid? SelectedDirectionId { get; set; }
+    public string? Statut { get; set; }
 }

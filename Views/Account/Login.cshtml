@@ -148,6 +148,13 @@
                     <span>@TempData["Info"]</span>
                 </div>
             }
+            @if (TempData["Error"] != null)
+            {
+                <div class="auth-premium-alert is-danger">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span>@TempData["Error"]</span>
+                </div>
+            }
             @if (!ViewData.ModelState.IsValid)
             {
                 <div class="auth-premium-alert is-danger">
@@ -371,5 +378,4 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
 </body>
 </html>
-
 

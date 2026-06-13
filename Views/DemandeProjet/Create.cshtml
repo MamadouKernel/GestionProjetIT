@@ -112,14 +112,11 @@
 
                     <div class="form-group-modern">
                         <label asp-for="Demande.DirecteurMetierId" class="form-label-modern">Directeur metier *</label>
-                        <select asp-for="Demande.DirecteurMetierId" id="DirecteurMetierId" class="form-control-modern" required>
-                            <option value="">-- Selectionner d'abord une direction --</option>
+                        <select asp-for="Demande.DirecteurMetierId" id="DirecteurMetierId" class="form-control-modern"
+                                asp-items="Model.DirecteursMetier" required>
+                            <option value="">-- Sélectionner un directeur métier --</option>
                         </select>
                         <span asp-validation-for="Demande.DirecteurMetierId" class="text-danger"></span>
-                        <div class="soft-note d-none" id="directeurMetierHelp">
-                            <i class="bi bi-info-circle"></i>
-                            Selectionnez une direction pour voir les directeurs metier disponibles.
-                        </div>
                     </div>
                 }
 
@@ -226,92 +223,52 @@
     </form>
 </div>
 
+<div id="demandeFormMeta"
+     data-readonly="@(Model.IsReadOnly ? "true" : "false")"
+     data-preselected-direction-id="@(Model.PreSelectedDirectionId?.ToString() ?? "")"
+     hidden></div>
+
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 
     <script type="text/javascript">
         (function() {
-            const directionSelect = document.getElementById('DirectionId');
-            const directeurMetierSelect = document.getElementById('DirecteurMetierId');
-            const directeurMetierHelp = document.getElementById('directeurMetierHelp');
-            const isReadOnly = @Model.IsReadOnly.ToString().ToLower();
+            var meta = document.getElementById('demandeFormMeta');
+            if (!meta) return;
 
-            if (isReadOnly) {
-                return;
-            }
+            var directionSelect = document.getElementById('DirectionId');
+            var directeurMetierSelect = document.getElementById('DirecteurMetierId');
+            var isReadOnly = meta.dataset.readonly === 'true';
 
-            if (!directionSelect || !directeurMetierSelect) return;
+            if (isReadOnly || !directionSelect || !directeurMetierSelect) return;
 
-            function showHelp(visible) {
-                if (!directeurMetierHelp) return;
-                directeurMetierHelp.classList.toggle('d-none', !visible);
+            var preSelectedDirectionId = meta.dataset.preselectedDirectionId || null;
+            if (preSelectedDirectionId) {
+                directionSelect.value = preSelectedDirectionId;
             }
 
             directionSelect.addEventListener('change', function() {
-                const directionId = this.value;
-                directeurMetierSelect.innerHTML = '<option value="">-- Chargement... --</option>';
-                directeurMetierSelect.disabled = true;
+                var directionId = this.value;
+                var currentValue = directeurMetierSelect.value;
+                var url = '/DemandeProjet/GetDirecteursMetierByDirection' + (directionId ? '?directionId=' + directionId : '');
 
-                if (!directionId) {
-                    directeurMetierSelect.innerHTML = '<option value="">-- Selectionner d\\'abord une direction --</option>';
-                    directeurMetierSelect.disabled = true;
-                    showHelp(true);
-                    return;
-                }
-
-                showHelp(false);
-
-                fetch(`/DemandeProjet/GetDirecteursMetierByDirection?directionId=${directionId}`)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Erreur lors du chargement des directeurs metier');
-                        }
+                fetch(url)
+                    .then(function(response) {
+                        if (!response.ok) throw new Error('Erreur chargement DM');
                         return response.json();
                     })
-                    .then(data => {
-                        directeurMetierSelect.innerHTML = '<option value="">-- Selectionner --</option>';
-
-                        if (data && data.length > 0) {
-                            let defaultDirecteurId = null;
-
-                            data.forEach(function(dm) {
-                                const option = document.createElement('option');
-                                option.value = dm.id;
-                                option.textContent = dm.text;
-
-                                if (dm.isDefault) {
-                                    defaultDirecteurId = dm.id;
-                                }
-
-                                directeurMetierSelect.appendChild(option);
-                            });
-
-                            if (defaultDirecteurId) {
-                                directeurMetierSelect.value = defaultDirecteurId;
-                            }
-
-                            directeurMetierSelect.disabled = false;
-                        } else {
-                            directeurMetierSelect.innerHTML = '<option value="">-- Aucun directeur metier trouve pour cette direction --</option>';
-                            directeurMetierSelect.disabled = true;
-                        }
+                    .then(function(data) {
+                        directeurMetierSelect.innerHTML = '<option value="">-- Sélectionner --</option>';
+                        data.forEach(function(dm) {
+                            var option = document.createElement('option');
+                            option.value = dm.id;
+                            option.textContent = dm.text;
+                            directeurMetierSelect.appendChild(option);
+                        });
+                        if (currentValue) directeurMetierSelect.value = currentValue;
                     })
-                    .catch(error => {
-                        console.error('Erreur:', error);
-                        directeurMetierSelect.innerHTML = '<option value="">-- Erreur lors du chargement --</option>';
-                        directeurMetierSelect.disabled = true;
-                    });
+                    .catch(function(error) { console.error('Erreur chargement directeurs metier:', error); });
             });
-
-            const preSelectedDirectionId = @(Model.PreSelectedDirectionId.HasValue ? $"'{Model.PreSelectedDirectionId}'" : "null");
-            if (preSelectedDirectionId && directionSelect) {
-                directionSelect.value = preSelectedDirectionId;
-                directionSelect.dispatchEvent(new Event('change'));
-            } else if (directionSelect && directionSelect.value) {
-                directionSelect.dispatchEvent(new Event('change'));
-            } else {
-                showHelp(true);
-            }
         })();
     </script>
     <script type="text/javascript">

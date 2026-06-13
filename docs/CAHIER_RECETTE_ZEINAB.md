@@ -4,7 +4,7 @@
 **Version :** 1.0  
 **Date :** Juin 2026  
 **URL de test :** http://10.88.179.103:8089  
-**Mot de passe commun (tous les comptes) :** `Zeinab@2024!`
+**Mot de passe commun (tous les comptes) :** fourni via la configuration locale `SeedDemo:Password` / variable d'environnement `SeedDemo__Password`.
 
 ---
 
@@ -62,7 +62,7 @@
 | # | Action | Résultat attendu | Résultat observé | Statut |
 |---|--------|-----------------|------------------|--------|
 | 1 | Aller sur http://10.88.179.103:8089 | Redirection vers la page de connexion | | |
-| 2 | Saisir matricule `DEM001` et mot de passe `Zeinab@2024!` | Connexion réussie, redirection vers le tableau de bord | | |
+| 2 | Saisir matricule `DEM001` et le mot de passe configure pour le seed demo | Connexion réussie, redirection vers le tableau de bord | | |
 | 3 | Vérifier que le nom "Jean Kouassi" apparaît dans l'interface | Nom affiché correctement | | |
 
 **Statut global :** ☐ PASS  ☐ FAIL  ☐ PARTIEL  

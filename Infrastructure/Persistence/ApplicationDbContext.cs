@@ -26,6 +26,7 @@ namespace GestionProjects.Infrastructure.Persistence
         public DbSet<Service> Services { get; set; }
         public DbSet<Utilisateur> Utilisateurs { get; set; }
         public DbSet<UtilisateurRole> UtilisateurRoles { get; set; }
+        public DbSet<JetonInitialisationMotDePasse> JetonsInitialisationMotDePasse { get; set; }
 
         public DbSet<DemandeProjet> DemandesProjets { get; set; }
         public DbSet<DocumentJointDemande> DocumentsJointsDemandes { get; set; }
@@ -255,6 +256,19 @@ namespace GestionProjects.Infrastructure.Persistence
                 .HasIndex(ur => new { ur.UtilisateurId, ur.Role })
                 .IsUnique()
                 .HasFilter("[EstSupprime] = 0");
+
+            modelBuilder.Entity<JetonInitialisationMotDePasse>()
+                .HasOne(j => j.Utilisateur)
+                .WithMany()
+                .HasForeignKey(j => j.UtilisateurId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<JetonInitialisationMotDePasse>()
+                .HasIndex(j => j.TokenHash)
+                .IsUnique();
+
+            modelBuilder.Entity<JetonInitialisationMotDePasse>()
+                .HasIndex(j => new { j.UtilisateurId, j.DateUtilisation, j.EstSupprime });
 
             // ---- Relations Notification ----
             modelBuilder.Entity<Notification>()
