@@ -31,7 +31,7 @@ namespace GestionProjects.Controllers
         [ValidateAntiForgeryToken]
         [Authorize]
         [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("UploadPolicy")]
-        public async Task<IActionResult> UploadLivrable(Guid projetId, PhaseProjet phase, TypeLivrable typeLivrable, IFormFile fichier, string? commentaire, string? version)
+        public async Task<IActionResult> UploadLivrable(Guid projetId, PhaseProjet phase, TypeLivrable typeLivrable, IFormFile fichier, string? commentaire, string? version, [FromServices] ILivrableProjetService livrableService)
         {
             var projet = await _db.Projets.FindAsync(projetId);
             if (projet == null)
@@ -64,26 +64,8 @@ namespace GestionProjects.Controllers
                 allowedExtensions,
                 maxSize);
 
-            var livrable = new LivrableProjet
-            {
-                Id = Guid.NewGuid(),
-                ProjetId = projetId,
-                Phase = phase,
-                TypeLivrable = typeLivrable,
-                NomDocument = fichier.FileName,
-                CheminRelatif = path,
-                DateDepot = DateTime.Now,
-                DeposeParId = userId,
-                Commentaire = commentaire ?? string.Empty,
-                Version = version ?? string.Empty,
-                DateCreation = DateTime.Now,
-                CreePar = _currentUserService.Matricule
-            };
-
-            _db.LivrablesProjets.Add(livrable);
-            await _db.SaveChangesAsync();
-
-            await _auditService.LogActionAsync("UPLOAD_LIVRABLE", "LivrableProjet", livrable.Id);
+            await livrableService.DeposerAsync(
+                projetId, phase, typeLivrable, fichier.FileName, path, userId, commentaire, version);
 
             TempData["Success"] = "Livrable déposé avec succès.";
             return RedirectToAction(nameof(Details), new { id = projetId, tab = GetTabForPhase(phase) });
@@ -93,7 +75,7 @@ namespace GestionProjects.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
-        public async Task<IActionResult> UpdateLivrable(Guid id, Guid livrableId, string? commentaire, string? version)
+        public async Task<IActionResult> UpdateLivrable(Guid id, Guid livrableId, string? commentaire, string? version, [FromServices] ILivrableProjetService livrableService)
         {
             var projet = await _db.Projets.FindAsync(id);
             if (projet == null)
@@ -106,21 +88,7 @@ namespace GestionProjects.Controllers
             if (!await CanManageLivrableAsync(projet, livrable.Phase))
                 return Forbid();
 
-            // Mettre à jour les champs fournis
-            if (!string.IsNullOrWhiteSpace(commentaire))
-                livrable.Commentaire = commentaire;
-
-            if (!string.IsNullOrWhiteSpace(version))
-                livrable.Version = version;
-
-            livrable.DateModification = DateTime.Now;
-            livrable.ModifiePar = _currentUserService.Matricule;
-
-            await _db.SaveChangesAsync();
-
-            await _auditService.LogActionAsync("MISE_A_JOUR_LIVRABLE", "LivrableProjet", livrable.Id,
-                new { ProjetId = id, NomDocument = livrable.NomDocument },
-                new { Version = livrable.Version, Commentaire = livrable.Commentaire });
+            await livrableService.MettreAJourAsync(id, livrableId, commentaire, version);
 
             TempData["Success"] = "Livrable mis à jour avec succès.";
             return RedirectToAction(nameof(Details), new { id, tab = GetTabForPhase(livrable.Phase) });
