@@ -1,5 +1,6 @@
 using GestionProjects.Application.Common.Extensions;
 using GestionProjects.Application.Common.Interfaces;
+using GestionProjects.Application.Common.Results;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using GestionProjects.Infrastructure.Persistence;
@@ -215,34 +216,9 @@ namespace GestionProjects.Controllers
 
             if (!await CanManageUatAsync(projet)) return Forbid();
 
-            if (string.IsNullOrWhiteSpace(titre))
-            {
-                TempData["Error"] = "Le titre du cas de test est obligatoire.";
-                return RedirectToAction(nameof(Details), new { id = projetId, tab = "uat" });
-            }
-
-            var reference = await _uatValidation.GenererReferenceCasTestAsync(projet);
-
-            var casTest = new CasTestProjet
-            {
-                Id = Guid.NewGuid(),
-                ProjetId = projetId,
-                CampagneTestProjetId = campagneId,
-                Reference = reference,
-                Titre = titre,
-                Description = description ?? string.Empty,
-                ResultatAttendu = resultAttendu ?? string.Empty,
-                Priorite = priorite,
-                EstObligatoire = estObligatoire,
-                CreePar = _currentUserService.Matricule ?? "SYSTEM",
-                DateCreation = DateTime.Now
-            };
-
-            _db.CasTestsProjets.Add(casTest);
-            await _db.SaveChangesAsync();
-
-            TempData["Success"] = $"Cas de test {reference} ajouté.";
-            return RedirectToAction(nameof(Details), new { id = projetId, tab = "uat" });
+            var result = await _uatWorkflow.AjouterCasTestAsync(
+                projetId, titre, description, resultAttendu, priorite, estObligatoire, campagneId);
+            return MapUatWorkflowToDetails(result, projetId);
         }
 
         [HttpPost]
@@ -264,25 +240,9 @@ namespace GestionProjects.Controllers
                 return Forbid();
             }
 
-            var execution = new ExecutionTestProjet
-            {
-                Id = Guid.NewGuid(),
-                ProjetId = projetId,
-                CasTestProjetId = casTestId,
-                CampagneTestProjetId = campagneId ?? casTest.CampagneTestProjetId,
-                Statut = statut,
-                Commentaire = commentaire ?? string.Empty,
-                DateExecution = DateTime.Now,
-                ExecuteParId = userId,
-                CreePar = _currentUserService.Matricule ?? "SYSTEM",
-                DateCreation = DateTime.Now
-            };
-
-            _db.ExecutionsTestsProjets.Add(execution);
-            await _db.SaveChangesAsync();
-
-            TempData["Success"] = $"Résultat enregistré : {statut}.";
-            return RedirectToAction(nameof(Details), new { id = projetId, tab = "uat" });
+            var result = await _uatWorkflow.ExecuterCasTestAsync(
+                projetId, casTestId, statut, commentaire, campagneId, userId);
+            return MapUatWorkflowToDetails(result, projetId);
         }
 
         [HttpPost]
@@ -296,30 +256,9 @@ namespace GestionProjects.Controllers
 
             if (!await CanManageUatAsync(projet)) return Forbid();
 
-            if (string.IsNullOrWhiteSpace(nom))
-            {
-                TempData["Error"] = "Le nom de la campagne est obligatoire.";
-                return RedirectToAction(nameof(Details), new { id = projetId, tab = "uat" });
-            }
-
-            var campagne = new CampagneTestProjet
-            {
-                Id = Guid.NewGuid(),
-                ProjetId = projetId,
-                Nom = nom,
-                Description = descriptionCampagne ?? string.Empty,
-                Environnement = environnement,
-                Statut = StatutCampagneTest.Brouillon,
-                DateLancement = dateLancement,
-                CreePar = _currentUserService.Matricule ?? "SYSTEM",
-                DateCreation = DateTime.Now
-            };
-
-            _db.CampagnesTestsProjets.Add(campagne);
-            await _db.SaveChangesAsync();
-
-            TempData["Success"] = $"Campagne \"{nom}\" créée.";
-            return RedirectToAction(nameof(Details), new { id = projetId, tab = "uat" });
+            var result = await _uatWorkflow.AjouterCampagneTestAsync(
+                projetId, nom, descriptionCampagne, environnement, dateLancement);
+            return MapUatWorkflowToDetails(result, projetId);
         }
 
         [HttpPost]
@@ -334,12 +273,23 @@ namespace GestionProjects.Controllers
             if (projet == null) return NotFound();
             if (!await CanManageUatAsync(projet)) return Forbid();
 
-            casTest.EstSupprime = true;
-            casTest.ModifiePar = _currentUserService.Matricule ?? "SYSTEM";
-            casTest.DateModification = DateTime.Now;
-            await _db.SaveChangesAsync();
+            var result = await _uatWorkflow.SupprimerCasTestAsync(projetId, casTestId);
+            return MapUatWorkflowToDetails(result, projetId);
+        }
 
-            TempData["Success"] = "Cas de test supprimé.";
+        private IActionResult MapUatWorkflowToDetails(WorkflowResult result, Guid projetId)
+        {
+            if (result.IsNotFound)
+                return NotFound();
+
+            if (result.IsForbidden)
+                return Forbid();
+
+            if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
+                TempData["Error"] = result.ErrorMessage;
+            else if (!string.IsNullOrWhiteSpace(result.SuccessMessage))
+                TempData["Success"] = result.SuccessMessage;
+
             return RedirectToAction(nameof(Details), new { id = projetId, tab = "uat" });
         }
     }

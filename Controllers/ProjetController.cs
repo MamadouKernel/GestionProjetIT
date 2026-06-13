@@ -38,6 +38,7 @@ namespace GestionProjects.Controllers
         private readonly IProjetQueryService _projetQuery;
         private readonly IClotureProjetWorkflowService _clotureWorkflow;
         private readonly ICharteProjetWorkflowService _charteWorkflow;
+        private readonly IUatProjetWorkflowService _uatWorkflow;
 
         public ProjetController(
             ApplicationDbContext db,
@@ -57,7 +58,8 @@ namespace GestionProjects.Controllers
             IElectronicSignatureService electronicSignature,
             IProjetQueryService projetQuery,
             IClotureProjetWorkflowService clotureWorkflow,
-            ICharteProjetWorkflowService charteWorkflow)
+            ICharteProjetWorkflowService charteWorkflow,
+            IUatProjetWorkflowService uatWorkflow)
         {
             _db = db;
             _fileStorage = fileStorage;
@@ -77,6 +79,7 @@ namespace GestionProjects.Controllers
             _projetQuery = projetQuery;
             _clotureWorkflow = clotureWorkflow;
             _charteWorkflow = charteWorkflow;
+            _uatWorkflow = uatWorkflow;
         }
         private Task<bool> CurrentUserHasPermissionAsync(string controleur, string action)
             => _permissionService.CurrentUserHasPermissionAsync(controleur, action);
