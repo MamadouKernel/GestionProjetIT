@@ -1,4 +1,5 @@
 using GestionProjects.Application.Common.Interfaces;
+using GestionProjects.Application.ViewModels;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using GestionProjects.Infrastructure.Persistence;
@@ -336,16 +337,5 @@ namespace GestionProjects.Controllers
         {
             return await _permissionService.CurrentUserHasPermissionAsync("Autorisations", "Index");
         }
-    }
-
-    public class VueInfo
-    {
-        public string Controleur { get; set; } = string.Empty;
-        public string Action { get; set; } = string.Empty;
-        public string NomAffichage { get; set; } = string.Empty;
-        public string? Description { get; set; }
-        public string Categorie { get; set; } = string.Empty;
-        public string? Icone { get; set; }
-        public int Ordre { get; set; }
     }
 }

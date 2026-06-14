@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -33,8 +33,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Application\DTOs\" />
-    <Folder Include="Application\Services\" />
     <Folder Include="Infrastructure\Files\" />
     <Folder Include="Infrastructure\Repositories\" />
     <Folder Include="Infrastructure\Persistence\" />
@@ -44,6 +42,7 @@
     <Compile Remove="Tests\**" />
     <Compile Remove="artifacts\**" />
     <Compile Remove="Domain\**" />
+    <Compile Remove="Application\**" />
     <Content Remove="Tests\**" />
     <Content Remove="artifacts\**" />
     <EmbeddedResource Remove="Tests\**" />
@@ -54,6 +53,7 @@
 
   <ItemGroup>
     <ProjectReference Include="Domain\GestionProjects.Domain.csproj" />
+    <ProjectReference Include="Application\GestionProjects.Application.csproj" />
   </ItemGroup>
 
 </Project>
