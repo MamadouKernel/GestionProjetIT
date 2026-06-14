@@ -3,7 +3,7 @@ using GestionProjects.Application.Common.Interfaces;
 using GestionProjects.Domain.Models;
 using GestionProjects.Infrastructure.Persistence;
 using GestionProjects.Infrastructure.Services;
-using GestionProjects.Infrastructure.Ui;
+using GestionProjects.Web.Ui;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

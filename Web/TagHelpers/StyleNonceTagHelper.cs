@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 
-namespace GestionProjects.Infrastructure.TagHelpers
+namespace GestionProjects.Web.TagHelpers
 {
     [HtmlTargetElement("style")]
     public class StyleNonceTagHelper : TagHelper

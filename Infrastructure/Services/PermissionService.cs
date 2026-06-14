@@ -1,7 +1,7 @@
 using GestionProjects.Application.Common.Interfaces;
+using GestionProjects.Application.Common.Security;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Infrastructure.Persistence;
-using GestionProjects.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 

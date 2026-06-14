@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Text.Json;
 
-namespace GestionProjects.Infrastructure.Middleware
+namespace GestionProjects.Web.Middleware
 {
     /// <summary>
     /// Middleware global de gestion des erreurs.

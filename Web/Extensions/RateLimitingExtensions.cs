@@ -1,6 +1,6 @@
 using System.Threading.RateLimiting;
 
-namespace GestionProjects.Infrastructure.Extensions;
+namespace GestionProjects.Web.Extensions;
 
 public static class RateLimitingExtensions
 {

@@ -1,7 +1,8 @@
 using GestionProjects.Application.Common.Extensions;
 using GestionProjects.Infrastructure.Extensions;
-using GestionProjects.Infrastructure.Middleware;
 using GestionProjects.Infrastructure.Persistence;
+using GestionProjects.Web.Extensions;
+using GestionProjects.Web.Middleware;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Options;
@@ -20,11 +21,11 @@ builder.Host.UseSerilog();
 // ── Services ─────────────────────────────────────────────────────────────────
 builder.Services
     .AddDatabase(builder.Configuration)
-    .AddApplicationServices()
+    .AddInfrastructureServices()
     .AddCustomAuthentication(builder.Configuration, builder.Environment)
     .AddCustomRateLimiting(builder.Environment)
     .AddCustomHealthChecks()
-    .AddControllersWithGlobalFilters();
+    .AddPresentationServices();
 
 // ── Localisation (French) ─────────────────────────────────────────────────────
 builder.Services.Configure<RequestLocalizationOptions>(options =>

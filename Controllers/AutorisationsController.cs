@@ -3,7 +3,7 @@ using GestionProjects.Application.ViewModels;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using GestionProjects.Infrastructure.Persistence;
-using GestionProjects.Infrastructure.Security;
+using GestionProjects.Application.Common.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

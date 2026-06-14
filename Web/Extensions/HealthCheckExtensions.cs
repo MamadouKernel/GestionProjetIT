@@ -2,7 +2,7 @@ using GestionProjects.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace GestionProjects.Infrastructure.Extensions;
+namespace GestionProjects.Web.Extensions;
 
 public static class HealthCheckExtensions
 {

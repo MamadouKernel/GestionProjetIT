@@ -1,15 +1,11 @@
 using GestionProjects.Application.Common.Interfaces;
-using GestionProjects.Infrastructure.Security;
 using GestionProjects.Infrastructure.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Authorization;
 
 namespace GestionProjects.Infrastructure.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+    public static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
     {
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
@@ -55,26 +51,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IClotureProjetWorkflowService, ClotureProjetWorkflowService>();
         services.AddScoped<ICharteProjetWorkflowService, CharteProjetWorkflowService>();
         services.AddScoped<IUatProjetWorkflowService, UatProjetWorkflowService>();
-        services.AddScoped<PermissionMatrixAuthorizationFilter>();
 
         services.AddHttpClient("Teams")
             .ConfigureHttpClient(c => c.Timeout = TimeSpan.FromSeconds(10));
-
-        return services;
-    }
-
-    public static IServiceCollection AddControllersWithGlobalFilters(this IServiceCollection services)
-    {
-        services.AddControllersWithViews(options =>
-        {
-            var policy = new AuthorizationPolicyBuilder()
-                .RequireAuthenticatedUser()
-                .Build();
-
-            options.Filters.Add(new AuthorizeFilter(policy));
-            options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
-            options.Filters.AddService<PermissionMatrixAuthorizationFilter>();
-        });
 
         return services;
     }

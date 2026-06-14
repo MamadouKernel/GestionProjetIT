@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 
-namespace GestionProjects.Infrastructure.Extensions;
+namespace GestionProjects.Web.Extensions;
 
 public static class AuthenticationExtensions
 {

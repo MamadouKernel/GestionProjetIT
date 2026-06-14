@@ -1,5 +1,5 @@
 using GestionProjects.Application.Common.Interfaces;
-using GestionProjects.Infrastructure.Security;
+using GestionProjects.Application.Common.Security;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GestionProjects.ViewComponents

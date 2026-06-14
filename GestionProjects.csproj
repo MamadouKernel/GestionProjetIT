@@ -43,6 +43,7 @@
     <Compile Remove="artifacts\**" />
     <Compile Remove="Domain\**" />
     <Compile Remove="Application\**" />
+    <Compile Remove="Infrastructure\**" />
     <Content Remove="Tests\**" />
     <Content Remove="artifacts\**" />
     <EmbeddedResource Remove="Tests\**" />
@@ -54,6 +55,7 @@
   <ItemGroup>
     <ProjectReference Include="Domain\GestionProjects.Domain.csproj" />
     <ProjectReference Include="Application\GestionProjects.Application.csproj" />
+    <ProjectReference Include="Infrastructure\GestionProjects.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 
-namespace GestionProjects.Infrastructure.Ui;
+namespace GestionProjects.Web.Ui;
 
 public sealed record ScreenHelpContent(
     string Title,

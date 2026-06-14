@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using System.Security.Cryptography;
 
-namespace GestionProjects.Infrastructure.Middleware
+namespace GestionProjects.Web.Middleware
 {
     public class SecurityHeadersMiddleware
     {

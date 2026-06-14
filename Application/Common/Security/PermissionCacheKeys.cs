@@ -1,6 +1,6 @@
 using GestionProjects.Domain.Enums;
 
-namespace GestionProjects.Infrastructure.Security
+namespace GestionProjects.Application.Common.Security
 {
     public static class PermissionCacheKeys
     {

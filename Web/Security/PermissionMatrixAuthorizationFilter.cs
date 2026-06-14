@@ -1,10 +1,11 @@
 using GestionProjects.Application.Common.Interfaces;
+using GestionProjects.Application.Common.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.AspNetCore.Mvc.Filters;
 
-namespace GestionProjects.Infrastructure.Security
+namespace GestionProjects.Web.Security
 {
     public class PermissionMatrixAuthorizationFilter : IAsyncAuthorizationFilter
     {

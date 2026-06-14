@@ -3,7 +3,7 @@ using GestionProjects.Application.Common.Interfaces;
 using GestionProjects.Application.ViewModels;
 using GestionProjects.Domain.Models;
 
-namespace GestionProjects.Infrastructure.Ui
+namespace GestionProjects.Web.Ui
 {
     public static class ProjetUiPermissionBuilder
     {

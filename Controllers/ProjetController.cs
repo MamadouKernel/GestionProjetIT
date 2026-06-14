@@ -1,12 +1,11 @@
-﻿using GestionProjects.Application.Common.Extensions;
+using GestionProjects.Application.Common.Extensions;
 using GestionProjects.Application.Common.Interfaces;
 using GestionProjects.Application.ViewModels;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using GestionProjects.Infrastructure.Persistence;
-using GestionProjects.Infrastructure.Security;
 using GestionProjects.Infrastructure.Services;
-using GestionProjects.Infrastructure.Ui;
+using GestionProjects.Web.Ui;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
