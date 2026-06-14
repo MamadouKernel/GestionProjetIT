@@ -1,17 +1,12 @@
-using GestionProjects.Application.Common.Constants;
-using GestionProjects.Application.Common.Interfaces;
+﻿using GestionProjects.Application.Common.Interfaces;
 using GestionProjects.Application.ViewModels.AzureAuth;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
-using GestionProjects.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Globalization;
 using System.Security.Claims;
-using System.Text;
 
 namespace GestionProjects.Controllers
 {
@@ -19,24 +14,21 @@ namespace GestionProjects.Controllers
     public class AzureAuthController : Controller
     {
         private const string AzureAdScheme = "AzureAd";
-        private readonly ApplicationDbContext _db;
         private readonly ILogger<AzureAuthController> _logger;
         private readonly IConfiguration _configuration;
-        private readonly INotificationService _notificationService;
         private readonly IUtilisateurIdentityResolver _identityResolver;
+        private readonly IAzureAuthWorkflowService _azureAuthWorkflow;
 
         public AzureAuthController(
-            ApplicationDbContext db,
             ILogger<AzureAuthController> logger,
             IConfiguration configuration,
-            INotificationService notificationService,
-            IUtilisateurIdentityResolver identityResolver)
+            IUtilisateurIdentityResolver identityResolver,
+            IAzureAuthWorkflowService azureAuthWorkflow)
         {
-            _db = db;
             _logger = logger;
             _configuration = configuration;
-            _notificationService = notificationService;
             _identityResolver = identityResolver;
+            _azureAuthWorkflow = azureAuthWorkflow;
         }
 
         [HttpGet]
@@ -52,8 +44,8 @@ namespace GestionProjects.Controllers
                 clientId.Contains("PLACEHOLDER", StringComparison.OrdinalIgnoreCase) ||
                 clientSecret.Contains("PLACEHOLDER", StringComparison.OrdinalIgnoreCase))
             {
-                _logger.LogWarning("Tentative de connexion Azure AD avec une configuration incomplète");
-                TempData["ErrorMessage"] = "Azure AD n'est pas configuré. Veuillez utiliser la connexion locale ou contacter l'administrateur.";
+                _logger.LogWarning("Tentative de connexion Azure AD avec une configuration incomplÃ¨te");
+                TempData["ErrorMessage"] = "Azure AD n'est pas configurÃ©. Veuillez utiliser la connexion locale ou contacter l'administrateur.";
                 return RedirectToAction("Login", "Account");
             }
 
@@ -73,8 +65,8 @@ namespace GestionProjects.Controllers
             {
                 if (User?.Identity?.IsAuthenticated != true)
                 {
-                    _logger.LogError("Échec de l'authentification Azure AD");
-                    TempData["Error"] = "Erreur lors de l'authentification Azure AD. Veuillez réessayer.";
+                    _logger.LogError("Ã‰chec de l'authentification Azure AD");
+                    TempData["Error"] = "Erreur lors de l'authentification Azure AD. Veuillez rÃ©essayer.";
                     return RedirectToAction("Login", "Account");
                 }
 
@@ -94,12 +86,12 @@ namespace GestionProjects.Controllers
                     ?? email?.Split('@')[0];
 
                 var azureDepartment = GetAzureDepartment(azureUser);
-                var directionDetectee = await DetecterDirectionDepuisAzureAsync(azureDepartment);
+                var directionDetectee = await _azureAuthWorkflow.DetectDirectionAsync(azureDepartment);
 
                 if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(matricule))
                 {
-                    _logger.LogError("Impossible de récupérer les informations de l'utilisateur Azure AD");
-                    TempData["Error"] = "Erreur lors de la récupération de vos informations. Veuillez réessayer.";
+                    _logger.LogError("Impossible de rÃ©cupÃ©rer les informations de l'utilisateur Azure AD");
+                    TempData["Error"] = "Erreur lors de la rÃ©cupÃ©ration de vos informations. Veuillez rÃ©essayer.";
                     return RedirectToAction("Login", "Account");
                 }
 
@@ -125,25 +117,21 @@ namespace GestionProjects.Controllers
 
                 if (utilisateur == null)
                 {
-                    var demandeAccesExistante = await _db.DemandesAccesAzureAd
-                        .Include(d => d.DirectionDetectee)
-                        .FirstOrDefaultAsync(d =>
-                            (d.Email == email || d.Matricule == matricule) &&
-                            d.Statut == StatutDemandeAcces.EnAttente);
+                    var demandeAccesExistante = await _azureAuthWorkflow.HasPendingAccessRequestAsync(email, matricule);
 
-                    _logger.LogDebug("Utilisateur non référencé (Azure AD login attempt)");
+                    _logger.LogDebug("Utilisateur non rÃ©fÃ©rencÃ© (Azure AD login attempt)");
 
                     TempData["AzureEmail"] = email;
                     TempData["AzureNom"] = nom ?? string.Empty;
                     TempData["AzurePrenom"] = prenom ?? string.Empty;
                     TempData["AzureMatricule"] = matricule;
                     TempData["AzureDepartment"] = azureDepartment ?? string.Empty;
-                    TempData["AzureDirectionDetecteeId"] = directionDetectee?.Id.ToString() ?? string.Empty;
-                    TempData["AzureDirectionDetecteeNom"] = directionDetectee?.Libelle ?? "Non déterminée";
+                    TempData["AzureDirectionDetecteeId"] = directionDetectee.DirectionId?.ToString() ?? string.Empty;
+                    TempData["AzureDirectionDetecteeNom"] = directionDetectee.DirectionLibelle ?? "Non dÃ©terminÃ©e";
 
-                    if (demandeAccesExistante != null)
+                    if (demandeAccesExistante)
                     {
-                        TempData["Info"] = "Une demande d'accès est déjà en attente de traitement pour votre compte.";
+                        TempData["Info"] = "Une demande d'accÃ¨s est dÃ©jÃ  en attente de traitement pour votre compte.";
                     }
 
                     await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -194,17 +182,15 @@ namespace GestionProjects.Controllers
                     new ClaimsPrincipal(claimsIdentity),
                     authProperties);
 
-                utilisateur.DateDerniereConnexion = DateTime.Now;
-                utilisateur.NombreConnexion++;
-                await _db.SaveChangesAsync();
+                await _azureAuthWorkflow.RecordSuccessfulLoginAsync(utilisateur.Id);
 
-                _logger.LogInformation("Connexion Azure AD réussie pour {Matricule}", utilisateur.Matricule);
+                _logger.LogInformation("Connexion Azure AD rÃ©ussie pour {Matricule}", utilisateur.Matricule);
                 return RedirectToAction("Index", "Home");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erreur lors du callback Azure AD");
-                TempData["Error"] = "Erreur lors de la connexion. Veuillez réessayer.";
+                TempData["Error"] = "Erreur lors de la connexion. Veuillez rÃ©essayer.";
                 return RedirectToAction("Login", "Account");
             }
         }
@@ -220,7 +206,7 @@ namespace GestionProjects.Controllers
                 Matricule          = TempData["AzureMatricule"] as string ?? string.Empty,
                 AzureDepartment    = TempData["AzureDepartment"] as string ?? string.Empty,
                 DirectionDetecteeId  = TempData["AzureDirectionDetecteeId"] as string ?? string.Empty,
-                DirectionDetecteeNom = TempData["AzureDirectionDetecteeNom"] as string ?? "Non déterminée"
+                DirectionDetecteeNom = TempData["AzureDirectionDetecteeNom"] as string ?? "Non dÃ©terminÃ©e"
             };
 
             return View(vm);
@@ -239,76 +225,36 @@ namespace GestionProjects.Controllers
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(matricule) || string.IsNullOrWhiteSpace(justification))
+                var result = await _azureAuthWorkflow.SoumettreDemandeAzureAsync(
+                    new SoumettreDemandeAccesAzureInput(
+                        email,
+                        nom,
+                        prenom,
+                        matricule,
+                        justification,
+                        azureDepartment,
+                        directionDetecteeId));
+
+                if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
                 {
-                    TempData["Error"] = "Informations manquantes.";
+                    TempData["Error"] = result.ErrorMessage;
                     return RedirectToAction("Login", "Account");
                 }
 
-                var demandeExiste = await _db.DemandesAccesAzureAd
-                    .AnyAsync(d => d.Email == email && d.Statut == StatutDemandeAcces.EnAttente);
-
-                if (demandeExiste)
+                if (!string.IsNullOrWhiteSpace(result.InfoMessage))
                 {
-                    TempData["Info"] = "Une demande d'accès a déjà été envoyée pour ce compte. Veuillez patienter.";
+                    TempData["Info"] = result.InfoMessage;
                     return RedirectToAction("Login", "Account");
                 }
-
-                Guid? parsedDirectionId = null;
-                if (Guid.TryParse(directionDetecteeId, out var directionId))
-                {
-                    parsedDirectionId = directionId;
-                }
-
-                var demandeAcces = new DemandeAccesAzureAd
-                {
-                    Id = Guid.NewGuid(),
-                    Email = email.Trim(),
-                    Nom = (nom ?? string.Empty).Trim(),
-                    Prenoms = (prenom ?? string.Empty).Trim(),
-                    Matricule = matricule.Trim(),
-                    Justification = justification.Trim(),
-                    AzureDepartment = (azureDepartment ?? string.Empty).Trim(),
-                    DirectionDetecteeId = parsedDirectionId,
-                    Statut = StatutDemandeAcces.EnAttente,
-                    CreePar = "AZURE_AD"
-                };
-
-                _db.DemandesAccesAzureAd.Add(demandeAcces);
-                await _db.SaveChangesAsync();
-
-                var directionLabel = "Non déterminée";
-                if (parsedDirectionId.HasValue)
-                {
-                    directionLabel = await _db.Directions
-                        .Where(d => d.Id == parsedDirectionId.Value)
-                        .Select(d => d.Libelle)
-                        .FirstOrDefaultAsync() ?? directionLabel;
-                }
-
-                await _notificationService.NotifierRoleAsync(
-                    RoleUtilisateur.AdminIT,
-                    TypeNotification.DemandeSupportTechnique,
-                    "Nouvelle demande d'accès Azure AD",
-                    $"Demande d'accès Azure AD de {demandeAcces.Prenoms} {demandeAcces.Nom} ({demandeAcces.Email}). Direction détectée : {directionLabel}.",
-                    DomainEntityTypes.DemandeAccesAzureAd,
-                    demandeAcces.Id,
-                    new
-                    {
-                        demandeAcces.Email,
-                        demandeAcces.Matricule,
-                        demandeAcces.AzureDepartment,
-                        demandeAcces.Justification
-                    });
 
                 _logger.LogDebug("Demande d'accès créée (utilisateur Azure AD)");
-                TempData["Success"] = "Votre demande d'accès a été envoyée aux administrateurs. Vous recevrez un retour après traitement.";
+                TempData["Success"] = result.SuccessMessage;
                 return RedirectToAction("Login", "Account");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Erreur lors de la création de la demande d'accès");
-                TempData["Error"] = "Erreur lors de l'envoi de la demande. Veuillez réessayer.";
+                _logger.LogError(ex, "Erreur lors de la crÃ©ation de la demande d'accÃ¨s");
+                TempData["Error"] = "Erreur lors de l'envoi de la demande. Veuillez rÃ©essayer.";
                 return RedirectToAction("Login", "Account");
             }
         }
@@ -336,42 +282,5 @@ namespace GestionProjects.Controllers
             return null;
         }
 
-        private async Task<Direction?> DetecterDirectionDepuisAzureAsync(string? azureDepartment)
-        {
-            if (string.IsNullOrWhiteSpace(azureDepartment))
-            {
-                return null;
-            }
-
-            var normalizedDepartment = NormalizeForMatch(azureDepartment);
-            var directions = await _db.Directions
-                .Where(d => !d.EstSupprime && d.EstActive)
-                .ToListAsync();
-
-            Direction? bestMatch = directions.FirstOrDefault(d => NormalizeForMatch(d.Code) == normalizedDepartment);
-            bestMatch ??= directions.FirstOrDefault(d => NormalizeForMatch(d.Libelle) == normalizedDepartment);
-            bestMatch ??= directions.FirstOrDefault(d => normalizedDepartment.Contains(NormalizeForMatch(d.Code)));
-            bestMatch ??= directions.FirstOrDefault(d => normalizedDepartment.Contains(NormalizeForMatch(d.Libelle)));
-            bestMatch ??= directions.FirstOrDefault(d => NormalizeForMatch(d.Libelle).Contains(normalizedDepartment));
-
-            return bestMatch;
-        }
-
-        private static string NormalizeForMatch(string value)
-        {
-            var normalized = value.Trim().ToUpperInvariant().Normalize(NormalizationForm.FormD);
-            var builder = new StringBuilder();
-
-            foreach (var c in normalized)
-            {
-                var category = CharUnicodeInfo.GetUnicodeCategory(c);
-                if (category != UnicodeCategory.NonSpacingMark)
-                {
-                    builder.Append(char.IsLetterOrDigit(c) ? c : ' ');
-                }
-            }
-
-            return string.Join(' ', builder.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries));
-        }
     }
 }

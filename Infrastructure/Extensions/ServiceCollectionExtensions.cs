@@ -12,6 +12,7 @@ public static class ServiceCollectionExtensions
         services.AddMemoryCache();
         services.AddScoped<ICacheService, CacheService>();
         services.AddScoped<IAideQueryService, AideQueryService>();
+        services.AddScoped<IAzureAuthWorkflowService, AzureAuthWorkflowService>();
         services.AddScoped<IDashboardAnalyticsService, DashboardAnalyticsService>();
         services.AddScoped<IHomeDashboardService, HomeDashboardService>();
 
