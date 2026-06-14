@@ -35,8 +35,6 @@
   <ItemGroup>
     <Folder Include="Application\DTOs\" />
     <Folder Include="Application\Services\" />
-    <Folder Include="Domain\Models\" />
-    <Folder Include="Domain\Enums\" />
     <Folder Include="Infrastructure\Files\" />
     <Folder Include="Infrastructure\Repositories\" />
     <Folder Include="Infrastructure\Persistence\" />
@@ -45,12 +43,17 @@
   <ItemGroup>
     <Compile Remove="Tests\**" />
     <Compile Remove="artifacts\**" />
+    <Compile Remove="Domain\**" />
     <Content Remove="Tests\**" />
     <Content Remove="artifacts\**" />
     <EmbeddedResource Remove="Tests\**" />
     <EmbeddedResource Remove="artifacts\**" />
     <None Remove="Tests\**" />
     <None Remove="artifacts\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="Domain\GestionProjects.Domain.csproj" />
   </ItemGroup>
 
 </Project>
