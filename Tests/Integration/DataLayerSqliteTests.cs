@@ -1,5 +1,6 @@
 using FluentAssertions;
 using GestionProjects.Application.Common.Interfaces;
+using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using GestionProjects.Tests.Helpers;
 using Microsoft.EntityFrameworkCore;
@@ -125,5 +126,23 @@ public class DataLayerSqliteTests
 
         direction.ModifiePar.Should().Be("TESTUSER");
         direction.DateModification.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task IndexUniqueRole_RefuseDeuxRolesActifsIdentiques()
+    {
+        using var db = new SqliteTestDb();
+
+        var user = NouvelUtilisateur("ROLE01", "role@cit.ci");
+        db.Context.Utilisateurs.Add(user);
+        await db.Context.SaveChangesAsync();
+
+        // Index unique filtré composite (UtilisateurId, Role) WHERE [EstSupprime] = 0.
+        db.Context.UtilisateurRoles.Add(new UtilisateurRole { Id = Guid.NewGuid(), UtilisateurId = user.Id, Role = RoleUtilisateur.ChefDeProjet, DateDebut = DateTime.Now });
+        db.Context.UtilisateurRoles.Add(new UtilisateurRole { Id = Guid.NewGuid(), UtilisateurId = user.Id, Role = RoleUtilisateur.ChefDeProjet, DateDebut = DateTime.Now });
+
+        Func<Task> act = async () => await db.Context.SaveChangesAsync();
+
+        await act.Should().ThrowAsync<DbUpdateException>();
     }
 }
