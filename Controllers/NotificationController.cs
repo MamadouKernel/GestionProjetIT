@@ -1,94 +1,47 @@
 using GestionProjects.Application.Common.Extensions;
 using GestionProjects.Application.Common.Interfaces;
-using GestionProjects.Application.ViewModels.Notification;
-using GestionProjects.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace GestionProjects.Controllers
 {
     [Authorize]
     public class NotificationController : Controller
     {
-        private readonly ApplicationDbContext _db;
+        private readonly INotificationQueryService _notificationQuery;
         private readonly INotificationService _notificationService;
         private readonly INotificationTargetResolver _targetResolver;
 
         public NotificationController(
-            ApplicationDbContext db,
+            INotificationQueryService notificationQuery,
             INotificationService notificationService,
             INotificationTargetResolver targetResolver)
         {
-            _db = db;
+            _notificationQuery = notificationQuery;
             _notificationService = notificationService;
             _targetResolver = targetResolver;
         }
 
-        // GET: Liste des notifications
         public async Task<IActionResult> Index(int page = 1, int pageSize = 20)
         {
             var userId = User.GetUserIdOrThrow();
-
-            var query = _db.Notifications
-                .Where(n => n.UtilisateurId == userId && !n.EstSupprime)
-                .OrderByDescending(n => n.DateCreation);
-
-            // Pagination
-            page = Math.Max(1, page);
-            pageSize = Math.Clamp(pageSize, 10, 100);
-
-            var pagedResult = await query.ToPagedResultAsync(page, pageSize);
-
-            var nonLues = await _db.Notifications
-                .CountAsync(n => n.UtilisateurId == userId && !n.EstLue && !n.EstSupprime);
-
-            var vm = new NotificationIndexViewModel
-            {
-                Items      = pagedResult.Items,
-                NonLues    = nonLues,
-                PageNumber = pagedResult.PageNumber,
-                TotalPages = pagedResult.TotalPages,
-                TotalCount = pagedResult.TotalCount,
-                PageSize   = pagedResult.PageSize
-            };
-
+            var vm = await _notificationQuery.GetIndexAsync(userId, page, pageSize);
             return View(vm);
         }
 
-        // GET: API pour récupérer le nombre de notifications non lues
         [HttpGet]
         public async Task<IActionResult> GetUnreadCount()
         {
             var userId = User.GetUserIdOrThrow();
-            var count = await _db.Notifications
-                .CountAsync(n => n.UtilisateurId == userId && !n.EstLue && !n.EstSupprime);
-
+            var count = await _notificationQuery.GetUnreadCountAsync(userId);
             return Json(new { count });
         }
 
-        // GET: API pour récupérer les dernières notifications non lues
         [HttpGet]
         public async Task<IActionResult> GetUnreadNotifications(int count = 5)
         {
             var userId = User.GetUserIdOrThrow();
-
-            var notifications = await _db.Notifications
-                .Where(n => n.UtilisateurId == userId && !n.EstLue && !n.EstSupprime)
-                .OrderByDescending(n => n.DateCreation)
-                .Take(count)
-                .Select(n => new
-                {
-                    n.Id,
-                    n.Titre,
-                    n.Message,
-                    n.TypeNotification,
-                    n.EntiteType,
-                    n.EntiteId,
-                    n.DateCreation,
-                    DateCreationFormatted = n.DateCreation.ToString("dd/MM/yyyy HH:mm")
-                })
-                .ToListAsync();
+            var notifications = await _notificationQuery.GetUnreadNotificationsAsync(userId, count);
 
             return Json(notifications.Select(n => new
             {
@@ -104,15 +57,11 @@ namespace GestionProjects.Controllers
             }));
         }
 
-        // GET: Ouvrir une notification et rediriger vers son contenu métier
         [HttpGet]
         public async Task<IActionResult> Ouvrir(Guid id)
         {
             var userId = User.GetUserIdOrThrow();
-            var notification = await _db.Notifications
-                .AsNoTracking()
-                .FirstOrDefaultAsync(n => n.Id == id && n.UtilisateurId == userId && !n.EstSupprime);
-
+            var notification = await _notificationQuery.GetOpenInfoAsync(id, userId);
             if (notification == null)
             {
                 TempData["Error"] = "Notification introuvable ou deja supprimee.";
@@ -125,7 +74,6 @@ namespace GestionProjects.Controllers
             return RedirectToAction(target.Action, target.Controller, target.RouteValues);
         }
 
-        // POST: Marquer comme lue
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarquerLue(Guid id, string? returnUrl = null)
@@ -140,7 +88,6 @@ namespace GestionProjects.Controllers
             return RedirectToSafeNotificationUrl(returnUrl);
         }
 
-        // POST: Marquer toutes comme lues
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarquerToutesLues(string? returnUrl = null)
@@ -176,6 +123,5 @@ namespace GestionProjects.Controllers
 
             return RedirectToAction(nameof(Index));
         }
-
     }
 }

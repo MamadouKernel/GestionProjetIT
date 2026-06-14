@@ -5,6 +5,7 @@ using GestionProjects.Controllers;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using GestionProjects.Infrastructure.Persistence;
+using GestionProjects.Infrastructure.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
@@ -60,7 +61,10 @@ public sealed class NotificationControllerTests
                 "Index",
                 new Dictionary<string, object?> { ["focusId"] = demandeId }));
 
-        var controller = new NotificationController(db, notificationService.Object, targetResolver.Object)
+        var controller = new NotificationController(
+            new NotificationQueryService(db),
+            notificationService.Object,
+            targetResolver.Object)
         {
             ControllerContext = BuildControllerContext(userId)
         };

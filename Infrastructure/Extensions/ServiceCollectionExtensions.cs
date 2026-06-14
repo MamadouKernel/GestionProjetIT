@@ -20,6 +20,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IExcelService, ExcelService>();
         services.AddScoped<IWordService, WordService>();
         services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<INotificationQueryService, NotificationQueryService>();
         services.AddScoped<INotificationTargetResolver, NotificationTargetResolver>();
         services.AddScoped<ILivrableValidationService, LivrableValidationService>();
         services.AddScoped<ILivrableProjetService, LivrableProjetService>();
