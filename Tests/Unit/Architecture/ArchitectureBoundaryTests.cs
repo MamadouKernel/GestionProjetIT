@@ -36,6 +36,7 @@ public sealed class ArchitectureBoundaryTests
         var migratedControllers = new[]
         {
             typeof(AideController),
+            typeof(AutorisationsController),
             typeof(DemandesAccesController),
             typeof(NotificationController)
         };

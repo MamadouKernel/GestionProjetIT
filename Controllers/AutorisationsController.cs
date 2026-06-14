@@ -1,33 +1,24 @@
 using GestionProjects.Application.Common.Interfaces;
-using GestionProjects.Application.ViewModels;
 using GestionProjects.Domain.Enums;
-using GestionProjects.Domain.Models;
-using GestionProjects.Infrastructure.Persistence;
-using GestionProjects.Application.Common.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace GestionProjects.Controllers
 {
     [Authorize]
     public class AutorisationsController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IAutorisationMatrixService _autorisationMatrix;
         private readonly ILogger<AutorisationsController> _logger;
-        private readonly IMemoryCache _cache;
         private readonly IPermissionService _permissionService;
 
         public AutorisationsController(
-            ApplicationDbContext context,
+            IAutorisationMatrixService autorisationMatrix,
             ILogger<AutorisationsController> logger,
-            IMemoryCache cache,
             IPermissionService permissionService)
         {
-            _context = context;
+            _autorisationMatrix = autorisationMatrix;
             _logger = logger;
-            _cache = cache;
             _permissionService = permissionService;
         }
 
@@ -40,60 +31,7 @@ namespace GestionProjects.Controllers
                     return Forbid();
                 }
 
-                var vuesDisponibles = ObtenirVuesDisponibles();
-                var roles = Enum.GetValues<RoleUtilisateur>()
-                    .OrderBy(r => r.ToString())
-                    .ToList();
-
-                var permissionsPersisted = await _context.RolePermissions
-                    .OrderBy(rp => rp.Role)
-                    .ThenBy(rp => rp.Categorie)
-                    .ThenBy(rp => rp.Ordre)
-                    .ToListAsync();
-
-                var permissionsParRole = new Dictionary<RoleUtilisateur, List<RolePermission>>();
-
-                foreach (var role in roles)
-                {
-                    var permissionsDuRole = new List<RolePermission>();
-
-                    foreach (var vue in vuesDisponibles)
-                    {
-                        var permissionPersisted = permissionsPersisted.FirstOrDefault(p =>
-                            p.Role == role &&
-                            p.Controleur == vue.Controleur &&
-                            p.Action == vue.Action);
-
-                        permissionsDuRole.Add(new RolePermission
-                        {
-                            Id = permissionPersisted?.Id ?? Guid.Empty,
-                            Role = role,
-                            Controleur = vue.Controleur,
-                            Action = vue.Action,
-                            NomAffichage = vue.NomAffichage,
-                            Description = vue.Description,
-                            Categorie = vue.Categorie,
-                            Icone = vue.Icone,
-                            Ordre = vue.Ordre,
-                            EstActif = permissionPersisted?.EstActif ?? (role == RoleUtilisateur.AdminIT
-                                || PermissionCatalog.IsEnabledByDefault(role, vue.Controleur, vue.Action))
-                        });
-                    }
-
-                    permissionsParRole[role] = permissionsDuRole
-                        .OrderBy(p => PermissionCatalog.GetCategoryOrder(p.Categorie))
-                        .ThenBy(p => p.Ordre)
-                        .ThenBy(p => p.NomAffichage)
-                        .ToList();
-                }
-
-                var viewModel = new Application.ViewModels.AutorisationsViewModel
-                {
-                    Roles = roles,
-                    PermissionsParRole = permissionsParRole,
-                    VuesDisponibles = vuesDisponibles
-                };
-
+                var viewModel = await _autorisationMatrix.BuildIndexAsync();
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -116,62 +54,18 @@ namespace GestionProjects.Controllers
             {
                 if (!await CanManagePermissionsAsync())
                 {
-                    return Json(new { success = false, message = "Accès refusé." });
+                    return Json(new { success = false, message = "Acces refuse." });
                 }
 
-                if (role == RoleUtilisateur.AdminIT)
-                {
-                    return Json(new
-                    {
-                        success = false,
-                        message = "Le role Admin IT conserve un acces global et n'est pas restreignable depuis cette matrice."
-                    });
-                }
-
-                var permission = await _context.RolePermissions
-                    .FirstOrDefaultAsync(rp =>
-                        rp.Role == role &&
-                        rp.Controleur == controleur &&
-                        rp.Action == action);
-
-                if (permission == null)
-                {
-                    var vueInfo = ObtenirInfoVue(controleur, action);
-                    permission = new RolePermission
-                    {
-                        Id = Guid.NewGuid(),
-                        Role = role,
-                        Controleur = controleur,
-                        Action = action,
-                        NomAffichage = vueInfo.NomAffichage,
-                        Description = vueInfo.Description,
-                        Categorie = vueInfo.Categorie,
-                        Icone = vueInfo.Icone,
-                        Ordre = vueInfo.Ordre,
-                        EstActif = estActif
-                    };
-
-                    _context.RolePermissions.Add(permission);
-                }
-                else
-                {
-                    var vueInfo = ObtenirInfoVue(controleur, action);
-                    permission.EstActif = estActif;
-                    permission.NomAffichage = vueInfo.NomAffichage;
-                    permission.Description = vueInfo.Description;
-                    permission.Categorie = vueInfo.Categorie;
-                    permission.Icone = vueInfo.Icone;
-                    permission.Ordre = vueInfo.Ordre;
-                    _context.Update(permission);
-                }
-
-                await _context.SaveChangesAsync();
-                ViderCachePermissions(role);
+                var result = await _autorisationMatrix.UpdatePermissionAsync(
+                    new UpdateRolePermissionInput(role, controleur, action, estActif));
 
                 return Json(new
                 {
-                    success = true,
-                    message = "Permission mise a jour avec succes. Les changements sont pris en compte au prochain chargement de page."
+                    success = result.Succeeded,
+                    message = result.Succeeded
+                        ? result.SuccessMessage
+                        : result.Errors.FirstOrDefault()?.Message ?? "Erreur lors de la mise a jour"
                 });
             }
             catch (Exception ex)
@@ -192,69 +86,17 @@ namespace GestionProjects.Controllers
                     return Forbid();
                 }
 
-                var vuesDisponibles = ObtenirVuesDisponibles();
-                var roles = Enum.GetValues<RoleUtilisateur>();
-                var permissionsPersisted = await _context.RolePermissions.ToListAsync();
-
-                foreach (var role in roles)
+                var result = await _autorisationMatrix.InitialiserPermissionsAsync();
+                if (result.Succeeded)
                 {
-                    foreach (var vue in vuesDisponibles)
-                    {
-                        var permission = permissionsPersisted.FirstOrDefault(rp =>
-                            rp.Role == role &&
-                            rp.Controleur == vue.Controleur &&
-                            rp.Action == vue.Action);
-
-                        var estActifParDefaut = role == RoleUtilisateur.AdminIT
-                            || PermissionCatalog.IsEnabledByDefault(role, vue.Controleur, vue.Action);
-
-                        if (permission == null)
-                        {
-                            permission = new RolePermission
-                            {
-                                Id = Guid.NewGuid(),
-                                Role = role,
-                                Controleur = vue.Controleur,
-                                Action = vue.Action,
-                                NomAffichage = vue.NomAffichage,
-                                Description = vue.Description,
-                                Categorie = vue.Categorie,
-                                Icone = vue.Icone,
-                                Ordre = vue.Ordre,
-                                EstActif = estActifParDefaut
-                            };
-                            _context.RolePermissions.Add(permission);
-                        }
-                        else
-                        {
-                            permission.NomAffichage = vue.NomAffichage;
-                            permission.Description = vue.Description;
-                            permission.Categorie = vue.Categorie;
-                            permission.Icone = vue.Icone;
-                            permission.Ordre = vue.Ordre;
-                            permission.EstActif = estActifParDefaut;
-                            _context.Update(permission);
-                        }
-                    }
+                    TempData["Success"] = result.SuccessMessage;
+                }
+                else
+                {
+                    TempData["Error"] = result.Errors.FirstOrDefault()?.Message
+                        ?? "Erreur lors de l'initialisation des permissions.";
                 }
 
-                var managedKeys = new HashSet<string>(
-                    vuesDisponibles.Select(v => $"{v.Controleur}::{v.Action}"),
-                    StringComparer.OrdinalIgnoreCase);
-
-                var obsoletePermissions = permissionsPersisted
-                    .Where(p => managedKeys.Contains($"{p.Controleur}::{p.Action}") == false)
-                    .ToList();
-
-                if (obsoletePermissions.Any())
-                {
-                    _context.RolePermissions.RemoveRange(obsoletePermissions);
-                }
-
-                await _context.SaveChangesAsync();
-                ViderCachePermissions();
-
-                TempData["Success"] = "Permissions reinitialisees avec succes. Les changements sont pris en compte au prochain chargement de page.";
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
@@ -262,74 +104,6 @@ namespace GestionProjects.Controllers
                 _logger.LogError(ex, "Erreur lors de l'initialisation des permissions");
                 TempData["Error"] = "Erreur lors de l'initialisation des permissions.";
                 return RedirectToAction(nameof(Index));
-            }
-        }
-
-        private List<VueInfo> ObtenirVuesDisponibles()
-        {
-            return PermissionCatalog.GetDefinitions()
-                .OrderBy(v => PermissionCatalog.GetCategoryOrder(v.Categorie))
-                .ThenBy(v => v.Ordre)
-                .Select(v => new VueInfo
-                {
-                    Controleur = v.Controleur,
-                    Action = v.Action,
-                    NomAffichage = v.NomAffichage,
-                    Description = v.Description,
-                    Categorie = v.Categorie,
-                    Icone = v.Icone,
-                    Ordre = v.Ordre
-                })
-                .ToList();
-        }
-
-        private VueInfo ObtenirInfoVue(string controleur, string action)
-        {
-            var definition = PermissionCatalog.GetDefinition(controleur, action);
-            return definition != null
-                ? new VueInfo
-                {
-                    Controleur = definition.Controleur,
-                    Action = definition.Action,
-                    NomAffichage = definition.NomAffichage,
-                    Description = definition.Description,
-                    Categorie = definition.Categorie,
-                    Icone = definition.Icone,
-                    Ordre = definition.Ordre
-                }
-                : new VueInfo
-                {
-                    Controleur = controleur,
-                    Action = action,
-                    NomAffichage = $"{controleur}.{action}",
-                    Categorie = "Autre",
-                    Icone = "bi-file",
-                    Ordre = 999
-                };
-        }
-
-        private void ViderCachePermissions(RoleUtilisateur? role = null)
-        {
-            try
-            {
-                if (role.HasValue)
-                {
-                    _cache.Set(PermissionCacheKeys.GetRoleVersionKey(role.Value), DateTime.UtcNow.Ticks);
-                    _logger.LogInformation("Cache des permissions vide pour le role {Role}", role.Value);
-                }
-                else
-                {
-                    foreach (var currentRole in Enum.GetValues<RoleUtilisateur>())
-                    {
-                        _cache.Set(PermissionCacheKeys.GetRoleVersionKey(currentRole), DateTime.UtcNow.Ticks);
-                    }
-
-                    _logger.LogInformation("Cache des permissions vide pour tous les roles");
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Erreur lors du vidage du cache des permissions");
             }
         }
 

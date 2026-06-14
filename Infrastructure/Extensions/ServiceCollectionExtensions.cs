@@ -44,6 +44,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserAdminService, UserAdminService>();
         services.AddScoped<IRoleAdminService, RoleAdminService>();
         services.AddScoped<IParametreAdminService, ParametreAdminService>();
+        services.AddScoped<IAutorisationMatrixService, AutorisationMatrixService>();
         services.AddScoped<IDemandeCompteAdminService, DemandeCompteAdminService>();
         services.AddScoped<IDemandeCreationCompteWorkflowService, DemandeCreationCompteWorkflowService>();
         services.AddScoped<IDemandeAccesQueryService, DemandeAccesQueryService>();
