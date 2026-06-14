@@ -70,8 +70,9 @@ public class AuthenticationTests : IDisposable
         var demandeCreationCompteWorkflow = new DemandeCreationCompteWorkflowService(
             _context,
             _emailMock.Object);
+        var accountService = new AccountService(_context);
         _controller = new AccountController(
-            _context,
+            accountService,
             permissionService,
             passwordSetupTokenService,
             demandeCreationCompteWorkflow,

@@ -1,17 +1,13 @@
-using GestionProjects.Application.Common.Constants;
 using GestionProjects.Application.Common.Extensions;
 using GestionProjects.Application.Common.Helpers;
 using GestionProjects.Application.Common.Interfaces;
 using GestionProjects.Application.ViewModels;
-using GestionProjects.Application.ViewModels.Account;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
-using GestionProjects.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System.Security.Claims;
 
@@ -19,20 +15,20 @@ namespace GestionProjects.Controllers
 {
     public class AccountController : Controller
     {
-        private readonly ApplicationDbContext _db;
+        private readonly IAccountService _accountService;
         private readonly IPermissionService _permissionService;
         private readonly IPasswordSetupTokenService _passwordSetupTokenService;
         private readonly IDemandeCreationCompteWorkflowService _demandeCreationCompteWorkflow;
         private readonly IDemandeAccesWorkflowService _demandeAccesWorkflow;
 
         public AccountController(
-            ApplicationDbContext db,
+            IAccountService accountService,
             IPermissionService permissionService,
             IPasswordSetupTokenService passwordSetupTokenService,
             IDemandeCreationCompteWorkflowService demandeCreationCompteWorkflow,
             IDemandeAccesWorkflowService demandeAccesWorkflow)
         {
-            _db = db;
+            _accountService = accountService;
             _permissionService = permissionService;
             _passwordSetupTokenService = passwordSetupTokenService;
             _demandeCreationCompteWorkflow = demandeCreationCompteWorkflow;
@@ -76,56 +72,14 @@ namespace GestionProjects.Controllers
                 return View(model);
             }
 
-            // On cherche l'utilisateur par login avec ses rôles
-            var user = await _db.Utilisateurs
-                .Include(u => u.Direction)
-                .Include(u => u.UtilisateurRoles)
-                .FirstOrDefaultAsync(u => u.Matricule == model.Matricule && !u.EstSupprime);
-
-            if (user == null)
+            var loginResult = await _accountService.ValidateLocalLoginAsync(model);
+            if (!loginResult.Succeeded || loginResult.User == null)
             {
-                ModelState.AddModelError(string.Empty, "Matricule ou mot de passe incorrect.");
+                ModelState.AddModelError(string.Empty, loginResult.ErrorMessage ?? "Matricule ou mot de passe incorrect.");
                 return View(model);
             }
 
-            // Vérifier que le mot de passe n'est pas vide
-            if (string.IsNullOrEmpty(user.MotDePasse))
-            {
-                ModelState.AddModelError(string.Empty, "Ce compte est en attente d'activation. Utilisez le lien recu par email ou contactez la DSI.");
-                return View(model);
-            }
-
-            // Vérification du mot de passe (BCrypt)
-            bool passwordOk = false;
-            try
-            {
-                if (string.IsNullOrEmpty(user.MotDePasse))
-                {
-                    ModelState.AddModelError(string.Empty, "Erreur : mot de passe utilisateur invalide.");
-                    return View(model);
-                }
-
-                // Vérifier le format du hash BCrypt
-                if (!user.MotDePasse.StartsWith("$2"))
-                {
-                    ModelState.AddModelError(string.Empty, "Erreur : format de mot de passe invalide.");
-                    return View(model);
-                }
-
-                passwordOk = BCrypt.Net.BCrypt.Verify(model.MotDePasse, user.MotDePasse);
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError(string.Empty, $"Erreur lors de la vérification du mot de passe : {ex.Message}");
-                return View(model);
-            }
-
-            if (!passwordOk)
-            {
-                ModelState.AddModelError(string.Empty, "Matricule ou mot de passe incorrect.");
-                return View(model);
-            }
-
+            var user = loginResult.User;
             var principal = BuildPrincipal(user);
 
             var authProperties = new AuthenticationProperties
@@ -140,10 +94,7 @@ namespace GestionProjects.Controllers
                     principal,
                     authProperties);
 
-                // Mise à jour suivi connexion
-                user.NombreConnexion += 1;
-                user.DateDerniereConnexion = DateTime.Now;
-                await _db.SaveChangesAsync();
+                await _accountService.RecordLoginAsync(user.Id);
 
                 // Vérifier que l'utilisateur est bien authentifié
                 if (!HttpContext.User.Identity?.IsAuthenticated == true)
@@ -437,28 +388,11 @@ namespace GestionProjects.Controllers
         public async Task<IActionResult> Profil()
         {
             var userId = User.GetUserIdOrThrow();
-            var user = await _db.Utilisateurs
-                .Include(u => u.Direction)
-                .Include(u => u.UtilisateurRoles)
-                .FirstOrDefaultAsync(u => u.Id == userId && !u.EstSupprime);
-
-            if (user == null)
+            var vm = await _accountService.GetProfilAsync(userId);
+            if (vm == null)
             {
                 return NotFound();
             }
-
-            var vm = new ProfilViewModel
-            {
-                Id = user.Id,
-                Matricule = user.Matricule,
-                Nom = user.Nom,
-                Prenoms = user.Prenoms,
-                Email = user.Email,
-                DirectionLibelle = user.Direction?.Libelle,
-                Role = user.Role.ToString(),
-                DateDerniereConnexion = user.DateDerniereConnexion,
-                NombreConnexion = user.NombreConnexion
-            };
 
             return View(vm);
         }
@@ -470,66 +404,24 @@ namespace GestionProjects.Controllers
         public async Task<IActionResult> Profil(ProfilViewModel model)
         {
             var userId = User.GetUserIdOrThrow();
-            var user = await _db.Utilisateurs
-                .Include(u => u.Direction)
-                .Include(u => u.UtilisateurRoles)
-                .FirstOrDefaultAsync(u => u.Id == userId && !u.EstSupprime);
 
-            if (user == null)
+            var result = await _accountService.UpdateProfilAsync(userId, model, !ModelState.IsValid);
+            if (result.NotFound || result.User == null)
             {
                 return NotFound();
             }
 
-            // Si changement de mot de passe demandé
-            if (!string.IsNullOrEmpty(model.NouveauMotDePasse))
+            foreach (var error in result.Errors)
             {
-                // Vérifier le mot de passe actuel
-                if (string.IsNullOrEmpty(model.MotDePasseActuel))
-                {
-                    ModelState.AddModelError(nameof(model.MotDePasseActuel), "Le mot de passe actuel est requis pour changer le mot de passe.");
-                }
-                else
-                {
-                    try
-                    {
-                        if (!BCrypt.Net.BCrypt.Verify(model.MotDePasseActuel, user.MotDePasse))
-                        {
-                            ModelState.AddModelError(nameof(model.MotDePasseActuel), "Le mot de passe actuel est incorrect.");
-                        }
-                        else
-                        {
-                            // Hash du nouveau mot de passe
-                            user.MotDePasse = BCrypt.Net.BCrypt.HashPassword(model.NouveauMotDePasse);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        ModelState.AddModelError(string.Empty, $"Erreur lors de la vérification du mot de passe : {ex.Message}");
-                    }
-                }
+                ModelState.AddModelError(error.Field, error.Message);
             }
 
-            if (!ModelState.IsValid)
+            if (!result.Succeeded)
             {
-                // Réinitialiser les champs de mot de passe pour ne pas les afficher
-                model.NouveauMotDePasse = null;
-                model.ConfirmerMotDePasse = null;
-                model.MotDePasseActuel = null;
-                model.DirectionLibelle = user.Direction?.Libelle;
-                model.Role = user.Role.ToString();
-                model.DateDerniereConnexion = user.DateDerniereConnexion;
-                model.NombreConnexion = user.NombreConnexion;
-                return View(model);
+                return View(result.ViewModel);
             }
 
-            // Mettre à jour les informations
-            user.Nom = model.Nom;
-            user.Prenoms = model.Prenoms;
-            user.Email = model.Email;
-
-            await _db.SaveChangesAsync();
-
-            var principal = BuildPrincipal(user);
+            var principal = BuildPrincipal(result.User);
 
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
@@ -542,21 +434,11 @@ namespace GestionProjects.Controllers
 
         // ─── Inscription (nouveau workflow) ───────────────────────────────────
 
-        private async Task<InscriptionViewModel> BuildInscriptionViewModelAsync()
-        {
-            var directions = await _db.Directions
-                .Where(d => !d.EstSupprime && d.EstActive)
-                .OrderBy(d => d.Libelle)
-                .Select(d => new DirectionSelectItem { Id = d.Id, Libelle = d.Libelle })
-                .ToListAsync();
-            return new InscriptionViewModel { Directions = directions };
-        }
-
         [AllowAnonymous, HttpGet]
         public async Task<IActionResult> Inscription()
         {
             if (User?.Identity?.IsAuthenticated == true) return RedirectToAction("Index", "Home");
-            return View(await BuildInscriptionViewModelAsync());
+            return View(await _accountService.BuildInscriptionViewModelAsync());
         }
 
         [AllowAnonymous, HttpPost, ValidateAntiForgeryToken]
@@ -577,7 +459,7 @@ namespace GestionProjects.Controllers
             if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
             {
                 TempData["Error"] = result.ErrorMessage;
-                return View(await BuildInscriptionViewModelAsync());
+                return View(await _accountService.BuildInscriptionViewModelAsync());
             }
 
             TempData["Success"] = result.SuccessMessage;
@@ -588,11 +470,7 @@ namespace GestionProjects.Controllers
         [AllowAnonymous, HttpGet]
         public async Task<IActionResult> GetServicesByDirection(Guid directionId)
         {
-            var services = await _db.Services
-                .Where(s => s.DirectionId == directionId && !s.EstSupprime && s.EstActive)
-                .OrderBy(s => s.Libelle)
-                .Select(s => new { s.Id, s.Libelle })
-                .ToListAsync();
+            var services = await _accountService.GetServicesByDirectionAsync(directionId);
             return Json(services);
         }
 
@@ -600,14 +478,7 @@ namespace GestionProjects.Controllers
         [AllowAnonymous, HttpGet]
         public async Task<IActionResult> GetDMsByDirection(Guid directionId)
         {
-            var dms = await _db.Utilisateurs
-                .Where(u => !u.EstSupprime && u.DirectionId == directionId)
-                .Join(_db.UtilisateurRoles.Where(r => r.Role == RoleUtilisateur.DirecteurMetier && !r.EstSupprime),
-                      u => u.Id, r => r.UtilisateurId, (u, r) => u)
-                .OrderBy(u => u.Nom)
-                .ThenBy(u => u.Prenoms)
-                .Select(u => new { id = u.Id, libelle = (u.Nom + " " + u.Prenoms).Trim() })
-                .ToListAsync();
+            var dms = await _accountService.GetDirecteursMetierByDirectionAsync(directionId);
             return Json(dms);
         }
 
@@ -645,11 +516,6 @@ namespace GestionProjects.Controllers
 
             TempData["Success"] = result.SuccessMessage;
             return RedirectToAction(nameof(Login));
-        }
-
-        private static bool EstActif(Utilisateur? u)
-        {
-            return u != null && !u.EstSupprime;
         }
     }
 }

@@ -10,6 +10,7 @@ public static class ServiceCollectionExtensions
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddMemoryCache();
+        services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<ICacheService, CacheService>();
         services.AddScoped<IAideQueryService, AideQueryService>();
         services.AddScoped<IAzureAuthWorkflowService, AzureAuthWorkflowService>();
