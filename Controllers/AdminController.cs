@@ -1,12 +1,10 @@
 using GestionProjects.Application.Common.Interfaces;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
-using GestionProjects.Infrastructure.Persistence;
 using GestionProjects.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace GestionProjects.Controllers
@@ -14,7 +12,6 @@ namespace GestionProjects.Controllers
     [Authorize]
     public partial class AdminController : Controller
     {
-        private readonly ApplicationDbContext _db;
         private readonly IAuditService _auditService;
         private readonly ICurrentUserService _currentUserService;
         private readonly IEmailService _email;
@@ -27,10 +24,10 @@ namespace GestionProjects.Controllers
         private readonly IParametreAdminService _parametreService;
         private readonly IDemandeCompteAdminService _demandeCompteService;
         private readonly IDelegationAdminService _delegationService;
+        private readonly IUserImportService _userImportService;
         private readonly ILogger<AdminController> _logger;
 
         public AdminController(
-            ApplicationDbContext db,
             IAuditService auditService,
             ICurrentUserService currentUserService,
             IEmailService email,
@@ -43,9 +40,9 @@ namespace GestionProjects.Controllers
             IParametreAdminService parametreService,
             IDemandeCompteAdminService demandeCompteService,
             IDelegationAdminService delegationService,
+            IUserImportService userImportService,
             ILogger<AdminController> logger)
         {
-            _db = db;
             _auditService = auditService;
             _currentUserService = currentUserService;
             _email = email;
@@ -58,6 +55,7 @@ namespace GestionProjects.Controllers
             _parametreService = parametreService;
             _demandeCompteService = demandeCompteService;
             _delegationService = delegationService;
+            _userImportService = userImportService;
             _logger = logger;
         }
 

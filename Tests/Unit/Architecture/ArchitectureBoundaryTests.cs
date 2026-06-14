@@ -36,6 +36,7 @@ public sealed class ArchitectureBoundaryTests
         var migratedControllers = new[]
         {
             typeof(AccountController),
+            typeof(AdminController),
             typeof(AideController),
             typeof(AutorisationsController),
             typeof(AzureAuthController),

@@ -84,9 +84,14 @@ namespace GestionProjects.Tests.Controllers
                 configuration);
             var delegationService = new DelegationAdminService(
                 _db, _currentUserMock.Object, _auditMock.Object);
+            var userImportService = new UserImportService(
+                _db,
+                _auditMock.Object,
+                _currentUserMock.Object,
+                _utilisateurMock.Object,
+                new Mock<ILogger<UserImportService>>().Object);
 
             _controller = new AdminController(
-                _db,
                 _auditMock.Object,
                 _currentUserMock.Object,
                 _emailMock.Object,
@@ -99,6 +104,7 @@ namespace GestionProjects.Tests.Controllers
                 parametreService,
                 demandeCompteService,
                 delegationService,
+                userImportService,
                 _loggerMock.Object);
 
             SetupControllerContext(_controller, AdminUserId, RoleUtilisateur.AdminIT);

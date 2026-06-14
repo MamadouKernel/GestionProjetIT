@@ -47,6 +47,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDirectionAdminService, DirectionAdminService>();
         services.AddScoped<IServiceAdminService, ServiceAdminService>();
         services.AddScoped<IUserAdminService, UserAdminService>();
+        services.AddScoped<IUserImportService, UserImportService>();
         services.AddScoped<IRoleAdminService, RoleAdminService>();
         services.AddScoped<IParametreAdminService, ParametreAdminService>();
         services.AddScoped<IAutorisationMatrixService, AutorisationMatrixService>();
