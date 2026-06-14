@@ -71,9 +71,9 @@
                         <!-- Notifications -->
                         <div class="dropdown">
                             <button class="notif-btn d-flex align-items-center justify-content-center" data-bs-toggle="dropdown" aria-expanded="false"
-                                aria-label="Notifications">
+                                aria-label="Notifications non lues">
                                 <i class="bi bi-bell"></i>
-                                <span id="notificationBadge" class="notif-badge"></span>
+                                <span id="notificationBadge" class="notif-badge" hidden></span>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end notif-dropdown">
                                 <li class="notif-header">
@@ -81,8 +81,11 @@
                                     <a asp-controller="Notification" asp-action="Index" class="notif-see-all">Voir tout</a>
                                 </li>
                                 <li>
-                                    <div id="notificationsList" class="notif-list">
-                                        <div class="text-center p-4 text-muted notif-loading">Chargement…</div>
+                                    <div id="notificationsList" class="notif-list" aria-live="polite" aria-busy="true">
+                                        <div class="notif-state notif-loading">
+                                            <span class="notif-state-icon"><i class="bi bi-arrow-repeat"></i></span>
+                                            <span>Chargement des notifications...</span>
+                                        </div>
                                     </div>
                                 </li>
                             </ul>
@@ -422,9 +425,9 @@
                         const badge = document.getElementById('notificationBadge');
                         if (data.count > 0) {
                             badge.textContent = data.count > 99 ? '99+' : data.count;
-                            badge.style.display = 'inline-block';
+                            badge.hidden = false;
                         } else {
-                            badge.style.display = 'none';
+                            badge.hidden = true;
                         }
                     })
                     .catch(err => console.error('Erreur chargement notifications:', err));
@@ -433,26 +436,44 @@
                     .then(response => response.json())
                     .then(data => {
                         const list = document.getElementById('notificationsList');
+                        list.setAttribute('aria-busy', 'false');
                         if (data.length === 0) {
-                            list.innerHTML = '<div class="text-center p-3 text-muted" style="font-size: 0.875rem;">Aucune notification</div>';
+                            list.innerHTML = `
+                                <div class="notif-state notif-empty">
+                                    <span class="notif-state-icon"><i class="bi bi-check2-circle"></i></span>
+                                    <span>Aucune notification non lue</span>
+                                </div>
+                            `;
                         } else {
                             list.innerHTML = data.map(n => {
                                 const openUrl = n.ouvrirUrl || '@Url.Action("Index", "Notification")';
                                 return `
-                                <a href="${escapeHtml(openUrl)}" class="dropdown-item-text" style="display: block; padding: var(--spacing-md); border-bottom: 1px solid var(--gray-100); text-decoration: none; color: inherit;">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div class="flex-grow-1">
-                                            <div style="font-weight: 600; font-size: 0.875rem; margin-bottom: var(--spacing-xs);">${escapeHtml(n.titre)}</div>
-                                            <div style="font-size: 0.8rem; color: var(--gray-600); margin-bottom: var(--spacing-xs);">${escapeHtml(n.message)}</div>
-                                            <div style="font-size: 0.75rem; color: var(--gray-500);">${n.dateCreationFormatted}</div>
-                                        </div>
-                                        <span class="btn-modern btn-modern-sm btn-modern-secondary" style="margin-left: var(--spacing-sm);"><i class="bi bi-arrow-right"></i></span>
+                                <a href="${escapeHtml(openUrl)}" class="notif-item">
+                                    <div class="notif-item-content">
+                                        <div class="notif-item-title">${escapeHtml(n.titre)}</div>
+                                        <div class="notif-item-message">${escapeHtml(n.message)}</div>
+                                        <div class="notif-item-date">${escapeHtml(n.dateCreationFormatted)}</div>
                                     </div>
+                                    <span class="notif-item-action" aria-hidden="true">
+                                        <i class="bi bi-arrow-right"></i>
+                                    </span>
                                 </a>
                             `}).join('');
                         }
                     })
-                    .catch(err => console.error('Erreur chargement liste notifications:', err));
+                    .catch(err => {
+                        console.error('Erreur chargement liste notifications:', err);
+                        const list = document.getElementById('notificationsList');
+                        if (list) {
+                            list.setAttribute('aria-busy', 'false');
+                            list.innerHTML = `
+                                <div class="notif-state notif-error">
+                                    <span class="notif-state-icon"><i class="bi bi-wifi-off"></i></span>
+                                    <span>Notifications indisponibles pour le moment</span>
+                                </div>
+                            `;
+                        }
+                    });
             }
             
             function escapeHtml(text) {
