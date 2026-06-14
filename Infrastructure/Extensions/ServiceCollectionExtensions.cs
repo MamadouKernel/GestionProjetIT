@@ -14,6 +14,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAideQueryService, AideQueryService>();
 
         services.AddScoped<IFileStorageService, FileStorageService>();
+        services.AddScoped<IDocumentAccessService, DocumentAccessService>();
         services.AddScoped<IDocumentPreviewService, DocumentPreviewService>();
         services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<IPdfService, PdfService>();

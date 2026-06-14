@@ -38,6 +38,7 @@ public sealed class ArchitectureBoundaryTests
             typeof(AideController),
             typeof(AutorisationsController),
             typeof(DemandesAccesController),
+            typeof(DocumentController),
             typeof(NotificationController)
         };
 
