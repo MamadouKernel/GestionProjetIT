@@ -14,7 +14,7 @@ namespace GestionProjects.Application.Common.Extensions
                 return null;
             }
 
-            var userIdClaim = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userIdClaim = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrWhiteSpace(userIdClaim))
             {
                 return null;

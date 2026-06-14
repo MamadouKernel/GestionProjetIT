@@ -1,14 +1,14 @@
+using GestionProjects.Application.Common.Models;
 using GestionProjects.Domain.Models;
-using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace GestionProjects.Application.ViewModels.DemandeProjet
 {
     public class DemandeProjetIndexViewModel
     {
         public IEnumerable<Domain.Models.DemandeProjet> Demandes { get; set; } = Enumerable.Empty<Domain.Models.DemandeProjet>();
-        public IEnumerable<SelectListItem> Directions { get; set; } = Enumerable.Empty<SelectListItem>();
-        public IEnumerable<SelectListItem> Demandeurs { get; set; } = Enumerable.Empty<SelectListItem>();
-        public IEnumerable<SelectListItem> DirecteursMetier { get; set; } = Enumerable.Empty<SelectListItem>();
+        public IEnumerable<SelectOption> Directions { get; set; } = Enumerable.Empty<SelectOption>();
+        public IEnumerable<SelectOption> Demandeurs { get; set; } = Enumerable.Empty<SelectOption>();
+        public IEnumerable<SelectOption> DirecteursMetier { get; set; } = Enumerable.Empty<SelectOption>();
 
         // Pagination
         public int PageNumber { get; set; }

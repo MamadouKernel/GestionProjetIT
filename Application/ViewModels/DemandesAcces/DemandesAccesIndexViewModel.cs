@@ -1,13 +1,13 @@
+using GestionProjects.Application.Common.Models;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
-using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace GestionProjects.Application.ViewModels.DemandesAcces
 {
     public class DemandesAccesIndexViewModel
     {
         public List<DemandeAccesAzureAd> Items { get; set; } = new();
-        public IEnumerable<SelectListItem> Directions { get; set; } = Enumerable.Empty<SelectListItem>();
+        public IEnumerable<SelectOption> Directions { get; set; } = Enumerable.Empty<SelectOption>();
         public string? Recherche { get; set; }
         public StatutDemandeAcces? SelectedStatut { get; set; }
         public Guid? FocusId { get; set; }

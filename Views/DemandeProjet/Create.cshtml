@@ -104,7 +104,7 @@
                 {
                     <div class="form-group-modern">
                         <label asp-for="Demande.DirectionId" class="form-label-modern">Direction *</label>
-                        <select asp-for="Demande.DirectionId" id="DirectionId" class="form-control-modern" asp-items="Model.Directions" required>
+                        <select asp-for="Demande.DirectionId" id="DirectionId" class="form-control-modern" asp-items="Model.Directions.ToSelectListItems()" required>
                             <option value="">-- Selectionner --</option>
                         </select>
                         <span asp-validation-for="Demande.DirectionId" class="text-danger"></span>
@@ -113,7 +113,7 @@
                     <div class="form-group-modern">
                         <label asp-for="Demande.DirecteurMetierId" class="form-label-modern">Directeur metier *</label>
                         <select asp-for="Demande.DirecteurMetierId" id="DirecteurMetierId" class="form-control-modern"
-                                asp-items="Model.DirecteursMetier" required>
+                                asp-items="Model.DirecteursMetier.ToSelectListItems()" required>
                             <option value="">-- Sélectionner un directeur métier --</option>
                         </select>
                         <span asp-validation-for="Demande.DirecteurMetierId" class="text-danger"></span>
@@ -122,7 +122,7 @@
 
                 <div class="form-group-modern">
                     <label asp-for="Demande.AutreSponsorId" class="form-label-modern">Autre sponsor (CODIR)</label>
-                    <select asp-for="Demande.AutreSponsorId" class="form-control-modern" asp-items="Model.AutresSponsors">
+                    <select asp-for="Demande.AutreSponsorId" class="form-control-modern" asp-items="Model.AutresSponsors.ToSelectListItems()">
                         <option value="">-- Aucun autre sponsor --</option>
                     </select>
                     <span asp-validation-for="Demande.AutreSponsorId" class="text-danger"></span>

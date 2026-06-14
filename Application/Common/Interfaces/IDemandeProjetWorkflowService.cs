@@ -1,6 +1,6 @@
+using GestionProjects.Application.Common.Models;
 using GestionProjects.Application.Common.Results;
 using GestionProjects.Application.ViewModels.DemandeProjet;
-using Microsoft.AspNetCore.Http;
 
 namespace GestionProjects.Application.Common.Interfaces;
 
@@ -38,7 +38,7 @@ public interface IDemandeProjetWorkflowService
 
     // ── Documents / duplication ────────────────────────────────────────────────
     Task<WorkflowResult> AjouterDocumentsComplementairesAsync(
-        Guid id, List<IFormFile>? documents, Guid currentUserId, bool canManageDemandes);
+        Guid id, List<UploadedFileInput>? documents, Guid currentUserId, bool canManageDemandes);
 
     Task<DuplicationResult> DupliquerDemandeAsync(Guid id, Guid currentUserId, bool canManageDemandes);
 

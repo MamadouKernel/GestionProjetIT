@@ -1,6 +1,6 @@
+using GestionProjects.Application.Common.Models;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
-using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace GestionProjects.Application.Common.Interfaces
 {
@@ -42,10 +42,10 @@ namespace GestionProjects.Application.Common.Interfaces
     /// <summary>DTO léger pour les filtres de la liste projets.</summary>
     public class ProjetFiltresViewModel
     {
-        public List<SelectListItem> Directions { get; init; } = new();
-        public List<SelectListItem> ChefsProjet { get; init; } = new();
-        public List<SelectListItem> Phases { get; init; } = new();
-        public List<SelectListItem> Statuts { get; init; } = new();
-        public List<SelectListItem> Etats { get; init; } = new();
+        public List<SelectOption> Directions { get; init; } = new();
+        public List<SelectOption> ChefsProjet { get; init; } = new();
+        public List<SelectOption> Phases { get; init; } = new();
+        public List<SelectOption> Statuts { get; init; } = new();
+        public List<SelectOption> Etats { get; init; } = new();
     }
 }

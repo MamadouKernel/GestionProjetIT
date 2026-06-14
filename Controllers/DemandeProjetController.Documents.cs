@@ -1,4 +1,5 @@
 using GestionProjects.Application.Common.Extensions;
+using GestionProjects.Web.Ui;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,7 +15,7 @@ namespace GestionProjects.Controllers
         public async Task<IActionResult> AjouterDocumentsComplementaires(Guid id, List<IFormFile>? documents)
         {
             var result = await _demandeWorkflowService.AjouterDocumentsComplementairesAsync(
-                id, documents, User.GetUserIdOrThrow(), await CanManageDemandesBackofficeAsync());
+                id, documents.ToUploadedFileInputs(), User.GetUserIdOrThrow(), await CanManageDemandesBackofficeAsync());
             return MapWorkflowToDetails(result, id);
         }
 

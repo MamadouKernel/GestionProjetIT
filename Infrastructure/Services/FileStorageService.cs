@@ -1,3 +1,4 @@
+using GestionProjects.Application.Common.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using System.Text;
@@ -7,12 +8,14 @@ namespace GestionProjects.Infrastructure.Services
         public interface IFileStorageService
         {
             Task<string> SaveFileAsync(IFormFile file, string subfolder, string? identifier = null, string[]? allowedExtensions = null, long? maxSizeBytes = null);
+            Task<string> SaveFileAsync(UploadedFileInput file, string subfolder, string? identifier = null, string[]? allowedExtensions = null, long? maxSizeBytes = null);
             Task<string> SaveGeneratedFileAsync(byte[] content, string fileName, string subfolder, string? identifier = null);
             Task<bool> DeleteFileAsync(string filePath);
             bool IsValidFileExtension(string fileName, string[] allowedExtensions);
             string GetFilePath(string subfolder, string fileName, string? identifier = null);
             string GetAbsolutePath(string relativePath);
             bool ValidateFileSignature(IFormFile file, string[] allowedExtensions);
+            bool ValidateFileSignature(UploadedFileInput file, string[] allowedExtensions);
         }
 
     public class FileStorageService : IFileStorageService
@@ -26,7 +29,12 @@ namespace GestionProjects.Infrastructure.Services
             _environment = environment;
         }
 
-        public async Task<string> SaveFileAsync(IFormFile file, string subfolder, string? identifier = null, string[]? allowedExtensions = null, long? maxSizeBytes = null)
+        public Task<string> SaveFileAsync(IFormFile file, string subfolder, string? identifier = null, string[]? allowedExtensions = null, long? maxSizeBytes = null)
+        {
+            return SaveFileAsync(ToUploadedFileInput(file), subfolder, identifier, allowedExtensions, maxSizeBytes);
+        }
+
+        public async Task<string> SaveFileAsync(UploadedFileInput file, string subfolder, string? identifier = null, string[]? allowedExtensions = null, long? maxSizeBytes = null)
         {
             if (file == null || file.Length == 0)
                 throw new ArgumentException("Le fichier est vide.");
@@ -90,9 +98,10 @@ namespace GestionProjects.Infrastructure.Services
             if (!canonicalPath.StartsWith(canonicalBasePath, StringComparison.Ordinal))
                 throw new UnauthorizedAccessException("Tentative d'accès non autorisé au système de fichiers.");
 
+            using (var source = file.OpenReadStream())
             using (var stream = new FileStream(filePath, FileMode.Create))
             {
-                await file.CopyToAsync(stream);
+                await source.CopyToAsync(stream);
             }
 
             // Retourner le chemin relatif depuis wwwroot (utiliser les chemins normalisés)
@@ -223,6 +232,11 @@ namespace GestionProjects.Infrastructure.Services
         /// </summary>
         public bool ValidateFileSignature(IFormFile file, string[] allowedExtensions)
         {
+            return ValidateFileSignature(ToUploadedFileInput(file), allowedExtensions);
+        }
+
+        public bool ValidateFileSignature(UploadedFileInput file, string[] allowedExtensions)
+        {
             if (file == null || file.Length == 0)
                 return false;
 
@@ -285,6 +299,10 @@ namespace GestionProjects.Infrastructure.Services
 
             return false;
         }
+
+        private static UploadedFileInput ToUploadedFileInput(IFormFile file)
+        {
+            return new UploadedFileInput(file.FileName, file.ContentType, file.Length, file.OpenReadStream);
+        }
     }
 }
-

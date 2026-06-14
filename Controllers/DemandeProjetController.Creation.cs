@@ -1,10 +1,10 @@
 using GestionProjects.Application.Common.Extensions;
+using GestionProjects.Application.Common.Models;
 using GestionProjects.Application.ViewModels.DemandeProjet;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
 namespace GestionProjects.Controllers
@@ -92,13 +92,11 @@ namespace GestionProjects.Controllers
                     DirectionId = preSelectedDirectionId,
                     DirecteurMetierId = preSelectedDirecteurMetierId ?? Guid.Empty
                 },
-                Directions = new SelectList(directions, "Id", "Libelle", preSelectedDirectionId),
-                DirecteursMetier = directeursMetier.Select(u => new SelectListItem
-                {
-                    Value = u.Id.ToString(),
-                    Text = $"{u.Nom} {u.Prenoms}",
-                    Selected = preSelectedDirecteurMetierId == u.Id
-                }),
+                Directions = directions.Select(d => new SelectOption(d.Id.ToString(), d.Libelle, preSelectedDirectionId == d.Id)),
+                DirecteursMetier = directeursMetier.Select(u => new SelectOption(
+                    u.Id.ToString(),
+                    $"{u.Nom} {u.Prenoms}",
+                    preSelectedDirecteurMetierId == u.Id)),
                 IsReadOnly = isReadOnly,
                 PreSelectedDirectionId = preSelectedDirectionId,
                 PreSelectedDirecteurMetierId = preSelectedDirecteurMetierId
@@ -234,13 +232,11 @@ namespace GestionProjects.Controllers
             return View(new DemandeProjetCreateViewModel
             {
                 Demande = demandeForm,
-                Directions = new SelectList(directionsErr, "Id", "Libelle", demandeForm.DirectionId),
-                DirecteursMetier = directeursMetierErr.Select(u => new SelectListItem
-                {
-                    Value = u.Id.ToString(),
-                    Text  = $"{u.Nom} {u.Prenoms}",
-                    Selected = demandeForm.DirecteurMetierId == u.Id
-                })
+                Directions = directionsErr.Select(d => new SelectOption(d.Id.ToString(), d.Libelle, demandeForm.DirectionId == d.Id)),
+                DirecteursMetier = directeursMetierErr.Select(u => new SelectOption(
+                    u.Id.ToString(),
+                    $"{u.Nom} {u.Prenoms}",
+                    demandeForm.DirecteurMetierId == u.Id))
             });
         }
 
@@ -289,13 +285,11 @@ namespace GestionProjects.Controllers
             return View(new DemandeProjetEditViewModel
             {
                 Demande = DemandeProjetFormModel.FromEntity(demande),
-                Directions = new SelectList(directionsEdit, "Id", "Libelle", demande?.DirectionId),
-                DirecteursMetier = directeursMetierEdit.Select(u => new SelectListItem
-                {
-                    Value = u.Id.ToString(),
-                    Text = $"{u.Nom} {u.Prenoms}",
-                    Selected = demande?.DirecteurMetierId == u.Id
-                })
+                Directions = directionsEdit.Select(d => new SelectOption(d.Id.ToString(), d.Libelle, demande?.DirectionId == d.Id)),
+                DirecteursMetier = directeursMetierEdit.Select(u => new SelectOption(
+                    u.Id.ToString(),
+                    $"{u.Nom} {u.Prenoms}",
+                    demande?.DirecteurMetierId == u.Id))
             });
         }
 
@@ -409,13 +403,11 @@ namespace GestionProjects.Controllers
             return View(new DemandeProjetEditViewModel
             {
                 Demande = demandeForm,
-                Directions = new SelectList(directionsPostErr, "Id", "Libelle", demandeForm.DirectionId),
-                DirecteursMetier = dmsPostErr.Select(u => new SelectListItem
-                {
-                    Value = u.Id.ToString(),
-                    Text = $"{u.Nom} {u.Prenoms}",
-                    Selected = demandeForm.DirecteurMetierId == u.Id
-                })
+                Directions = directionsPostErr.Select(d => new SelectOption(d.Id.ToString(), d.Libelle, demandeForm.DirectionId == d.Id)),
+                DirecteursMetier = dmsPostErr.Select(u => new SelectOption(
+                    u.Id.ToString(),
+                    $"{u.Nom} {u.Prenoms}",
+                    demandeForm.DirecteurMetierId == u.Id))
             });
         }
     }

@@ -1,10 +1,10 @@
 using GestionProjects.Application.Common.Extensions;
 using GestionProjects.Application.Common.Interfaces;
+using GestionProjects.Application.Common.Models;
 using GestionProjects.Application.ViewModels.DemandeProjet;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using GestionProjects.Infrastructure.Persistence;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
 namespace GestionProjects.Infrastructure.Services;
@@ -59,21 +59,21 @@ public class DemandeProjetQueryService : IDemandeProjetQueryService
             vm.Directions = await _db.Directions
                 .Where(d => !d.EstSupprime && d.EstActive)
                 .OrderBy(d => d.Libelle)
-                .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Libelle, Selected = directionId == d.Id })
+                .Select(d => new SelectOption(d.Id.ToString(), d.Libelle, directionId == d.Id, false))
                 .ToListAsync();
 
             vm.Demandeurs = await _db.Utilisateurs
                 .Include(u => u.UtilisateurRoles)
                 .Where(u => !u.EstSupprime && u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.Demandeur))
                 .OrderBy(u => u.Nom).ThenBy(u => u.Prenoms)
-                .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = $"{u.Nom} {u.Prenoms}", Selected = demandeurId == u.Id })
+                .Select(u => new SelectOption(u.Id.ToString(), $"{u.Nom} {u.Prenoms}", demandeurId == u.Id, false))
                 .ToListAsync();
 
             vm.DirecteursMetier = await _db.Utilisateurs
                 .Include(u => u.UtilisateurRoles)
                 .Where(u => !u.EstSupprime && u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.DirecteurMetier))
                 .OrderBy(u => u.Nom).ThenBy(u => u.Prenoms)
-                .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = $"{u.Nom} {u.Prenoms}", Selected = directeurMetierId == u.Id })
+                .Select(u => new SelectOption(u.Id.ToString(), $"{u.Nom} {u.Prenoms}", directeurMetierId == u.Id, false))
                 .ToListAsync();
         }
 
@@ -130,7 +130,7 @@ public class DemandeProjetQueryService : IDemandeProjetQueryService
         var directions = await _db.Directions
             .Where(d => !d.EstSupprime && d.EstActive)
             .OrderBy(d => d.Libelle)
-            .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Libelle, Selected = directionId == d.Id })
+            .Select(d => new SelectOption(d.Id.ToString(), d.Libelle, directionId == d.Id, false))
             .ToListAsync();
 
         return new ValidationDsiListResult(paged, directions);

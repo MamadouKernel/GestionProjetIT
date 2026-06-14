@@ -1,6 +1,6 @@
+using GestionProjects.Application.Common.Models;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
-using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace GestionProjects.Application.ViewModels.Projet;
 
@@ -9,11 +9,11 @@ public class ProjetIndexViewModel
     public IEnumerable<Domain.Models.Projet> Projets { get; set; } = Enumerable.Empty<Domain.Models.Projet>();
 
     // Filtres (disponibles uniquement pour les gestionnaires de portefeuille)
-    public IEnumerable<SelectListItem> Directions { get; set; } = Enumerable.Empty<SelectListItem>();
-    public IEnumerable<SelectListItem> ChefsProjet { get; set; } = Enumerable.Empty<SelectListItem>();
-    public IEnumerable<SelectListItem> Phases { get; set; } = Enumerable.Empty<SelectListItem>();
-    public IEnumerable<SelectListItem> Statuts { get; set; } = Enumerable.Empty<SelectListItem>();
-    public IEnumerable<SelectListItem> Etats { get; set; } = Enumerable.Empty<SelectListItem>();
+    public IEnumerable<SelectOption> Directions { get; set; } = Enumerable.Empty<SelectOption>();
+    public IEnumerable<SelectOption> ChefsProjet { get; set; } = Enumerable.Empty<SelectOption>();
+    public IEnumerable<SelectOption> Phases { get; set; } = Enumerable.Empty<SelectOption>();
+    public IEnumerable<SelectOption> Statuts { get; set; } = Enumerable.Empty<SelectOption>();
+    public IEnumerable<SelectOption> Etats { get; set; } = Enumerable.Empty<SelectOption>();
 
     // Flags de vue
     public bool IsDemandeurOnlyView { get; set; }

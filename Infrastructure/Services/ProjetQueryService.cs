@@ -1,8 +1,8 @@
 using GestionProjects.Application.Common.Interfaces;
+using GestionProjects.Application.Common.Models;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using GestionProjects.Infrastructure.Persistence;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
 namespace GestionProjects.Infrastructure.Services
@@ -89,7 +89,7 @@ namespace GestionProjects.Infrastructure.Services
                 () => _db.Directions
                     .Where(d => !d.EstSupprime && d.EstActive)
                     .OrderBy(d => d.Libelle)
-                    .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Libelle })
+                    .Select(d => new SelectOption(d.Id.ToString(), d.Libelle, false, false))
                     .ToListAsync(),
                 TimeSpan.FromMinutes(30));
 
@@ -100,54 +100,29 @@ namespace GestionProjects.Infrastructure.Services
                     .Include(u => u.UtilisateurRoles)
                     .Where(u => !u.EstSupprime && u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.ChefDeProjet))
                     .OrderBy(u => u.Nom).ThenBy(u => u.Prenoms)
-                    .Select(u => new SelectListItem { Value = u.Id.ToString(), Text = $"{u.Nom} {u.Prenoms}" })
+                    .Select(u => new SelectOption(u.Id.ToString(), $"{u.Nom} {u.Prenoms}", false, false))
                     .ToListAsync(),
                 TimeSpan.FromMinutes(15));
 
             return new ProjetFiltresViewModel
             {
                 Directions = (directionsCached ?? new())
-                    .Select(d => new SelectListItem
-                    {
-                        Value = d.Value,
-                        Text = d.Text,
-                        Selected = directionId.HasValue && d.Value == directionId.Value.ToString()
-                    }).ToList(),
+                    .Select(d => d with { Selected = directionId.HasValue && d.Value == directionId.Value.ToString() }).ToList(),
 
                 ChefsProjet = (chefsCached ?? new())
-                    .Select(c => new SelectListItem
-                    {
-                        Value = c.Value,
-                        Text = c.Text,
-                        Selected = chefProjetId.HasValue && c.Value == chefProjetId.Value.ToString()
-                    }).ToList(),
+                    .Select(c => c with { Selected = chefProjetId.HasValue && c.Value == chefProjetId.Value.ToString() }).ToList(),
 
                 Phases = Enum.GetValues(typeof(PhaseProjet))
                     .Cast<PhaseProjet>()
-                    .Select(p => new SelectListItem
-                    {
-                        Value = ((int)p).ToString(),
-                        Text = p.ToString(),
-                        Selected = phase == p
-                    }).ToList(),
+                    .Select(p => new SelectOption(((int)p).ToString(), p.ToString(), phase == p)).ToList(),
 
                 Statuts = Enum.GetValues(typeof(StatutProjet))
                     .Cast<StatutProjet>()
-                    .Select(s => new SelectListItem
-                    {
-                        Value = ((int)s).ToString(),
-                        Text = s.ToString(),
-                        Selected = statut == s
-                    }).ToList(),
+                    .Select(s => new SelectOption(((int)s).ToString(), s.ToString(), statut == s)).ToList(),
 
                 Etats = Enum.GetValues(typeof(EtatProjet))
                     .Cast<EtatProjet>()
-                    .Select(e => new SelectListItem
-                    {
-                        Value = ((int)e).ToString(),
-                        Text = e.ToString(),
-                        Selected = etat == e
-                    }).ToList()
+                    .Select(e => new SelectOption(((int)e).ToString(), e.ToString(), etat == e)).ToList()
             };
         }
     }

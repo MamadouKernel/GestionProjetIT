@@ -1,12 +1,12 @@
 using GestionProjects.Application.Common.Extensions;
 using GestionProjects.Application.Common.Interfaces;
+using GestionProjects.Application.Common.Models;
 using GestionProjects.Application.ViewModels.DemandesAcces;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using GestionProjects.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
 namespace GestionProjects.Controllers
@@ -71,7 +71,7 @@ namespace GestionProjects.Controllers
             var directions = await _db.Directions
                 .Where(d => !d.EstSupprime && d.EstActive)
                 .OrderBy(d => d.Libelle)
-                .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Libelle })
+                .Select(d => new SelectOption(d.Id.ToString(), d.Libelle, false, false))
                 .ToListAsync();
 
             var vm = new DemandesAccesIndexViewModel

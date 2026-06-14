@@ -1,4 +1,5 @@
 using GestionProjects.Application.Common.Interfaces;
+using GestionProjects.Application.Common.Models;
 using GestionProjects.Application.Common.Results;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
@@ -315,7 +316,7 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
 
     // ── Documents / duplication ────────────────────────────────────────────────
     public async Task<WorkflowResult> AjouterDocumentsComplementairesAsync(
-        Guid id, List<IFormFile>? documents, Guid currentUserId, bool canManageDemandes)
+        Guid id, List<UploadedFileInput>? documents, Guid currentUserId, bool canManageDemandes)
     {
         var demande = await _db.DemandesProjets.Include(d => d.Annexes).FirstOrDefaultAsync(d => d.Id == id);
         if (demande == null) return WorkflowResult.NotFound();

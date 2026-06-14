@@ -1,7 +1,7 @@
 using GestionProjects.Application.Common.Extensions;
+using GestionProjects.Application.Common.Models;
 using GestionProjects.Application.ViewModels.DemandeProjet;
 using GestionProjects.Domain.Models;
-using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace GestionProjects.Application.Common.Interfaces;
 
@@ -38,4 +38,4 @@ public interface IDemandeProjetQueryService
 }
 
 /// <summary>Liste de validation DSI paginée + liste des directions pour le filtre.</summary>
-public sealed record ValidationDsiListResult(PagedResult<DemandeProjet> Paged, List<SelectListItem> Directions);
+public sealed record ValidationDsiListResult(PagedResult<DemandeProjet> Paged, List<SelectOption> Directions);
