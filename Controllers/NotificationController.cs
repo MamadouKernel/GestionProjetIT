@@ -5,7 +5,6 @@ using GestionProjects.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace GestionProjects.Controllers
 {
@@ -14,13 +13,16 @@ namespace GestionProjects.Controllers
     {
         private readonly ApplicationDbContext _db;
         private readonly INotificationService _notificationService;
+        private readonly INotificationTargetResolver _targetResolver;
 
         public NotificationController(
             ApplicationDbContext db,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            INotificationTargetResolver targetResolver)
         {
             _db = db;
             _notificationService = notificationService;
+            _targetResolver = targetResolver;
         }
 
         // GET: Liste des notifications
@@ -88,7 +90,39 @@ namespace GestionProjects.Controllers
                 })
                 .ToListAsync();
 
-            return Json(notifications);
+            return Json(notifications.Select(n => new
+            {
+                n.Id,
+                n.Titre,
+                n.Message,
+                n.TypeNotification,
+                n.EntiteType,
+                n.EntiteId,
+                n.DateCreation,
+                n.DateCreationFormatted,
+                OuvrirUrl = Url.Action(nameof(Ouvrir), "Notification", new { id = n.Id })
+            }));
+        }
+
+        // GET: Ouvrir une notification et rediriger vers son contenu métier
+        [HttpGet]
+        public async Task<IActionResult> Ouvrir(Guid id)
+        {
+            var userId = User.GetUserIdOrThrow();
+            var notification = await _db.Notifications
+                .AsNoTracking()
+                .FirstOrDefaultAsync(n => n.Id == id && n.UtilisateurId == userId && !n.EstSupprime);
+
+            if (notification == null)
+            {
+                TempData["Error"] = "Notification introuvable ou deja supprimee.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            await _notificationService.MarquerCommeLueAsync(id, userId);
+
+            var target = await _targetResolver.ResolveAsync(notification.EntiteType, notification.EntiteId);
+            return RedirectToAction(target.Action, target.Controller, target.RouteValues);
         }
 
         // POST: Marquer comme lue
@@ -142,6 +176,6 @@ namespace GestionProjects.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
     }
 }
-

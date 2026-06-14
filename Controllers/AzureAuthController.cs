@@ -1,3 +1,4 @@
+using GestionProjects.Application.Common.Constants;
 using GestionProjects.Application.Common.Interfaces;
 using GestionProjects.Application.ViewModels.AzureAuth;
 using GestionProjects.Domain.Enums;
@@ -22,17 +23,20 @@ namespace GestionProjects.Controllers
         private readonly ILogger<AzureAuthController> _logger;
         private readonly IConfiguration _configuration;
         private readonly INotificationService _notificationService;
+        private readonly IUtilisateurIdentityResolver _identityResolver;
 
         public AzureAuthController(
             ApplicationDbContext db,
             ILogger<AzureAuthController> logger,
             IConfiguration configuration,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            IUtilisateurIdentityResolver identityResolver)
         {
             _db = db;
             _logger = logger;
             _configuration = configuration;
             _notificationService = notificationService;
+            _identityResolver = identityResolver;
         }
 
         [HttpGet]
@@ -99,16 +103,33 @@ namespace GestionProjects.Controllers
                     return RedirectToAction("Login", "Account");
                 }
 
-                var utilisateur = await _db.Utilisateurs
-                    .Include(u => u.Direction)
-                    .Include(u => u.UtilisateurRoles)
-                    .FirstOrDefaultAsync(u => u.Email == email && !u.EstSupprime);
+                var identityResolution = await _identityResolver.ResolveActiveUserAsync(
+                    email,
+                    matricule,
+                    UtilisateurIdentityResolutionMode.PreferEmail,
+                    includeRoles: true,
+                    includeDirection: true);
+
+                if (identityResolution.HasError)
+                {
+                    _logger.LogWarning(
+                        "Connexion Microsoft bloquee pour {Email}: {Reason}",
+                        email,
+                        identityResolution.ErrorMessage);
+                    TempData["Error"] = $"Connexion Microsoft impossible : {identityResolution.ErrorMessage}";
+                    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    return RedirectToAction("Login", "Account");
+                }
+
+                var utilisateur = identityResolution.Utilisateur;
 
                 if (utilisateur == null)
                 {
                     var demandeAccesExistante = await _db.DemandesAccesAzureAd
                         .Include(d => d.DirectionDetectee)
-                        .FirstOrDefaultAsync(d => d.Email == email && d.Statut == StatutDemandeAcces.EnAttente);
+                        .FirstOrDefaultAsync(d =>
+                            (d.Email == email || d.Matricule == matricule) &&
+                            d.Statut == StatutDemandeAcces.EnAttente);
 
                     _logger.LogDebug("Utilisateur non référencé (Azure AD login attempt)");
 
@@ -270,7 +291,7 @@ namespace GestionProjects.Controllers
                     TypeNotification.DemandeSupportTechnique,
                     "Nouvelle demande d'accès Azure AD",
                     $"Demande d'accès Azure AD de {demandeAcces.Prenoms} {demandeAcces.Nom} ({demandeAcces.Email}). Direction détectée : {directionLabel}.",
-                    "DemandeAccesAzureAd",
+                    DomainEntityTypes.DemandeAccesAzureAd,
                     demandeAcces.Id,
                     new
                     {

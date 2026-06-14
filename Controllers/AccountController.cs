@@ -1,4 +1,4 @@
-﻿using GestionProjects.Application.Common.Constants;
+using GestionProjects.Application.Common.Constants;
 using GestionProjects.Application.Common.Extensions;
 using GestionProjects.Application.Common.Helpers;
 using GestionProjects.Application.Common.Interfaces;
@@ -20,20 +20,23 @@ namespace GestionProjects.Controllers
     public class AccountController : Controller
     {
         private readonly ApplicationDbContext _db;
-        private readonly IEmailService _email;
         private readonly IPermissionService _permissionService;
         private readonly IPasswordSetupTokenService _passwordSetupTokenService;
+        private readonly IDemandeCreationCompteWorkflowService _demandeCreationCompteWorkflow;
+        private readonly IDemandeAccesWorkflowService _demandeAccesWorkflow;
 
         public AccountController(
             ApplicationDbContext db,
-            IEmailService email,
             IPermissionService permissionService,
-            IPasswordSetupTokenService passwordSetupTokenService)
+            IPasswordSetupTokenService passwordSetupTokenService,
+            IDemandeCreationCompteWorkflowService demandeCreationCompteWorkflow,
+            IDemandeAccesWorkflowService demandeAccesWorkflow)
         {
             _db = db;
-            _email = email;
             _permissionService = permissionService;
             _passwordSetupTokenService = passwordSetupTokenService;
+            _demandeCreationCompteWorkflow = demandeCreationCompteWorkflow;
+            _demandeAccesWorkflow = demandeAccesWorkflow;
         }
 
         // GET: /Account/Login
@@ -123,39 +126,7 @@ namespace GestionProjects.Controllers
                 return View(model);
             }
 
-            // Claims
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim("Matricule", user.Matricule),
-                new Claim("Nom", user.Nom ?? string.Empty),
-                new Claim("Prenoms", user.Prenoms ?? string.Empty)
-            };
-
-            // Ajouter tous les rôles actifs de l'utilisateur
-            var rolesActifs = user.GetRolesActifs().ToList();
-            if (rolesActifs.Any())
-            {
-                foreach (var role in rolesActifs)
-                {
-                    claims.Add(new Claim(ClaimTypes.Role, role.ToString()));
-                }
-            }
-            else
-            {
-                // Par défaut, assigner le rôle Demandeur si aucun rôle n'est défini
-                claims.Add(new Claim(ClaimTypes.Role, RoleUtilisateur.Demandeur.ToString()));
-            }
-
-            if (user.DirectionId.HasValue)
-            {
-                claims.Add(new Claim("DirectionId", user.DirectionId.Value.ToString()));
-                if (user.Direction != null)
-                    claims.Add(new Claim("Libelle", user.Direction.Libelle));
-            }
-
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
+            var principal = BuildPrincipal(user);
 
             var authProperties = new AuthenticationProperties
             {
@@ -184,18 +155,7 @@ namespace GestionProjects.Controllers
                 if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
                     return Redirect(model.ReturnUrl);
 
-                var activeRoles = user.UtilisateurRoles
-                    .Where(ur => !ur.EstSupprime &&
-                                 (!ur.DateDebut.HasValue || ur.DateDebut.Value <= DateTime.Now) &&
-                                 (!ur.DateFin.HasValue || ur.DateFin.Value >= DateTime.Now))
-                    .Select(ur => ur.Role)
-                    .Distinct()
-                    .ToList();
-
-                if (!activeRoles.Any())
-                {
-                    activeRoles.Add(RoleUtilisateur.Demandeur);
-                }
+                var activeRoles = GetActiveRoles(user);
 
                 var hasProjectWorkspace = false;
                 var hasDemandeWorkspace = false;
@@ -240,6 +200,53 @@ namespace GestionProjects.Controllers
             }
             
             return RedirectToAction("Login");
+        }
+
+        private static ClaimsPrincipal BuildPrincipal(Utilisateur user)
+        {
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new("Matricule", user.Matricule),
+                new("Nom", user.Nom ?? string.Empty),
+                new("Prenoms", user.Prenoms ?? string.Empty)
+            };
+
+            foreach (var role in GetActiveRoles(user))
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role.ToString()));
+            }
+
+            if (user.DirectionId.HasValue)
+            {
+                claims.Add(new Claim("DirectionId", user.DirectionId.Value.ToString()));
+                if (user.Direction != null)
+                {
+                    claims.Add(new Claim("Libelle", user.Direction.Libelle));
+                }
+            }
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            return new ClaimsPrincipal(identity);
+        }
+
+        private static List<RoleUtilisateur> GetActiveRoles(Utilisateur user)
+        {
+            var now = DateTime.Now;
+            var roles = user.UtilisateurRoles
+                .Where(ur => !ur.EstSupprime &&
+                             (!ur.DateDebut.HasValue || ur.DateDebut.Value <= now) &&
+                             (!ur.DateFin.HasValue || ur.DateFin.Value >= now))
+                .Select(ur => ur.Role)
+                .Distinct()
+                .ToList();
+
+            if (!roles.Any())
+            {
+                roles.Add(RoleUtilisateur.Demandeur);
+            }
+
+            return roles;
         }
 
         // GET: /Account/Logout
@@ -522,39 +529,7 @@ namespace GestionProjects.Controllers
 
             await _db.SaveChangesAsync();
 
-            // Mettre à jour les claims si nécessaire
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim("Matricule", user.Matricule),
-                new Claim("Nom", user.Nom ?? string.Empty),
-                new Claim("Prenoms", user.Prenoms ?? string.Empty)
-            };
-
-            // Ajouter tous les rôles actifs de l'utilisateur
-            var rolesActifs = user.GetRolesActifs().ToList();
-            if (rolesActifs.Any())
-            {
-                foreach (var role in rolesActifs)
-                {
-                    claims.Add(new Claim(ClaimTypes.Role, role.ToString()));
-                }
-            }
-            else
-            {
-                // Par défaut, assigner le rôle Demandeur si aucun rôle n'est défini
-                claims.Add(new Claim(ClaimTypes.Role, RoleUtilisateur.Demandeur.ToString()));
-            }
-
-            if (user.DirectionId.HasValue)
-            {
-                claims.Add(new Claim("DirectionId", user.DirectionId.Value.ToString()));
-                if (user.Direction != null)
-                    claims.Add(new Claim("Libelle", user.Direction.Libelle));
-            }
-
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
+            var principal = BuildPrincipal(user);
 
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
@@ -590,61 +565,22 @@ namespace GestionProjects.Controllers
             string nom, string prenoms, string email,
             Guid? directionId, string? serviceLibelle, Guid? directeurMetierId)
         {
-            if (string.IsNullOrWhiteSpace(nom) || string.IsNullOrWhiteSpace(prenoms)
-                || string.IsNullOrWhiteSpace(email) || directionId == null || directeurMetierId == null)
+            var result = await _demandeCreationCompteWorkflow.SoumettreAsync(
+                new SoumettreDemandeCreationCompteInput(
+                    nom,
+                    prenoms,
+                    email,
+                    directionId,
+                    serviceLibelle,
+                    directeurMetierId));
+
+            if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
             {
-                TempData["Error"] = "Tous les champs obligatoires doivent être remplis.";
+                TempData["Error"] = result.ErrorMessage;
                 return View(await BuildInscriptionViewModelAsync());
             }
 
-            // Vérifier email non déjà utilisé (ni en demande en cours)
-            if (await _db.Utilisateurs.AnyAsync(u => u.Email == email && !u.EstSupprime))
-            {
-                TempData["Error"] = "Un compte avec cette adresse email existe déjà.";
-                return View(await BuildInscriptionViewModelAsync());
-            }
-            if (await _db.DemandesCreationCompte.AnyAsync(d =>
-                    d.Email == email &&
-                    d.Statut != StatutDemandeCompte.RefuseeParDM &&
-                    d.Statut != StatutDemandeCompte.RefuseeParDSI &&
-                    !d.EstSupprime))
-            {
-                TempData["Error"] = "Une demande de création de compte est déjà en cours pour cette adresse email.";
-                return View(await BuildInscriptionViewModelAsync());
-            }
-
-            var dm = await _db.Utilisateurs.FindAsync(directeurMetierId);
-            var direction = await _db.Directions.FindAsync(directionId);
-
-            var demande = new GestionProjects.Domain.Models.DemandeCreationCompte
-            {
-                Id = Guid.NewGuid(),
-                Nom = nom.Trim(),
-                Prenoms = prenoms.Trim(),
-                Email = email.Trim(),
-                Service = serviceLibelle?.Trim() ?? string.Empty,
-                DirectionId = directionId,
-                DirecteurMetierId = directeurMetierId,
-                Statut = GestionProjects.Domain.Enums.StatutDemandeCompte.EnAttenteValidationDM,
-                DateSoumission = DateTime.Now,
-                DateCreation = DateTime.Now,
-                CreePar = "ANONYMOUS",
-                EstSupprime = false
-            };
-            _db.DemandesCreationCompte.Add(demande);
-            await _db.SaveChangesAsync();
-
-            // Email au DM
-            if (dm?.Email != null)
-                await _email.EnvoyerDemandeCreationCompteAuDMAsync(
-                    dm.Email,
-                    $"{dm.Nom} {dm.Prenoms}".Trim(),
-                    $"{nom.Trim()} {prenoms.Trim()}",
-                    direction?.Libelle ?? "—",
-                    serviceLibelle?.Trim() ?? "—",
-                    email.Trim());
-
-            TempData["Success"] = "Votre demande a été transmise à votre Directeur Métier. Vous serez contacté par email une fois votre compte créé.";
+            TempData["Success"] = result.SuccessMessage;
             return RedirectToAction(nameof(Login));
         }
 
@@ -692,26 +628,22 @@ namespace GestionProjects.Controllers
         [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("LoginPolicy")]
         public async Task<IActionResult> DemandeAcces(string nom, string prenoms, string email, string matricule, string rolesSouhaites, string? message)
         {
-            if (string.IsNullOrWhiteSpace(nom) || string.IsNullOrWhiteSpace(prenoms)
-                || string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(matricule)
-                || string.IsNullOrWhiteSpace(rolesSouhaites))
+            var result = await _demandeAccesWorkflow.SoumettreDemandeLocaleAsync(
+                new SoumettreDemandeAccesLocaleInput(nom, prenoms, email, matricule, rolesSouhaites, message));
+
+            if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
             {
-                TempData["Error"] = "Tous les champs obligatoires doivent être remplis.";
+                TempData["Error"] = result.ErrorMessage;
                 return View();
             }
 
-            // Trouver l'AdminIT pour lui envoyer la notification
-            var admin = await _db.Utilisateurs
-                .Where(u => !u.EstSupprime)
-                .Join(_db.UtilisateurRoles.Where(r => r.Role == RoleUtilisateur.AdminIT && !r.EstSupprime),
-                      u => u.Id, r => r.UtilisateurId, (u, r) => u)
-                .FirstOrDefaultAsync();
+            if (!string.IsNullOrWhiteSpace(result.InfoMessage))
+            {
+                TempData["Info"] = result.InfoMessage;
+                return RedirectToAction(nameof(Login));
+            }
 
-            var nomComplet = $"{nom.Trim()} {prenoms.Trim()}";
-            if (admin?.Email != null)
-                await _email.EnvoyerDemandeAccesAsync(admin.Email, nomComplet, email.Trim(), rolesSouhaites.Trim());
-
-            TempData["Success"] = "Votre demande d'accès a été envoyée à l'administrateur. Vous serez contacté prochainement.";
+            TempData["Success"] = result.SuccessMessage;
             return RedirectToAction(nameof(Login));
         }
 
@@ -721,4 +653,3 @@ namespace GestionProjects.Controllers
         }
     }
 }
-

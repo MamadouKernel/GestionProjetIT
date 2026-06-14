@@ -1,16 +1,20 @@
 using FluentAssertions;
+using GestionProjects.Application.Common.Constants;
 using GestionProjects.Controllers;
 using GestionProjects.Application.Common.Interfaces;
 using GestionProjects.Application.ViewModels;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using GestionProjects.Infrastructure.Persistence;
+using GestionProjects.Infrastructure.Services;
 using GestionProjects.Tests.Helpers;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Routing;
 using Moq;
 using Xunit;
 
@@ -23,14 +27,55 @@ public class AuthenticationTests : IDisposable
 {
     private readonly ApplicationDbContext _context;
     private readonly AccountController _controller;
+    private readonly Mock<IEmailService> _emailMock;
+    private readonly Mock<INotificationService> _notificationMock;
 
     public AuthenticationTests()
     {
         _context = TestDbContextFactory.CreateContextWithSeedDataAsync(Guid.NewGuid().ToString()).Result;
-        var emailService = new Mock<IEmailService>().Object;
+        _emailMock = new Mock<IEmailService>();
+        _notificationMock = new Mock<INotificationService>();
+        _emailMock
+            .Setup(e => e.EnvoyerDemandeAccesAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>()))
+            .Returns(Task.CompletedTask);
+        _notificationMock
+            .Setup(n => n.NotifierRoleAsync(
+                It.IsAny<RoleUtilisateur>(),
+                It.IsAny<TypeNotification>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string?>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<object?>()))
+            .Returns(Task.CompletedTask);
         var permissionService = new Mock<IPermissionService>().Object;
         var passwordSetupTokenService = new Mock<IPasswordSetupTokenService>().Object;
-        _controller = new AccountController(_context, emailService, permissionService, passwordSetupTokenService);
+        var currentUserService = new Mock<ICurrentUserService>();
+        currentUserService.SetupGet(c => c.Matricule).Returns("TEST");
+        currentUserService.SetupGet(c => c.Roles).Returns(Array.Empty<string>());
+        var auditService = new Mock<IAuditService>();
+        var demandeAccesWorkflow = new DemandeAccesWorkflowService(
+            _context,
+            currentUserService.Object,
+            auditService.Object,
+            _emailMock.Object,
+            _notificationMock.Object,
+            passwordSetupTokenService,
+            new UtilisateurIdentityResolver(_context),
+            new ConfigurationBuilder().Build());
+        var demandeCreationCompteWorkflow = new DemandeCreationCompteWorkflowService(
+            _context,
+            _emailMock.Object);
+        _controller = new AccountController(
+            _context,
+            permissionService,
+            passwordSetupTokenService,
+            demandeCreationCompteWorkflow,
+            demandeAccesWorkflow);
 
         // Construire un HttpContext avec tous les services MVC nécessaires
         var authService = new Mock<IAuthenticationService>();
@@ -55,7 +100,8 @@ public class AuthenticationTests : IDisposable
 
         _controller.ControllerContext = new ControllerContext
         {
-            HttpContext = httpContext
+            HttpContext = httpContext,
+            RouteData = new RouteData()
         };
 
         // TempData requis par View()
@@ -151,6 +197,42 @@ public class AuthenticationTests : IDisposable
         demandeur!.DirectionId.Should().NotBeNull();
         demandeur.Direction.Should().NotBeNull();
         demandeur.Direction!.Libelle.Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task DemandeAcces_DoitCreerUneDemandeVisibleParAdmin()
+    {
+        // Act
+        var result = await _controller.DemandeAcces(
+            "Konate",
+            "Mamadou",
+            "mamadou.konate@cit.ci",
+            "2020",
+            "ChefDeProjet",
+            "Besoin d'accéder au portefeuille projet.");
+
+        // Assert
+        result.Should().BeOfType<RedirectToActionResult>();
+        ((RedirectToActionResult)result).ActionName.Should().Be("Login");
+
+        var demande = await _context.DemandesAccesAzureAd
+            .SingleOrDefaultAsync(d => d.Email == "mamadou.konate@cit.ci");
+
+        demande.Should().NotBeNull();
+        demande!.Statut.Should().Be(StatutDemandeAcces.EnAttente);
+        demande.Matricule.Should().Be("2020");
+        demande.AzureDepartment.Should().Be(AccessRequestConstants.LocalAzureDepartment);
+        demande.Justification.Should().Contain("ChefDeProjet");
+        demande.Justification.Should().Contain("Besoin d'accéder au portefeuille projet.");
+
+        _notificationMock.Verify(n => n.NotifierRoleAsync(
+            RoleUtilisateur.AdminIT,
+            TypeNotification.DemandeSupportTechnique,
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            DomainEntityTypes.DemandeAccesAzureAd,
+            demande.Id,
+            It.IsAny<object?>()), Times.Once);
     }
 
     /// <summary>

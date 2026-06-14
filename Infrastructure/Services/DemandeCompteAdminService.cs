@@ -1,3 +1,4 @@
+using GestionProjects.Application.Common.Constants;
 using GestionProjects.Application.Common.Interfaces;
 using GestionProjects.Application.Common.Results;
 using GestionProjects.Domain.Enums;
@@ -66,7 +67,7 @@ public class DemandeCompteAdminService : IDemandeCompteAdminService
         demande.ModifiePar       = _currentUser.Matricule;
         await _db.SaveChangesAsync();
 
-        await _audit.LogActionAsync("VALIDATION_DM_COMPTE", "DemandeCreationCompte", demande.Id);
+        await _audit.LogActionAsync("VALIDATION_DM_COMPTE", DomainEntityTypes.DemandeCreationCompte, demande.Id);
 
         var roles = new[] { RoleUtilisateur.DSI, RoleUtilisateur.AdminIT, RoleUtilisateur.ResponsableSolutionsIT };
         var destinataires = await _db.Utilisateurs
@@ -95,6 +96,9 @@ public class DemandeCompteAdminService : IDemandeCompteAdminService
 
         if (!hasFullScope && demande.DirecteurMetierId != currentUserId)
             return WorkflowResult.Forbidden();
+
+        if (demande.Statut != StatutDemandeCompte.EnAttenteValidationDM)
+            return WorkflowResult.Error("Cette demande n'est pas en attente de validation DM.");
 
         demande.Statut           = StatutDemandeCompte.RefuseeParDM;
         demande.CommentaireDM     = commentaire;
@@ -159,7 +163,7 @@ public class DemandeCompteAdminService : IDemandeCompteAdminService
 
         await _db.SaveChangesAsync();
 
-        await _audit.LogActionAsync("CREATION_COMPTE_DSI", "DemandeCreationCompte", demande.Id,
+        await _audit.LogActionAsync("CREATION_COMPTE_DSI", DomainEntityTypes.DemandeCreationCompte, demande.Id,
             null, new { MatriculeCreated = matricule, Role = role.ToString() });
 
         var nomComplet = $"{demande.Nom} {demande.Prenoms}";
@@ -182,6 +186,9 @@ public class DemandeCompteAdminService : IDemandeCompteAdminService
     {
         var demande = await _db.DemandesCreationCompte.FindAsync(id);
         if (demande == null) return WorkflowResult.NotFound();
+
+        if (demande.Statut != StatutDemandeCompte.ValideeParDM)
+            return WorkflowResult.Error("Cette demande doit d'abord etre validee par le Directeur Metier.");
 
         demande.Statut           = StatutDemandeCompte.RefuseeParDSI;
         demande.CommentaireDSI    = commentaire;

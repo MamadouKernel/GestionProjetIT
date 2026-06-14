@@ -1,11 +1,13 @@
 @model GestionProjects.Application.ViewModels.DemandesAcces.DemandesAccesIndexViewModel
+@using GestionProjects.Application.Common.Constants
 @using GestionProjects.Domain.Enums
 
 @{
-    ViewData["Title"] = "Demandes d'accès Azure AD";
+    ViewData["Title"] = "Demandes d'accès";
     var directions     = Model.Directions;
     var recherche      = Model.Recherche ?? string.Empty;
     var selectedStatut = Model.SelectedStatut;
+    var focusId        = Model.FocusId;
     var totalCount     = Model.TotalCount;
 }
 
@@ -14,9 +16,9 @@
         <div>
             <h2 class="display-6 mb-0">
                 <i class="bi bi-person-plus" style="color: var(--primary-blue);"></i>
-                Demandes d'accès Azure AD
+                Demandes d'accès
             </h2>
-            <p class="text-muted mb-0">Validation Admin IT des premiers accès applicatifs.</p>
+            <p class="text-muted mb-0">Validation Admin IT des premiers accès applicatifs et des demandes locales.</p>
         </div>
         <span class="badge-modern badge-modern-info">@totalCount demande(s)</span>
     </div>
@@ -44,7 +46,7 @@
                         <button type="submit" class="btn-modern btn-modern-primary flex-fill">
                             <i class="bi bi-search"></i> Filtrer
                         </button>
-                        @if (!string.IsNullOrWhiteSpace(recherche) || selectedStatut.HasValue)
+                        @if (!string.IsNullOrWhiteSpace(recherche) || selectedStatut.HasValue || focusId.HasValue)
                         {
                             <a asp-action="Index" class="btn-modern btn-modern-secondary">
                                 <i class="bi bi-x-circle"></i> Effacer
@@ -63,6 +65,13 @@
     @if (TempData["Error"] is string error)
     {
         <div class="alert alert-danger">@error</div>
+    }
+    @if (focusId.HasValue)
+    {
+        <div class="alert alert-info d-flex justify-content-between align-items-center gap-3">
+            <span>Demande ouverte depuis une notification.</span>
+            <a asp-action="Index" class="btn-modern btn-modern-sm btn-modern-secondary">Voir toutes les demandes</a>
+        </div>
     }
 
     @if (!Model.Items.Any())
@@ -85,15 +94,25 @@
                     GestionProjects.Domain.Enums.StatutDemandeAcces.Rejetee => "badge-modern-danger",
                     _ => "badge-modern-warning"
                 };
+                var isLocalAccessRequest = string.Equals(demande.AzureDepartment, AccessRequestConstants.LocalAzureDepartment, StringComparison.OrdinalIgnoreCase);
+                var accessTypeLabel = isLocalAccessRequest ? AccessRequestConstants.LocalAccountLabel : AccessRequestConstants.MicrosoftAccountLabel;
+                var accessTypeClass = isLocalAccessRequest ? "badge-modern-secondary" : "badge-modern-info";
+                var accessTypeHelp = isLocalAccessRequest
+                    ? "Activation par lien de mot de passe après approbation."
+                    : $"{AccessRequestConstants.MicrosoftAccountLabel} déjà authentifié, à référencer dans l'application.";
+                var isFocused = focusId == demande.Id;
 
-                <div class="card-modern">
+                <div class="card-modern @(isFocused ? "border border-primary shadow-sm" : string.Empty)">
                     <div class="card-body-modern">
                         <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
                             <div>
                                 <h4 class="mb-1">@demande.Prenoms @demande.Nom</h4>
                                 <div class="text-muted">@demande.Email</div>
                             </div>
-                            <span class="badge-modern @badgeClass">@demande.Statut</span>
+                            <div class="d-flex flex-wrap gap-2 justify-content-end">
+                                <span class="badge-modern @accessTypeClass">@accessTypeLabel</span>
+                                <span class="badge-modern @badgeClass">@demande.Statut</span>
+                            </div>
                         </div>
 
                         <div class="row g-3 mb-3">
@@ -102,13 +121,23 @@
                                 <div>@demande.Matricule</div>
                             </div>
                             <div class="col-md-4">
-                                <strong>Departement Azure AD</strong>
-                                <div>@(string.IsNullOrWhiteSpace(demande.AzureDepartment) ? "Non remonte" : demande.AzureDepartment)</div>
+                                <strong>Type d'accès</strong>
+                                <div>
+                                    <span class="badge-modern @accessTypeClass">@accessTypeLabel</span>
+                                    <div class="text-muted small mt-1">@accessTypeHelp</div>
+                                </div>
                             </div>
                             <div class="col-md-4">
                                 <strong>Direction détectée</strong>
                                 <div>@(demande.DirectionDetectee?.Libelle ?? "Non determinee")</div>
                             </div>
+                            @if (!isLocalAccessRequest)
+                            {
+                                <div class="col-md-4">
+                                    <strong>Département Microsoft 365</strong>
+                                    <div>@(string.IsNullOrWhiteSpace(demande.AzureDepartment) ? "Non remonté" : demande.AzureDepartment)</div>
+                                </div>
+                            }
                             <div class="col-12">
                                 <strong>Justification</strong>
                                 <div>@demande.Justification</div>
@@ -144,6 +173,15 @@
                                                         var selected = direction.Value == demande.DirectionDetecteeId?.ToString();
                                                         <option value="@direction.Value" selected="@selected">@direction.Text</option>
                                                     }
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Rôle à attribuer</label>
+                                                <select class="form-select" name="role">
+                                                    <option value="@((int)RoleUtilisateur.Demandeur)">Demandeur</option>
+                                                    <option value="@((int)RoleUtilisateur.DirecteurMetier)">Directeur Métier</option>
+                                                    <option value="@((int)RoleUtilisateur.ChefDeProjet)">Chef de projet</option>
+                                                    <option value="@((int)RoleUtilisateur.ResponsableSolutionsIT)">Responsable Solutions IT</option>
                                                 </select>
                                             </div>
                                             <div class="mb-3">

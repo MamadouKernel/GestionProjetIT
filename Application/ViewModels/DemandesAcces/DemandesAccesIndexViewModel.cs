@@ -10,6 +10,7 @@ namespace GestionProjects.Application.ViewModels.DemandesAcces
         public IEnumerable<SelectListItem> Directions { get; set; } = Enumerable.Empty<SelectListItem>();
         public string? Recherche { get; set; }
         public StatutDemandeAcces? SelectedStatut { get; set; }
+        public Guid? FocusId { get; set; }
         public int TotalCount { get; set; }
 
         // Pagination

@@ -72,7 +72,7 @@
                                 </span>
                                 @if (notification.EntiteType != null && notification.EntiteId.HasValue)
                                 {
-                                    <a href="@GetEntityUrl(notification.EntiteType, notification.EntiteId.Value)" class="phase-link">
+                                    <a asp-controller="Notification" asp-action="Ouvrir" asp-route-id="@notification.Id" class="phase-link">
                                         <i class="bi bi-arrow-right-circle"></i>
                                         Ouvrir l'element
                                     </a>
@@ -117,17 +117,6 @@
             GestionProjects.Domain.Enums.TypeNotification.DelegationDSIActivee => "<i class='bi bi-person-badge' style='color: var(--success);'></i>",
             GestionProjects.Domain.Enums.TypeNotification.DelegationDSIExpiree => "<i class='bi bi-person-x' style='color: var(--gray-500);'></i>",
             _ => "<i class='bi bi-bell' style='color: var(--gray-500);'></i>"
-        };
-    }
-
-    string GetEntityUrl(string? entiteType, Guid entiteId)
-    {
-        return entiteType switch
-        {
-            "Projet" => Url.Action("Details", "Projet", new { id = entiteId }) ?? "#",
-            "DemandeProjet" => Url.Action("Details", "DemandeProjet", new { id = entiteId }) ?? "#",
-            "DemandeClotureProjet" => Url.Action("Details", "Projet", new { id = entiteId }) ?? "#",
-            _ => "#"
         };
     }
 }

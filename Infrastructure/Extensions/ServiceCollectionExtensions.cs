@@ -23,6 +23,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IExcelService, ExcelService>();
         services.AddScoped<IWordService, WordService>();
         services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<INotificationTargetResolver, NotificationTargetResolver>();
         services.AddScoped<ILivrableValidationService, LivrableValidationService>();
         services.AddScoped<ILivrableProjetService, LivrableProjetService>();
         services.AddScoped<IChargeProjetService, ChargeProjetService>();
@@ -32,6 +33,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITeamsNotificationService, TeamsNotificationService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IPasswordSetupTokenService, PasswordSetupTokenService>();
+        services.AddScoped<IUtilisateurIdentityResolver, UtilisateurIdentityResolver>();
         services.AddScoped<IUtilisateurService, UtilisateurService>();
         services.AddScoped<IProjetQueryService, ProjetQueryService>();
         services.AddScoped<IUatValidationService, UatValidationService>();
@@ -44,6 +46,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRoleAdminService, RoleAdminService>();
         services.AddScoped<IParametreAdminService, ParametreAdminService>();
         services.AddScoped<IDemandeCompteAdminService, DemandeCompteAdminService>();
+        services.AddScoped<IDemandeCreationCompteWorkflowService, DemandeCreationCompteWorkflowService>();
+        services.AddScoped<IDemandeAccesWorkflowService, DemandeAccesWorkflowService>();
         services.AddScoped<IDelegationAdminService, DelegationAdminService>();
         services.AddScoped<IDemandeProjetQueryService, DemandeProjetQueryService>();
         services.AddScoped<IDemandeProjetWorkflowService, DemandeProjetWorkflowService>();

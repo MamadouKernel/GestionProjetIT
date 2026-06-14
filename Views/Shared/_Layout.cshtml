@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="utf-8" />
@@ -436,18 +436,20 @@
                         if (data.length === 0) {
                             list.innerHTML = '<div class="text-center p-3 text-muted" style="font-size: 0.875rem;">Aucune notification</div>';
                         } else {
-                            list.innerHTML = data.map(n => `
-                                <div class="dropdown-item-text" style="padding: var(--spacing-md); border-bottom: 1px solid var(--gray-100);">
+                            list.innerHTML = data.map(n => {
+                                const openUrl = n.ouvrirUrl || '@Url.Action("Index", "Notification")';
+                                return `
+                                <a href="${escapeHtml(openUrl)}" class="dropdown-item-text" style="display: block; padding: var(--spacing-md); border-bottom: 1px solid var(--gray-100); text-decoration: none; color: inherit;">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div class="flex-grow-1">
                                             <div style="font-weight: 600; font-size: 0.875rem; margin-bottom: var(--spacing-xs);">${escapeHtml(n.titre)}</div>
                                             <div style="font-size: 0.8rem; color: var(--gray-600); margin-bottom: var(--spacing-xs);">${escapeHtml(n.message)}</div>
                                             <div style="font-size: 0.75rem; color: var(--gray-500);">${n.dateCreationFormatted}</div>
                                         </div>
-                                        ${n.entiteType && n.entiteId ? `<a href="${getEntityUrl(n.entiteType, n.entiteId)}" class="btn-modern btn-modern-sm btn-modern-secondary" style="margin-left: var(--spacing-sm);"><i class="bi bi-arrow-right"></i></a>` : ''}
+                                        <span class="btn-modern btn-modern-sm btn-modern-secondary" style="margin-left: var(--spacing-sm);"><i class="bi bi-arrow-right"></i></span>
                                     </div>
-                                </div>
-                            `).join('');
+                                </a>
+                            `}).join('');
                         }
                     })
                     .catch(err => console.error('Erreur chargement liste notifications:', err));
@@ -459,15 +461,6 @@
                 return div.innerHTML;
             }
             
-            function getEntityUrl(entiteType, entiteId) {
-                switch(entiteType) {
-                    case 'Projet': return '@Url.Action("Details", "Projet")/' + entiteId;
-                    case 'DemandeProjet': return '@Url.Action("Details", "DemandeProjet")/' + entiteId;
-                    case 'AnomalieProjet': return '@Url.Action("Details", "Projet")/' + entiteId + '?tab=execution';
-                    default: return '#';
-                }
-            }
-            
             // Charger les notifications au chargement de la page
             loadNotifications();
             // Recharger toutes les 30 secondes
@@ -477,4 +470,3 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
-
