@@ -173,118 +173,19 @@ namespace GestionProjects.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
-        public async Task<IActionResult> UpdateChefProjet(Guid id, Guid? chefProjetId)
+        public async Task<IActionResult> UpdateChefProjet(Guid id, Guid? chefProjetId, [FromServices] IProjetDetailsWorkflowService detailsWorkflow)
         {
-            var projet = await _db.Projets
-                .Include(p => p.ChefProjet)
-                .FirstOrDefaultAsync(p => p.Id == id);
+            if (!await HasPortfolioGovernanceAccessAsync())
+                return Forbid();
 
-            if (projet == null)
+            var result = await detailsWorkflow.UpdateChefProjetAsync(id, chefProjetId);
+            if (result.IsNotFound)
                 return NotFound();
 
-            if (!await HasPortfolioGovernanceAccessAsync())
-            {
-                return Forbid();
-            }
-
-            // Vérifier que le projet n'est pas clôturé
-            if (projet.StatutProjet == StatutProjet.Cloture)
-            {
-                TempData["Error"] = "Impossible de modifier le ResponsableSolutionsIT d'un projet clôturé.";
-                return RedirectToAction(nameof(Details), new { id });
-            }
-
-            var ancienChefProjetId = projet.ChefProjetId;
-            var ancienChefProjetNom = projet.ChefProjet != null ? $"{projet.ChefProjet.Nom} {projet.ChefProjet.Prenoms}" : "Aucun";
-
-            // Si un chef de projet est spécifié, vérifier qu'il existe et est valide
-            if (chefProjetId.HasValue)
-            {
-                var chefProjet = await _db.Utilisateurs
-                    .Include(u => u.UtilisateurRoles.Where(ur => !ur.EstSupprime))
-                    .FirstOrDefaultAsync(u => u.Id == chefProjetId.Value && !u.EstSupprime);
-
-                if (chefProjet == null)
-                {
-                    TempData["Error"] = "Le ResponsableSolutionsIT sélectionné n'existe pas.";
-                    return RedirectToAction(nameof(Details), new { id });
-                }
-
-                // Vérifier que l'utilisateur a le rôle ChefDeProjet OU a une délégation active pour ce projet
-                bool isValidChefProjet = chefProjet.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.ChefDeProjet);
-
-                if (!isValidChefProjet)
-                {
-                    // Vérifier s'il a une délégation active pour ce projet
-                    var delegationActive = await _db.DelegationsChefProjet
-                        .AnyAsync(d => d.DelegueId == chefProjetId.Value &&
-                                      d.ProjetId == id &&
-                                      d.EstActive &&
-                                      d.DateFin == null &&
-                                      !d.EstSupprime);
-
-                    if (!delegationActive)
-                    {
-                        TempData["Error"] = "Le ResponsableSolutionsIT sélectionné n'est pas valide (doit être ChefDeProjet ou avoir une délégation active pour ce projet).";
-                        return RedirectToAction(nameof(Details), new { id });
-                    }
-                }
-            }
-
-            // Si l'ancien chef de projet change, enregistrer la fin dans l'historique
-            if (ancienChefProjetId.HasValue && ancienChefProjetId != chefProjetId)
-            {
-                var historiqueAncienChef = await _db.HistoriqueChefProjets
-                    .Where(h => h.ProjetId == id && h.ChefProjetId == ancienChefProjetId.Value && h.DateFin == null)
-                    .FirstOrDefaultAsync();
-
-                if (historiqueAncienChef != null)
-                {
-                    historiqueAncienChef.DateFin = DateTime.Now;
-                    historiqueAncienChef.DateModification = DateTime.Now;
-                    historiqueAncienChef.ModifiePar = _currentUserService.Matricule;
-                }
-            }
-
-            projet.ChefProjetId = chefProjetId;
-            projet.DateModification = DateTime.Now;
-            projet.ModifiePar = _currentUserService.Matricule ?? "SYSTEM";
-
-            await _db.SaveChangesAsync();
-
-            // Si un nouveau chef de projet est assigné, créer une entrée dans l'historique
-            if (chefProjetId.HasValue && ancienChefProjetId != chefProjetId)
-            {
-                var historiqueChefProjet = new HistoriqueChefProjet
-                {
-                    Id = Guid.NewGuid(),
-                    ProjetId = projet.Id,
-                    ChefProjetId = chefProjetId.Value,
-                    DateDebut = DateTime.Now,
-                    DateFin = null,
-                    Commentaire = "Assignation comme chef de projet",
-                    DateCreation = DateTime.Now,
-                    CreePar = _currentUserService.Matricule ?? "SYSTEM"
-                };
-
-                _db.HistoriqueChefProjets.Add(historiqueChefProjet);
-                await _db.SaveChangesAsync();
-            }
-
-            var nouveauChefProjetNom = chefProjetId.HasValue
-                ? await _db.Utilisateurs
-                    .Where(u => u.Id == chefProjetId.Value)
-                    .Select(u => $"{u.Nom} {u.Prenoms}")
-                    .FirstOrDefaultAsync()
-                : "Aucun";
-
-            await _auditService.LogActionAsync("UPDATE_CHEFPROJET", "Projet", projet.Id,
-                new { AncienChefProjetId = ancienChefProjetId, AncienChefProjet = ancienChefProjetNom },
-                new { NouveauChefProjetId = chefProjetId, NouveauChefProjet = nouveauChefProjetNom });
-
-            TempData["Success"] = chefProjetId.HasValue
-                ? $"ResponsableSolutionsIT mis à jour : {nouveauChefProjetNom}"
-                : "ResponsableSolutionsIT retiré du projet.";
+            if (result.ErrorMessage is not null)
+                TempData["Error"] = result.ErrorMessage;
+            else
+                TempData["Success"] = result.SuccessMessage;
 
             return RedirectToAction(nameof(Details), new { id });
         }
