@@ -1,30 +1,25 @@
 using GestionProjects.Application.Common.Extensions;
 using GestionProjects.Application.Common.Interfaces;
-using GestionProjects.Application.Common.Models;
-using GestionProjects.Application.ViewModels.DemandesAcces;
 using GestionProjects.Domain.Enums;
-using GestionProjects.Domain.Models;
-using GestionProjects.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace GestionProjects.Controllers
 {
     [Authorize]
     public class DemandesAccesController : Controller
     {
-        private readonly ApplicationDbContext _db;
         private readonly IPermissionService _permissionService;
+        private readonly IDemandeAccesQueryService _demandeAccesQuery;
         private readonly IDemandeAccesWorkflowService _demandeAccesWorkflow;
 
         public DemandesAccesController(
-            ApplicationDbContext db,
             IPermissionService permissionService,
+            IDemandeAccesQueryService demandeAccesQuery,
             IDemandeAccesWorkflowService demandeAccesWorkflow)
         {
-            _db = db;
             _permissionService = permissionService;
+            _demandeAccesQuery = demandeAccesQuery;
             _demandeAccesWorkflow = demandeAccesWorkflow;
         }
 
@@ -38,55 +33,7 @@ namespace GestionProjects.Controllers
             if (!await CanManageAccessRequestsAsync())
                 return Forbid();
 
-            page     = Math.Max(1, page);
-            pageSize = Math.Clamp(pageSize, 5, 100);
-
-            var query = _db.DemandesAccesAzureAd
-                .Include(d => d.DirectionDetectee)
-                .Include(d => d.TraitePar)
-                .AsQueryable();
-
-            if (focusId.HasValue)
-            {
-                query = query.Where(d => d.Id == focusId.Value);
-            }
-            else if (!string.IsNullOrWhiteSpace(recherche))
-            {
-                query = query.Where(d =>
-                    d.Nom.Contains(recherche) ||
-                    d.Prenoms.Contains(recherche) ||
-                    d.Email.Contains(recherche) ||
-                    d.Matricule.Contains(recherche));
-            }
-
-            if (!focusId.HasValue && statut.HasValue)
-            {
-                query = query.Where(d => d.Statut == statut.Value);
-            }
-
-            query = query.OrderBy(d => d.Statut).ThenByDescending(d => d.DateCreation);
-
-            var paged = await query.ToPagedResultAsync(page, pageSize);
-
-            var directions = await _db.Directions
-                .Where(d => !d.EstSupprime && d.EstActive)
-                .OrderBy(d => d.Libelle)
-                .Select(d => new SelectOption(d.Id.ToString(), d.Libelle, false, false))
-                .ToListAsync();
-
-            var vm = new DemandesAccesIndexViewModel
-            {
-                Items          = paged.Items,
-                Directions     = directions,
-                Recherche      = recherche,
-                SelectedStatut = statut,
-                FocusId        = focusId,
-                TotalCount     = paged.TotalCount,
-                PageNumber     = paged.PageNumber,
-                TotalPages     = paged.TotalPages,
-                PageSize       = paged.PageSize
-            };
-
+            var vm = await _demandeAccesQuery.GetIndexAsync(recherche, statut, focusId, page, pageSize);
             return View(vm);
         }
 

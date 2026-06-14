@@ -132,8 +132,8 @@ public sealed class DemandesAccesControllerTests
             configuration);
 
         var controller = new DemandesAccesController(
-            db,
             permission.Object,
+            new DemandeAccesQueryService(db),
             workflow);
 
         var claims = new[]
