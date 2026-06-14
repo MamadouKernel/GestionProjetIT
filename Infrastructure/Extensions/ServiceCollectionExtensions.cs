@@ -13,6 +13,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICacheService, CacheService>();
         services.AddScoped<IAideQueryService, AideQueryService>();
         services.AddScoped<IDashboardAnalyticsService, DashboardAnalyticsService>();
+        services.AddScoped<IHomeDashboardService, HomeDashboardService>();
 
         services.AddScoped<IFileStorageService, FileStorageService>();
         services.AddScoped<IDocumentAccessService, DocumentAccessService>();

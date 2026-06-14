@@ -40,6 +40,7 @@ public sealed class ArchitectureBoundaryTests
             typeof(DashboardController),
             typeof(DemandesAccesController),
             typeof(DocumentController),
+            typeof(HomeController),
             typeof(NotificationController)
         };
 
