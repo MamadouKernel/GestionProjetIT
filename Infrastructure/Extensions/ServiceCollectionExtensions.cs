@@ -29,6 +29,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IChargeProjetService, ChargeProjetService>();
         services.AddScoped<IMembreProjetService, MembreProjetService>();
         services.AddScoped<IProjetDetailsWorkflowService, ProjetDetailsWorkflowService>();
+        services.AddScoped<IFicheProjetService, FicheProjetService>();
         services.AddScoped<IRAGCalculationService, RAGCalculationService>();
         services.AddScoped<ITeamsNotificationService, TeamsNotificationService>();
         services.AddScoped<IEmailService, EmailService>();
