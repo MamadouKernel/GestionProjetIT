@@ -1,5 +1,6 @@
 using GestionProjects.Application.Common.Interfaces;
 using GestionProjects.Application.Common.Results;
+using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using GestionProjects.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,70 @@ namespace GestionProjects.Infrastructure.Services
             _db = db;
             _auditService = auditService;
             _currentUserService = currentUserService;
+        }
+
+        /// <summary>
+        /// Récupère la fiche du projet pour affichage, en la créant à la volée si absente,
+        /// et synchronise les indicateurs de livrables obligatoires. Le projet doit être
+        /// chargé avec Livrables, Membres, ChefProjet et DemandeProjet.
+        /// </summary>
+        public async Task<FicheProjet> ObtenirPourAffichageAsync(Projet projet)
+        {
+            var fiche = await _db.FicheProjets
+                .Include(f => f.DerniereMiseAJourPar)
+                .FirstOrDefaultAsync(f => f.ProjetId == projet.Id && !f.EstSupprime);
+
+            if (fiche == null)
+            {
+                fiche = new FicheProjet
+                {
+                    Id = Guid.NewGuid(),
+                    ProjetId = projet.Id,
+                    TitreCourt = projet.Titre,
+                    TitreLong = projet.Titre,
+                    ObjectifPrincipal = projet.Objectif ?? projet.DemandeProjet?.Objectifs ?? string.Empty,
+                    ContexteProblemeAdresse = projet.DemandeProjet?.Contexte ?? string.Empty,
+                    DescriptionSynthetique = projet.DemandeProjet?.Description ?? string.Empty,
+                    ResultatsAttendus = projet.DemandeProjet?.AvantagesAttendus ?? string.Empty,
+                    CriticiteUrgence = $"{projet.DemandeProjet?.Criticite} / {projet.DemandeProjet?.Urgence}",
+                    DateCreation = DateTime.Now,
+                    CreePar = _currentUserService.Matricule ?? "SYSTEM",
+                    EstSupprime = false
+                };
+
+                SynchroniserLivrablesObligatoires(fiche, projet);
+
+                var equipeProjet = new List<string>();
+                if (projet.ChefProjet != null)
+                    equipeProjet.Add($"{projet.ChefProjet.Nom} {projet.ChefProjet.Prenoms} - Chef de Projet");
+                foreach (var membre in projet.Membres?.Where(m => !m.EstSupprime) ?? Enumerable.Empty<MembreProjet>())
+                {
+                    equipeProjet.Add($"{membre.Nom} {membre.Prenom} - {membre.RoleDansProjet}");
+                }
+                fiche.EquipeProjet = string.Join("\n", equipeProjet);
+
+                _db.FicheProjets.Add(fiche);
+                await _db.SaveChangesAsync();
+            }
+            else
+            {
+                SynchroniserLivrablesObligatoires(fiche, projet);
+                await _db.SaveChangesAsync();
+            }
+
+            return fiche;
+        }
+
+        private static void SynchroniserLivrablesObligatoires(FicheProjet fiche, Projet projet)
+        {
+            fiche.CharteProjetPresente = projet.Livrables?.Any(l => l.TypeLivrable == TypeLivrable.CharteProjet) ?? false;
+            fiche.WBSPlanningRACIBudgetPresent = projet.Livrables?.Any(l => l.Phase == PhaseProjet.PlanificationValidation &&
+                (l.TypeLivrable == TypeLivrable.Wbs || l.TypeLivrable == TypeLivrable.PlanningDetaille || l.TypeLivrable == TypeLivrable.MatriceRaci || l.TypeLivrable == TypeLivrable.BudgetPrevisionnel)) ?? false;
+            fiche.CRReunionsPresent = projet.Livrables?.Any(l => l.Phase == PhaseProjet.ExecutionSuivi && l.TypeLivrable == TypeLivrable.CompteRenduReunion) ?? false;
+            fiche.CahierTestsPVRecettePVMEPPresent = projet.Livrables?.Any(l => (l.Phase == PhaseProjet.UatMep || l.Phase == PhaseProjet.ClotureLeconsApprises) &&
+                (l.TypeLivrable == TypeLivrable.CahierTests || l.TypeLivrable == TypeLivrable.PvRecette || l.TypeLivrable == TypeLivrable.PvMep)) ?? false;
+            fiche.RapportLeconsApprisesPVCloturePresent = projet.Livrables?.Any(l => l.Phase == PhaseProjet.ClotureLeconsApprises &&
+                (l.TypeLivrable == TypeLivrable.RapportCloture || l.TypeLivrable == TypeLivrable.PvCloture)) ?? false;
         }
 
         public async Task<WorkflowResult> SauvegarderAsync(Guid projetId, FicheProjet fiche, Guid userId)

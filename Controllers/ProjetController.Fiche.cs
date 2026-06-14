@@ -13,7 +13,7 @@ namespace GestionProjects.Controllers
     {
         // GET: Afficher/Éditer la fiche projet CIT
         [Authorize]
-        public async Task<IActionResult> FicheProjet(Guid id)
+        public async Task<IActionResult> FicheProjet(Guid id, [FromServices] IFicheProjetService ficheService)
         {
             var projet = await _db.Projets
                 .Include(p => p.Direction)
@@ -29,65 +29,7 @@ namespace GestionProjects.Controllers
             if (projet == null)
                 return NotFound();
 
-            var fiche = await _db.FicheProjets
-                .Include(f => f.DerniereMiseAJourPar)
-                .FirstOrDefaultAsync(f => f.ProjetId == id && !f.EstSupprime);
-
-            // Si la fiche n'existe pas, créer une structure par défaut
-            if (fiche == null)
-            {
-                fiche = new FicheProjet
-                {
-                    Id = Guid.NewGuid(),
-                    ProjetId = projet.Id,
-                    TitreCourt = projet.Titre,
-                    TitreLong = projet.Titre,
-                    ObjectifPrincipal = projet.Objectif ?? projet.DemandeProjet?.Objectifs ?? string.Empty,
-                    ContexteProblemeAdresse = projet.DemandeProjet?.Contexte ?? string.Empty,
-                    DescriptionSynthetique = projet.DemandeProjet?.Description ?? string.Empty,
-                    ResultatsAttendus = projet.DemandeProjet?.AvantagesAttendus ?? string.Empty,
-                    CriticiteUrgence = $"{projet.DemandeProjet?.Criticite} / {projet.DemandeProjet?.Urgence}",
-                    DateCreation = DateTime.Now,
-                    CreePar = _currentUserService.Matricule ?? "SYSTEM",
-                    EstSupprime = false
-                };
-
-                // Vérifier les livrables obligatoires
-                fiche.CharteProjetPresente = projet.Livrables?.Any(l => l.TypeLivrable == TypeLivrable.CharteProjet) ?? false;
-                fiche.WBSPlanningRACIBudgetPresent = projet.Livrables?.Any(l => l.Phase == PhaseProjet.PlanificationValidation &&
-                    (l.TypeLivrable == TypeLivrable.Wbs || l.TypeLivrable == TypeLivrable.PlanningDetaille || l.TypeLivrable == TypeLivrable.MatriceRaci || l.TypeLivrable == TypeLivrable.BudgetPrevisionnel)) ?? false;
-                fiche.CRReunionsPresent = projet.Livrables?.Any(l => l.Phase == PhaseProjet.ExecutionSuivi && l.TypeLivrable == TypeLivrable.CompteRenduReunion) ?? false;
-                fiche.CahierTestsPVRecettePVMEPPresent = projet.Livrables?.Any(l => (l.Phase == PhaseProjet.UatMep || l.Phase == PhaseProjet.ClotureLeconsApprises) &&
-                    (l.TypeLivrable == TypeLivrable.CahierTests || l.TypeLivrable == TypeLivrable.PvRecette || l.TypeLivrable == TypeLivrable.PvMep)) ?? false;
-                fiche.RapportLeconsApprisesPVCloturePresent = projet.Livrables?.Any(l => l.Phase == PhaseProjet.ClotureLeconsApprises &&
-                    (l.TypeLivrable == TypeLivrable.RapportCloture || l.TypeLivrable == TypeLivrable.PvCloture)) ?? false;
-
-                // Construire la liste de l'équipe projet
-                var equipeProjet = new List<string>();
-                if (projet.ChefProjet != null)
-                    equipeProjet.Add($"{projet.ChefProjet.Nom} {projet.ChefProjet.Prenoms} - Chef de Projet");
-                foreach (var membre in projet.Membres?.Where(m => !m.EstSupprime) ?? Enumerable.Empty<MembreProjet>())
-                {
-                    equipeProjet.Add($"{membre.Nom} {membre.Prenom} - {membre.RoleDansProjet}");
-                }
-                fiche.EquipeProjet = string.Join("\n", equipeProjet);
-
-                _db.FicheProjets.Add(fiche);
-                await _db.SaveChangesAsync();
-            }
-            else
-            {
-                // Mettre à jour les livrables obligatoires
-                fiche.CharteProjetPresente = projet.Livrables?.Any(l => l.TypeLivrable == TypeLivrable.CharteProjet) ?? false;
-                fiche.WBSPlanningRACIBudgetPresent = projet.Livrables?.Any(l => l.Phase == PhaseProjet.PlanificationValidation &&
-                    (l.TypeLivrable == TypeLivrable.Wbs || l.TypeLivrable == TypeLivrable.PlanningDetaille || l.TypeLivrable == TypeLivrable.MatriceRaci || l.TypeLivrable == TypeLivrable.BudgetPrevisionnel)) ?? false;
-                fiche.CRReunionsPresent = projet.Livrables?.Any(l => l.Phase == PhaseProjet.ExecutionSuivi && l.TypeLivrable == TypeLivrable.CompteRenduReunion) ?? false;
-                fiche.CahierTestsPVRecettePVMEPPresent = projet.Livrables?.Any(l => (l.Phase == PhaseProjet.UatMep || l.Phase == PhaseProjet.ClotureLeconsApprises) &&
-                    (l.TypeLivrable == TypeLivrable.CahierTests || l.TypeLivrable == TypeLivrable.PvRecette || l.TypeLivrable == TypeLivrable.PvMep)) ?? false;
-                fiche.RapportLeconsApprisesPVCloturePresent = projet.Livrables?.Any(l => l.Phase == PhaseProjet.ClotureLeconsApprises &&
-                    (l.TypeLivrable == TypeLivrable.RapportCloture || l.TypeLivrable == TypeLivrable.PvCloture)) ?? false;
-                await _db.SaveChangesAsync();
-            }
+            var fiche = await ficheService.ObtenirPourAffichageAsync(projet);
 
             return View(new GestionProjects.Application.ViewModels.Projet.FicheProjetPageViewModel { Fiche = fiche, Projet = projet });
         }
