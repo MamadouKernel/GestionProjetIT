@@ -1,4 +1,5 @@
 using GestionProjects.Application.Common.Extensions;
+using GestionProjects.Application.Common.Interfaces;
 using GestionProjects.Application.ViewModels.Projet;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
@@ -364,7 +365,7 @@ namespace GestionProjects.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
-        public async Task<IActionResult> AjouterMembre(Guid projetId, Guid utilisateurId, string roleDansProjet)
+        public async Task<IActionResult> AjouterMembre(Guid projetId, Guid utilisateurId, string roleDansProjet, [FromServices] IMembreProjetService membreService)
         {
             var projet = await _db.Projets.FindAsync(projetId);
             if (projet == null)
@@ -373,31 +374,11 @@ namespace GestionProjects.Controllers
             if (!await CanManageProjectMembersAsync(projet))
                 return Forbid();
 
-            var utilisateur = await _db.Utilisateurs.FindAsync(utilisateurId);
-            if (utilisateur == null)
+            if (!await membreService.AjouterMembreAsync(projetId, utilisateurId, roleDansProjet))
             {
                 TempData["Error"] = "Utilisateur non trouvé.";
                 return RedirectToAction(nameof(Details), new { id = projetId, tab = "analyse" });
             }
-
-            var membre = new MembreProjet
-            {
-                Id = Guid.NewGuid(),
-                ProjetId = projetId,
-                Nom = utilisateur.Nom,
-                Prenom = utilisateur.Prenoms,
-                RoleDansProjet = roleDansProjet,
-                Email = utilisateur.Email,
-                DirectionLibelle = utilisateur.Direction?.Libelle ?? string.Empty,
-                EstActif = true,
-                DateCreation = DateTime.Now,
-                CreePar = _currentUserService.Matricule
-            };
-
-            _db.MembresProjets.Add(membre);
-            await _db.SaveChangesAsync();
-
-            await _auditService.LogActionAsync("AJOUT_MEMBRE", "MembreProjet", membre.Id);
 
             TempData["Success"] = "Membre ajouté au projet.";
             return RedirectToAction(nameof(Details), new { id = projetId, tab = "analyse" });
@@ -407,7 +388,7 @@ namespace GestionProjects.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
-        public async Task<IActionResult> RetirerMembre(Guid id, Guid membreId)
+        public async Task<IActionResult> RetirerMembre(Guid id, Guid membreId, [FromServices] IMembreProjetService membreService)
         {
             var projet = await _db.Projets.FindAsync(id);
             if (projet == null)
@@ -416,21 +397,8 @@ namespace GestionProjects.Controllers
             if (!await CanManageProjectMembersAsync(projet))
                 return Forbid();
 
-            var membre = await _db.MembresProjets.FindAsync(membreId);
-            if (membre == null || membre.ProjetId != id)
+            if (!await membreService.RetirerMembreAsync(id, membreId))
                 return NotFound();
-
-            // Soft delete : marquer comme supprimé
-            membre.EstActif = false;
-            membre.EstSupprime = true;
-            membre.DateModification = DateTime.Now;
-            membre.ModifiePar = _currentUserService.Matricule;
-
-            await _db.SaveChangesAsync();
-
-            await _auditService.LogActionAsync("RETRAIT_MEMBRE_PROJET", "MembreProjet", membre.Id,
-                new { ProjetId = id, MembreNom = $"{membre.Nom} {membre.Prenom}" },
-                new { Action = "Retiré/Désactivé" });
 
             TempData["Success"] = "Membre retiré du projet.";
             return RedirectToAction(nameof(Details), new { id, tab = "analyse" });
