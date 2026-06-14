@@ -11,6 +11,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddMemoryCache();
         services.AddScoped<ICacheService, CacheService>();
+        services.AddScoped<IAideQueryService, AideQueryService>();
 
         services.AddScoped<IFileStorageService, FileStorageService>();
         services.AddScoped<IDocumentPreviewService, DocumentPreviewService>();
