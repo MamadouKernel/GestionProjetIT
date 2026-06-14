@@ -1,4 +1,6 @@
 using GestionProjects.Application.Common.Results;
+using GestionProjects.Application.ViewModels.Projet;
+using GestionProjects.Domain.Models;
 
 namespace GestionProjects.Application.Common.Interfaces
 {
@@ -14,5 +16,21 @@ namespace GestionProjects.Application.Common.Interfaces
         /// l'historique. Erreurs métier renvoyées en WorkflowResult.Error.
         /// </summary>
         Task<WorkflowResult> UpdateChefProjetAsync(Guid projetId, Guid? chefProjetId);
+
+        /// <summary>
+        /// Assemble le ProjetDetailsViewModel : chargements conditionnels par onglet,
+        /// liste des chefs de projet réassignables et audit de prise en charge.
+        /// Le contrôleur garde l'autorisation (BuildProjectUi) et le recalcul d'avancement ;
+        /// les drapeaux d'habilitation sont passés en booléens pour ne pas coupler la couche
+        /// Application à l'Infrastructure.
+        /// </summary>
+        Task<ProjetDetailsViewModel> BuildDetailsViewModelAsync(
+            Projet projet,
+            Guid userId,
+            string? tab,
+            bool isReadOnly,
+            bool canReassignChefProjet,
+            bool isAssignedChefProjet,
+            bool canOpenChargesTab);
     }
 }
