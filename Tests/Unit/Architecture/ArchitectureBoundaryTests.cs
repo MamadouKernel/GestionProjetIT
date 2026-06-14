@@ -1,5 +1,6 @@
 using FluentAssertions;
 using GestionProjects.Application.Common.Interfaces;
+using GestionProjects.Controllers;
 using Xunit;
 
 namespace GestionProjects.Tests.Unit.Architecture;
@@ -27,6 +28,30 @@ public sealed class ArchitectureBoundaryTests
         references.Should().NotContain("GestionProjects");
         references.Should().NotContain(reference => reference.StartsWith("Microsoft.AspNetCore", StringComparison.Ordinal));
         references.Should().NotContain(reference => reference.StartsWith("Microsoft.EntityFrameworkCore", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ControleursMigres_NInjectentPasDirectementLeDbContext()
+    {
+        var migratedControllers = new[]
+        {
+            typeof(AideController),
+            typeof(DemandesAccesController),
+            typeof(NotificationController)
+        };
+
+        foreach (var controller in migratedControllers)
+        {
+            var constructorParameterNames = controller
+                .GetConstructors()
+                .SelectMany(constructor => constructor.GetParameters())
+                .Select(parameter => parameter.ParameterType.FullName)
+                .ToArray();
+
+            constructorParameterNames.Should().NotContain(
+                "GestionProjects.Infrastructure.Persistence.ApplicationDbContext",
+                $"{controller.Name} doit passer par des services Application/Infrastructure, pas par EF directement");
+        }
     }
 
     private static IReadOnlyCollection<string> ReferenceNames(System.Reflection.Assembly assembly)
