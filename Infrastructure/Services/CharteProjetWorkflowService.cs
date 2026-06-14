@@ -1,5 +1,6 @@
 using GestionProjects.Application.Common.Interfaces;
 using GestionProjects.Application.Common.Results;
+using GestionProjects.Application.ViewModels.Projet;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using GestionProjects.Infrastructure.Persistence;
@@ -21,6 +22,114 @@ public class CharteProjetWorkflowService : ICharteProjetWorkflowService
         _db = db;
         _currentUserService = currentUserService;
         _auditService = auditService;
+    }
+
+    /// <summary>
+    /// Charge la charte du projet pour affichage/édition. Crée une charte par défaut
+    /// (avec ses jalons standard) si elle n'existe pas encore, puis assemble le
+    /// view-model de la page (utilisateurs, dernier livrable signé, dossier de
+    /// signature). L'autorisation reste au contrôleur.
+    /// </summary>
+    public async Task<CharteProjetPageViewModel> ObtenirPourAffichageAsync(Projet projet)
+    {
+        var id = projet.Id;
+
+        var charte = await _db.CharteProjets
+            .Include(c => c.Demandeur)
+            .Include(c => c.ChefProjet)
+            .Include(c => c.SignatureSponsorUtilisateur)
+            .Include(c => c.SignatureChefProjetUtilisateur)
+            .Include(c => c.Jalons.Where(j => !j.EstSupprime).OrderBy(j => j.Ordre))
+            .Include(c => c.PartiesPrenantes.Where(p => !p.EstSupprime))
+            .FirstOrDefaultAsync(c => c.ProjetId == id && !c.EstSupprime);
+
+        // Si la charte n'existe pas, créer une structure par défaut
+        if (charte == null)
+        {
+            charte = new CharteProjet
+            {
+                Id = Guid.NewGuid(),
+                ProjetId = projet.Id,
+                NomProjet = projet.Titre,
+                NumeroProjet = projet.CodeProjet,
+                ObjectifProjet = projet.Objectif ?? projet.DemandeProjet?.Objectifs ?? string.Empty,
+                DemandeurId = projet.DemandeProjet?.DemandeurId ?? Guid.Empty,
+                ChefProjetId = projet.ChefProjetId ?? Guid.Empty,
+                EmailChefProjet = projet.ChefProjet?.Email ?? string.Empty,
+                Sponsors = $"{projet.Sponsor?.Nom} {projet.Sponsor?.Prenoms}",
+                CodeDocument = $"CIT-CIV-DSI-CP-{projet.CodeProjet}-Rév.01",
+                TypeDocument = "Charte de projet",
+                Departement = "SYSTEME D'INFORMATION",
+                NumeroRevision = 1,
+                DateRevision = DateTime.Now,
+                DescriptionRevision = "Création",
+                DateCreation = DateTime.Now,
+                CreePar = _currentUserService.Matricule ?? "SYSTEM",
+                EstSupprime = false
+            };
+
+            // Ajouter les jalons par défaut
+            var jalonsDefaut = new[]
+            {
+                new { Nom = "Cahier de charge validé", Description = "Le document détaillé décrivant les besoins et les attentes du projet est officiellement approuvé par les parties prenantes.", Criteres = "Signature du responsable du projet et des parties prenantes, aucune objection majeure ou confirmation par mail." },
+                new { Nom = "Appel d'offre lancé", Description = "La phase d'appel d'offres est officiellement lancée, invitant les fournisseurs potentiels à soumettre leurs propositions.", Criteres = "Documentation complète de l'appel d'offres, diffusion auprès des soumissionnaires potentiels." },
+                new { Nom = "Soumissionnaire choisi", Description = "Un soumissionnaire est sélectionné après l'évaluation des propositions reçues.", Criteres = "Analyse comparative des soumissions, recommandation du comité de sélection, approbation du responsable du projet." },
+                new { Nom = "Infra IT Mise en Place", Description = "L'infrastructure nécessaire au projet est mise en place, comprenant les serveurs, les réseaux, et autres composants essentiels.", Criteres = "Vérification de la disponibilité et de la fonctionnalité de l'infrastructure selon les prérequis" },
+                new { Nom = "Paiement Fournisseur Réalisé", Description = "Le paiement convenu avec le fournisseur est effectué conformément aux termes du contrat", Criteres = "Confirmation de la transaction financière, documentation appropriée du paiement" },
+                new { Nom = "Solution Déployée", Description = "La solution logicielle est installée et configurée conformément aux spécifications du cahier de charge", Criteres = "Réussite des tests de déploiement, absence de problèmes critiques" },
+                new { Nom = "Utilisateurs Formés", Description = "Les utilisateurs concernés sont formés à l'utilisation de la nouvelle solution", Criteres = "Tous les utilisateurs ont suivi la formation, évaluation positive des compétences acquises" },
+                new { Nom = "Solution Utilisée", Description = "La solution est pleinement opérationnelle et utilisée par les utilisateurs finaux", Criteres = "Confirmation de l'utilisation régulière de la solution dans le cadre des activités quotidiennes" }
+            };
+
+            for (int i = 0; i < jalonsDefaut.Length; i++)
+            {
+                charte.Jalons.Add(new JalonCharte
+                {
+                    Id = Guid.NewGuid(),
+                    CharteProjetId = charte.Id,
+                    Nom = jalonsDefaut[i].Nom,
+                    Description = jalonsDefaut[i].Description,
+                    CriteresApprobation = jalonsDefaut[i].Criteres,
+                    Ordre = i + 1,
+                    DateCreation = DateTime.Now,
+                    CreePar = _currentUserService.Matricule ?? "SYSTEM",
+                    EstSupprime = false
+                });
+            }
+
+            _db.CharteProjets.Add(charte);
+            await _db.SaveChangesAsync();
+        }
+
+        var utilisateurs = await _db.Utilisateurs
+            .Where(u => !u.EstSupprime)
+            .OrderBy(u => u.Nom)
+            .ThenBy(u => u.Prenoms)
+            .ToListAsync();
+        var charteSigneeLivrable = await _db.LivrablesProjets
+            .Include(l => l.DeposePar)
+            .Where(l => l.ProjetId == id &&
+                        l.TypeLivrable == TypeLivrable.CharteProjetSignee &&
+                        !l.EstSupprime)
+            .OrderByDescending(l => l.DateDepot)
+            .FirstOrDefaultAsync();
+        var dossierSignatureCharte = await _db.DossiersSignatureProjets
+            .Include(d => d.Signataires.OrderBy(s => s.OrdreSignature))
+                .ThenInclude(s => s.Utilisateur)
+            .Where(d => d.ProjetId == id &&
+                        d.TypeDocument == TypeDocumentSignatureProjet.CharteProjet &&
+                        !d.EstSupprime)
+            .OrderByDescending(d => d.DateCreation)
+            .FirstOrDefaultAsync();
+
+        return new CharteProjetPageViewModel
+        {
+            Charte                = charte,
+            Projet                = projet,
+            Utilisateurs          = utilisateurs,
+            CharteSigneeLivrable  = charteSigneeLivrable,
+            DossierSignatureCharte = dossierSignatureCharte
+        };
     }
 
     public async Task<WorkflowResult> ValiderDmAsync(Guid projetId, Guid userId)
