@@ -1,3 +1,4 @@
+using GestionProjects.Application.ViewModels;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 
@@ -11,6 +12,9 @@ namespace GestionProjects.Application.Common.Interfaces
     /// </summary>
     public interface IChargeProjetService
     {
+        Task<ProjetChargesViewModel> BuildChargesViewModelAsync(
+            Projet projet, Guid currentUserId, bool isPilotage, bool isProjectMember);
+
         Task<ChargeProjet> SaisirAsync(
             Guid projetId, Guid ressourceId, DateTime semaineDebut,
             decimal? chargePrevisionnelle, decimal? chargeReelle,
