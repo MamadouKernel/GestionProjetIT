@@ -39,9 +39,9 @@ namespace GestionProjects.Infrastructure.Middleware
                     context.Response.Headers["Content-Security-Policy"] =
                         "default-src 'self'; " +
                         $"script-src 'self' 'nonce-{nonce}'; " +
-                        $"style-src 'self' 'nonce-{nonce}' https://cdn.jsdelivr.net; " +
+                        $"style-src 'self' 'nonce-{nonce}'; " +
                         "img-src 'self' data:; " +
-                        "font-src 'self' https://cdn.jsdelivr.net; " +
+                        "font-src 'self'; " +
                         "connect-src 'self'; " +
                         "frame-ancestors 'none'; " +
                         "base-uri 'self'; " +
