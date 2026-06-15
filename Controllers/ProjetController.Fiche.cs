@@ -511,6 +511,7 @@ namespace GestionProjects.Controllers
         {
             var projet = await _db.Projets
                 .Include(p => p.Livrables)
+                .Include(p => p.FicheProjet)
                 .FirstOrDefaultAsync(p => p.Id == id);
             if (projet == null)
                 return NotFound();
@@ -550,6 +551,15 @@ namespace GestionProjects.Controllers
 
             projet.PlanningValideParDSI = true;
             projet.DatePlanningValideParDSI = DateTime.Now;
+
+            // Figer la baseline (référentiel) au premier passage : délai + budget de
+            // référence pour mesurer ensuite la dérive (notamment via les avenants).
+            if (!projet.DateBaseline.HasValue)
+            {
+                projet.DateBaseline = DateTime.Now;
+                projet.DateFinPrevueBaseline = projet.DateFinPrevue;
+                projet.BudgetBaseline = projet.FicheProjet?.BudgetPrevisionnel;
+            }
 
             // Passer à la phase Exécution
             projet.PhaseActuelle = PhaseProjet.ExecutionSuivi;

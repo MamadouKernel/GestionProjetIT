@@ -453,6 +453,10 @@ namespace GestionProjects.Infrastructure.Persistence
                 .Property(a => a.NouveauBudget)
                 .HasPrecision(18, 2);
 
+            modelBuilder.Entity<Projet>()
+                .Property(p => p.BudgetBaseline)
+                .HasPrecision(18, 2);
+
             // Index pour améliorer les performances des requêtes de charges
             modelBuilder.Entity<ChargeProjet>()
                 .HasIndex(c => new { c.ProjetId, c.SemaineDebut, c.RessourceId })

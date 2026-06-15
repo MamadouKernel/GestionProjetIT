@@ -45,6 +45,16 @@ namespace GestionProjects.Domain.Models
             StatutProjet.Annule => Math.Clamp(PourcentageAvancement, 0, 99),
             _ => Math.Clamp(PourcentageAvancement, 0, 100)
         };
+
+        /// <summary>
+        /// Dérive de délai en jours par rapport à la baseline (positif = retard).
+        /// Null tant qu'aucune baseline n'est figée ou sans date de fin prévue.
+        /// </summary>
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public int? EcartJoursDelai =>
+            (DateFinPrevue.HasValue && DateFinPrevueBaseline.HasValue)
+                ? (int)(DateFinPrevue.Value.Date - DateFinPrevueBaseline.Value.Date).TotalDays
+                : null;
         
         // Indicateur RAG (calculé automatiquement pour le portefeuille)
         public IndicateurRAG IndicateurRAG { get; set; } = IndicateurRAG.Vert;
@@ -58,6 +68,12 @@ namespace GestionProjects.Domain.Models
         // Suspension (mise en pause maîtrisée : motif + date, repris ensuite)
         public string? MotifSuspension { get; set; }
         public DateTime? DateSuspension { get; set; }
+
+        // Baseline (référentiel figé à la validation DSI de la planification).
+        // Permet de mesurer la dérive délai/budget (notamment via les avenants).
+        public DateTime? DateBaseline { get; set; }
+        public DateTime? DateFinPrevueBaseline { get; set; }
+        public decimal? BudgetBaseline { get; set; }
 
         // Clôture — champs structurés (remplacent les anciens champs texte libres)
         public string? BilanCloture { get; set; }       // conservé pour rétro-compatibilité

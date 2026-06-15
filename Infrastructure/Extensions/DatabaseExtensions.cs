@@ -96,6 +96,15 @@ public static class DatabaseExtensions
                 ALTER TABLE [Projets] ADD [DateSuspension] datetime2 NULL;
         ");
 
+        ExecutePatch(db, "BaselineProjet", @"
+            IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID('Projets') AND name='DateBaseline')
+                ALTER TABLE [Projets] ADD [DateBaseline] datetime2 NULL;
+            IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID('Projets') AND name='DateFinPrevueBaseline')
+                ALTER TABLE [Projets] ADD [DateFinPrevueBaseline] datetime2 NULL;
+            IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID('Projets') AND name='BudgetBaseline')
+                ALTER TABLE [Projets] ADD [BudgetBaseline] decimal(18,2) NULL;
+        ");
+
         ExecutePatch(db, "SignaturesCharte", @"
             IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID('CharteProjets') AND name='SignatureImageCP')
                 ALTER TABLE [CharteProjets] ADD [SignatureImageCP] nvarchar(max) NULL;

@@ -140,6 +140,38 @@
                     <span>Date fin reelle</span>
                     <strong>@(projet.DateFinReelle?.ToString("dd/MM/yyyy") ?? "En cours")</strong>
                 </div>
+                @if (projet.DateBaseline.HasValue)
+                {
+                    <div class="phase-summary-item">
+                        <span>Délai de référence (baseline)</span>
+                        <strong>
+                            @(projet.DateFinPrevueBaseline?.ToString("dd/MM/yyyy") ?? "—")
+                            @if (projet.EcartJoursDelai.HasValue && projet.EcartJoursDelai.Value != 0)
+                            {
+                                <span class="badge-modern badge-modern-@(projet.EcartJoursDelai.Value > 0 ? "danger" : "success")">
+                                    @(projet.EcartJoursDelai.Value > 0 ? "+" : "")@projet.EcartJoursDelai.Value j
+                                </span>
+                            }
+                        </strong>
+                    </div>
+                    @if (projet.BudgetBaseline.HasValue)
+                    {
+                        var budgetCourant = projet.FicheProjet?.BudgetPrevisionnel;
+                        var ecartBudget = budgetCourant.HasValue ? budgetCourant.Value - projet.BudgetBaseline.Value : (decimal?)null;
+                        <div class="phase-summary-item">
+                            <span>Budget de référence (baseline)</span>
+                            <strong>
+                                @projet.BudgetBaseline.Value.ToString("N0")
+                                @if (ecartBudget.HasValue && ecartBudget.Value != 0)
+                                {
+                                    <span class="badge-modern badge-modern-@(ecartBudget.Value > 0 ? "danger" : "success")">
+                                        @(ecartBudget.Value > 0 ? "+" : "")@ecartBudget.Value.ToString("N0")
+                                    </span>
+                                }
+                            </strong>
+                        </div>
+                    }
+                }
             </div>
 
             <div class="phase-action-row" style="margin-top: 1rem;">
