@@ -55,6 +55,27 @@ namespace GestionProjects.Domain.Models
             (DateFinPrevue.HasValue && DateFinPrevueBaseline.HasValue)
                 ? (int)(DateFinPrevue.Value.Date - DateFinPrevueBaseline.Value.Date).TotalDays
                 : null;
+
+        /// <summary>
+        /// Santé objective dérivée du RAG calculé (Budget/Planning/Risques/Livrables),
+        /// exprimée dans le même référentiel que l'État déclaré. Le RAG fait foi comme
+        /// indicateur objectif ; l'État reste la santé déclarée par le pilote.
+        /// </summary>
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public EtatProjet EtatRAGEquivalent => IndicateurRAG switch
+        {
+            IndicateurRAG.Vert => EtatProjet.Vert,
+            IndicateurRAG.Amber => EtatProjet.Orange,
+            IndicateurRAG.Rouge => EtatProjet.Rouge,
+            _ => EtatProjet.Vert
+        };
+
+        /// <summary>
+        /// Vrai quand l'État déclaré diverge du RAG calculé : l'écart doit être justifié
+        /// (le pilote est plus optimiste/pessimiste que les indicateurs objectifs).
+        /// </summary>
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public bool EtatDivergeDuRAG => EtatProjet != EtatRAGEquivalent;
         
         // Indicateur RAG (calculé automatiquement pour le portefeuille)
         public IndicateurRAG IndicateurRAG { get; set; } = IndicateurRAG.Vert;

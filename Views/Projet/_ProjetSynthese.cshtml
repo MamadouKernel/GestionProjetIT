@@ -259,6 +259,13 @@
                                     else { <option value="@etat">@etat</option> }
                                 }
                             </select>
+                            <small class="app-modal-note">
+                                RAG calculé (référence objective) : <strong>@projet.EtatRAGEquivalent</strong>.
+                                @if (projet.EtatDivergeDuRAG)
+                                {
+                                    <text>⚠ Votre État déclaré diverge du RAG calculé — justifiez l'écart auprès de la gouvernance.</text>
+                                }
+                            </small>
                         </div>
                         <button type="submit" class="btn-modern btn-modern-primary w-100 mt-3">
                             <i class="bi bi-save"></i>
@@ -283,8 +290,18 @@
                             <strong>@projet.PourcentageAvancementAffiche%</strong>
                         </div>
                         <div class="phase-summary-item">
-                            <span>Etat</span>
-                            <strong>@projet.EtatProjet</strong>
+                            <span>Etat declare</span>
+                            <strong>
+                                @projet.EtatProjet
+                                @if (projet.EtatDivergeDuRAG)
+                                {
+                                    <span class="badge-modern badge-modern-warning" title="Diverge du RAG calculé (@projet.EtatRAGEquivalent)"><i class="bi bi-exclamation-triangle"></i></span>
+                                }
+                            </strong>
+                        </div>
+                        <div class="phase-summary-item">
+                            <span>RAG calcule (reference)</span>
+                            <strong>@projet.EtatRAGEquivalent</strong>
                         </div>
                     </div>
                 </section>

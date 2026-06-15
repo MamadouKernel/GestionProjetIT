@@ -55,10 +55,16 @@
                 <div class="page-hero-meta mt-2">
                     <span class="badge-modern badge-modern-@GetPhaseClass(projet.PhaseActuelle)">@projet.PhaseWorkflowLabel</span>
                     <span class="badge-modern badge-modern-@GetStatutClass(projet.StatutProjet)">@projet.StatutWorkflowLabel</span>
-                    <span class="badge-modern badge-modern-@GetRAGClass(projet.IndicateurRAG)" title="Indicateur RAG calculé automatiquement (Budget, Planning, Risques, Livrables)">
+                    <span class="badge-modern badge-modern-@GetRAGClass(projet.IndicateurRAG)" title="Indicateur RAG calculé automatiquement (Budget, Planning, Risques, Livrables). Indicateur objectif de référence.">
                         RAG: @GetRAGLabel(projet.IndicateurRAG)
                     </span>
-                    <span class="badge-modern badge-modern-@GetEtatClass(projet.EtatProjet)">@projet.EtatProjet</span>
+                    <span class="badge-modern badge-modern-@GetEtatClass(projet.EtatProjet)" title="État de santé déclaré par le pilote du projet.">@projet.EtatProjet</span>
+                    @if (projet.EtatDivergeDuRAG)
+                    {
+                        <span class="badge-modern badge-modern-warning" title="L'État déclaré (@projet.EtatProjet) diverge du RAG calculé (@projet.EtatRAGEquivalent). L'écart doit être justifié.">
+                            <i class="bi bi-exclamation-triangle"></i> Écart RAG
+                        </span>
+                    }
                 </div>
                 @if (projet.DemandeProjet != null)
                 {
