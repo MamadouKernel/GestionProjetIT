@@ -1,5 +1,7 @@
+using GestionProjects.Application.Common.Extensions;
 using GestionProjects.Application.Common.Interfaces;
 using GestionProjects.Application.Common.Models;
+using GestionProjects.Application.ViewModels.Projet;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using GestionProjects.Infrastructure.Persistence;
@@ -20,6 +22,138 @@ namespace GestionProjects.Infrastructure.Services
         {
             _db = db;
             _cache = cache;
+        }
+
+        /// <inheritdoc/>
+        public async Task<ProjetHistoriqueDMViewModel> BuildHistoriqueDMAsync(
+            string? recherche,
+            Guid? directionId,
+            PhaseProjet? phase,
+            StatutProjet? statut,
+            int page,
+            int pageSize,
+            Guid userId,
+            bool canPortfolioAccess,
+            Guid? currentUserDirectionId)
+        {
+            page     = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize, 5, 50);
+
+            IQueryable<Projet> query = _db.Projets
+                .Include(p => p.Direction)
+                .Include(p => p.ChefProjet)
+                .Include(p => p.DemandeProjet)
+                    .ThenInclude(d => d.Demandeur)
+                .Include(p => p.HistoriquePhases)
+                    .ThenInclude(h => h.ModifieParUtilisateur);
+
+            if (!canPortfolioAccess)
+            {
+                query = currentUserDirectionId.HasValue
+                    ? query.Where(p => p.SponsorId == userId || p.DirectionId == currentUserDirectionId.Value)
+                    : query.Where(p => p.SponsorId == userId);
+            }
+
+            if (!string.IsNullOrWhiteSpace(recherche))
+                query = query.Where(p => p.Titre.Contains(recherche) || p.CodeProjet.Contains(recherche));
+
+            if (directionId.HasValue)
+                query = query.Where(p => p.DirectionId == directionId.Value);
+
+            if (phase.HasValue)
+                query = query.Where(p => p.PhaseActuelle == phase.Value);
+
+            if (statut.HasValue)
+                query = query.Where(p => p.StatutProjet == statut.Value);
+
+            var pagedProjets = await query.OrderByDescending(p => p.DateCreation).ToPagedResultAsync(page, pageSize);
+            var projets = pagedProjets.Items;
+
+            // Optimisation : charger les données uniquement pour la page courante
+            var projetIds = projets.Select(p => p.Id).ToList();
+
+            // Charger tous les logs d'audit en une seule requête
+            var allAuditLogsList = await _db.AuditLogs
+                .Include(a => a.Utilisateur)
+                .Where(a => a.Entite == "Projet" && projetIds.Any(id => a.EntiteId == id.ToString()))
+                .ToListAsync();
+
+            var allAuditLogs = allAuditLogsList
+                .Where(a => Guid.TryParse(a.EntiteId, out var id) && projetIds.Contains(id))
+                .GroupBy(a => Guid.Parse(a.EntiteId))
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(a => a.DateAction).ToList());
+
+            // Charger toutes les statistiques en une seule requête par type
+            var livrablesCounts = await _db.LivrablesProjets
+                .Where(l => projetIds.Contains(l.ProjetId))
+                .GroupBy(l => l.ProjetId)
+                .Select(g => new { ProjetId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.ProjetId, x => x.Count);
+
+            var anomaliesCounts = await _db.AnomaliesProjets
+                .Where(a => projetIds.Contains(a.ProjetId))
+                .GroupBy(a => a.ProjetId)
+                .Select(g => new
+                {
+                    ProjetId = g.Key,
+                    Total = g.Count(),
+                    Ouvertes = g.Count(a => a.Statut == Domain.Enums.StatutAnomalie.Ouverte)
+                })
+                .ToDictionaryAsync(x => x.ProjetId, x => new { x.Total, x.Ouvertes });
+
+            var risquesCounts = await _db.RisquesProjets
+                .Where(r => projetIds.Contains(r.ProjetId))
+                .GroupBy(r => r.ProjetId)
+                .Select(g => new
+                {
+                    ProjetId = g.Key,
+                    Total = g.Count(),
+                    Critiques = g.Count(r => r.Impact == Domain.Enums.ImpactRisque.Critique)
+                })
+                .ToDictionaryAsync(x => x.ProjetId, x => new { x.Total, x.Critiques });
+
+            // Construire le ViewModel
+            var directions = await _db.Directions
+                .Where(d => !d.EstSupprime && d.EstActive)
+                .OrderBy(d => d.Libelle)
+                .ToListAsync();
+
+            var vmHistorique = new ProjetHistoriqueDMViewModel
+            {
+                Projets          = projets,
+                Directions       = directions,
+                Recherche        = recherche,
+                SelectedDirectionId = directionId,
+                SelectedPhase    = phase,
+                SelectedStatut   = statut,
+                PageNumber       = pagedProjets.PageNumber,
+                TotalPages       = pagedProjets.TotalPages,
+                TotalCount       = pagedProjets.TotalCount,
+                PageSize         = pagedProjets.PageSize,
+            };
+
+            foreach (var projet in projets)
+            {
+                var auditLogs = allAuditLogs.TryGetValue(projet.Id, out var logs) ? logs : new List<Domain.Models.AuditLog>();
+                var totalLivrables = livrablesCounts.TryGetValue(projet.Id, out var livCount) ? livCount : 0;
+                var totalAnomalies = anomaliesCounts.TryGetValue(projet.Id, out var anomCount) ? anomCount.Total : 0;
+                var anomaliesOuvertes = anomaliesCounts.TryGetValue(projet.Id, out var anomCount2) ? anomCount2.Ouvertes : 0;
+                var totalRisques = risquesCounts.TryGetValue(projet.Id, out var riskCount) ? riskCount.Total : 0;
+                var risquesCritiques = risquesCounts.TryGetValue(projet.Id, out var riskCount2) ? riskCount2.Critiques : 0;
+
+                vmHistorique.ProjetsAvecHistorique.Add(new ProjetHistoriqueItem
+                {
+                    Projet            = projet,
+                    AuditLogs         = auditLogs,
+                    TotalLivrables    = totalLivrables,
+                    TotalAnomalies    = totalAnomalies,
+                    AnomaliesOuvertes = anomaliesOuvertes,
+                    TotalRisques      = totalRisques,
+                    RisquesCritiques  = risquesCritiques
+                });
+            }
+
+            return vmHistorique;
         }
 
         /// <inheritdoc/>

@@ -1,4 +1,5 @@
 using GestionProjects.Application.Common.Models;
+using GestionProjects.Application.ViewModels.Projet;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 
@@ -14,6 +15,22 @@ namespace GestionProjects.Application.Common.Interfaces
         /// Détermine la direction de l'utilisateur courant.
         /// </summary>
         Task<Guid?> GetUserDirectionIdAsync(Guid userId);
+
+        /// <summary>
+        /// Construit le view-model de l'historique projets du Directeur Métier :
+        /// filtrage par scope, pagination et agrégation batch (audit, livrables,
+        /// anomalies, risques). L'autorisation reste au contrôleur.
+        /// </summary>
+        Task<ProjetHistoriqueDMViewModel> BuildHistoriqueDMAsync(
+            string? recherche,
+            Guid? directionId,
+            PhaseProjet? phase,
+            StatutProjet? statut,
+            int page,
+            int pageSize,
+            Guid userId,
+            bool canPortfolioAccess,
+            Guid? currentUserDirectionId);
 
         /// <summary>
         /// Applique le filtre de scope (périmètre visible) sur une requête de projets
