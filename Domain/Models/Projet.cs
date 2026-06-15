@@ -36,6 +36,15 @@ namespace GestionProjects.Domain.Models
         public PhaseProjet PhaseActuelle { get; set; }
         public int PourcentageAvancement { get; set; }
         public EtatProjet EtatProjet { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public int PourcentageAvancementAffiche => StatutProjet switch
+        {
+            StatutProjet.NonDemarre => 0,
+            StatutProjet.Cloture => 100,
+            StatutProjet.Annule => Math.Clamp(PourcentageAvancement, 0, 99),
+            _ => Math.Clamp(PourcentageAvancement, 0, 100)
+        };
         
         // Indicateur RAG (calculé automatiquement pour le portefeuille)
         public IndicateurRAG IndicateurRAG { get; set; } = IndicateurRAG.Vert;

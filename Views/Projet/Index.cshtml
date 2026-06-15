@@ -150,6 +150,7 @@
                         @foreach (var projet in Model.Projets)
                         {
                             var isReadOnly = Model.ReadOnlyProjets.Contains(projet.Id);
+                            var avancementAffiche = projet.PourcentageAvancementAffiche;
                             
                             <tr class="@(isReadOnly ? "readonly-row" : "")">
                                 <td>
@@ -189,9 +190,9 @@
                                 <td>
                                     <div class="table-progress">
                                         <div class="table-progress-track">
-                                            <div class="table-progress-bar" style="width: @projet.PourcentageAvancement%;"></div>
+                                            <div class="table-progress-bar" style="width: @avancementAffiche%;"></div>
                                         </div>
-                                        <span class="table-progress-value">@projet.PourcentageAvancement%</span>
+                                        <span class="table-progress-value">@avancementAffiche%</span>
                                     </div>
                                 </td>
                                 <td>

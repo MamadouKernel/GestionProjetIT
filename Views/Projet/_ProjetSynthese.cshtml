@@ -1,5 +1,6 @@
 @using Microsoft.AspNetCore.Html
 @using System.Net
+@using GestionProjects.Domain.Enums
 @model GestionProjects.Application.ViewModels.Projet.ProjetDetailsViewModel
 @inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
 
@@ -33,6 +34,7 @@
 @{
     var projet = Model.Projet;
     var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, projet);
+    var canStartProject = ui.CanStartProject && projet.StatutProjet == StatutProjet.NonDemarre;
 }
 
 <div class="phase-shell">
@@ -55,7 +57,7 @@
                 </span>
                 <span class="phase-chip">
                     <i class="bi bi-bar-chart"></i>
-                    @projet.PourcentageAvancement%
+                    @projet.PourcentageAvancementAffiche%
                 </span>
                 <span class="phase-chip @(projet.StatutProjet == GestionProjects.Domain.Enums.StatutProjet.Cloture ? "is-success" : "is-warning")">
                     <i class="bi bi-flag"></i>
@@ -127,6 +129,18 @@
             </div>
 
             <div class="phase-action-row" style="margin-top: 1rem;">
+                @if (canStartProject)
+                {
+                    <form asp-action="DemarrerProjet" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@projet.Id" />
+                        <button type="submit" class="btn-modern btn-modern-primary" disabled="@(!projet.ChefProjetId.HasValue)"
+                                title="@(projet.ChefProjetId.HasValue ? "Demarrer le projet" : "Assignez d'abord un ResponsableSolutionsIT")">
+                            <i class="bi bi-play-circle"></i>
+                            Demarrer le projet
+                        </button>
+                    </form>
+                }
                 @if (ui.CanReassignChefProjet && projet.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
                 {
                     <button type="button" class="btn-modern btn-modern-secondary" data-bs-toggle="modal" data-bs-target="#updateChefProjetModal">
@@ -167,7 +181,7 @@
                         <input type="hidden" name="id" value="@projet.Id" />
                         <div class="form-group-modern">
                             <label class="form-label-modern">Pourcentage d'avancement (calcul automatique)</label>
-                            <input type="text" class="form-control-modern" value="@projet.PourcentageAvancement%" disabled />
+                            <input type="text" class="form-control-modern" value="@projet.PourcentageAvancementAffiche%" disabled />
                             <small class="app-modal-note">
                                 Calculé automatiquement depuis les validations de phase, les livrables obligatoires, les tâches du planning et les preuves de clôture.
                             </small>
@@ -202,7 +216,7 @@
                     <div class="phase-summary-list">
                         <div class="phase-summary-item">
                             <span>Progression</span>
-                            <strong>@projet.PourcentageAvancement%</strong>
+                            <strong>@projet.PourcentageAvancementAffiche%</strong>
                         </div>
                         <div class="phase-summary-item">
                             <span>Etat</span>

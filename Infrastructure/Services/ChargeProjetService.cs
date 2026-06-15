@@ -273,7 +273,7 @@ namespace GestionProjects.Infrastructure.Services
                 });
             }
 
-            if (projet.PourcentageAvancement < 50 && totalActual > 0 && totalPlanned > 0 && totalActual < (totalPlanned * 0.4m))
+            if (projet.PourcentageAvancementAffiche < 50 && totalActual > 0 && totalPlanned > 0 && totalActual < (totalPlanned * 0.4m))
             {
                 alerts.Add(new ProjetChargeAlertViewModel
                 {
@@ -321,7 +321,7 @@ namespace GestionProjects.Infrastructure.Services
                 ChefProjet = projet.ChefProjet != null ? $"{projet.ChefProjet.Nom} {projet.ChefProjet.Prenoms}".Trim() : "Non affecté",
                 Phase = projet.PhaseWorkflowLabel,
                 Statut = projet.StatutWorkflowLabel,
-                Avancement = projet.PourcentageAvancement,
+                Avancement = projet.PourcentageAvancementAffiche,
                 Etat = projet.EtatProjet.ToString(),
                 ProchainJalon = projet.FicheProjet?.ProchainJalon ?? "À définir",
                 BudgetPrevisionnel = projet.FicheProjet?.BudgetPrevisionnel ?? 0,

@@ -99,6 +99,7 @@
             var anomaliesOuvertes = item.AnomaliesOuvertes;
             var totalRisques = item.TotalRisques;
             var risquesCritiques = item.RisquesCritiques;
+            var avancementAffiche = projet.PourcentageAvancementAffiche;
 
             <details class="card-modern panel-accent history-project-accordion">
                 <summary class="card-header-modern history-project-summary">
@@ -150,17 +151,17 @@
                         <div class="project-progress-panel">
                             <div class="project-progress-copy">
                                 <div class="project-progress-kicker">Avancement</div>
-                                <div class="project-progress-value">@projet.PourcentageAvancement%</div>
+                                <div class="project-progress-value">@avancementAffiche%</div>
                             </div>
                             <div class="project-progress-ring">
                                 <svg width="104" height="104">
                                     <circle cx="52" cy="52" r="40" fill="none" stroke="var(--gray-200)" stroke-width="8"></circle>
                                     <circle cx="52" cy="52" r="40" fill="none" stroke="var(--cit-blue)" stroke-width="8"
                                             stroke-dasharray="@(2 * Math.PI * 40)"
-                                            stroke-dashoffset="@(2 * Math.PI * 40 * (1 - projet.PourcentageAvancement / 100.0))"
+                                            stroke-dashoffset="@(2 * Math.PI * 40 * (1 - avancementAffiche / 100.0))"
                                             stroke-linecap="round"></circle>
                                 </svg>
-                                <div class="project-progress-ring-value">@projet.PourcentageAvancement%</div>
+                                <div class="project-progress-ring-value">@avancementAffiche%</div>
                             </div>
                         </div>
                     </div>
@@ -593,8 +594,7 @@
     {
         return statut switch
         {
-            GestionProjects.Domain.Enums.StatutProjet.NonDemarre when phase == GestionProjects.Domain.Enums.PhaseProjet.AnalyseClarification => "En analyse",
-            GestionProjects.Domain.Enums.StatutProjet.NonDemarre => "En analyse",
+            GestionProjects.Domain.Enums.StatutProjet.NonDemarre => "Non demarre",
             GestionProjects.Domain.Enums.StatutProjet.EnCours when phase == GestionProjects.Domain.Enums.PhaseProjet.AnalyseClarification => "En analyse",
             GestionProjects.Domain.Enums.StatutProjet.EnCours when phase == GestionProjects.Domain.Enums.PhaseProjet.PlanificationValidation => "En planification",
             GestionProjects.Domain.Enums.StatutProjet.EnCours when phase == GestionProjects.Domain.Enums.PhaseProjet.ExecutionSuivi => "En exécution",

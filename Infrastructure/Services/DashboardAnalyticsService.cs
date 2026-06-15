@@ -252,7 +252,7 @@ public sealed class DashboardAnalyticsService : IDashboardAnalyticsService
             ProjetsRouges: projets.Count(p => p.EtatProjet == EtatProjet.Rouge),
             ProjetsOranges: projets.Count(p => p.EtatProjet == EtatProjet.Orange),
             ProjetsVerts: projets.Count(p => p.EtatProjet == EtatProjet.Vert),
-            AvancementMoyen: projets.Any() ? Math.Round(projets.Average(p => (double)p.PourcentageAvancement), 1) : 0,
+            AvancementMoyen: projets.Any() ? Math.Round(projets.Average(p => (double)p.PourcentageAvancementAffiche), 1) : 0,
             DemandesEnAttente: demandesEnAttente,
             ProjetsEnRetard: projetsEnRetard,
             TauxRetard: tauxRetard,

@@ -86,7 +86,7 @@ public class ValidationDSITests : IDisposable
             DirectionId = demande.DirectionId,
             SponsorId = demande.DirecteurMetierId,
             ChefProjetId = chefProjet.Id,
-            StatutProjet = StatutProjet.EnCours,
+            StatutProjet = StatutProjet.NonDemarre,
             PhaseActuelle = PhaseProjet.AnalyseClarification,
             PourcentageAvancement = 0,
             EtatProjet = EtatProjet.Vert,
@@ -106,7 +106,7 @@ public class ValidationDSITests : IDisposable
         
         demandeValidee.StatutDemande.Should().Be(StatutDemande.ValideeParDSI);
         demandeValidee.Projet.Should().NotBeNull();
-        demandeValidee.Projet!.StatutProjet.Should().Be(StatutProjet.EnCours);
+        demandeValidee.Projet!.StatutProjet.Should().Be(StatutProjet.NonDemarre);
     }
 
     /// <summary>
@@ -114,7 +114,7 @@ public class ValidationDSITests : IDisposable
     /// Criticité: Bloquante
     /// </summary>
     [Fact]
-    public async Task VALD04_StatutInitialProjet_DoitEtreValideePourAnalyse()
+    public async Task VALD04_StatutInitialProjet_DoitEtreNonDemarrePourAnalyse()
     {
         // Arrange
         var demande = await CreerDemandeEnAttenteValidationDSIAsync();
@@ -130,7 +130,7 @@ public class ValidationDSITests : IDisposable
             DirectionId = demande.DirectionId,
             SponsorId = demande.DirecteurMetierId,
             ChefProjetId = chefProjet.Id,
-            StatutProjet = StatutProjet.EnCours,
+            StatutProjet = StatutProjet.NonDemarre,
             PhaseActuelle = PhaseProjet.AnalyseClarification,
             PourcentageAvancement = 0,
             EtatProjet = EtatProjet.Vert,
@@ -146,7 +146,7 @@ public class ValidationDSITests : IDisposable
         // Assert
         var projetCree = await _context.Projets.FindAsync(projet.Id);
         projetCree.Should().NotBeNull();
-        projetCree!.StatutProjet.Should().Be(StatutProjet.EnCours);
+        projetCree!.StatutProjet.Should().Be(StatutProjet.NonDemarre);
         projetCree.PhaseActuelle.Should().Be(PhaseProjet.AnalyseClarification);
     }
 

@@ -67,7 +67,7 @@
                 </span>
                 <span class="phase-chip">
                     <i class="bi bi-bar-chart"></i>
-                    @projet.PourcentageAvancement%
+                    @projet.PourcentageAvancementAffiche%
                 </span>
                 <span class="phase-chip @(ecartCharge > 0 ? "is-warning" : "is-success")">
                     <i class="bi bi-clock-history"></i>
@@ -83,7 +83,7 @@
             <div class="phase-summary-list">
                 <div class="phase-summary-item"><span>Phase</span><strong>@projet.PhaseWorkflowLabel</strong></div>
                 <div class="phase-summary-item"><span>Statut global</span><strong>@projet.StatutWorkflowLabel</strong></div>
-                <div class="phase-summary-item"><span>Avancement</span><strong>@projet.PourcentageAvancement%</strong></div>
+                <div class="phase-summary-item"><span>Avancement</span><strong>@projet.PourcentageAvancementAffiche%</strong></div>
                 <div class="phase-summary-item"><span>Etat</span><strong>@projet.EtatProjet</strong></div>
             </div>
         </article>
@@ -140,7 +140,7 @@
                     </div>
                     <div class="form-group-modern">
                         <label class="form-label-modern">% avancement (calcul automatique)</label>
-                        <input type="text" class="form-control-modern" value="@projet.PourcentageAvancement%" disabled />
+                        <input type="text" class="form-control-modern" value="@projet.PourcentageAvancementAffiche%" disabled />
                         <small class="app-modal-note">
                             Calculé automatiquement depuis l'avancement des tâches du planning, puis ajusté selon l'état de la phase.
                         </small>

@@ -432,7 +432,7 @@ namespace GestionProjects.Infrastructure.Services
                         body.AppendChild(CreateParagraphWithRuns(("Date fin prévue: ", true, 11), (fiche.Projet?.DateFinPrevue?.ToString("dd/MM/yyyy") ?? "N/A", false, 11)));
                         body.AppendChild(CreateParagraphWithRuns(("Prochain jalon: ", true, 11), (fiche.ProchainJalon ?? "N/A", false, 11)));
                         body.AppendChild(CreateParagraphWithRuns(("Statut: ", true, 11), (fiche.Projet?.EtatProjet.ToString() ?? "Vert", false, 11)));
-                        body.AppendChild(CreateParagraphWithRuns(("% Avancement: ", true, 11), ($"{fiche.Projet?.PourcentageAvancement ?? 0}%", false, 11)));
+                        body.AppendChild(CreateParagraphWithRuns(("% Avancement: ", true, 11), ($"{fiche.Projet?.PourcentageAvancementAffiche ?? 0}%", false, 11)));
                         body.AppendChild(new Paragraph(new Run(new Text(""))));
 
                         // 6. Principaux risques

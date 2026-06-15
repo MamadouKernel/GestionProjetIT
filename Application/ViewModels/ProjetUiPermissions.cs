@@ -45,6 +45,7 @@ namespace GestionProjects.Application.ViewModels
 
         public bool CanEditCharte => Has("Projet", "EditCharte") && (IsAssignedChefProjet || HasDsiGovernanceAccess);
         public bool CanEditAnalyse => Has("Projet", "EditAnalyse") && (IsAssignedChefProjet || HasDsiGovernanceAccess);
+        public bool CanStartProject => CanEditAnalyse || HasDsiGovernanceAccess;
         public bool CanValidateAnalysePhase => Has("Projet", "ValiderAnalyse") && IsAssignedChefProjet;
         public bool CanValidateCharteDm => Has("Projet", "ValiderCharteDM") && IsProjectSponsor && !IsReadOnly;
         public bool CanValidateCharteDsi => Has("Projet", "ValiderCharteDSI");
@@ -73,6 +74,7 @@ namespace GestionProjects.Application.ViewModels
 
         public bool CanUseProjectModals =>
             CanEditAnalyse ||
+            CanStartProject ||
             CanEditCharte ||
             CanEditPlanification ||
             CanEditExecution ||

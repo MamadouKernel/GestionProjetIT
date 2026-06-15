@@ -305,9 +305,19 @@ namespace GestionProjects.Controllers
 
         private static int ComputeAutomaticProgress(Projet projet)
         {
-            if (projet.StatutProjet == StatutProjet.Cloture || projet.StatutProjet == StatutProjet.Annule)
+            if (projet.StatutProjet == StatutProjet.NonDemarre)
+            {
+                return 0;
+            }
+
+            if (projet.StatutProjet == StatutProjet.Cloture)
             {
                 return 100;
+            }
+
+            if (projet.StatutProjet == StatutProjet.Annule)
+            {
+                return Math.Clamp(projet.PourcentageAvancement, 0, 99);
             }
 
             var livrables = projet.Livrables?

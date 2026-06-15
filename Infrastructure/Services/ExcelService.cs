@@ -122,7 +122,7 @@ namespace GestionProjects.Infrastructure.Services
                         : "Non assigné";
                     worksheet.Cells[currentRow, 7].Value = projet.StatutProjet.ToString();
                     worksheet.Cells[currentRow, 8].Value = projet.PhaseActuelle.ToString();
-                    worksheet.Cells[currentRow, 9].Value = projet.PourcentageAvancement / 100d;
+                    worksheet.Cells[currentRow, 9].Value = projet.PourcentageAvancementAffiche / 100d;
                     worksheet.Cells[currentRow, 9].Style.Numberformat.Format = "0%";
                     ApplyTableRowBorder(worksheet, currentRow, headers.Length);
                     currentRow++;
@@ -201,7 +201,7 @@ namespace GestionProjects.Infrastructure.Services
                         : "Non assigné";
                     worksheet.Cells[currentRow, 5].Value = projet.IndicateurRAG.ToString();
                     worksheet.Cells[currentRow, 6].Value = projet.PhaseActuelle.ToString();
-                    worksheet.Cells[currentRow, 7].Value = projet.PourcentageAvancement / 100d;
+                    worksheet.Cells[currentRow, 7].Value = projet.PourcentageAvancementAffiche / 100d;
                     worksheet.Cells[currentRow, 7].Style.Numberformat.Format = "0%";
                     worksheet.Cells[currentRow, 8].Value = projet.StatutProjet.ToString();
                     worksheet.Cells[currentRow, 9].Value = projet.DateDebut?.ToString("dd/MM/yyyy") ?? "N/A";

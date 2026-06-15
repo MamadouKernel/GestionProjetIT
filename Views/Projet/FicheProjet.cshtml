@@ -30,7 +30,7 @@
                 <div class="document-kpi-panel">
                     <div class="document-kpi">
                         <span class="document-kpi-label">Avancement</span>
-                        <span class="document-kpi-value">@(projet?.PourcentageAvancement ?? 0)%</span>
+                        <span class="document-kpi-value">@(projet?.PourcentageAvancementAffiche ?? 0)%</span>
                         <span class="document-kpi-copy">Niveau de progression consolidé</span>
                     </div>
                     <div class="document-kpi">
@@ -226,9 +226,9 @@
                     <strong class="document-definition-label">% avancement</strong>
                     <div class="document-progress">
                         <div class="document-progress-track">
-                            <div class="document-progress-fill" style="width: @(projet?.PourcentageAvancement ?? 0)%"></div>
+                            <div class="document-progress-fill" style="width: @(projet?.PourcentageAvancementAffiche ?? 0)%"></div>
                         </div>
-                        <span class="document-progress-value">@(projet?.PourcentageAvancement ?? 0)%</span>
+                        <span class="document-progress-value">@(projet?.PourcentageAvancementAffiche ?? 0)%</span>
                     </div>
                 </div>
             </div>

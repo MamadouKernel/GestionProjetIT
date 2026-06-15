@@ -88,6 +88,35 @@ namespace GestionProjects.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
+        // POST: Demarrer operationnellement le projet
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
+        public async Task<IActionResult> DemarrerProjet(Guid id, [FromServices] IProjetDetailsWorkflowService detailsWorkflow)
+        {
+            var projet = await _db.Projets.FindAsync(id);
+            if (projet == null)
+                return NotFound();
+
+            var ui = await BuildProjectUiAsync(projet);
+            if (!ui.CanStartProject)
+                return Forbid();
+
+            var result = await detailsWorkflow.DemarrerProjetAsync(id, User.GetUserIdOrThrow());
+            if (result.IsNotFound)
+                return NotFound();
+
+            if (result.IsForbidden)
+                return Forbid();
+
+            if (result.ErrorMessage is not null)
+                TempData["Error"] = result.ErrorMessage;
+            else
+                TempData["Success"] = result.SuccessMessage;
+
+            return RedirectToAction(nameof(Details), new { id, tab = "synthese" });
+        }
+
         // POST: Valider Phase Analyse (Go/No-Go vers Planification)
         [HttpPost]
         [ValidateAntiForgeryToken]

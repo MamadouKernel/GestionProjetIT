@@ -61,7 +61,7 @@ namespace GestionProjects.Infrastructure.Services
                 if (dureeTotale > 0 && joursEcoules > 0)
                 {
                     var pourcentageTempsEcoule = (joursEcoules / dureeTotale) * 100;
-                    var pourcentageAvancement = projetComplet.PourcentageAvancement;
+                    var pourcentageAvancement = projetComplet.PourcentageAvancementAffiche;
                     
                     // Si on a consommé plus de temps que prévu par rapport à l'avancement
                     var retard = pourcentageTempsEcoule - pourcentageAvancement;

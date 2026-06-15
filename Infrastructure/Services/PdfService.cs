@@ -148,7 +148,7 @@ namespace GestionProjects.Infrastructure.Services
                                 column.Item().Text($"Statut: {projet.StatutProjet}");
                                 column.Item().Text($"Phase actuelle: {projet.PhaseActuelle}");
                                 column.Item().Text($"État: {projet.EtatProjet}");
-                                column.Item().Text($"Avancement: {projet.PourcentageAvancement}%");
+                                column.Item().Text($"Avancement: {projet.PourcentageAvancementAffiche}%");
 
                                 column.Item().PaddingTop(0.5f, Unit.Centimetre);
 
@@ -508,7 +508,7 @@ namespace GestionProjects.Infrastructure.Services
                                 column.Item().Text($"Date fin prévue: {(fiche.Projet?.DateFinPrevue?.ToString("dd/MM/yyyy") ?? "N/A")}");
                                 column.Item().Text($"Prochain jalon: {fiche.ProchainJalon ?? "N/A"}");
                                 column.Item().Text($"Statut: {fiche.Projet?.EtatProjet ?? EtatProjet.Vert}");
-                                column.Item().Text($"% Avancement: {fiche.Projet?.PourcentageAvancement ?? 0}%");
+                                column.Item().Text($"% Avancement: {fiche.Projet?.PourcentageAvancementAffiche ?? 0}%");
 
                                 // 6. Principaux risques
                                 if (!string.IsNullOrWhiteSpace(fiche.SyntheseRisques))
@@ -722,7 +722,7 @@ namespace GestionProjects.Infrastructure.Services
                                             {
                                                 row.RelativeItem().Text($"Statut: {projet.StatutProjet}").FontSize(9);
                                                 row.RelativeItem().Text($"Phase: {projet.PhaseActuelle}").FontSize(9);
-                                                row.RelativeItem().Text($"Avancement: {projet.PourcentageAvancement}%").FontSize(9);
+                                                row.RelativeItem().Text($"Avancement: {projet.PourcentageAvancementAffiche}%").FontSize(9);
                                             });
                                         });
 
@@ -887,7 +887,7 @@ namespace GestionProjects.Infrastructure.Services
                                         table.Cell().Element(CellStyle).Text(projet.Direction?.Libelle ?? "N/A");
                                         table.Cell().Element(CellStyle).Text(ragLabel);
                                         table.Cell().Element(CellStyle).Text(projet.PhaseActuelle.ToString());
-                                        table.Cell().Element(CellStyle).Text($"{projet.PourcentageAvancement}%");
+                                        table.Cell().Element(CellStyle).Text($"{projet.PourcentageAvancementAffiche}%");
                                         table.Cell().Element(CellStyle).Text(projet.StatutProjet.ToString());
                                     }
                                 });

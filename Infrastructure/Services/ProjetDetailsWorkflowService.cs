@@ -120,6 +120,55 @@ namespace GestionProjects.Infrastructure.Services
                 : "ResponsableSolutionsIT retiré du projet.");
         }
 
+        public async Task<WorkflowResult> DemarrerProjetAsync(Guid projetId, Guid userId)
+        {
+            var projet = await _db.Projets.FirstOrDefaultAsync(p => p.Id == projetId);
+            if (projet == null)
+                return WorkflowResult.NotFound();
+
+            if (projet.StatutProjet == StatutProjet.Cloture || projet.StatutProjet == StatutProjet.Annule)
+                return WorkflowResult.Error("Impossible de demarrer un projet cloture ou annule.");
+
+            if (projet.StatutProjet != StatutProjet.NonDemarre)
+                return WorkflowResult.Error("Ce projet est deja demarre.");
+
+            if (projet.PhaseActuelle != PhaseProjet.AnalyseClarification)
+                return WorkflowResult.Error("Un projet ne peut demarrer que depuis la phase Analyse & Clarification.");
+
+            if (!projet.ChefProjetId.HasValue)
+                return WorkflowResult.Error("Assignez d'abord un ResponsableSolutionsIT avant de demarrer le projet.");
+
+            var ancienStatut = projet.StatutProjet;
+            var ancienPourcentage = projet.PourcentageAvancement;
+
+            projet.StatutProjet = StatutProjet.EnCours;
+            projet.PourcentageAvancement = 0;
+            projet.DateDebut ??= DateTime.Now;
+            projet.DateModification = DateTime.Now;
+            projet.ModifiePar = _currentUserService.Matricule ?? "SYSTEM";
+
+            _db.HistoriquePhasesProjets.Add(new HistoriquePhaseProjet
+            {
+                Id = Guid.NewGuid(),
+                ProjetId = projet.Id,
+                Phase = projet.PhaseActuelle,
+                StatutProjet = projet.StatutProjet,
+                DateDebut = projet.DateDebut.Value,
+                ModifieParId = userId,
+                Commentaire = "Demarrage operationnel du projet - prise en charge reelle",
+                DateCreation = DateTime.Now,
+                CreePar = _currentUserService.Matricule ?? "SYSTEM"
+            });
+
+            await _db.SaveChangesAsync();
+
+            await _auditService.LogActionAsync("DEMARRAGE_PROJET", "Projet", projet.Id,
+                new { StatutProjet = ancienStatut, PourcentageAvancement = ancienPourcentage },
+                new { projet.StatutProjet, projet.PourcentageAvancement, projet.DateDebut, projet.ChefProjetId });
+
+            return WorkflowResult.Success("Projet demarre. L'avancement reste a 0% jusqu'a la production des premiers livrables.");
+        }
+
         public async Task<ProjetDetailsViewModel> BuildDetailsViewModelAsync(
             Projet projet,
             Guid userId,

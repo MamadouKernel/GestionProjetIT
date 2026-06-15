@@ -110,6 +110,7 @@ namespace GestionProjects.Infrastructure.Persistence
                 description: "Implémentation d'un système de gestion des incidents et demandes IT (ITSM).",
                 statut: StatutDemande.EnAttenteValidationDirecteurMetier);
 
+            await NormaliserProjetsNonDemarresAsync(db);
             await db.SaveChangesAsync();
             Log.Information("✅ Demandes et projets de démonstration créés/vérifiés");
             Log.Information("📋 Comptes testeurs disponibles. Mot de passe fourni via {ConfigKey}.", DemoPasswordConfigKey);
@@ -285,15 +286,7 @@ namespace GestionProjects.Infrastructure.Persistence
                     StatutProjet         = statutProjet.Value,
                     PhaseActuelle        = phaseProjet.Value,
                     EtatProjet           = EtatProjet.Vert,
-                    PourcentageAvancement = phaseProjet.Value switch
-                    {
-                        PhaseProjet.AnalyseClarification  => 10,
-                        PhaseProjet.PlanificationValidation => 25,
-                        PhaseProjet.ExecutionSuivi         => 55,
-                        PhaseProjet.UatMep                 => 80,
-                        PhaseProjet.ClotureLeconsApprises  => 100,
-                        _ => 0
-                    },
+                    PourcentageAvancement = CalculerPourcentageDemo(phaseProjet.Value, statutProjet.Value),
                     DateDebut            = statutProjet.Value == StatutProjet.EnCours ? DateTime.Now.AddDays(-15) : null,
                     BilanCloture         = string.Empty,
                     LeconsApprises       = string.Empty,
@@ -302,6 +295,45 @@ namespace GestionProjects.Infrastructure.Persistence
                     EstSupprime          = false
                 };
                 db.Projets.Add(projet);
+            }
+        }
+
+        private static int CalculerPourcentageDemo(PhaseProjet phaseProjet, StatutProjet statutProjet)
+        {
+            if (statutProjet == StatutProjet.NonDemarre)
+                return 0;
+
+            if (statutProjet == StatutProjet.Cloture)
+                return 100;
+
+            if (statutProjet == StatutProjet.Annule)
+                return 0;
+
+            return phaseProjet switch
+            {
+                PhaseProjet.AnalyseClarification => 10,
+                PhaseProjet.PlanificationValidation => 25,
+                PhaseProjet.ExecutionSuivi => 55,
+                PhaseProjet.UatMep => 80,
+                PhaseProjet.ClotureLeconsApprises => 95,
+                _ => 0
+            };
+        }
+
+        private static async Task NormaliserProjetsNonDemarresAsync(ApplicationDbContext db)
+        {
+            var projets = await db.Projets
+                .Where(p => !p.EstSupprime &&
+                            p.StatutProjet == StatutProjet.NonDemarre &&
+                            (p.PourcentageAvancement != 0 || p.DateDebut != null))
+                .ToListAsync();
+
+            foreach (var projet in projets)
+            {
+                projet.PourcentageAvancement = 0;
+                projet.DateDebut = null;
+                projet.DateModification = DateTime.Now;
+                projet.ModifiePar = "SEED_DEMO_NORMALISATION";
             }
         }
 

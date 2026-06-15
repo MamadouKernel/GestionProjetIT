@@ -98,7 +98,7 @@ public sealed class HomeDashboardService : IHomeDashboardService
                 stats.DemandesValidees = await _db.DemandesProjets.CountAsync(d => !d.EstSupprime && d.StatutDemande == StatutDemande.ValideeParDSI);
                 stats.DemandesRejetees = await _db.DemandesProjets.CountAsync(d => !d.EstSupprime && d.StatutDemande == StatutDemande.RejeteeParDSI);
                 stats.TotalLivrables = await _db.LivrablesProjets.CountAsync(l => !l.EstSupprime);
-                stats.TauxAvancementMoyen = projets.Any() ? projets.Average(p => p.PourcentageAvancement) : 0;
+                stats.TauxAvancementMoyen = projets.Any() ? projets.Average(p => p.PourcentageAvancementAffiche) : 0;
 
                 stats.ProjetsVerts = projets.Count(p => p.EtatProjet == EtatProjet.Vert);
                 stats.ProjetsOranges = projets.Count(p => p.EtatProjet == EtatProjet.Orange);
@@ -515,7 +515,7 @@ public sealed class HomeDashboardService : IHomeDashboardService
                     .Where(p => p.StatutProjet != StatutProjet.Cloture && p.StatutProjet != StatutProjet.Annule)
                     .OrderByDescending(p => p.EtatProjet == EtatProjet.Rouge)
                     .ThenByDescending(p => p.EtatProjet == EtatProjet.Orange)
-                    .ThenByDescending(p => p.PourcentageAvancement)
+                    .ThenByDescending(p => p.PourcentageAvancementAffiche)
                     .Take(5)
                     .Select(p =>
                     {
@@ -531,7 +531,7 @@ public sealed class HomeDashboardService : IHomeDashboardService
                             Direction = p.Direction?.Libelle ?? "Non dÃ©finie",
                             Phase = FormatPhaseProjet(p.PhaseActuelle),
                             Etat = FormatEtatProjet(p.EtatProjet),
-                            Avancement = p.PourcentageAvancement,
+                            Avancement = p.PourcentageAvancementAffiche,
                             Budget = budgetPrevisionnel.HasValue || budgetConsomme.HasValue
                                 ? $"{FormatMontantCompact(budgetConsomme)} / {FormatMontantCompact(budgetPrevisionnel)}"
                                 : "-",
@@ -563,7 +563,10 @@ public sealed class HomeDashboardService : IHomeDashboardService
                     stats.TotalAnomalies = await _db.Set<AnomalieProjet>().CountAsync();
                     stats.AnomaliesOuvertes = await _db.Set<AnomalieProjet>().CountAsync(a => a.Statut == StatutAnomalie.Ouverte);
                     stats.TotalLivrables = await _db.Set<LivrableProjet>().CountAsync();
-                    var avRSI = await _db.Projets.Where(p => p.PourcentageAvancement > 0).Select(p => p.PourcentageAvancement).ToListAsync();
+                    var avRSI = (await _db.Projets.ToListAsync())
+                        .Select(p => p.PourcentageAvancementAffiche)
+                        .Where(p => p > 0)
+                        .ToList();
                     stats.TauxAvancementMoyen = avRSI.Any() ? avRSI.Average() : 0;
 
                     // Graphiques RSI
@@ -612,7 +615,10 @@ public sealed class HomeDashboardService : IHomeDashboardService
                     stats.RisquesCritiques = await _db.Set<RisqueProjet>().CountAsync(r => r.Projet!.ChefProjetId == userId && r.Impact == ImpactRisque.Critique);
                     stats.AnomaliesOuvertes = await _db.Set<AnomalieProjet>().CountAsync(a => a.Projet!.ChefProjetId == userId && a.Statut == StatutAnomalie.Ouverte);
                     stats.TotalLivrables = await _db.Set<LivrableProjet>().CountAsync(l => l.Projet!.ChefProjetId == userId);
-                    var avCP = await _db.Projets.Where(p => p.ChefProjetId == userId && p.PourcentageAvancement > 0).Select(p => p.PourcentageAvancement).ToListAsync();
+                    var avCP = (await _db.Projets.Where(p => p.ChefProjetId == userId).ToListAsync())
+                        .Select(p => p.PourcentageAvancementAffiche)
+                        .Where(p => p > 0)
+                        .ToList();
                     stats.TauxAvancementMoyen = avCP.Any() ? avCP.Average() : 0;
 
                     // Graphiques ChefDeProjet

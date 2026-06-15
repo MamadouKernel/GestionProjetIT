@@ -221,6 +221,30 @@ public class ProjetTests : IDisposable
         projetMisAJour!.EtatProjet.Should().Be(etat);
     }
 
+    [Fact]
+    public void PourcentageAvancementAffiche_NonDemarre_DoitToujoursEtreZero()
+    {
+        var projet = new GestionProjects.Domain.Models.Projet
+        {
+            StatutProjet = StatutProjet.NonDemarre,
+            PourcentageAvancement = 10
+        };
+
+        projet.PourcentageAvancementAffiche.Should().Be(0);
+    }
+
+    [Fact]
+    public void PourcentageAvancementAffiche_Annule_NeDoitPasAfficherTermine()
+    {
+        var projet = new GestionProjects.Domain.Models.Projet
+        {
+            StatutProjet = StatutProjet.Annule,
+            PourcentageAvancement = 100
+        };
+
+        projet.PourcentageAvancementAffiche.Should().Be(99);
+    }
+
     /// <summary>
     /// UAT-07 et UAT-08: Tests des statuts de recette et MEP
     /// Criticité: Bloquante

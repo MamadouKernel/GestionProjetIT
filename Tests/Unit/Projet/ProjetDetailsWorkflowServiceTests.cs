@@ -81,6 +81,53 @@ public class ProjetDetailsWorkflowServiceTests
     }
 
     [Fact]
+    public async Task DemarrerProjet_NonDemarreAssigne_DoitPasserEnCoursSansAvancementArtificiel()
+    {
+        var (ctx, svc, audit) = CreateSut(nameof(DemarrerProjet_NonDemarreAssigne_DoitPasserEnCoursSansAvancementArtificiel));
+        var chefProjetId = Guid.NewGuid();
+        var projet = SeedProjet(ctx);
+        projet.ChefProjetId = chefProjetId;
+        projet.StatutProjet = StatutProjet.NonDemarre;
+        projet.PhaseActuelle = PhaseProjet.AnalyseClarification;
+        projet.PourcentageAvancement = 10;
+        await ctx.SaveChangesAsync();
+
+        var result = await svc.DemarrerProjetAsync(projet.Id, chefProjetId);
+
+        result.Succeeded.Should().BeTrue();
+        var reload = await ctx.Projets.FindAsync(projet.Id);
+        reload!.StatutProjet.Should().Be(StatutProjet.EnCours);
+        reload.PourcentageAvancement.Should().Be(0);
+        reload.DateDebut.Should().NotBeNull();
+
+        ctx.HistoriquePhasesProjets.Should().ContainSingle(h =>
+            h.ProjetId == projet.Id &&
+            h.Phase == PhaseProjet.AnalyseClarification &&
+            h.StatutProjet == StatutProjet.EnCours);
+
+        audit.Verify(a => a.LogActionAsync("DEMARRAGE_PROJET", "Projet", projet.Id,
+            It.IsAny<object?>(), It.IsAny<object?>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task DemarrerProjet_SansResponsableSolutionsIT_DoitRefuser()
+    {
+        var (ctx, svc, _) = CreateSut(nameof(DemarrerProjet_SansResponsableSolutionsIT_DoitRefuser));
+        var projet = SeedProjet(ctx);
+        projet.StatutProjet = StatutProjet.NonDemarre;
+        projet.PhaseActuelle = PhaseProjet.AnalyseClarification;
+        projet.ChefProjetId = null;
+        await ctx.SaveChangesAsync();
+
+        var result = await svc.DemarrerProjetAsync(projet.Id, Guid.NewGuid());
+
+        result.ErrorMessage.Should().Contain("ResponsableSolutionsIT");
+        var reload = await ctx.Projets.FindAsync(projet.Id);
+        reload!.StatutProjet.Should().Be(StatutProjet.NonDemarre);
+        reload.DateDebut.Should().BeNull();
+    }
+
+    [Fact]
     public async Task BuildDetails_PeutReassigner_ChargeLesChefsDeProjet()
     {
         var (ctx, svc, _) = CreateSut(nameof(BuildDetails_PeutReassigner_ChargeLesChefsDeProjet));
