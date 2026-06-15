@@ -53,16 +53,29 @@ public class DirectionAdminService : IDirectionAdminService
             .OrderBy(u => u.Nom).ThenBy(u => u.Prenoms)
             .ToListAsync();
 
+        // Set des Ids de direction ayant au moins un Directeur Metier actif.
+        // Une seule requete groupee : pas de N+1 cote vue.
+        var idsAffiches = paged.Items.Select(d => d.Id).ToList();
+        var avecDm = await _db.Utilisateurs
+            .Where(u => !u.EstSupprime &&
+                        u.DirectionId.HasValue &&
+                        idsAffiches.Contains(u.DirectionId.Value) &&
+                        u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == Domain.Enums.RoleUtilisateur.DirecteurMetier))
+            .Select(u => u.DirectionId!.Value)
+            .Distinct()
+            .ToListAsync();
+
         return new DirectionsListViewModel
         {
-            Directions = paged.Items,
-            DSIs       = dsis,
-            TotalCount = paged.TotalCount,
-            PageNumber = paged.PageNumber,
-            TotalPages = paged.TotalPages,
-            PageSize   = paged.PageSize,
-            Recherche  = recherche,
-            Statut     = statut
+            Directions       = paged.Items,
+            DSIs             = dsis,
+            DirectionsAvecDm = avecDm.ToHashSet(),
+            TotalCount       = paged.TotalCount,
+            PageNumber       = paged.PageNumber,
+            TotalPages       = paged.TotalPages,
+            PageSize         = paged.PageSize,
+            Recherche        = recherche,
+            Statut           = statut
         };
     }
 

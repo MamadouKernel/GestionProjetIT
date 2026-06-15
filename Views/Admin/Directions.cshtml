@@ -34,6 +34,24 @@
 
     @await Html.PartialAsync("_ValidationSummary")
 
+    @{
+        var directionsSansDm = Model.Directions
+            .Where(d => d.EstActive && !Model.DirectionsAvecDm.Contains(d.Id))
+            .ToList();
+    }
+    @if (directionsSansDm.Count > 0)
+    {
+        <div class="alert-modern alert-modern-warning mb-4">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <div>
+                <strong>@directionsSansDm.Count direction(s) active(s) sans Directeur Métier :</strong>
+                @string.Join(", ", directionsSansDm.Select(d => d.Libelle)).
+                Les demandes d'accès rattachées à ces directions sont bloquées
+                tant qu'aucun DM n'y est affecté (page <em>Utilisateurs</em> → assigner le rôle).
+            </div>
+        </div>
+    }
+
     <div class="admin-tabset nav nav-pills mb-4">
         <a asp-action="Users" class="nav-link">Utilisateurs</a>
         <a asp-action="ListeRoles" class="nav-link">Rôles</a>
@@ -118,6 +136,12 @@
                                     <td>
                                         <div class="table-inline-stack column">
                                             <span class="table-person-title">@direction.Libelle</span>
+                                            @if (direction.EstActive && !Model.DirectionsAvecDm.Contains(direction.Id))
+                                            {
+                                                <span class="badge-modern badge-modern-warning" title="Aucun Directeur Métier rattaché : les demandes d'accès vers cette direction sont bloquées.">
+                                                    <i class="bi bi-exclamation-triangle"></i> Aucun DM
+                                                </span>
+                                            }
                                         </div>
                                     </td>
                                     <td>
