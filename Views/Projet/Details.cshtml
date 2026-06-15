@@ -1,3 +1,4 @@
+@using GestionProjects.Domain.Enums
 @model GestionProjects.Application.ViewModels.Projet.ProjetDetailsViewModel
 @inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
 
@@ -127,48 +128,61 @@
     <!-- Navigation par onglets -->
     <div class="card-modern mb-4">
         <ul class="nav project-tabs">
+            @* Vue d'ensemble *@
             <li class="nav-item">
-                <a class="nav-link @(activeTab == "synthese" ? "active" : "")" 
+                <a class="nav-link @(activeTab == "synthese" ? "active" : "")"
                    href="@Url.Action("Details", new { id = projet.Id, tab = "synthese" })">
                     <i class="bi bi-speedometer2"></i> Synthèse
                 </a>
             </li>
+            @* Phases du cycle de vie, dans l'ordre (avec marqueur d'avancement) *@
             <li class="nav-item">
-                <a class="nav-link @(activeTab == "analyse" ? "active" : "")" 
+                <a class="nav-link @(activeTab == "analyse" ? "active" : "")"
                    href="@Url.Action("Details", new { id = projet.Id, tab = "analyse" })">
-                    <i class="bi bi-search"></i> Analyse
+                    <i class="bi bi-search"></i> Analyse @PhaseMarker(PhaseProjet.AnalyseClarification, projet.PhaseActuelle)
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link @(activeTab == "planification" ? "active" : "")" 
+                <a class="nav-link @(activeTab == "planification" ? "active" : "")"
                    href="@Url.Action("Details", new { id = projet.Id, tab = "planification" })">
-                    <i class="bi bi-calendar-check"></i> Planification
+                    <i class="bi bi-calendar-check"></i> Planification @PhaseMarker(PhaseProjet.PlanificationValidation, projet.PhaseActuelle)
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link @(activeTab == "execution" ? "active" : "")" 
+                <a class="nav-link @(activeTab == "execution" ? "active" : "")"
                    href="@Url.Action("Details", new { id = projet.Id, tab = "execution" })">
-                    <i class="bi bi-play-circle"></i> Exécution
+                    <i class="bi bi-play-circle"></i> Exécution @PhaseMarker(PhaseProjet.ExecutionSuivi, projet.PhaseActuelle)
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link @(activeTab == "uat" ? "active" : "")" 
+                <a class="nav-link @(activeTab == "uat" ? "active" : "")"
                    href="@Url.Action("Details", new { id = projet.Id, tab = "uat" })">
-                    <i class="bi bi-check2-square"></i> UAT & MEP
+                    <i class="bi bi-check2-square"></i> UAT & MEP @PhaseMarker(PhaseProjet.UatMep, projet.PhaseActuelle)
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "cloture" ? "active" : "")"
+                   href="@Url.Action("Details", new { id = projet.Id, tab = "cloture" })">
+                    <i class="bi bi-flag"></i> Clôture @PhaseMarker(PhaseProjet.ClotureLeconsApprises, projet.PhaseActuelle)
+                </a>
+            </li>
+            @* Outils transverses *@
             <li class="nav-item">
                 <a class="nav-link @(activeTab == "collaboration" ? "active" : "")"
                    href="@Url.Action("Details", new { id = projet.Id, tab = "collaboration" })">
                     <i class="bi bi-people"></i> Collaboration
                 </a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link @(activeTab == "cloture" ? "active" : "")"
-                   href="@Url.Action("Details", new { id = projet.Id, tab = "cloture" })">
-                    <i class="bi bi-flag"></i> Clôture
-                </a>
-            </li>
+            @if (canAccessCharges && ui.CanOpenChargesTab)
+            {
+                <li class="nav-item">
+                    <a class="nav-link @(activeTab == "charges" ? "active" : "")"
+                       href="@Url.Action("Charges", new { id = projet.Id })">
+                        <i class="bi bi-clock-history"></i> Charges
+                    </a>
+                </li>
+            }
+            @* Gouvernance : maîtrise du changement et de la valeur *@
             <li class="nav-item">
                 <a class="nav-link @(activeTab == "avenants" ? "active" : "")"
                    href="@Url.Action("Details", new { id = projet.Id, tab = "avenants" })">
@@ -181,17 +195,9 @@
                     <i class="bi bi-graph-up-arrow"></i> Bénéfices
                 </a>
             </li>
-            @if (canAccessCharges && ui.CanOpenChargesTab)
-            {
-                <li class="nav-item">
-                    <a class="nav-link @(activeTab == "charges" ? "active" : "")" 
-                       href="@Url.Action("Charges", new { id = projet.Id })">
-                        <i class="bi bi-clock-history"></i> Charges
-                    </a>
-                </li>
-            }
+            @* Traçabilité *@
             <li class="nav-item">
-                <a class="nav-link @(activeTab == "historique" ? "active" : "")" 
+                <a class="nav-link @(activeTab == "historique" ? "active" : "")"
                    href="@Url.Action("Details", new { id = projet.Id, tab = "historique" })">
                     <i class="bi bi-clock-history"></i> Historique
                 </a>
@@ -261,6 +267,16 @@
 }
 
 @functions {
+    // Marqueur d'avancement de phase sur les onglets : phase passée (✓), en cours (●), à venir (rien).
+    Microsoft.AspNetCore.Html.IHtmlContent PhaseMarker(PhaseProjet tabPhase, PhaseProjet current)
+    {
+        if ((int)tabPhase < (int)current)
+            return new Microsoft.AspNetCore.Html.HtmlString("<i class=\"bi bi-check-circle-fill\" style=\"color: var(--success); margin-left: .25rem;\" title=\"Phase terminée\"></i>");
+        if ((int)tabPhase == (int)current)
+            return new Microsoft.AspNetCore.Html.HtmlString("<i class=\"bi bi-record-circle-fill\" style=\"color: var(--primary-blue); margin-left: .25rem;\" title=\"Phase en cours\"></i>");
+        return Microsoft.AspNetCore.Html.HtmlString.Empty;
+    }
+
     string GetPhaseClass(GestionProjects.Domain.Enums.PhaseProjet phase)
     {
         return phase switch
