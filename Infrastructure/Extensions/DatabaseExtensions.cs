@@ -47,6 +47,48 @@ public static class DatabaseExtensions
     // Tous les blocs sont idempotents (IF NOT EXISTS).
     private static void ApplyCompatibilityPatches(ApplicationDbContext db)
     {
+        ExecutePatch(db, "AvenantsProjets", @"
+            IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE object_id=OBJECT_ID('AvenantsProjets') AND type='U')
+            BEGIN
+                CREATE TABLE [AvenantsProjets] (
+                    [Id] uniqueidentifier NOT NULL,
+                    [ProjetId] uniqueidentifier NOT NULL,
+                    [Numero] int NOT NULL,
+                    [Type] int NOT NULL,
+                    [Titre] nvarchar(4000) NOT NULL,
+                    [Justification] nvarchar(max) NOT NULL,
+                    [DescriptionPerimetre] nvarchar(max) NULL,
+                    [AncienBudget] decimal(18,2) NULL,
+                    [NouveauBudget] decimal(18,2) NULL,
+                    [AncienneDateFinPrevue] datetime2 NULL,
+                    [NouvelleDateFinPrevue] datetime2 NULL,
+                    [Statut] int NOT NULL,
+                    [DemandeParId] uniqueidentifier NOT NULL,
+                    [DateDemande] datetime2 NOT NULL,
+                    [ValideParDMId] uniqueidentifier NULL,
+                    [DateValidationDM] datetime2 NULL,
+                    [ValideParDSIId] uniqueidentifier NULL,
+                    [DateValidationDSI] datetime2 NULL,
+                    [CommentaireRejet] nvarchar(max) NOT NULL,
+                    [DateApplication] datetime2 NULL,
+                    [DateCreation] datetime2 NOT NULL,
+                    [CreePar] nvarchar(4000) NOT NULL,
+                    [DateModification] datetime2 NULL,
+                    [ModifiePar] nvarchar(4000) NULL,
+                    [EstSupprime] bit NOT NULL,
+                    CONSTRAINT [PK_AvenantsProjets] PRIMARY KEY ([Id]),
+                    CONSTRAINT [FK_AvenantsProjets_Projets] FOREIGN KEY ([ProjetId]) REFERENCES [Projets]([Id]) ON DELETE CASCADE,
+                    CONSTRAINT [FK_AvenantsProjets_Utilisateurs_DemandePar] FOREIGN KEY ([DemandeParId]) REFERENCES [Utilisateurs]([Id]),
+                    CONSTRAINT [FK_AvenantsProjets_Utilisateurs_ValideParDM] FOREIGN KEY ([ValideParDMId]) REFERENCES [Utilisateurs]([Id]),
+                    CONSTRAINT [FK_AvenantsProjets_Utilisateurs_ValideParDSI] FOREIGN KEY ([ValideParDSIId]) REFERENCES [Utilisateurs]([Id])
+                );
+                CREATE INDEX [IX_AvenantsProjets_ProjetId] ON [AvenantsProjets]([ProjetId]);
+                CREATE INDEX [IX_AvenantsProjets_DemandeParId] ON [AvenantsProjets]([DemandeParId]);
+                CREATE INDEX [IX_AvenantsProjets_ValideParDMId] ON [AvenantsProjets]([ValideParDMId]);
+                CREATE INDEX [IX_AvenantsProjets_ValideParDSIId] ON [AvenantsProjets]([ValideParDSIId]);
+            END
+        ");
+
         ExecutePatch(db, "SignaturesCharte", @"
             IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID('CharteProjets') AND name='SignatureImageCP')
                 ALTER TABLE [CharteProjets] ADD [SignatureImageCP] nvarchar(max) NULL;

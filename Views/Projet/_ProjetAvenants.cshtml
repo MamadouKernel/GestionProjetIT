@@ -1,0 +1,270 @@
+@using GestionProjects.Domain.Enums
+@model GestionProjects.Application.ViewModels.Projet.ProjetDetailsViewModel
+@inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
+
+@{
+    var projet = Model.Projet;
+    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, projet);
+
+    var projetActif = projet.StatutProjet != StatutProjet.Cloture && projet.StatutProjet != StatutProjet.Annule;
+    var canCreer = (ui.IsAssignedChefProjet || ui.HasDsiGovernanceAccess) && projetActif;
+    var canValiderDM = ui.HasDmGovernanceAccess && ui.IsProjectSponsor && !ui.IsReadOnly;
+    var canValiderDSI = ui.HasDsiGovernanceAccess;
+    var canRejeter = canValiderDSI || canValiderDM;
+}
+
+<div class="phase-shell">
+    <section class="phase-hero">
+        <div class="phase-hero-top">
+            <div>
+                <div class="phase-eyebrow">
+                    <i class="bi bi-file-earmark-diff"></i>
+                    Gestion du changement
+                </div>
+                <h3 class="phase-title">Avenants au projet</h3>
+                <p class="phase-subtitle">
+                    Tout changement de périmètre, de budget ou de délai après validation de la charte et du planning
+                    passe par un avenant tracé, validé par le Métier puis par la DSI (dont la validation applique le changement).
+                </p>
+            </div>
+            <div class="phase-action-row">
+                @if (canCreer)
+                {
+                    <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#creerAvenantModal">
+                        <i class="bi bi-plus-circle"></i>
+                        Nouvel avenant
+                    </button>
+                }
+            </div>
+        </div>
+    </section>
+
+    @if (!projetActif)
+    {
+        <div class="alert-modern alert-modern-info mb-4">
+            <i class="bi bi-info-circle-fill"></i>
+            <div>Le projet est clôturé ou annulé : aucun nouvel avenant ne peut être créé.</div>
+        </div>
+    }
+
+    <section class="phase-panel">
+        @if (Model.Avenants.Any())
+        {
+            <div class="record-stack">
+                @foreach (var avenant in Model.Avenants)
+                {
+                    <article class="record-card">
+                        <div class="record-card-header">
+                            <div>
+                                <div class="record-card-title">
+                                    AV-@avenant.Numero.ToString("D2") · @avenant.Titre
+                                    <span class="badge-modern badge-modern-info">@GetTypeLabel(avenant.Type)</span>
+                                    <span class="badge-modern badge-modern-@GetStatutClass(avenant.Statut)">@GetStatutLabel(avenant.Statut)</span>
+                                </div>
+                                <div class="record-card-subtitle">
+                                    Demandé par @avenant.DemandePar?.Nom @avenant.DemandePar?.Prenoms le @avenant.DateDemande.ToString("dd/MM/yyyy")
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="record-card-note">
+                            <strong>Justification :</strong> @avenant.Justification
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(avenant.DescriptionPerimetre))
+                        {
+                            <div class="record-card-note">
+                                <strong>Changement de périmètre :</strong> @avenant.DescriptionPerimetre
+                            </div>
+                        }
+                        @if (avenant.NouveauBudget.HasValue)
+                        {
+                            <div class="record-card-note">
+                                <strong>Budget :</strong>
+                                @(avenant.AncienBudget?.ToString("N0") ?? "—") → @avenant.NouveauBudget.Value.ToString("N0")
+                            </div>
+                        }
+                        @if (avenant.NouvelleDateFinPrevue.HasValue)
+                        {
+                            <div class="record-card-note">
+                                <strong>Date de fin prévue :</strong>
+                                @(avenant.AncienneDateFinPrevue?.ToString("dd/MM/yyyy") ?? "—") → @avenant.NouvelleDateFinPrevue.Value.ToString("dd/MM/yyyy")
+                            </div>
+                        }
+
+                        <div class="record-card-note">
+                            <strong>Circuit :</strong>
+                            @if (avenant.DateValidationDM.HasValue)
+                            {
+                                <span class="badge-modern badge-modern-success"><i class="bi bi-check-circle"></i> Métier @avenant.DateValidationDM.Value.ToString("dd/MM/yyyy")</span>
+                            }
+                            else
+                            {
+                                <span class="badge-modern badge-modern-warning"><i class="bi bi-clock"></i> Métier en attente</span>
+                            }
+                            @if (avenant.DateValidationDSI.HasValue)
+                            {
+                                <span class="badge-modern badge-modern-success"><i class="bi bi-check-circle"></i> DSI @avenant.DateValidationDSI.Value.ToString("dd/MM/yyyy")</span>
+                            }
+                            else if (avenant.Statut != StatutAvenant.Rejete)
+                            {
+                                <span class="badge-modern badge-modern-warning"><i class="bi bi-clock"></i> DSI en attente</span>
+                            }
+                        </div>
+
+                        @if (avenant.Statut == StatutAvenant.Rejete && !string.IsNullOrWhiteSpace(avenant.CommentaireRejet))
+                        {
+                            <div class="record-card-note">
+                                <strong>Motif de rejet :</strong> @avenant.CommentaireRejet
+                            </div>
+                        }
+
+                        <div class="phase-action-row" style="margin-top: .75rem;">
+                            @if (avenant.Statut == StatutAvenant.EnAttenteValidationDM && canValiderDM)
+                            {
+                                <form asp-action="ValiderAvenantDM" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@projet.Id" />
+                                    <input type="hidden" name="avenantId" value="@avenant.Id" />
+                                    <button type="submit" class="btn-modern btn-modern-primary">
+                                        <i class="bi bi-check-circle"></i> Valider (Métier)
+                                    </button>
+                                </form>
+                            }
+                            @if (avenant.Statut == StatutAvenant.EnAttenteValidationDSI && canValiderDSI)
+                            {
+                                <form asp-action="ValiderAvenantDSI" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@projet.Id" />
+                                    <input type="hidden" name="avenantId" value="@avenant.Id" />
+                                    <button type="submit" class="btn-modern btn-modern-primary">
+                                        <i class="bi bi-check2-all"></i> Valider et appliquer (DSI)
+                                    </button>
+                                </form>
+                            }
+                            @if ((avenant.Statut == StatutAvenant.EnAttenteValidationDM || avenant.Statut == StatutAvenant.EnAttenteValidationDSI) && canRejeter)
+                            {
+                                <button type="button" class="btn-modern btn-modern-warning" data-bs-toggle="modal" data-bs-target="#rejeterAvenantModal_@avenant.Id">
+                                    <i class="bi bi-x-circle"></i> Rejeter
+                                </button>
+
+                                <div class="modal fade" id="rejeterAvenantModal_@avenant.Id" tabindex="-1">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content app-modal-content">
+                                            <form asp-action="RejeterAvenant" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@projet.Id" />
+                                                <input type="hidden" name="avenantId" value="@avenant.Id" />
+                                                <div class="modal-header app-modal-header is-warning">
+                                                    <h5 class="modal-title app-modal-title"><i class="bi bi-x-circle"></i> Rejeter l'avenant AV-@avenant.Numero.ToString("D2")</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body app-modal-body">
+                                                    <div class="form-group-modern">
+                                                        <label class="form-label-modern">Motif du rejet *</label>
+                                                        <textarea name="commentaire" class="form-control-modern" rows="3" required placeholder="Expliquez la raison du rejet..."></textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer app-modal-footer">
+                                                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                    <button type="submit" class="btn-modern btn-modern-warning"><i class="bi bi-x-circle"></i> Rejeter</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="phase-empty">
+                <i class="bi bi-file-earmark-diff"></i>
+                <p>Aucun avenant pour le moment. Les changements de périmètre, budget ou délai validés apparaîtront ici.</p>
+            </div>
+        }
+    </section>
+</div>
+
+@if (canCreer)
+{
+    <div class="modal fade" id="creerAvenantModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content app-modal-content">
+                <form asp-action="CreerAvenant" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@projet.Id" />
+                    <div class="modal-header app-modal-header">
+                        <h5 class="modal-title app-modal-title"><i class="bi bi-file-earmark-diff"></i> Nouvel avenant</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body app-modal-body">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Type d'avenant *</label>
+                            <select name="type" class="form-control-modern" asp-items="Html.GetEnumSelectList<GestionProjects.Domain.Enums.TypeAvenant>()" required>
+                                <option value="">-- Sélectionner --</option>
+                            </select>
+                            <small class="app-modal-note">Renseignez la (les) section(s) correspondant au type choisi (Mixte = plusieurs).</small>
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Titre *</label>
+                            <input type="text" name="titre" class="form-control-modern" maxlength="200" required />
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Justification *</label>
+                            <textarea name="justification" class="form-control-modern" rows="3" required placeholder="Pourquoi ce changement est-il nécessaire ?"></textarea>
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Changement de périmètre (si Périmètre / Mixte)</label>
+                            <textarea name="descriptionPerimetre" class="form-control-modern" rows="2" placeholder="Décrivez ce qui entre ou sort du périmètre..."></textarea>
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Nouveau budget (si Budget / Mixte)</label>
+                            <input type="number" step="0.01" min="0" name="nouveauBudget" class="form-control-modern" />
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Nouvelle date de fin prévue (si Délai / Mixte)</label>
+                            <input type="date" name="nouvelleDateFinPrevue" class="form-control-modern" />
+                        </div>
+                    </div>
+                    <div class="modal-footer app-modal-footer">
+                        <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn-modern btn-modern-primary"><i class="bi bi-send"></i> Soumettre pour validation</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@functions {
+    string GetTypeLabel(GestionProjects.Domain.Enums.TypeAvenant type) => type switch
+    {
+        GestionProjects.Domain.Enums.TypeAvenant.Perimetre => "Périmètre",
+        GestionProjects.Domain.Enums.TypeAvenant.Budget => "Budget",
+        GestionProjects.Domain.Enums.TypeAvenant.Delai => "Délai",
+        GestionProjects.Domain.Enums.TypeAvenant.Mixte => "Mixte",
+        _ => type.ToString()
+    };
+
+    string GetStatutLabel(GestionProjects.Domain.Enums.StatutAvenant statut) => statut switch
+    {
+        GestionProjects.Domain.Enums.StatutAvenant.EnAttenteValidationDM => "En attente Métier",
+        GestionProjects.Domain.Enums.StatutAvenant.EnAttenteValidationDSI => "En attente DSI",
+        GestionProjects.Domain.Enums.StatutAvenant.Applique => "Appliqué",
+        GestionProjects.Domain.Enums.StatutAvenant.Rejete => "Rejeté",
+        _ => statut.ToString()
+    };
+
+    string GetStatutClass(GestionProjects.Domain.Enums.StatutAvenant statut) => statut switch
+    {
+        GestionProjects.Domain.Enums.StatutAvenant.EnAttenteValidationDM => "warning",
+        GestionProjects.Domain.Enums.StatutAvenant.EnAttenteValidationDSI => "info",
+        GestionProjects.Domain.Enums.StatutAvenant.Applique => "success",
+        GestionProjects.Domain.Enums.StatutAvenant.Rejete => "danger",
+        _ => "secondary"
+    };
+}

@@ -27,6 +27,9 @@ public class ProjetDetailsViewModel
     // Données onglet Historique
     public IEnumerable<AuditLog> AuditLogs { get; set; } = Enumerable.Empty<AuditLog>();
 
+    // Données onglet Avenants (gestion du changement)
+    public List<AvenantProjet> Avenants { get; set; } = new();
+
     // Données pour sélection du chef de projet (synthèse)
     public List<Utilisateur> ChefsProjet { get; set; } = new();
 }

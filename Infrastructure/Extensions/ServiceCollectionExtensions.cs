@@ -61,6 +61,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IClotureProjetWorkflowService, ClotureProjetWorkflowService>();
         services.AddScoped<ICharteProjetWorkflowService, CharteProjetWorkflowService>();
         services.AddScoped<IUatProjetWorkflowService, UatProjetWorkflowService>();
+        services.AddScoped<IAvenantProjetService, AvenantProjetService>();
 
         services.AddHttpClient("Teams")
             .ConfigureHttpClient(c => c.Timeout = TimeSpan.FromSeconds(10));

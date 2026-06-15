@@ -163,6 +163,12 @@
                     <i class="bi bi-flag"></i> Clôture
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "avenants" ? "active" : "")"
+                   href="@Url.Action("Details", new { id = projet.Id, tab = "avenants" })">
+                    <i class="bi bi-file-earmark-diff"></i> Avenants
+                </a>
+            </li>
             @if (canAccessCharges && ui.CanOpenChargesTab)
             {
                 <li class="nav-item">
@@ -209,6 +215,10 @@
     else if (activeTab == "cloture")
     {
         @await Html.PartialAsync("_ProjetCloture", Model)
+    }
+    else if (activeTab == "avenants")
+    {
+        @await Html.PartialAsync("_ProjetAvenants", Model)
     }
     else if (activeTab == "historique")
     {

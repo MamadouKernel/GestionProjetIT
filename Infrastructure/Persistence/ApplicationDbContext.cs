@@ -42,6 +42,7 @@ namespace GestionProjects.Infrastructure.Persistence
         public DbSet<AnomalieProjet> AnomaliesProjets { get; set; }
 
         public DbSet<DemandeClotureProjet> DemandesClotureProjets { get; set; }
+        public DbSet<AvenantProjet> AvenantsProjets { get; set; }
 
         public DbSet<DelegationValidationDSI> DelegationsValidationDSI { get; set; }
         public DbSet<DelegationChefProjet> DelegationsChefProjet { get; set; }
@@ -418,6 +419,39 @@ namespace GestionProjects.Infrastructure.Persistence
                 .WithMany()
                 .HasForeignKey(d => d.DemandeParId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // ---- Relations AvenantProjet (gestion du changement) ----
+            modelBuilder.Entity<AvenantProjet>()
+                .HasOne(a => a.Projet)
+                .WithMany(p => p.Avenants)
+                .HasForeignKey(a => a.ProjetId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<AvenantProjet>()
+                .HasOne(a => a.DemandePar)
+                .WithMany()
+                .HasForeignKey(a => a.DemandeParId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<AvenantProjet>()
+                .HasOne(a => a.ValideParDMUtilisateur)
+                .WithMany()
+                .HasForeignKey(a => a.ValideParDMId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<AvenantProjet>()
+                .HasOne(a => a.ValideParDSIUtilisateur)
+                .WithMany()
+                .HasForeignKey(a => a.ValideParDSIId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<AvenantProjet>()
+                .Property(a => a.AncienBudget)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<AvenantProjet>()
+                .Property(a => a.NouveauBudget)
+                .HasPrecision(18, 2);
 
             // Index pour améliorer les performances des requêtes de charges
             modelBuilder.Entity<ChargeProjet>()

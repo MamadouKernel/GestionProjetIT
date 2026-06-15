@@ -111,6 +111,7 @@ namespace GestionProjects.Domain.Models
         public ICollection<AnomalieProjet> Anomalies { get; set; } = new List<AnomalieProjet>();
         public ICollection<HistoriquePhaseProjet> HistoriquePhases { get; set; } = new List<HistoriquePhaseProjet>();
         public ICollection<DemandeClotureProjet> DemandesCloture { get; set; } = new List<DemandeClotureProjet>();
+        public ICollection<AvenantProjet> Avenants { get; set; } = new List<AvenantProjet>();
         public ICollection<ChargeProjet> Charges { get; set; } = new List<ChargeProjet>();
         public ICollection<TachePlanningProjet> TachesPlanning { get; set; } = new List<TachePlanningProjet>();
         public ICollection<LigneRaciProjet> LignesRaci { get; set; } = new List<LigneRaciProjet>();

@@ -186,6 +186,7 @@ namespace GestionProjects.Infrastructure.Services
             List<DossierSignatureProjet> dossiersSignature = new();
             IEnumerable<AuditLog> auditLogs = Enumerable.Empty<AuditLog>();
             List<Utilisateur> chefsProjet = new();
+            List<AvenantProjet> avenants = new();
 
             if (tab == "uat")
             {
@@ -225,6 +226,17 @@ namespace GestionProjects.Infrastructure.Services
                     .Include(a => a.Utilisateur)
                     .Where(a => a.Entite == "Projet" && a.EntiteId == id.ToString())
                     .OrderByDescending(a => a.DateAction)
+                    .ToListAsync();
+            }
+
+            if (tab == "avenants")
+            {
+                avenants = await _db.AvenantsProjets
+                    .Include(a => a.DemandePar)
+                    .Include(a => a.ValideParDMUtilisateur)
+                    .Include(a => a.ValideParDSIUtilisateur)
+                    .Where(a => a.ProjetId == id && !a.EstSupprime)
+                    .OrderByDescending(a => a.Numero)
                     .ToListAsync();
             }
 
@@ -289,6 +301,7 @@ namespace GestionProjects.Infrastructure.Services
                 DossiersSignature  = dossiersSignature,
                 AuditLogs          = auditLogs,
                 ChefsProjet        = chefsProjet,
+                Avenants           = avenants,
             };
         }
     }
