@@ -68,6 +68,32 @@ BEGIN
 END
 GO
 
+/* 3b. Table des jetons d'initialisation de mot de passe (utilisée par DemandesAcces/Approuver) */
+IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE object_id=OBJECT_ID('JetonsInitialisationMotDePasse') AND type='U')
+BEGIN
+    CREATE TABLE [JetonsInitialisationMotDePasse] (
+        [Id] uniqueidentifier NOT NULL,
+        [UtilisateurId] uniqueidentifier NOT NULL,
+        [TokenHash] nvarchar(450) NOT NULL,
+        [DateExpiration] datetime2 NOT NULL,
+        [DateUtilisation] datetime2 NULL,
+        [UtiliseDepuisIp] nvarchar(max) NULL,
+        [DateCreation] datetime2 NOT NULL,
+        [CreePar] nvarchar(max) NOT NULL,
+        [DateModification] datetime2 NULL,
+        [ModifiePar] nvarchar(max) NULL,
+        [EstSupprime] bit NOT NULL,
+        CONSTRAINT [PK_JetonsInitialisationMotDePasse] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_JetonsInitialisationMotDePasse_Utilisateurs_UtilisateurId]
+            FOREIGN KEY ([UtilisateurId]) REFERENCES [Utilisateurs]([Id]) ON DELETE CASCADE
+    );
+    CREATE UNIQUE INDEX [IX_JetonsInitialisationMotDePasse_TokenHash]
+        ON [JetonsInitialisationMotDePasse]([TokenHash]);
+    CREATE INDEX [IX_JetonsInitialisationMotDePasse_UtilisateurId_DateUtilisation_EstSupprime]
+        ON [JetonsInitialisationMotDePasse]([UtilisateurId], [DateUtilisation], [EstSupprime]);
+END
+GO
+
 /* 4. Table des bénéfices (réalisation de la valeur) */
 IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE object_id=OBJECT_ID('BeneficesProjets') AND type='U')
 BEGIN
