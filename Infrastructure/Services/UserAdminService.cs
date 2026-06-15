@@ -7,6 +7,7 @@ using GestionProjects.Application.ViewModels.Admin;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace GestionProjects.Infrastructure.Services;
 
@@ -16,17 +17,26 @@ public class UserAdminService : IUserAdminService
     private readonly ICurrentUserService _currentUser;
     private readonly IAuditService _audit;
     private readonly IUtilisateurService _utilisateurService;
+    private readonly IPasswordSetupTokenService _passwordSetupTokenService;
+    private readonly IEmailService _emailService;
+    private readonly IConfiguration _configuration;
 
     public UserAdminService(
         ApplicationDbContext db,
         ICurrentUserService currentUser,
         IAuditService audit,
-        IUtilisateurService utilisateurService)
+        IUtilisateurService utilisateurService,
+        IPasswordSetupTokenService passwordSetupTokenService,
+        IEmailService emailService,
+        IConfiguration configuration)
     {
         _db = db;
         _currentUser = currentUser;
         _audit = audit;
         _utilisateurService = utilisateurService;
+        _passwordSetupTokenService = passwordSetupTokenService;
+        _emailService = emailService;
+        _configuration = configuration;
     }
 
     public async Task<UsersListViewModel> GetListAsync(string? recherche, Guid? directionId, RoleUtilisateur? role, int page, int pageSize)
@@ -237,5 +247,46 @@ public class UserAdminService : IUserAdminService
             new { user.Matricule });
 
         return OperationResult.Success("Mot de passe réinitialisé avec succès.");
+    }
+
+    public async Task<OperationResult> RenvoyerLienActivationAsync(Guid id)
+    {
+        var user = await _db.Utilisateurs.FirstOrDefaultAsync(u => u.Id == id && !u.EstSupprime);
+        if (user == null)
+            return OperationResult.NotFound();
+
+        if (string.IsNullOrWhiteSpace(user.Email))
+            return OperationResult.Invalid("Email", "L'utilisateur n'a pas d'adresse email valide.");
+
+        // Invalider les jetons précédents non utilisés (soft-delete) pour ne garder qu'un lien actif.
+        var anciensJetons = await _db.JetonsInitialisationMotDePasse
+            .Where(j => j.UtilisateurId == id && !j.EstSupprime && j.DateUtilisation == null)
+            .ToListAsync();
+        foreach (var j in anciensJetons)
+        {
+            j.EstSupprime      = true;
+            j.DateModification = DateTime.Now;
+            j.ModifiePar       = _currentUser.Matricule;
+        }
+
+        var jeton = await _passwordSetupTokenService.CreerAsync(user.Id, _currentUser.Matricule ?? "SYSTEM");
+        await _db.SaveChangesAsync();
+
+        var lien = BuildActivationLink(user.Id, jeton.Token);
+        var nomComplet = $"{user.Prenoms} {user.Nom}".Trim();
+        await _emailService.EnvoyerActivationCompteAsync(
+            user.Email, nomComplet, user.Matricule, lien, jeton.DateExpiration);
+
+        await _audit.LogActionAsync("RENVOI_LIEN_ACTIVATION", "Utilisateur", user.Id,
+            new { user.Matricule, user.Email });
+
+        return OperationResult.Success($"Lien d'activation renvoyé à {user.Email}.");
+    }
+
+    private string BuildActivationLink(Guid utilisateurId, string token)
+    {
+        var baseUrl = (_configuration["SmtpSettings:BaseUrl"] ?? string.Empty).Trim().TrimEnd('/');
+        var path = $"/Account/InitialiserMotDePasse?utilisateurId={utilisateurId}&token={Uri.EscapeDataString(token)}";
+        return string.IsNullOrWhiteSpace(baseUrl) ? path : $"{baseUrl}{path}";
     }
 }

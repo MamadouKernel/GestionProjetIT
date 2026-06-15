@@ -297,6 +297,19 @@
                                                     aria-label="Réinitialiser le mot de passe">
                                                 <i class="bi bi-key"></i>
                                             </button>
+                                            <form asp-action="RenvoyerLienActivation"
+                                                  asp-route-id="@user.Id"
+                                                  method="post"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('Renvoyer un nouveau lien d'activation à @user.Email ? Les anciens liens non utilisés seront invalidés.');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit"
+                                                        class="btn-modern btn-modern-secondary btn-icon"
+                                                        title="Renvoyer le lien d'activation par email"
+                                                        aria-label="Renvoyer le lien d'activation par email">
+                                                    <i class="bi bi-envelope-arrow-up"></i>
+                                                </button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>

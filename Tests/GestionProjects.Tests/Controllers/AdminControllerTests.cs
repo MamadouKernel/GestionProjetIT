@@ -63,8 +63,17 @@ namespace GestionProjects.Tests.Controllers
                 _db, _currentUserMock.Object, _auditMock.Object);
             var serviceService = new ServiceAdminService(
                 _db, _currentUserMock.Object, _auditMock.Object);
+            var passwordSetupTokenMock = new Mock<IPasswordSetupTokenService>();
+            var emailMock = new Mock<IEmailService>();
+            var userAdminConfig = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["SmtpSettings:BaseUrl"] = "http://localhost"
+                })
+                .Build();
             var userService = new UserAdminService(
-                _db, _currentUserMock.Object, _auditMock.Object, _utilisateurMock.Object);
+                _db, _currentUserMock.Object, _auditMock.Object, _utilisateurMock.Object,
+                passwordSetupTokenMock.Object, emailMock.Object, userAdminConfig);
             var roleService = new RoleAdminService(
                 _db, _auditMock.Object, _utilisateurMock.Object);
             var parametreService = new ParametreAdminService(

@@ -18,4 +18,10 @@ public interface IUserAdminService
     Task<OperationResult> UpdateAsync(UpdateUserInput input);
     Task<OperationResult> DeleteAsync(Guid id);
     Task<OperationResult> ResetPasswordAsync(Guid id, string? nouveauMotDePasse);
+
+    /// <summary>
+    /// Régénère un jeton d'activation et renvoie l'email d'activation à l'utilisateur.
+    /// Invalide d'abord les jetons précédents non utilisés (soft-delete).
+    /// </summary>
+    Task<OperationResult> RenvoyerLienActivationAsync(Guid id);
 }

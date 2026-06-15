@@ -65,6 +65,23 @@ namespace GestionProjects.Controllers
             return RedirectToAction(nameof(Users));
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RenvoyerLienActivation(Guid id)
+        {
+            var result = await _userService.RenvoyerLienActivationAsync(id);
+
+            if (result.IsNotFound)
+                return NotFound();
+
+            if (result.Succeeded)
+                TempData["Success"] = result.SuccessMessage;
+            else
+                TempData["Error"] = result.Errors.FirstOrDefault()?.Message ?? "Echec du renvoi du lien d'activation.";
+
+            return RedirectToAction(nameof(Users));
+        }
+
         // ── Helpers HTTP (présentation uniquement) ────────────────────────────
         private async Task<IActionResult> HandleUserResultAsync(OperationResult result)
         {
