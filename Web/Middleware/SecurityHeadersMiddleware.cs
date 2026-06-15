@@ -39,7 +39,9 @@ namespace GestionProjects.Web.Middleware
                     context.Response.Headers["Content-Security-Policy"] =
                         "default-src 'self'; " +
                         $"script-src 'self' 'nonce-{nonce}'; " +
-                        $"style-src 'self' 'nonce-{nonce}'; " +
+                        // Styles inline autorisés : un nonce ne couvre pas les attributs style="" (Razor/SVG en
+                        // utilisent), et le risque XSS via CSS est faible. Le nonce reste sur les scripts.
+                        "style-src 'self' 'unsafe-inline'; " +
                         "img-src 'self' data:; " +
                         "font-src 'self'; " +
                         "connect-src 'self'; " +
