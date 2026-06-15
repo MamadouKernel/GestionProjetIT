@@ -153,4 +153,57 @@ public class ProjetDetailsWorkflowServiceTests
         vmAvec.ChefsProjet.Should().ContainSingle(u => u.Id == chef.Id);
         vmSans.ChefsProjet.Should().BeEmpty();
     }
+
+    [Fact]
+    public async Task Suspendre_ProjetEnCours_PasseEnSuspenduAvecMotif()
+    {
+        var (ctx, svc, audit) = CreateSut(nameof(Suspendre_ProjetEnCours_PasseEnSuspenduAvecMotif));
+        var projet = SeedProjet(ctx);
+        projet.StatutProjet = StatutProjet.EnCours;
+        await ctx.SaveChangesAsync();
+
+        var result = await svc.SuspendreProjetAsync(projet.Id, Guid.NewGuid(), "Gel budgetaire");
+
+        result.Succeeded.Should().BeTrue();
+        var reload = await ctx.Projets.FindAsync(projet.Id);
+        reload!.StatutProjet.Should().Be(StatutProjet.Suspendu);
+        reload.MotifSuspension.Should().Be("Gel budgetaire");
+        reload.DateSuspension.Should().NotBeNull();
+        audit.Verify(a => a.LogActionAsync("SUSPENSION_PROJET", "Projet", projet.Id,
+            It.IsAny<object?>(), It.IsAny<object?>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Suspendre_RefuseSiPasEnCoursOuSansMotif()
+    {
+        var (ctx, svc, _) = CreateSut(nameof(Suspendre_RefuseSiPasEnCoursOuSansMotif));
+        var projet = SeedProjet(ctx);
+        projet.StatutProjet = StatutProjet.NonDemarre;
+        await ctx.SaveChangesAsync();
+
+        (await svc.SuspendreProjetAsync(projet.Id, Guid.NewGuid(), "motif")).ErrorMessage.Should().NotBeNullOrWhiteSpace();
+
+        projet.StatutProjet = StatutProjet.EnCours;
+        await ctx.SaveChangesAsync();
+        (await svc.SuspendreProjetAsync(projet.Id, Guid.NewGuid(), "   ")).ErrorMessage.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
+    public async Task Reprendre_ProjetSuspendu_RepasseEnCours()
+    {
+        var (ctx, svc, _) = CreateSut(nameof(Reprendre_ProjetSuspendu_RepasseEnCours));
+        var projet = SeedProjet(ctx);
+        projet.StatutProjet = StatutProjet.Suspendu;
+        projet.MotifSuspension = "pause";
+        projet.DateSuspension = DateTime.Now;
+        await ctx.SaveChangesAsync();
+
+        var result = await svc.ReprendreProjetAsync(projet.Id, Guid.NewGuid());
+
+        result.Succeeded.Should().BeTrue();
+        var reload = await ctx.Projets.FindAsync(projet.Id);
+        reload!.StatutProjet.Should().Be(StatutProjet.EnCours);
+        reload.MotifSuspension.Should().BeNull();
+        reload.DateSuspension.Should().BeNull();
+    }
 }

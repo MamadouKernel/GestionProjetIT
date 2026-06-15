@@ -25,6 +25,13 @@ namespace GestionProjects.Application.Common.Interfaces
         Task<WorkflowResult> DemarrerProjetAsync(Guid projetId, Guid userId);
 
         /// <summary>
+        /// Suspend un projet en cours (mise en pause maîtrisée) avec un motif obligatoire,
+        /// et le repasse en cours via la reprise. Tient l'historique de phase.
+        /// </summary>
+        Task<WorkflowResult> SuspendreProjetAsync(Guid projetId, Guid userId, string motif);
+        Task<WorkflowResult> ReprendreProjetAsync(Guid projetId, Guid userId);
+
+        /// <summary>
         /// Assemble le ProjetDetailsViewModel : chargements conditionnels par onglet,
         /// liste des chefs de projet réassignables et audit de prise en charge.
         /// Le contrôleur garde l'autorisation (BuildProjectUi) et le recalcul d'avancement ;

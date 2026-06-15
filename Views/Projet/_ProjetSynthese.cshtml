@@ -67,6 +67,20 @@
         </div>
     </section>
 
+    @if (projet.StatutProjet == StatutProjet.Suspendu)
+    {
+        <div class="alert-modern alert-modern-warning mb-4">
+            <i class="bi bi-pause-circle-fill"></i>
+            <div>
+                <strong>Projet suspendu</strong>@(projet.DateSuspension.HasValue ? $" depuis le {projet.DateSuspension.Value:dd/MM/yyyy}" : "")
+                @if (!string.IsNullOrWhiteSpace(projet.MotifSuspension))
+                {
+                    <text> — Motif : @projet.MotifSuspension</text>
+                }
+            </div>
+        </div>
+    }
+
     <div class="phase-grid">
         <section class="phase-panel">
                 <div class="phase-section-header">
@@ -154,6 +168,24 @@
                         <i class="bi bi-arrow-repeat"></i>
                         Changer la phase
                     </button>
+                }
+                @if (ui.CanChangePhase && projet.StatutProjet == GestionProjects.Domain.Enums.StatutProjet.EnCours)
+                {
+                    <button type="button" class="btn-modern btn-modern-warning" data-bs-toggle="modal" data-bs-target="#suspendreProjetModal">
+                        <i class="bi bi-pause-circle"></i>
+                        Suspendre
+                    </button>
+                }
+                @if (ui.CanChangePhase && projet.StatutProjet == GestionProjects.Domain.Enums.StatutProjet.Suspendu)
+                {
+                    <form asp-action="ReprendreProjet" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@projet.Id" />
+                        <button type="submit" class="btn-modern btn-modern-primary">
+                            <i class="bi bi-play-circle"></i>
+                            Reprendre
+                        </button>
+                    </form>
                 }
                 @if (ui.CanForceStatus && projet.StatutProjet != GestionProjects.Domain.Enums.StatutProjet.Cloture)
                 {
@@ -448,6 +480,41 @@
                             <i class="bi bi-exclamation-triangle"></i>
                             Forcer le statut
                         </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ui.CanChangePhase && projet.StatutProjet == StatutProjet.EnCours)
+{
+    <div class="modal fade" id="suspendreProjetModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content app-modal-content">
+                <form asp-action="SuspendreProjet" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@projet.Id" />
+                    <div class="modal-header app-modal-header is-warning">
+                        <h5 class="modal-title app-modal-title">
+                            <i class="bi bi-pause-circle"></i>
+                            Suspendre le projet
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body app-modal-body">
+                        <div class="alert-modern alert-modern-info document-alert-tight">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <div>Le projet passera en statut « Suspendu ». Il pourra être repris à tout moment.</div>
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Motif de la suspension *</label>
+                            <textarea name="motif" class="form-control-modern" rows="3" required placeholder="Pourquoi le projet est-il mis en pause ? (gel budgétaire, attente d'arbitrage, dépendance externe...)"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer app-modal-footer">
+                        <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn-modern btn-modern-warning"><i class="bi bi-pause-circle"></i> Suspendre</button>
                     </div>
                 </form>
             </div>

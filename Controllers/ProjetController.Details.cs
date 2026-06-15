@@ -117,6 +117,58 @@ namespace GestionProjects.Controllers
             return RedirectToAction(nameof(Details), new { id, tab = "synthese" });
         }
 
+        // POST: Suspendre (mettre en pause) le projet
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
+        public async Task<IActionResult> SuspendreProjet(Guid id, string motif, [FromServices] IProjetDetailsWorkflowService detailsWorkflow)
+        {
+            var projet = await _db.Projets.FindAsync(id);
+            if (projet == null)
+                return NotFound();
+
+            var ui = await BuildProjectUiAsync(projet);
+            if (!ui.CanChangePhase)
+                return Forbid();
+
+            var result = await detailsWorkflow.SuspendreProjetAsync(id, User.GetUserIdOrThrow(), motif);
+            if (result.IsNotFound)
+                return NotFound();
+
+            if (result.ErrorMessage is not null)
+                TempData["Error"] = result.ErrorMessage;
+            else
+                TempData["Success"] = result.SuccessMessage;
+
+            return RedirectToAction(nameof(Details), new { id, tab = "synthese" });
+        }
+
+        // POST: Reprendre le projet suspendu
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
+        public async Task<IActionResult> ReprendreProjet(Guid id, [FromServices] IProjetDetailsWorkflowService detailsWorkflow)
+        {
+            var projet = await _db.Projets.FindAsync(id);
+            if (projet == null)
+                return NotFound();
+
+            var ui = await BuildProjectUiAsync(projet);
+            if (!ui.CanChangePhase)
+                return Forbid();
+
+            var result = await detailsWorkflow.ReprendreProjetAsync(id, User.GetUserIdOrThrow());
+            if (result.IsNotFound)
+                return NotFound();
+
+            if (result.ErrorMessage is not null)
+                TempData["Error"] = result.ErrorMessage;
+            else
+                TempData["Success"] = result.SuccessMessage;
+
+            return RedirectToAction(nameof(Details), new { id, tab = "synthese" });
+        }
+
         // POST: Valider Phase Analyse (Go/No-Go vers Planification)
         [HttpPost]
         [ValidateAntiForgeryToken]

@@ -169,6 +169,81 @@ namespace GestionProjects.Infrastructure.Services
             return WorkflowResult.Success("Projet demarre. L'avancement reste a 0% jusqu'a la production des premiers livrables.");
         }
 
+        public async Task<WorkflowResult> SuspendreProjetAsync(Guid projetId, Guid userId, string motif)
+        {
+            var projet = await _db.Projets.FirstOrDefaultAsync(p => p.Id == projetId);
+            if (projet == null)
+                return WorkflowResult.NotFound();
+
+            if (projet.StatutProjet != StatutProjet.EnCours)
+                return WorkflowResult.Error("Seul un projet en cours peut etre suspendu.");
+
+            if (string.IsNullOrWhiteSpace(motif))
+                return WorkflowResult.Error("Un motif de suspension est obligatoire.");
+
+            projet.StatutProjet = StatutProjet.Suspendu;
+            projet.MotifSuspension = motif.Trim();
+            projet.DateSuspension = DateTime.Now;
+            projet.DateModification = DateTime.Now;
+            projet.ModifiePar = _currentUserService.Matricule ?? "SYSTEM";
+
+            _db.HistoriquePhasesProjets.Add(new HistoriquePhaseProjet
+            {
+                Id = Guid.NewGuid(),
+                ProjetId = projet.Id,
+                Phase = projet.PhaseActuelle,
+                StatutProjet = projet.StatutProjet,
+                DateDebut = DateTime.Now,
+                ModifieParId = userId,
+                Commentaire = $"Projet suspendu : {projet.MotifSuspension}",
+                DateCreation = DateTime.Now,
+                CreePar = _currentUserService.Matricule ?? "SYSTEM"
+            });
+
+            await _db.SaveChangesAsync();
+
+            await _auditService.LogActionAsync("SUSPENSION_PROJET", "Projet", projet.Id,
+                null,
+                new { Motif = projet.MotifSuspension, projet.DateSuspension });
+
+            return WorkflowResult.Success("Projet suspendu. Il pourra etre repris ulterieurement.");
+        }
+
+        public async Task<WorkflowResult> ReprendreProjetAsync(Guid projetId, Guid userId)
+        {
+            var projet = await _db.Projets.FirstOrDefaultAsync(p => p.Id == projetId);
+            if (projet == null)
+                return WorkflowResult.NotFound();
+
+            if (projet.StatutProjet != StatutProjet.Suspendu)
+                return WorkflowResult.Error("Seul un projet suspendu peut etre repris.");
+
+            projet.StatutProjet = StatutProjet.EnCours;
+            projet.MotifSuspension = null;
+            projet.DateSuspension = null;
+            projet.DateModification = DateTime.Now;
+            projet.ModifiePar = _currentUserService.Matricule ?? "SYSTEM";
+
+            _db.HistoriquePhasesProjets.Add(new HistoriquePhaseProjet
+            {
+                Id = Guid.NewGuid(),
+                ProjetId = projet.Id,
+                Phase = projet.PhaseActuelle,
+                StatutProjet = projet.StatutProjet,
+                DateDebut = DateTime.Now,
+                ModifieParId = userId,
+                Commentaire = "Reprise du projet apres suspension",
+                DateCreation = DateTime.Now,
+                CreePar = _currentUserService.Matricule ?? "SYSTEM"
+            });
+
+            await _db.SaveChangesAsync();
+
+            await _auditService.LogActionAsync("REPRISE_PROJET", "Projet", projet.Id);
+
+            return WorkflowResult.Success("Projet repris. Il repasse en cours.");
+        }
+
         public async Task<ProjetDetailsViewModel> BuildDetailsViewModelAsync(
             Projet projet,
             Guid userId,

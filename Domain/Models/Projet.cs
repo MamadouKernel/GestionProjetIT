@@ -55,6 +55,10 @@ namespace GestionProjects.Domain.Models
         public DateTime? DateFinPrevue { get; set; }
         public DateTime? DateFinReelle { get; set; }
 
+        // Suspension (mise en pause maîtrisée : motif + date, repris ensuite)
+        public string? MotifSuspension { get; set; }
+        public DateTime? DateSuspension { get; set; }
+
         // Clôture — champs structurés (remplacent les anciens champs texte libres)
         public string? BilanCloture { get; set; }       // conservé pour rétro-compatibilité
         public string? LeconsApprises { get; set; }     // conservé pour rétro-compatibilité

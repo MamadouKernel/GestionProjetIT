@@ -89,6 +89,13 @@ public static class DatabaseExtensions
             END
         ");
 
+        ExecutePatch(db, "SuspensionProjet", @"
+            IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID('Projets') AND name='MotifSuspension')
+                ALTER TABLE [Projets] ADD [MotifSuspension] nvarchar(max) NULL;
+            IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID('Projets') AND name='DateSuspension')
+                ALTER TABLE [Projets] ADD [DateSuspension] datetime2 NULL;
+        ");
+
         ExecutePatch(db, "SignaturesCharte", @"
             IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID('CharteProjets') AND name='SignatureImageCP')
                 ALTER TABLE [CharteProjets] ADD [SignatureImageCP] nvarchar(max) NULL;
