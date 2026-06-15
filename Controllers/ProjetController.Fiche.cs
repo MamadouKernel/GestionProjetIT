@@ -549,6 +549,12 @@ namespace GestionProjects.Controllers
                 return RedirectToAction(nameof(Details), new { id, tab = "planification" });
             }
 
+            if (!projet.DateFinPrevue.HasValue)
+            {
+                TempData["Error"] = "Une date de fin prévue doit être renseignée (fiche projet ou planning des tâches) avant de valider la planification : elle fixe la baseline du projet.";
+                return RedirectToAction(nameof(Details), new { id, tab = "planification" });
+            }
+
             projet.PlanningValideParDSI = true;
             projet.DatePlanningValideParDSI = DateTime.Now;
 
