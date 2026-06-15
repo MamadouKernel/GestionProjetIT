@@ -203,8 +203,10 @@ public class AuthenticationTests : IDisposable
     [Fact]
     public async Task DemandeAcces_DoitCreerUneDemandeVisibleParAdmin()
     {
-        // Une direction active du seed est requise depuis qu'on impose le rattachement.
-        var directionId = (await _context.Directions.FirstAsync(d => d.EstActive && !d.EstSupprime)).Id;
+        // Une direction active AVEC Directeur Metier rattache est requise (le seed
+        // attache "Marie Yao" comme DM a la direction Finance).
+        var directionId = (await _context.Directions
+            .FirstAsync(d => d.EstActive && !d.EstSupprime && d.Code == "FIN")).Id;
 
         // Act
         var result = await _controller.DemandeAcces(

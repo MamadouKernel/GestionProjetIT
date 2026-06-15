@@ -62,6 +62,17 @@ public sealed class DemandeAccesWorkflowService : IDemandeAccesWorkflowService
             return DemandeAccesWorkflowResult.Error("La direction sélectionnée est invalide ou inactive.");
         }
 
+        // Un compte rattache a une direction sans Directeur Metier laisse le workflow
+        // d'approbation aveugle (personne a notifier / a faire valider) : on refuse net.
+        var directionADm = await _db.Utilisateurs.AnyAsync(u =>
+            !u.EstSupprime &&
+            u.DirectionId == input.DirectionId &&
+            u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.DirecteurMetier));
+        if (!directionADm)
+        {
+            return DemandeAccesWorkflowResult.Error("Cette direction n'a pas de Directeur Métier rattaché. Contactez la DSI pour qu'un DM y soit affecté avant de soumettre votre demande.");
+        }
+
         var nomNormalise = input.Nom.Trim();
         var prenomsNormalise = input.Prenoms.Trim();
         var emailNormalise = input.Email.Trim();

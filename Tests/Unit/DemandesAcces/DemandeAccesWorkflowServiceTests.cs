@@ -15,13 +15,31 @@ namespace GestionProjects.Tests.Unit.DemandesAcces;
 
 public sealed class DemandeAccesWorkflowServiceTests
 {
+    private static async Task<Guid> SeedDirectionAvecDmAsync(ApplicationDbContext db, string code = "DIR")
+    {
+        var directionId = Guid.NewGuid();
+        db.Directions.Add(new Direction { Id = directionId, Code = code, Libelle = $"Direction {code}", EstActive = true });
+        var dmId = Guid.NewGuid();
+        db.Utilisateurs.Add(new Utilisateur
+        {
+            Id = dmId, Matricule = $"DM-{code}", MotDePasse = "x",
+            Nom = "DM", Prenoms = code, Email = $"dm-{code}@cit.test",
+            DirectionId = directionId
+        });
+        db.UtilisateurRoles.Add(new UtilisateurRole
+        {
+            Id = Guid.NewGuid(), UtilisateurId = dmId, Role = RoleUtilisateur.DirecteurMetier,
+            DateDebut = DateTime.Now
+        });
+        await db.SaveChangesAsync();
+        return directionId;
+    }
+
     [Fact]
     public async Task SoumettreDemandeLocaleAsync_DoitCreerDemandeEtNotifierAdminIt()
     {
         await using var db = CreateDbContext();
-        var directionId = Guid.NewGuid();
-        db.Directions.Add(new Direction { Id = directionId, Code = "DIR", Libelle = "Direction Test", EstActive = true });
-        await db.SaveChangesAsync();
+        var directionId = await SeedDirectionAvecDmAsync(db);
         var fixture = CreateService(db);
 
         var result = await fixture.Service.SoumettreDemandeLocaleAsync(new SoumettreDemandeAccesLocaleInput(
@@ -59,11 +77,27 @@ public sealed class DemandeAccesWorkflowServiceTests
     }
 
     [Fact]
+    public async Task SoumettreDemandeLocaleAsync_DirectionSansDm_DoitRefuser()
+    {
+        await using var db = CreateDbContext();
+        var directionSansDmId = Guid.NewGuid();
+        db.Directions.Add(new Direction { Id = directionSansDmId, Code = "ORPHAN", Libelle = "Direction Orpheline", EstActive = true });
+        await db.SaveChangesAsync();
+        var fixture = CreateService(db);
+
+        var result = await fixture.Service.SoumettreDemandeLocaleAsync(new SoumettreDemandeAccesLocaleInput(
+            "Test", "Test", "test@cit.test", "T1", directionSansDmId, "Demandeur", null));
+
+        result.Succeeded.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("Directeur Métier");
+        (await db.DemandesAccesAzureAd.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
     public async Task SoumettreDemandeLocaleAsync_DoublonEnAttente_DoitRetournerInfoSansNotifier()
     {
         await using var db = CreateDbContext();
-        var directionId = Guid.NewGuid();
-        db.Directions.Add(new Direction { Id = directionId, Code = "DIR", Libelle = "Direction Test", EstActive = true });
+        var directionId = await SeedDirectionAvecDmAsync(db);
         db.DemandesAccesAzureAd.Add(CreateDemandeAcces(
             email: "raissa.kouadio@cit.test",
             matricule: "2414",

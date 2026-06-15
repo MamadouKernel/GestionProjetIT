@@ -113,7 +113,14 @@
                                 <option value="">Sélectionner votre direction</option>
                                 @foreach (var direction in Model.Directions)
                                 {
-                                    <option value="@direction.Id">@direction.Libelle</option>
+                                    if (direction.ADmActif)
+                                    {
+                                        <option value="@direction.Id">@direction.Libelle</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@direction.Id" disabled>@direction.Libelle (aucun Directeur Métier rattaché — contactez la DSI)</option>
+                                    }
                                 }
                             </select>
                             <small class="text-muted">Indispensable pour le rattachement organisationnel de votre compte.</small>

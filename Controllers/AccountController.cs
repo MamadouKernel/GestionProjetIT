@@ -526,12 +526,21 @@ namespace GestionProjects.Controllers
         private static async Task<GestionProjects.Application.ViewModels.Account.DemandeAccesViewModel> BuildDemandeAccesViewModel(
             GestionProjects.Infrastructure.Persistence.ApplicationDbContext db)
         {
+            // Directions actives + indication "a au moins un Directeur Metier rattache".
+            // Une direction sans DM ne peut pas accueillir un nouvel utilisateur : le
+            // workflow approbation->DM n'aurait personne a solliciter.
             return new GestionProjects.Application.ViewModels.Account.DemandeAccesViewModel
             {
                 Directions = await db.Directions
                     .Where(d => !d.EstSupprime && d.EstActive)
                     .OrderBy(d => d.Libelle)
-                    .Select(d => new GestionProjects.Application.ViewModels.Account.DirectionOption(d.Id, d.Libelle))
+                    .Select(d => new GestionProjects.Application.ViewModels.Account.DirectionOption(
+                        d.Id,
+                        d.Libelle,
+                        db.Utilisateurs.Any(u =>
+                            !u.EstSupprime &&
+                            u.DirectionId == d.Id &&
+                            u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == GestionProjects.Domain.Enums.RoleUtilisateur.DirecteurMetier))))
                     .ToListAsync()
             };
         }
