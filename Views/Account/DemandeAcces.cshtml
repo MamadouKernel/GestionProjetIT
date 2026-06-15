@@ -1,4 +1,5 @@
-﻿@{
+﻿@model GestionProjects.Application.ViewModels.Account.DemandeAccesViewModel
+@{
     ViewData["Title"] = "Demander un accès";
     Layout = null;
 }
@@ -104,6 +105,18 @@
                         <div class="form-group-modern auth-form-grid-full">
                             <label class="form-label-modern">Adresse email professionnelle <span class="text-danger">*</span></label>
                             <input type="email" name="email" class="form-control-modern" required maxlength="200" placeholder="prenom.nom@cit.ci" />
+                        </div>
+
+                        <div class="form-group-modern auth-form-grid-full">
+                            <label class="form-label-modern">Direction de rattachement <span class="text-danger">*</span></label>
+                            <select name="directionId" class="form-control-modern" required>
+                                <option value="">Sélectionner votre direction</option>
+                                @foreach (var direction in Model.Directions)
+                                {
+                                    <option value="@direction.Id">@direction.Libelle</option>
+                                }
+                            </select>
+                            <small class="text-muted">Indispensable pour le rattachement organisationnel de votre compte.</small>
                         </div>
 
                         <div class="form-group-modern auth-form-grid-full">

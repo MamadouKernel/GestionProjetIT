@@ -50,6 +50,18 @@ public sealed class DemandeAccesWorkflowService : IDemandeAccesWorkflowService
             return DemandeAccesWorkflowResult.Error("Tous les champs obligatoires doivent être remplis.");
         }
 
+        if (input.DirectionId == Guid.Empty)
+        {
+            return DemandeAccesWorkflowResult.Error("Merci de sélectionner votre direction de rattachement.");
+        }
+
+        var directionExiste = await _db.Directions
+            .AnyAsync(d => d.Id == input.DirectionId && !d.EstSupprime && d.EstActive);
+        if (!directionExiste)
+        {
+            return DemandeAccesWorkflowResult.Error("La direction sélectionnée est invalide ou inactive.");
+        }
+
         var nomNormalise = input.Nom.Trim();
         var prenomsNormalise = input.Prenoms.Trim();
         var emailNormalise = input.Email.Trim();
@@ -73,6 +85,7 @@ public sealed class DemandeAccesWorkflowService : IDemandeAccesWorkflowService
             Matricule = matriculeNormalise,
             Justification = BuildLocalAccessRequestJustification(roleSouhaiteNormalise, input.Message),
             AzureDepartment = AccessRequestConstants.LocalAzureDepartment,
+            DirectionDetecteeId = input.DirectionId,
             Statut = StatutDemandeAcces.EnAttente,
             DateCreation = DateTime.Now,
             CreePar = "ANONYMOUS",

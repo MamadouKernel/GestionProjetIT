@@ -19,6 +19,9 @@ public sealed class DemandeAccesWorkflowServiceTests
     public async Task SoumettreDemandeLocaleAsync_DoitCreerDemandeEtNotifierAdminIt()
     {
         await using var db = CreateDbContext();
+        var directionId = Guid.NewGuid();
+        db.Directions.Add(new Direction { Id = directionId, Code = "DIR", Libelle = "Direction Test", EstActive = true });
+        await db.SaveChangesAsync();
         var fixture = CreateService(db);
 
         var result = await fixture.Service.SoumettreDemandeLocaleAsync(new SoumettreDemandeAccesLocaleInput(
@@ -26,6 +29,7 @@ public sealed class DemandeAccesWorkflowServiceTests
             "  Raissa  ",
             "  raissa.kouadio@cit.test  ",
             "  2414  ",
+            directionId,
             "  Demandeur  ",
             "  Besoin d'acces au portail  "));
 
@@ -37,6 +41,7 @@ public sealed class DemandeAccesWorkflowServiceTests
         demande.Prenoms.Should().Be("Raissa");
         demande.Email.Should().Be("raissa.kouadio@cit.test");
         demande.Matricule.Should().Be("2414");
+        demande.DirectionDetecteeId.Should().Be(directionId);
         demande.AzureDepartment.Should().Be(AccessRequestConstants.LocalAzureDepartment);
         demande.Statut.Should().Be(StatutDemandeAcces.EnAttente);
         demande.CreePar.Should().Be("ANONYMOUS");
@@ -57,6 +62,8 @@ public sealed class DemandeAccesWorkflowServiceTests
     public async Task SoumettreDemandeLocaleAsync_DoublonEnAttente_DoitRetournerInfoSansNotifier()
     {
         await using var db = CreateDbContext();
+        var directionId = Guid.NewGuid();
+        db.Directions.Add(new Direction { Id = directionId, Code = "DIR", Libelle = "Direction Test", EstActive = true });
         db.DemandesAccesAzureAd.Add(CreateDemandeAcces(
             email: "raissa.kouadio@cit.test",
             matricule: "2414",
@@ -69,6 +76,7 @@ public sealed class DemandeAccesWorkflowServiceTests
             "Raissa",
             "raissa.kouadio@cit.test",
             "9999",
+            directionId,
             "Demandeur",
             null));
 

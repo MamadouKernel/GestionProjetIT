@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System.Security.Claims;
 
@@ -485,11 +486,12 @@ namespace GestionProjects.Controllers
         // GET: /Account/DemandeAcces
         [AllowAnonymous]
         [HttpGet]
-        public IActionResult DemandeAcces()
+        public async Task<IActionResult> DemandeAcces([FromServices] GestionProjects.Infrastructure.Persistence.ApplicationDbContext db)
         {
             if (User?.Identity?.IsAuthenticated == true)
                 return RedirectToAction("Index", "Home");
-            return View();
+
+            return View(await BuildDemandeAccesViewModel(db));
         }
 
         // POST: /Account/DemandeAcces
@@ -497,15 +499,18 @@ namespace GestionProjects.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("LoginPolicy")]
-        public async Task<IActionResult> DemandeAcces(string nom, string prenoms, string email, string matricule, string rolesSouhaites, string? message)
+        public async Task<IActionResult> DemandeAcces(
+            string nom, string prenoms, string email, string matricule,
+            Guid directionId, string rolesSouhaites, string? message,
+            [FromServices] GestionProjects.Infrastructure.Persistence.ApplicationDbContext db)
         {
             var result = await _demandeAccesWorkflow.SoumettreDemandeLocaleAsync(
-                new SoumettreDemandeAccesLocaleInput(nom, prenoms, email, matricule, rolesSouhaites, message));
+                new SoumettreDemandeAccesLocaleInput(nom, prenoms, email, matricule, directionId, rolesSouhaites, message));
 
             if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
             {
                 TempData["Error"] = result.ErrorMessage;
-                return View();
+                return View(await BuildDemandeAccesViewModel(db));
             }
 
             if (!string.IsNullOrWhiteSpace(result.InfoMessage))
@@ -516,6 +521,19 @@ namespace GestionProjects.Controllers
 
             TempData["Success"] = result.SuccessMessage;
             return RedirectToAction(nameof(Login));
+        }
+
+        private static async Task<GestionProjects.Application.ViewModels.Account.DemandeAccesViewModel> BuildDemandeAccesViewModel(
+            GestionProjects.Infrastructure.Persistence.ApplicationDbContext db)
+        {
+            return new GestionProjects.Application.ViewModels.Account.DemandeAccesViewModel
+            {
+                Directions = await db.Directions
+                    .Where(d => !d.EstSupprime && d.EstActive)
+                    .OrderBy(d => d.Libelle)
+                    .Select(d => new GestionProjects.Application.ViewModels.Account.DirectionOption(d.Id, d.Libelle))
+                    .ToListAsync()
+            };
         }
     }
 }

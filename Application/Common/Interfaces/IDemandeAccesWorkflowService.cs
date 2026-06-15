@@ -14,6 +14,7 @@ public sealed record SoumettreDemandeAccesLocaleInput(
     string Prenoms,
     string Email,
     string Matricule,
+    Guid DirectionId,
     string RolesSouhaites,
     string? Message);
 

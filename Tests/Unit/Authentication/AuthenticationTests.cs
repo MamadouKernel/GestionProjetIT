@@ -203,14 +203,19 @@ public class AuthenticationTests : IDisposable
     [Fact]
     public async Task DemandeAcces_DoitCreerUneDemandeVisibleParAdmin()
     {
+        // Une direction active du seed est requise depuis qu'on impose le rattachement.
+        var directionId = (await _context.Directions.FirstAsync(d => d.EstActive && !d.EstSupprime)).Id;
+
         // Act
         var result = await _controller.DemandeAcces(
             "Konate",
             "Mamadou",
             "mamadou.konate@cit.ci",
             "2020",
+            directionId,
             "ChefDeProjet",
-            "Besoin d'accéder au portefeuille projet.");
+            "Besoin d'accéder au portefeuille projet.",
+            _context);
 
         // Assert
         result.Should().BeOfType<RedirectToActionResult>();
