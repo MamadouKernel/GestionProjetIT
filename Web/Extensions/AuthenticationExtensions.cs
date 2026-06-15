@@ -21,11 +21,11 @@ public static class AuthenticationExtensions
                 options.ExpireTimeSpan    = TimeSpan.FromMinutes(30);
                 options.Cookie.Name       = ".GestionProjets.Auth";
                 options.Cookie.HttpOnly   = true;
-                // SameAsRequest : fonctionne en HTTP (intranet sans TLS) et HTTPS.
-                // Passer à Always uniquement si un reverse proxy avec certificat TLS est en place.
-                options.Cookie.SecurePolicy = environment.IsDevelopment()
-                    ? CookieSecurePolicy.SameAsRequest
-                    : CookieSecurePolicy.Always;
+                // SameAsRequest : le cookie est Secure sur une requête HTTPS, non-Secure sur HTTP.
+                // Indispensable tant que la prod tourne en HTTP (un cookie Secure n'est jamais
+                // stocké par le navigateur sur HTTP -> boucle de connexion silencieuse).
+                // Bascule automatiquement en Secure dès que le site passe en HTTPS.
+                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
                 options.Cookie.SameSite     = SameSiteMode.Lax;
             });
 
