@@ -242,7 +242,21 @@ namespace GestionProjects.Infrastructure.Services
                     "Ouvrir le dossier"));
 
         public Task EnvoyerActivationCompteAsync(string email, string nomComplet, string username, string lienActivation, DateTime dateExpiration)
-            => EnvoyerAsync(
+        {
+            // Defense en profondeur : si SmtpSettings:BaseUrl n'est pas configure, le lien
+            // arrive en relatif (/Account/...) et le client mail n'a aucun moyen de le resoudre.
+            // On le signale au log pour eviter d'envoyer un email sans lien cliquable en silence.
+            if (!Uri.TryCreate(lienActivation, UriKind.Absolute, out _))
+            {
+                _logger.LogWarning(
+                    "Lien d'activation relatif envoye a {Email} : configure SmtpSettings:BaseUrl pour generer un lien absolu cliquable.",
+                    email);
+            }
+
+            // On affiche aussi le lien en clair (texte) sous le bouton stylise : certains
+            // clients (Outlook strict, anti-phishing, dark mode) masquent les <a> stylises ;
+            // l'URL textuelle est toujours visible et copiable.
+            return EnvoyerAsync(
                 email,
                 $"Activez votre acces a {DocumentBrandingHelper.ApplicationName}",
                 CorpsHtml(
@@ -253,10 +267,13 @@ namespace GestionProjects.Infrastructure.Services
                     $"<p style=\"margin:0 0 10px 0;\"><strong>Identifiant</strong><br/><span style=\"font-size:18px;color:#ffffff;\">{username}</span></p>" +
                     $"<p style=\"margin:0;\"><strong>Expiration du lien</strong><br/><span style=\"font-size:18px;color:#ffffff;\">{dateExpiration:dd/MM/yyyy HH:mm}</span></p>" +
                     "</div>" +
+                    "<p style=\"margin-top:18px;font-size:13px;color:#475569;\">Si le bouton ne s'affiche pas, copiez-collez ce lien dans votre navigateur :<br/>" +
+                    $"<a href=\"{lienActivation}\" style=\"color:#0f4c81;word-break:break-all;\">{lienActivation}</a></p>" +
                     "<p>Si vous n'etes pas a l'origine de cette demande, ignorez ce message et contactez la DSI.</p>",
                     "Acces utilisateur",
                     "Definir mon mot de passe",
                     lienActivation));
+        }
 
         public Task EnvoyerConfirmationCreationCompteAuDMAsync(string emailDM, string nomDM, string nomNouvelUtilisateur)
             => EnvoyerAsync(
