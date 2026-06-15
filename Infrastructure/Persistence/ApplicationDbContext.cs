@@ -43,6 +43,7 @@ namespace GestionProjects.Infrastructure.Persistence
 
         public DbSet<DemandeClotureProjet> DemandesClotureProjets { get; set; }
         public DbSet<AvenantProjet> AvenantsProjets { get; set; }
+        public DbSet<BeneficeProjet> BeneficesProjets { get; set; }
 
         public DbSet<DelegationValidationDSI> DelegationsValidationDSI { get; set; }
         public DbSet<DelegationChefProjet> DelegationsChefProjet { get; set; }
@@ -456,6 +457,13 @@ namespace GestionProjects.Infrastructure.Persistence
             modelBuilder.Entity<Projet>()
                 .Property(p => p.BudgetBaseline)
                 .HasPrecision(18, 2);
+
+            // ---- Relations BeneficeProjet (réalisation des bénéfices) ----
+            modelBuilder.Entity<BeneficeProjet>()
+                .HasOne(b => b.Projet)
+                .WithMany(p => p.Benefices)
+                .HasForeignKey(b => b.ProjetId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Index pour améliorer les performances des requêtes de charges
             modelBuilder.Entity<ChargeProjet>()

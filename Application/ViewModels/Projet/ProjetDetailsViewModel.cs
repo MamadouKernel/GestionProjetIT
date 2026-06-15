@@ -30,6 +30,9 @@ public class ProjetDetailsViewModel
     // Données onglet Avenants (gestion du changement)
     public List<AvenantProjet> Avenants { get; set; } = new();
 
+    // Données onglet Bénéfices (réalisation de la valeur)
+    public List<BeneficeProjet> Benefices { get; set; } = new();
+
     // Données pour sélection du chef de projet (synthèse)
     public List<Utilisateur> ChefsProjet { get; set; } = new();
 }

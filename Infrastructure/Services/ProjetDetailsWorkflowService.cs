@@ -262,6 +262,7 @@ namespace GestionProjects.Infrastructure.Services
             IEnumerable<AuditLog> auditLogs = Enumerable.Empty<AuditLog>();
             List<Utilisateur> chefsProjet = new();
             List<AvenantProjet> avenants = new();
+            List<BeneficeProjet> benefices = new();
 
             if (tab == "uat")
             {
@@ -312,6 +313,14 @@ namespace GestionProjects.Infrastructure.Services
                     .Include(a => a.ValideParDSIUtilisateur)
                     .Where(a => a.ProjetId == id && !a.EstSupprime)
                     .OrderByDescending(a => a.Numero)
+                    .ToListAsync();
+            }
+
+            if (tab == "benefices")
+            {
+                benefices = await _db.BeneficesProjets
+                    .Where(b => b.ProjetId == id && !b.EstSupprime)
+                    .OrderBy(b => b.DateCreation)
                     .ToListAsync();
             }
 
@@ -377,6 +386,7 @@ namespace GestionProjects.Infrastructure.Services
                 AuditLogs          = auditLogs,
                 ChefsProjet        = chefsProjet,
                 Avenants           = avenants,
+                Benefices          = benefices,
             };
         }
     }

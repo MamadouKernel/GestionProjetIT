@@ -1,0 +1,200 @@
+@using GestionProjects.Domain.Enums
+@model GestionProjects.Application.ViewModels.Projet.ProjetDetailsViewModel
+@inject GestionProjects.Application.Common.Interfaces.IPermissionService PermissionService
+
+@{
+    var projet = Model.Projet;
+    var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, projet);
+    var canManage = ui.IsAssignedChefProjet || ui.HasDsiGovernanceAccess;
+}
+
+<div class="phase-shell">
+    <section class="phase-hero">
+        <div class="phase-hero-top">
+            <div>
+                <div class="phase-eyebrow">
+                    <i class="bi bi-graph-up-arrow"></i>
+                    Réalisation des bénéfices
+                </div>
+                <h3 class="phase-title">Bénéfices attendus</h3>
+                <p class="phase-subtitle">
+                    Les bénéfices visés par le projet sont définis pendant le cadrage, puis évalués lors de la
+                    revue post-implémentation. C'est ce qui permet de juger si le projet a produit la valeur promise,
+                    au-delà du simple « livré ».
+                </p>
+            </div>
+            <div class="phase-action-row">
+                @if (canManage)
+                {
+                    <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#ajouterBeneficeModal">
+                        <i class="bi bi-plus-circle"></i>
+                        Ajouter un bénéfice
+                    </button>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="phase-panel">
+        @if (Model.Benefices.Any())
+        {
+            <div class="record-stack">
+                @foreach (var benefice in Model.Benefices)
+                {
+                    <article class="record-card">
+                        <div class="record-card-header">
+                            <div>
+                                <div class="record-card-title">
+                                    @benefice.Libelle
+                                    <span class="badge-modern badge-modern-@GetStatutClass(benefice.Statut)">@GetStatutLabel(benefice.Statut)</span>
+                                </div>
+                                <div class="record-card-subtitle">
+                                    @if (!string.IsNullOrWhiteSpace(benefice.Indicateur))
+                                    {
+                                        <text>Indicateur : @benefice.Indicateur · </text>
+                                    }
+                                    Cible : @(string.IsNullOrWhiteSpace(benefice.ValeurCible) ? "—" : benefice.ValeurCible)
+                                    @if (benefice.DateCibleRealisation.HasValue)
+                                    {
+                                        <text> (pour le @benefice.DateCibleRealisation.Value.ToString("dd/MM/yyyy"))</text>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (benefice.DateRevue.HasValue)
+                        {
+                            <div class="record-card-note">
+                                <strong>Revue du @benefice.DateRevue.Value.ToString("dd/MM/yyyy") :</strong>
+                                @(string.IsNullOrWhiteSpace(benefice.ValeurRealisee) ? "" : $"valeur réalisée = {benefice.ValeurRealisee}.")
+                                @benefice.CommentaireRevue
+                            </div>
+                        }
+
+                        @if (canManage)
+                        {
+                            <div class="phase-action-row" style="margin-top: .75rem;">
+                                <button type="button" class="btn-modern btn-modern-secondary" data-bs-toggle="modal" data-bs-target="#evaluerBeneficeModal_@benefice.Id">
+                                    <i class="bi bi-clipboard-check"></i> Évaluer
+                                </button>
+                                <form asp-action="SupprimerBenefice" method="post" class="d-inline" onsubmit="return confirm('Supprimer ce bénéfice ?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@projet.Id" />
+                                    <input type="hidden" name="beneficeId" value="@benefice.Id" />
+                                    <button type="submit" class="btn-modern btn-modern-danger">
+                                        <i class="bi bi-trash"></i> Supprimer
+                                    </button>
+                                </form>
+                            </div>
+
+                            <div class="modal fade" id="evaluerBeneficeModal_@benefice.Id" tabindex="-1">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content app-modal-content">
+                                        <form asp-action="EvaluerBenefice" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@projet.Id" />
+                                            <input type="hidden" name="beneficeId" value="@benefice.Id" />
+                                            <div class="modal-header app-modal-header">
+                                                <h5 class="modal-title app-modal-title"><i class="bi bi-clipboard-check"></i> Revue : @benefice.Libelle</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body app-modal-body">
+                                                <div class="form-group-modern">
+                                                    <label class="form-label-modern">Résultat *</label>
+                                                    <select name="statut" class="form-control-modern" required>
+                                                        <option value="@((int)StatutBenefice.Realise)">Réalisé</option>
+                                                        <option value="@((int)StatutBenefice.PartiellementRealise)">Partiellement réalisé</option>
+                                                        <option value="@((int)StatutBenefice.NonRealise)">Non réalisé</option>
+                                                    </select>
+                                                </div>
+                                                <div class="form-group-modern">
+                                                    <label class="form-label-modern">Valeur réalisée</label>
+                                                    <input type="text" name="valeurRealisee" class="form-control-modern" value="@benefice.ValeurRealisee" placeholder="ex : -25% de délai" />
+                                                </div>
+                                                <div class="form-group-modern">
+                                                    <label class="form-label-modern">Commentaire</label>
+                                                    <textarea name="commentaire" class="form-control-modern" rows="2">@benefice.CommentaireRevue</textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer app-modal-footer">
+                                                <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                <button type="submit" class="btn-modern btn-modern-primary"><i class="bi bi-save"></i> Enregistrer la revue</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </article>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="phase-empty">
+                <i class="bi bi-graph-up-arrow"></i>
+                <p>Aucun bénéfice défini. Déclarez les bénéfices attendus pour pouvoir les évaluer après la mise en service.</p>
+            </div>
+        }
+    </section>
+</div>
+
+@if (canManage)
+{
+    <div class="modal fade" id="ajouterBeneficeModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content app-modal-content">
+                <form asp-action="AjouterBenefice" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@projet.Id" />
+                    <div class="modal-header app-modal-header">
+                        <h5 class="modal-title app-modal-title"><i class="bi bi-graph-up-arrow"></i> Nouveau bénéfice attendu</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body app-modal-body">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Bénéfice *</label>
+                            <input type="text" name="libelle" class="form-control-modern" maxlength="200" required placeholder="ex : Réduction du temps de traitement des notes de frais" />
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Indicateur de mesure</label>
+                            <input type="text" name="indicateur" class="form-control-modern" placeholder="ex : Délai moyen de traitement (jours)" />
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Valeur cible</label>
+                            <input type="text" name="valeurCible" class="form-control-modern" placeholder="ex : &lt; 2 jours" />
+                        </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Échéance de réalisation visée</label>
+                            <input type="date" name="dateCibleRealisation" class="form-control-modern" />
+                        </div>
+                    </div>
+                    <div class="modal-footer app-modal-footer">
+                        <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn-modern btn-modern-primary"><i class="bi bi-plus-circle"></i> Ajouter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@functions {
+    string GetStatutLabel(GestionProjects.Domain.Enums.StatutBenefice statut) => statut switch
+    {
+        GestionProjects.Domain.Enums.StatutBenefice.Attendu => "Attendu",
+        GestionProjects.Domain.Enums.StatutBenefice.Realise => "Réalisé",
+        GestionProjects.Domain.Enums.StatutBenefice.PartiellementRealise => "Partiellement réalisé",
+        GestionProjects.Domain.Enums.StatutBenefice.NonRealise => "Non réalisé",
+        _ => statut.ToString()
+    };
+
+    string GetStatutClass(GestionProjects.Domain.Enums.StatutBenefice statut) => statut switch
+    {
+        GestionProjects.Domain.Enums.StatutBenefice.Attendu => "secondary",
+        GestionProjects.Domain.Enums.StatutBenefice.Realise => "success",
+        GestionProjects.Domain.Enums.StatutBenefice.PartiellementRealise => "warning",
+        GestionProjects.Domain.Enums.StatutBenefice.NonRealise => "danger",
+        _ => "secondary"
+    };
+}

@@ -105,6 +105,32 @@ public static class DatabaseExtensions
                 ALTER TABLE [Projets] ADD [BudgetBaseline] decimal(18,2) NULL;
         ");
 
+        ExecutePatch(db, "BeneficesProjets", @"
+            IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE object_id=OBJECT_ID('BeneficesProjets') AND type='U')
+            BEGIN
+                CREATE TABLE [BeneficesProjets] (
+                    [Id] uniqueidentifier NOT NULL,
+                    [ProjetId] uniqueidentifier NOT NULL,
+                    [Libelle] nvarchar(4000) NOT NULL,
+                    [Indicateur] nvarchar(4000) NOT NULL,
+                    [ValeurCible] nvarchar(4000) NOT NULL,
+                    [DateCibleRealisation] datetime2 NULL,
+                    [Statut] int NOT NULL,
+                    [ValeurRealisee] nvarchar(4000) NULL,
+                    [DateRevue] datetime2 NULL,
+                    [CommentaireRevue] nvarchar(max) NULL,
+                    [DateCreation] datetime2 NOT NULL,
+                    [CreePar] nvarchar(4000) NOT NULL,
+                    [DateModification] datetime2 NULL,
+                    [ModifiePar] nvarchar(4000) NULL,
+                    [EstSupprime] bit NOT NULL,
+                    CONSTRAINT [PK_BeneficesProjets] PRIMARY KEY ([Id]),
+                    CONSTRAINT [FK_BeneficesProjets_Projets] FOREIGN KEY ([ProjetId]) REFERENCES [Projets]([Id]) ON DELETE CASCADE
+                );
+                CREATE INDEX [IX_BeneficesProjets_ProjetId] ON [BeneficesProjets]([ProjetId]);
+            END
+        ");
+
         ExecutePatch(db, "SignaturesCharte", @"
             IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID('CharteProjets') AND name='SignatureImageCP')
                 ALTER TABLE [CharteProjets] ADD [SignatureImageCP] nvarchar(max) NULL;

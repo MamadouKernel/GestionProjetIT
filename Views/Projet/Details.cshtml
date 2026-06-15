@@ -169,6 +169,12 @@
                     <i class="bi bi-file-earmark-diff"></i> Avenants
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "benefices" ? "active" : "")"
+                   href="@Url.Action("Details", new { id = projet.Id, tab = "benefices" })">
+                    <i class="bi bi-graph-up-arrow"></i> Bénéfices
+                </a>
+            </li>
             @if (canAccessCharges && ui.CanOpenChargesTab)
             {
                 <li class="nav-item">
@@ -219,6 +225,10 @@
     else if (activeTab == "avenants")
     {
         @await Html.PartialAsync("_ProjetAvenants", Model)
+    }
+    else if (activeTab == "benefices")
+    {
+        @await Html.PartialAsync("_ProjetBenefices", Model)
     }
     else if (activeTab == "historique")
     {
