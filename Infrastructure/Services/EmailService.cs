@@ -216,6 +216,21 @@ namespace GestionProjects.Infrastructure.Services
                     "Acces a traiter",
                     "Ouvrir l'administration"));
 
+        public Task EnvoyerDemandeAccesAuDmAsync(string emailDM, string nomDM, string nomDemandeur, string emailDemandeur, string direction, string roleSouhaite)
+            => EnvoyerAsync(
+                emailDM,
+                $"[Information] Demande d'acces dans votre direction - {nomDemandeur}",
+                CorpsHtml(
+                    $"Nouvelle demande d'acces - <strong>{nomDemandeur}</strong>",
+                    $"<p>Bonjour <strong>{nomDM}</strong>,</p>" +
+                    $"<p><strong>{nomDemandeur}</strong> ({emailDemandeur}) a soumis une demande d'acces a {DocumentBrandingHelper.ApplicationName} " +
+                    $"en se rattachant a la direction <strong>{direction}</strong> dont vous etes Directeur Metier.</p>" +
+                    $"<p>Role souhaite : <strong>{roleSouhaite}</strong></p>" +
+                    "<p>Cette demande sera traitee par l'AdminIT. Vous etes informe afin de pouvoir signaler une eventuelle anomalie " +
+                    "(rattachement incorrect, role inapproprie, identite douteuse) avant son traitement.</p>",
+                    "Acces - information DM",
+                    "Ouvrir Zéïnab"));
+
         public Task EnvoyerDemandeCreationCompteAuDMAsync(string emailDM, string nomDM, string nomComplet, string direction, string service, string emailDemandeur)
             => EnvoyerAsync(
                 emailDM,

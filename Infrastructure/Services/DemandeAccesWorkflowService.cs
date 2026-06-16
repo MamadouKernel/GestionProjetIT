@@ -122,9 +122,55 @@ public sealed class DemandeAccesWorkflowService : IDemandeAccesWorkflowService
                 Message = input.Message?.Trim()
             });
 
+        // Information aux Directeurs Metier de la direction rattachee (ils ne sont pas
+        // validateurs mais informes pour pouvoir signaler une anomalie a l'AdminIT).
+        await NotifierDirecteursMetierAsync(demandeAcces, roleSouhaiteNormalise);
+
         return DemandeAccesWorkflowResult.Success(
             "Votre demande d'accès a été envoyée à l'administrateur. Vous serez contacté prochainement.",
             demandeAcces.Id);
+    }
+
+    private async Task NotifierDirecteursMetierAsync(
+        DemandeAccesAzureAd demande,
+        string roleSouhaite)
+    {
+        if (!demande.DirectionDetecteeId.HasValue)
+            return;
+
+        var direction = await _db.Directions
+            .FirstOrDefaultAsync(d => d.Id == demande.DirectionDetecteeId.Value && !d.EstSupprime);
+        if (direction == null)
+            return;
+
+        var dms = await _db.Utilisateurs
+            .Where(u => !u.EstSupprime &&
+                        u.DirectionId == direction.Id &&
+                        u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.DirecteurMetier))
+            .ToListAsync();
+
+        var nomDemandeur = $"{demande.Prenoms} {demande.Nom}".Trim();
+        foreach (var dm in dms)
+        {
+            await _notificationService.NotifierUtilisateurAsync(
+                dm.Id,
+                TypeNotification.DemandeSupportTechnique,
+                $"Demande d'accès dans votre direction — {nomDemandeur}",
+                $"{nomDemandeur} ({demande.Email}) demande un accès rattaché à {direction.Libelle}. Rôle souhaité : {roleSouhaite}. Information uniquement — l'AdminIT traitera la demande.",
+                DomainEntityTypes.DemandeAccesAzureAd,
+                demande.Id);
+
+            if (!string.IsNullOrWhiteSpace(dm.Email))
+            {
+                await _emailService.EnvoyerDemandeAccesAuDmAsync(
+                    dm.Email,
+                    $"{dm.Prenoms} {dm.Nom}".Trim(),
+                    nomDemandeur,
+                    demande.Email,
+                    direction.Libelle,
+                    roleSouhaite);
+            }
+        }
     }
 
     public async Task<DemandeAccesWorkflowResult> ApprouverAsync(ApprouverDemandeAccesInput input)

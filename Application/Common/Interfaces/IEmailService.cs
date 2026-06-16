@@ -11,6 +11,11 @@ namespace GestionProjects.Application.Common.Interfaces
         Task EnvoyerValidationDSIProjetCreeAsync(string emailDemandeur, string? emailDM, string titreDemande, string codeProjet);
         Task EnvoyerPdfCharteAsync(string emailDM, string emailDSI, string titreDemande, string nomChefProjet, byte[] pdfBytes, string nomFichier);
         Task EnvoyerDemandeAccesAsync(string emailAdmin, string nomDemandeur, string emailDemandeur, string rolesSouhaites);
+        /// <summary>
+        /// Informe le Directeur Metier qu'une demande d'acces vient d'etre soumise pour sa direction.
+        /// Le DM n'est pas validateur, mais informe pour signaler une eventuelle anomalie a l'AdminIT.
+        /// </summary>
+        Task EnvoyerDemandeAccesAuDmAsync(string emailDM, string nomDM, string nomDemandeur, string emailDemandeur, string direction, string roleSouhaite);
         Task EnvoyerDemandeCreationCompteAuDMAsync(string emailDM, string nomDM, string nomComplet, string direction, string service, string emailDemandeur);
         Task EnvoyerDemandeCreationCompteAuDSIAsync(string emailDSI, string nomComplet, string nomDM, string direction, string service);
         Task EnvoyerActivationCompteAsync(string email, string nomComplet, string username, string lienActivation, DateTime dateExpiration);
