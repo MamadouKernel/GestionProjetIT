@@ -72,10 +72,21 @@ public class UserAdminService : IUserAdminService
             .OrderBy(d => d.Libelle)
             .ToListAsync();
 
+        // Ids des directions avec un DM actif : enrichit visuellement la modale Creer
+        // un utilisateur sans bloquer (l'AdminIT peut y vouloir affecter un premier DM).
+        var directionsAvecDm = await _db.Utilisateurs
+            .Where(u => !u.EstSupprime &&
+                        u.DirectionId.HasValue &&
+                        u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.DirecteurMetier))
+            .Select(u => u.DirectionId!.Value)
+            .Distinct()
+            .ToListAsync();
+
         return new UsersListViewModel
         {
             Users               = paged.Items,
             Directions          = directions,
+            DirectionsAvecDm    = directionsAvecDm.ToHashSet(),
             AllRoles            = Enum.GetValues<RoleUtilisateur>().ToList(),
             TotalCount          = paged.TotalCount,
             PageNumber          = paged.PageNumber,

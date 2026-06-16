@@ -390,9 +390,11 @@
                                         <option value="">-- Sélectionner une direction --</option>
                                         @foreach (var dir in directions)
                                         {
-                                            <option value="@dir.Id">@dir.Libelle</option>
+                                            var sansDm = !Model.DirectionsAvecDm.Contains(dir.Id);
+                                            <option value="@dir.Id">@dir.Libelle@(sansDm ? " (aucun DM rattaché)" : "")</option>
                                         }
                                     </select>
+                                    <small class="text-muted">Les directions « aucun DM rattaché » peuvent être sélectionnées (notamment pour y affecter le premier Directeur Métier).</small>
                                     <span class="text-danger field-validation-valid" data-valmsg-for="DirectionId" data-valmsg-replace="true"></span>
                                 </div>
                                 <div class="form-group-modern">

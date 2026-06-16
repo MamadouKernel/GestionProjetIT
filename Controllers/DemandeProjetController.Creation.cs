@@ -73,8 +73,14 @@ namespace GestionProjects.Controllers
                 }
             }
 
+            // On ne propose que les directions actives ET ayant au moins un Directeur Metier
+            // rattache. Sans DM, la demande ne pourrait jamais etre validee (workflow bloque).
             var directions = await _db.Directions
-                .Where(d => !d.EstSupprime && d.EstActive)
+                .Where(d => !d.EstSupprime && d.EstActive &&
+                            _db.Utilisateurs.Any(u =>
+                                !u.EstSupprime &&
+                                u.DirectionId == d.Id &&
+                                u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.DirecteurMetier)))
                 .OrderBy(d => d.Libelle)
                 .ToListAsync();
 
