@@ -83,8 +83,8 @@ namespace GestionProjects.ViewComponents
             // Badge : demandes d'acces en attente de validation DM (pour le DM connecte).
             if (permissionSet.Contains("DemandesAcces::ValidationsDm"))
             {
-                var userIdClaim = ((ViewComponentContext)ViewComponentContext)
-                    .ViewContext.HttpContext.User
+                // HttpContext.User est expose par la classe de base ViewComponent.
+                var userIdClaim = HttpContext.User
                     .FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
                 if (Guid.TryParse(userIdClaim, out var userId))
