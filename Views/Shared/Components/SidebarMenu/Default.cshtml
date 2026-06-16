@@ -14,9 +14,13 @@
             <a class="nav-link @(isActive ? "active" : string.Empty)"
                asp-controller="@item.Controller"
                asp-action="@item.Action"
-               title="@item.Title">
+               title="@(item.Badge.HasValue ? $"{item.Title} ({item.Badge} en attente)" : item.Title)">
                 <i class="bi @item.Icon"></i>
                 <span>@item.Title</span>
+                @if (item.Badge.HasValue)
+                {
+                    <span class="badge-modern badge-modern-danger ms-auto" style="font-size: .65rem;">@item.Badge</span>
+                }
             </a>
         }
     }

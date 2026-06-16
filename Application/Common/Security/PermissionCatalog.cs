@@ -99,6 +99,7 @@ namespace GestionProjects.Application.Common.Security
             new() { Controleur = "Admin", Action = "ValiderDemandeCreationCompteDSI", NomAffichage = "Validation Compte DSI", Categorie = "Administration", Icone = "bi-person-check", Ordre = 13, AfficherDansMenu = false },
             new() { Controleur = "Admin", Action = "RefuserDemandeCreationCompteDSI", NomAffichage = "Refus Compte DSI", Categorie = "Administration", Icone = "bi-person-x", Ordre = 14, AfficherDansMenu = false },
             new() { Controleur = "DemandesAcces", Action = "Index", NomAffichage = "Demandes d'acces", Categorie = "Administration", Icone = "bi-person-plus", Ordre = 9, AfficherDansMenu = true },
+            new() { Controleur = "DemandesAcces", Action = "ValidationsDm", NomAffichage = "Validations d'acces (DM)", Categorie = "Validations", Icone = "bi-shield-check", Ordre = 6, AfficherDansMenu = true },
             new() { Controleur = "Autorisations", Action = "Index", NomAffichage = "Autorisations / Droits", Categorie = "Administration", Icone = "bi-shield-lock", Ordre = 10, AfficherDansMenu = true }
         };
 
@@ -206,6 +207,7 @@ namespace GestionProjects.Application.Common.Security
                     ("Admin", "DemandesCreationCompte") => true,
                     ("Admin", "ValiderDemandeCreationCompteDM") => true,
                     ("Admin", "RefuserDemandeCreationCompteDM") => true,
+                    ("DemandesAcces", "ValidationsDm") => true,
                     _ => false
                 },
                 RoleUtilisateur.DSI => (controleur, action) switch
