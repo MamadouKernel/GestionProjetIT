@@ -233,14 +233,21 @@ public class AuthenticationTests : IDisposable
         demande.Justification.Should().Contain("ChefDeProjet");
         demande.Justification.Should().Contain("Besoin d'accéder au portefeuille projet.");
 
-        _notificationMock.Verify(n => n.NotifierRoleAsync(
-            RoleUtilisateur.AdminIT,
+        // Nouveau workflow : a la soumission, le DM est notifie (pas l'AdminIT directement).
+        _notificationMock.Verify(n => n.NotifierUtilisateurAsync(
+            It.IsAny<Guid>(),
             TypeNotification.DemandeSupportTechnique,
             It.IsAny<string>(),
             It.IsAny<string>(),
             DomainEntityTypes.DemandeAccesAzureAd,
             demande.Id,
-            It.IsAny<object?>()), Times.Once);
+            It.IsAny<object?>()), Times.AtLeastOnce);
+        _notificationMock.Verify(n => n.NotifierRoleAsync(
+            RoleUtilisateur.AdminIT,
+            It.IsAny<TypeNotification>(),
+            It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<string?>(), It.IsAny<Guid?>(),
+            It.IsAny<object?>()), Times.Never);
     }
 
     /// <summary>

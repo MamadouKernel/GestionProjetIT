@@ -458,6 +458,13 @@ namespace GestionProjects.Infrastructure.Persistence
                 .Property(p => p.BudgetBaseline)
                 .HasPrecision(18, 2);
 
+            // ---- Validation DM des demandes d'accès (premier rang du workflow) ----
+            modelBuilder.Entity<DemandeAccesAzureAd>()
+                .HasOne(d => d.ValideeParDm)
+                .WithMany()
+                .HasForeignKey(d => d.ValideeParDmId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // ---- Relations BeneficeProjet (réalisation des bénéfices) ----
             modelBuilder.Entity<BeneficeProjet>()
                 .HasOne(b => b.Projet)

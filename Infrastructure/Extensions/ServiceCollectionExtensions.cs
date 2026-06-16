@@ -54,6 +54,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDemandeCompteAdminService, DemandeCompteAdminService>();
         services.AddScoped<IDemandeCreationCompteWorkflowService, DemandeCreationCompteWorkflowService>();
         services.AddScoped<IDemandeAccesQueryService, DemandeAccesQueryService>();
+        services.AddScoped<IDemandeAccesDmQueryService, DemandeAccesDmQueryService>();
         services.AddScoped<IDemandeAccesWorkflowService, DemandeAccesWorkflowService>();
         services.AddScoped<IDelegationAdminService, DelegationAdminService>();
         services.AddScoped<IDemandeProjetQueryService, DemandeProjetQueryService>();

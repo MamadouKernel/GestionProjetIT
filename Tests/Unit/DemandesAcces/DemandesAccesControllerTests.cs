@@ -57,7 +57,7 @@ public sealed class DemandesAccesControllerTests
             Matricule = "2414",
             AzureDepartment = AccessRequestConstants.LocalAzureDepartment,
             Justification = AccessRequestConstants.LocalAccountLabel,
-            Statut = StatutDemandeAcces.EnAttente,
+            Statut = StatutDemandeAcces.ApprouveeParDm, // = validee DM, en attente creation compte
             DateCreation = DateTime.Now
         });
         await db.SaveChangesAsync();

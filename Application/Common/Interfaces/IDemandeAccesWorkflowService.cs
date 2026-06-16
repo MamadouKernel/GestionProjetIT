@@ -5,9 +5,22 @@ namespace GestionProjects.Application.Common.Interfaces;
 public interface IDemandeAccesWorkflowService
 {
     Task<DemandeAccesWorkflowResult> SoumettreDemandeLocaleAsync(SoumettreDemandeAccesLocaleInput input);
+    Task<DemandeAccesWorkflowResult> ValiderParDmAsync(ValiderDemandeAccesParDmInput input);
+    Task<DemandeAccesWorkflowResult> RejeterParDmAsync(RejeterDemandeAccesParDmInput input);
     Task<DemandeAccesWorkflowResult> ApprouverAsync(ApprouverDemandeAccesInput input);
     Task<DemandeAccesWorkflowResult> RejeterAsync(RejeterDemandeAccesInput input);
 }
+
+public sealed record ValiderDemandeAccesParDmInput(
+    Guid DemandeId,
+    Guid DmId,
+    RoleUtilisateur RoleConfirme,
+    string? Commentaire);
+
+public sealed record RejeterDemandeAccesParDmInput(
+    Guid DemandeId,
+    Guid DmId,
+    string Commentaire);
 
 public sealed record SoumettreDemandeAccesLocaleInput(
     string Nom,

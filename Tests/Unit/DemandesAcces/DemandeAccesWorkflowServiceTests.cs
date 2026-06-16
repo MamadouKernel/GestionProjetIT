@@ -36,7 +36,7 @@ public sealed class DemandeAccesWorkflowServiceTests
     }
 
     [Fact]
-    public async Task SoumettreDemandeLocaleAsync_DoitCreerDemandeEtNotifierAdminIt()
+    public async Task SoumettreDemandeLocaleAsync_DoitCreerDemandeEtNotifierDmSeul()
     {
         await using var db = CreateDbContext();
         var directionId = await SeedDirectionAvecDmAsync(db);
@@ -61,19 +61,26 @@ public sealed class DemandeAccesWorkflowServiceTests
         demande.Matricule.Should().Be("2414");
         demande.DirectionDetecteeId.Should().Be(directionId);
         demande.AzureDepartment.Should().Be(AccessRequestConstants.LocalAzureDepartment);
-        demande.Statut.Should().Be(StatutDemandeAcces.EnAttente);
+        demande.Statut.Should().Be(StatutDemandeAcces.EnAttente); // = en attente DM
         demande.CreePar.Should().Be("ANONYMOUS");
         demande.Justification.Should().Contain("Demandeur");
         demande.Justification.Should().Contain("Besoin d'acces au portail");
 
-        fixture.Notification.Verify(n => n.NotifierRoleAsync(
-            RoleUtilisateur.AdminIT,
+        // Nouveau workflow : a la soumission, seul le DM est notifie (pas l'AdminIT).
+        fixture.Notification.Verify(n => n.NotifierUtilisateurAsync(
+            It.IsAny<Guid>(),
             TypeNotification.DemandeSupportTechnique,
-            It.Is<string>(titre => titre.Contains("local CIT")),
-            It.Is<string>(message => message.Contains("raissa.kouadio@cit.test")),
+            It.Is<string>(titre => titre.Contains("Validation d'accès")),
+            It.IsAny<string>(),
             DomainEntityTypes.DemandeAccesAzureAd,
             demande.Id,
-            It.IsAny<object?>()), Times.Once);
+            It.IsAny<object?>()), Times.AtLeastOnce);
+        fixture.Notification.Verify(n => n.NotifierRoleAsync(
+            RoleUtilisateur.AdminIT,
+            It.IsAny<TypeNotification>(),
+            It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<string?>(), It.IsAny<Guid?>(),
+            It.IsAny<object?>()), Times.Never);
     }
 
     [Fact]
@@ -138,7 +145,8 @@ public sealed class DemandeAccesWorkflowServiceTests
             email: "raissa.kouadio@cit.test",
             matricule: "2414",
             azureDepartment: AccessRequestConstants.LocalAzureDepartment,
-            directionId: direction.Id);
+            directionId: direction.Id,
+            statut: StatutDemandeAcces.ApprouveeParDm);
         db.Directions.Add(direction);
         db.DemandesAccesAzureAd.Add(demande);
         await db.SaveChangesAsync();
@@ -203,7 +211,8 @@ public sealed class DemandeAccesWorkflowServiceTests
         var demande = CreateDemandeAcces(
             email: "raissa.kouadio@cit.test",
             matricule: "2414",
-            azureDepartment: "DSI");
+            azureDepartment: "DSI",
+            statut: StatutDemandeAcces.ApprouveeParDm);
         db.Utilisateurs.Add(utilisateurExistant);
         db.DemandesAccesAzureAd.Add(demande);
         await db.SaveChangesAsync();
@@ -313,6 +322,99 @@ public sealed class DemandeAccesWorkflowServiceTests
             It.IsAny<string?>()), Times.Once);
     }
 
+    // ─────────────── Validation par DM (workflow premier rang) ───────────────
+
+    [Fact]
+    public async Task ValiderParDmAsync_DmDeLaDirection_DoitPasserEnApprouveeParDm()
+    {
+        await using var db = CreateDbContext();
+        var directionId = await SeedDirectionAvecDmAsync(db);
+        var dmId = await db.Utilisateurs.Where(u => u.DirectionId == directionId).Select(u => u.Id).FirstAsync();
+        var demande = CreateDemandeAcces("anne.mobio@cit.test", "2518", AccessRequestConstants.LocalAzureDepartment, directionId);
+        db.DemandesAccesAzureAd.Add(demande);
+        await db.SaveChangesAsync();
+        var fixture = CreateService(db);
+
+        var result = await fixture.Service.ValiderParDmAsync(
+            new ValiderDemandeAccesParDmInput(demande.Id, dmId, RoleUtilisateur.ChefDeProjet, "OK"));
+
+        result.Succeeded.Should().BeTrue();
+        var reload = await db.DemandesAccesAzureAd.SingleAsync();
+        reload.Statut.Should().Be(StatutDemandeAcces.ApprouveeParDm);
+        reload.ValideeParDmId.Should().Be(dmId);
+        reload.RoleConfirmeParDm.Should().Be("ChefDeProjet");
+    }
+
+    [Fact]
+    public async Task ValiderParDmAsync_DmDuneAutreDirection_DoitRefuser()
+    {
+        await using var db = CreateDbContext();
+        var directionDemande = await SeedDirectionAvecDmAsync(db, "DIR1");
+        var directionAutre   = await SeedDirectionAvecDmAsync(db, "DIR2");
+        var dmAutreId = await db.Utilisateurs.Where(u => u.DirectionId == directionAutre).Select(u => u.Id).FirstAsync();
+        var demande = CreateDemandeAcces("x@cit.test", "X1", AccessRequestConstants.LocalAzureDepartment, directionDemande);
+        db.DemandesAccesAzureAd.Add(demande);
+        await db.SaveChangesAsync();
+        var fixture = CreateService(db);
+
+        var result = await fixture.Service.ValiderParDmAsync(
+            new ValiderDemandeAccesParDmInput(demande.Id, dmAutreId, RoleUtilisateur.Demandeur, null));
+
+        result.Succeeded.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("Directeur Metier");
+        (await db.DemandesAccesAzureAd.SingleAsync()).Statut.Should().Be(StatutDemandeAcces.EnAttente);
+    }
+
+    [Fact]
+    public async Task ValiderParDmAsync_VerrouSiDejaTraiteeParUnAutreDm()
+    {
+        await using var db = CreateDbContext();
+        var directionId = await SeedDirectionAvecDmAsync(db);
+        // 2e DM rattache a la meme direction
+        var dm1Id = await db.Utilisateurs.Where(u => u.DirectionId == directionId).Select(u => u.Id).FirstAsync();
+        var dm2Id = Guid.NewGuid();
+        db.Utilisateurs.Add(new Utilisateur { Id = dm2Id, Matricule = "DM2", MotDePasse = "x", Nom = "DM2", Prenoms = "X", Email = "dm2@cit.test", DirectionId = directionId });
+        db.UtilisateurRoles.Add(new UtilisateurRole { Id = Guid.NewGuid(), UtilisateurId = dm2Id, Role = RoleUtilisateur.DirecteurMetier, DateDebut = DateTime.Now });
+        var demande = CreateDemandeAcces("y@cit.test", "Y1", AccessRequestConstants.LocalAzureDepartment, directionId);
+        db.DemandesAccesAzureAd.Add(demande);
+        await db.SaveChangesAsync();
+        var fixture = CreateService(db);
+
+        // DM1 valide en premier
+        (await fixture.Service.ValiderParDmAsync(
+            new ValiderDemandeAccesParDmInput(demande.Id, dm1Id, RoleUtilisateur.Demandeur, null))).Succeeded.Should().BeTrue();
+
+        // DM2 essaye de re-traiter -> verrou
+        var result = await fixture.Service.ValiderParDmAsync(
+            new ValiderDemandeAccesParDmInput(demande.Id, dm2Id, RoleUtilisateur.ChefDeProjet, null));
+
+        result.Succeeded.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("deja ete traitee");
+    }
+
+    [Fact]
+    public async Task RejeterParDmAsync_AvecMotif_DoitInformerLeDemandeur()
+    {
+        await using var db = CreateDbContext();
+        var directionId = await SeedDirectionAvecDmAsync(db);
+        var dmId = await db.Utilisateurs.Where(u => u.DirectionId == directionId).Select(u => u.Id).FirstAsync();
+        var demande = CreateDemandeAcces("z@cit.test", "Z1", AccessRequestConstants.LocalAzureDepartment, directionId);
+        db.DemandesAccesAzureAd.Add(demande);
+        await db.SaveChangesAsync();
+        var fixture = CreateService(db);
+
+        var result = await fixture.Service.RejeterParDmAsync(
+            new RejeterDemandeAccesParDmInput(demande.Id, dmId, "Identite non confirmee"));
+
+        result.Succeeded.Should().BeTrue();
+        (await db.DemandesAccesAzureAd.SingleAsync()).Statut.Should().Be(StatutDemandeAcces.RejeteeParDm);
+        // Le demandeur recoit un email (workflow terminal cote DM).
+        fixture.Email.Verify(e => e.EnvoyerAsync(
+            "z@cit.test",
+            It.Is<string>(s => s.Contains("refus")),
+            It.IsAny<string>()), Times.Once);
+    }
+
     private static WorkflowFixture CreateService(
         ApplicationDbContext db,
         PasswordSetupTokenCreation? token = null)
@@ -374,7 +476,8 @@ public sealed class DemandeAccesWorkflowServiceTests
         string email,
         string matricule,
         string azureDepartment,
-        Guid? directionId = null)
+        Guid? directionId = null,
+        StatutDemandeAcces statut = StatutDemandeAcces.EnAttente)
     {
         return new DemandeAccesAzureAd
         {
@@ -386,7 +489,7 @@ public sealed class DemandeAccesWorkflowServiceTests
             AzureDepartment = azureDepartment,
             DirectionDetecteeId = directionId,
             Justification = "Demande d'acces",
-            Statut = StatutDemandeAcces.EnAttente,
+            Statut = statut,
             DateCreation = DateTime.Now,
             CreePar = "TEST"
         };

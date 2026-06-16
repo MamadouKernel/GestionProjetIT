@@ -106,28 +106,13 @@ public sealed class DemandeAccesWorkflowService : IDemandeAccesWorkflowService
         _db.DemandesAccesAzureAd.Add(demandeAcces);
         await _db.SaveChangesAsync();
 
-        await _notificationService.NotifierRoleAsync(
-            RoleUtilisateur.AdminIT,
-            TypeNotification.DemandeSupportTechnique,
-            "Nouvelle demande d'accès local CIT",
-            $"Demande d'accès local CIT de {demandeAcces.Prenoms} {demandeAcces.Nom} ({demandeAcces.Email}). Rôle souhaité : {roleSouhaiteNormalise}.",
-            DomainEntityTypes.DemandeAccesAzureAd,
-            demandeAcces.Id,
-            new
-            {
-                demandeAcces.Email,
-                demandeAcces.Matricule,
-                TypeAcces = AccessRequestConstants.LocalAccountLabel,
-                RoleSouhaite = roleSouhaiteNormalise,
-                Message = input.Message?.Trim()
-            });
-
-        // Information aux Directeurs Metier de la direction rattachee (ils ne sont pas
-        // validateurs mais informes pour pouvoir signaler une anomalie a l'AdminIT).
+        // Nouveau workflow : a la soumission, seul(s) le(s) Directeur(s) Metier de la
+        // direction declaree sont notifies. L'AdminIT/DSI/RSIT ne sont alertes qu'apres
+        // validation DM (= la demande devient ApprouveeParDm, compte a creer).
         await NotifierDirecteursMetierAsync(demandeAcces, roleSouhaiteNormalise);
 
         return DemandeAccesWorkflowResult.Success(
-            "Votre demande d'accès a été envoyée à l'administrateur. Vous serez contacté prochainement.",
+            "Votre demande d'accès a été transmise à votre Directeur Métier pour première validation.",
             demandeAcces.Id);
     }
 
@@ -155,8 +140,8 @@ public sealed class DemandeAccesWorkflowService : IDemandeAccesWorkflowService
             await _notificationService.NotifierUtilisateurAsync(
                 dm.Id,
                 TypeNotification.DemandeSupportTechnique,
-                $"Demande d'accès dans votre direction — {nomDemandeur}",
-                $"{nomDemandeur} ({demande.Email}) demande un accès rattaché à {direction.Libelle}. Rôle souhaité : {roleSouhaite}. Information uniquement — l'AdminIT traitera la demande.",
+                $"[Action requise] Validation d'accès — {nomDemandeur}",
+                $"{nomDemandeur} ({demande.Email}) demande un accès rattaché à {direction.Libelle}. Rôle souhaité : {roleSouhaite}. Votre validation est nécessaire avant création du compte.",
                 DomainEntityTypes.DemandeAccesAzureAd,
                 demande.Id);
 
@@ -173,6 +158,187 @@ public sealed class DemandeAccesWorkflowService : IDemandeAccesWorkflowService
         }
     }
 
+    public async Task<DemandeAccesWorkflowResult> ValiderParDmAsync(ValiderDemandeAccesParDmInput input)
+    {
+        var demande = await _db.DemandesAccesAzureAd
+            .Include(d => d.DirectionDetectee)
+            .FirstOrDefaultAsync(d => d.Id == input.DemandeId);
+        if (demande == null)
+            return DemandeAccesWorkflowResult.Error("Demande introuvable.");
+
+        // Verrou : statut doit etre EnAttente (= en attente DM). Si un autre DM a deja
+        // tranche, on refuse poliment avec son nom.
+        if (demande.Statut != StatutDemandeAcces.EnAttente)
+            return await BuildDejaTraiteeParDmAsync(demande);
+
+        // Verification : ce DM est-il bien rattache a la direction de la demande ?
+        if (!demande.DirectionDetecteeId.HasValue ||
+            !await EstDmDeLaDirectionAsync(input.DmId, demande.DirectionDetecteeId.Value))
+        {
+            return DemandeAccesWorkflowResult.Error(
+                "Vous n'etes pas le Directeur Metier de la direction concernee par cette demande.", demande.Id);
+        }
+
+        demande.Statut = StatutDemandeAcces.ApprouveeParDm;
+        demande.ValideeParDmId = input.DmId;
+        demande.DateValidationDm = DateTime.Now;
+        demande.CommentaireDm = input.Commentaire?.Trim();
+        demande.RoleConfirmeParDm = input.RoleConfirme.ToString();
+
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return await BuildDejaTraiteeParDmAsync(demande);
+        }
+
+        await NotifierEtMailerCreationCompteAsync(demande, input.RoleConfirme);
+
+        return DemandeAccesWorkflowResult.Success(
+            $"Demande validee. L'AdminIT/DSI/RSIT va creer le compte avec le role {input.RoleConfirme}.",
+            demande.Id);
+    }
+
+    public async Task<DemandeAccesWorkflowResult> RejeterParDmAsync(RejeterDemandeAccesParDmInput input)
+    {
+        if (string.IsNullOrWhiteSpace(input.Commentaire))
+            return DemandeAccesWorkflowResult.Error("Un motif de refus est obligatoire.");
+
+        var demande = await _db.DemandesAccesAzureAd
+            .Include(d => d.DirectionDetectee)
+            .FirstOrDefaultAsync(d => d.Id == input.DemandeId);
+        if (demande == null)
+            return DemandeAccesWorkflowResult.Error("Demande introuvable.");
+
+        if (demande.Statut != StatutDemandeAcces.EnAttente)
+            return await BuildDejaTraiteeParDmAsync(demande);
+
+        if (!demande.DirectionDetecteeId.HasValue ||
+            !await EstDmDeLaDirectionAsync(input.DmId, demande.DirectionDetecteeId.Value))
+        {
+            return DemandeAccesWorkflowResult.Error(
+                "Vous n'etes pas le Directeur Metier de la direction concernee par cette demande.", demande.Id);
+        }
+
+        demande.Statut = StatutDemandeAcces.RejeteeParDm;
+        demande.ValideeParDmId = input.DmId;
+        demande.DateValidationDm = DateTime.Now;
+        demande.CommentaireDm = input.Commentaire.Trim();
+
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return await BuildDejaTraiteeParDmAsync(demande);
+        }
+
+        await NotifierRefusAuDemandeurAsync(demande, input.Commentaire.Trim());
+
+        return DemandeAccesWorkflowResult.Success(
+            "Demande refusée. Le demandeur a été informé.", demande.Id);
+    }
+
+    private async Task<bool> EstDmDeLaDirectionAsync(Guid utilisateurId, Guid directionId)
+    {
+        return await _db.Utilisateurs.AnyAsync(u =>
+            u.Id == utilisateurId &&
+            !u.EstSupprime &&
+            u.DirectionId == directionId &&
+            u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.DirecteurMetier));
+    }
+
+    private async Task<DemandeAccesWorkflowResult> BuildDejaTraiteeParDmAsync(DemandeAccesAzureAd demande)
+    {
+        if (demande.ValideeParDmId.HasValue)
+        {
+            var auteur = await _db.Utilisateurs
+                .Where(u => u.Id == demande.ValideeParDmId.Value)
+                .Select(u => $"{u.Prenoms} {u.Nom}".Trim())
+                .FirstOrDefaultAsync();
+            return DemandeAccesWorkflowResult.Error(
+                $"Cette demande a deja ete traitee par {auteur ?? "un autre Directeur Metier"}.",
+                demande.Id);
+        }
+        return DemandeAccesWorkflowResult.Error("Cette demande a deja ete traitee.", demande.Id);
+    }
+
+    private async Task NotifierEtMailerCreationCompteAsync(DemandeAccesAzureAd demande, RoleUtilisateur roleConfirme)
+    {
+        var nomDemandeur = $"{demande.Prenoms} {demande.Nom}".Trim();
+        var directionLib = demande.DirectionDetectee?.Libelle ?? "—";
+        var nomDm = await _db.Utilisateurs
+            .Where(u => u.Id == demande.ValideeParDmId)
+            .Select(u => $"{u.Prenoms} {u.Nom}".Trim())
+            .FirstOrDefaultAsync() ?? "le Directeur Metier";
+
+        var titre = $"Demande d'acces validee par {nomDm} — {nomDemandeur}";
+        var message = $"Le DM {nomDm} a valide la demande d'acces de {nomDemandeur} ({demande.Email}) rattache a {directionLib}. Role confirme : {roleConfirme}. Creer le compte.";
+
+        // Notifs in-app aux 3 roles qui peuvent agir (verrou : 1er qui cree gagne).
+        await _notificationService.NotifierRoleAsync(
+            RoleUtilisateur.AdminIT, TypeNotification.DemandeSupportTechnique,
+            titre, message, DomainEntityTypes.DemandeAccesAzureAd, demande.Id);
+        await _notificationService.NotifierRoleAsync(
+            RoleUtilisateur.DSI, TypeNotification.DemandeSupportTechnique,
+            titre, message, DomainEntityTypes.DemandeAccesAzureAd, demande.Id);
+        await _notificationService.NotifierRoleAsync(
+            RoleUtilisateur.ResponsableSolutionsIT, TypeNotification.DemandeSupportTechnique,
+            titre, message, DomainEntityTypes.DemandeAccesAzureAd, demande.Id);
+
+        // Email a tous les destinataires de ces roles.
+        var destinataires = await _db.Utilisateurs
+            .Where(u => !u.EstSupprime &&
+                        u.UtilisateurRoles.Any(ur => !ur.EstSupprime &&
+                            (ur.Role == RoleUtilisateur.AdminIT ||
+                             ur.Role == RoleUtilisateur.DSI ||
+                             ur.Role == RoleUtilisateur.ResponsableSolutionsIT)))
+            .Select(u => u.Email)
+            .Where(e => !string.IsNullOrWhiteSpace(e))
+            .Distinct()
+            .ToListAsync();
+
+        if (destinataires.Count > 0)
+        {
+            await _emailService.EnvoyerAsync(
+                destinataires,
+                $"[Action requise] Compte a creer (valide DM) — {nomDemandeur}",
+                $"<p>Le Directeur Metier <strong>{nomDm}</strong> a valide la demande d'acces de <strong>{nomDemandeur}</strong> ({demande.Email}) rattache a la direction <strong>{directionLib}</strong>.</p>" +
+                $"<p>Role confirme : <strong>{roleConfirme}</strong></p>" +
+                "<p>Connectez-vous a Zéïnab pour créer le compte. Le premier qui agit ferme la demande, les autres voient « deja traitee ».</p>");
+        }
+    }
+
+    private async Task NotifierRefusAuDemandeurAsync(DemandeAccesAzureAd demande, string motif)
+    {
+        var nomDm = await _db.Utilisateurs
+            .Where(u => u.Id == demande.ValideeParDmId)
+            .Select(u => $"{u.Prenoms} {u.Nom}".Trim())
+            .FirstOrDefaultAsync() ?? "le Directeur Metier";
+
+        // Information AdminIT pour stats / traçabilité (pas d'action attendue).
+        await _notificationService.NotifierRoleAsync(
+            RoleUtilisateur.AdminIT, TypeNotification.DemandeSupportTechnique,
+            $"Demande d'acces refusée par {nomDm}",
+            $"Le DM {nomDm} a refusé la demande de {demande.Prenoms} {demande.Nom} ({demande.Email}). Motif : {motif}",
+            DomainEntityTypes.DemandeAccesAzureAd, demande.Id);
+
+        // Email au demandeur (terminal).
+        if (!string.IsNullOrWhiteSpace(demande.Email))
+        {
+            await _emailService.EnvoyerAsync(
+                demande.Email,
+                $"[Information] Votre demande d'acces a été refusée",
+                $"<p>Bonjour <strong>{demande.Prenoms} {demande.Nom}</strong>,</p>" +
+                $"<p>Votre demande d'acces a l'application Zéïnab a été refusée par votre Directeur Metier <strong>{nomDm}</strong>.</p>" +
+                $"<p><strong>Motif :</strong> {motif}</p>" +
+                "<p>Pour toute question ou recours, rapprochez-vous directement de votre Directeur Metier ou de la DSI.</p>");
+        }
+    }
+
     public async Task<DemandeAccesWorkflowResult> ApprouverAsync(ApprouverDemandeAccesInput input)
     {
         var demande = await _db.DemandesAccesAzureAd
@@ -183,9 +349,24 @@ public sealed class DemandeAccesWorkflowService : IDemandeAccesWorkflowService
             return DemandeAccesWorkflowResult.Error("Demande introuvable.");
         }
 
-        if (demande.Statut != StatutDemandeAcces.EnAttente)
+        // Verrou : on n'accepte la creation que sur une demande validee par le DM.
+        // Si elle est deja Approuvee (compte cree par un collegue), on bloque proprement.
+        if (demande.Statut == StatutDemandeAcces.Approuvee)
         {
-            return DemandeAccesWorkflowResult.Error("Cette demande a déjà été traitée.", demande.Id);
+            var auteur = await _db.Utilisateurs
+                .Where(u => u.Id == demande.TraiteParId)
+                .Select(u => $"{u.Prenoms} {u.Nom}".Trim())
+                .FirstOrDefaultAsync();
+            return DemandeAccesWorkflowResult.Error(
+                $"Cette demande a deja ete traitee par {auteur ?? "un autre administrateur"}.",
+                demande.Id);
+        }
+
+        if (demande.Statut != StatutDemandeAcces.ApprouveeParDm)
+        {
+            return DemandeAccesWorkflowResult.Error(
+                "Cette demande n'a pas ete validee par le Directeur Metier. Action impossible.",
+                demande.Id);
         }
 
         var roleAAttribuer = NormalizeAccessRequestRole(input.Role);
