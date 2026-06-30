@@ -558,7 +558,7 @@ namespace GestionProjects.Controllers
         // POST: Valider Charte par DM
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "DirecteurMetier")]
+        [Authorize(Roles = "DirecteurMetier,AdminIT")]
         public async Task<IActionResult> ValiderCharteDM(Guid id)
         {
             var projet = await _db.Projets
@@ -582,7 +582,7 @@ namespace GestionProjects.Controllers
         // POST: Rejeter Charte par DM
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "DirecteurMetier")]
+        [Authorize(Roles = "DirecteurMetier,AdminIT")]
         public async Task<IActionResult> RejeterCharteDM(Guid id, string commentaire)
         {
             var projet = await _db.Projets
@@ -604,7 +604,7 @@ namespace GestionProjects.Controllers
         // POST: Valider Charte par DSI
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "DSI,ResponsableSolutionsIT")]
+        [Authorize(Roles = "DSI,ResponsableSolutionsIT,AdminIT")]
         public async Task<IActionResult> ValiderCharteDSI(Guid id)
         {
             var projet = await _db.Projets
@@ -628,7 +628,7 @@ namespace GestionProjects.Controllers
         // POST: Rejeter Charte par DSI
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "DSI,ResponsableSolutionsIT")]
+        [Authorize(Roles = "DSI,ResponsableSolutionsIT,AdminIT")]
         public async Task<IActionResult> RejeterCharteDSI(Guid id, string commentaire)
         {
             var projet = await _db.Projets.FindAsync(id);

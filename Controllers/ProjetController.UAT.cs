@@ -79,7 +79,7 @@ namespace GestionProjects.Controllers
         // POST: Valider Recette
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "DirecteurMetier")]
+        [Authorize(Roles = "DirecteurMetier,AdminIT")]
         public async Task<IActionResult> ValiderRecette(Guid id)
         {
             var projet = await _db.Projets.FindAsync(id);

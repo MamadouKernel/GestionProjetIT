@@ -474,7 +474,7 @@ namespace GestionProjects.Controllers
         // POST: Valider Planification par DM
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "DirecteurMetier")]
+        [Authorize(Roles = "DirecteurMetier,AdminIT")]
         public async Task<IActionResult> ValiderPlanifDM(Guid id)
         {
             var projet = await _db.Projets.FindAsync(id);
@@ -506,7 +506,7 @@ namespace GestionProjects.Controllers
         // POST: Valider Planification par DSI
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "DSI,ResponsableSolutionsIT")]
+        [Authorize(Roles = "DSI,ResponsableSolutionsIT,AdminIT")]
         public async Task<IActionResult> ValiderPlanifDSI(Guid id)
         {
             var projet = await _db.Projets

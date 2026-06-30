@@ -47,7 +47,7 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
         if (!hasAdminScope && demande.DirecteurMetierId != currentUserId)
             return WorkflowResult.Forbidden();
 
-        if (demande.DemandeurId == currentUserId)
+        if (!hasAdminScope && demande.DemandeurId == currentUserId)
             return WorkflowResult.Error("Vous ne pouvez pas valider votre propre demande.");
 
         if (demande.StatutDemande != StatutDemande.EnAttenteValidationDirecteurMetier &&
