@@ -44,6 +44,7 @@ namespace GestionProjects.Infrastructure.Persistence
         public DbSet<DemandeClotureProjet> DemandesClotureProjets { get; set; }
         public DbSet<AvenantProjet> AvenantsProjets { get; set; }
         public DbSet<BeneficeProjet> BeneficesProjets { get; set; }
+        public DbSet<EvaluationMembreProjet> EvaluationsMembresProjets { get; set; }
 
         public DbSet<DelegationValidationDSI> DelegationsValidationDSI { get; set; }
         public DbSet<DelegationChefProjet> DelegationsChefProjet { get; set; }
@@ -471,6 +472,30 @@ namespace GestionProjects.Infrastructure.Persistence
                 .WithMany(p => p.Benefices)
                 .HasForeignKey(b => b.ProjetId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // ---- Relations EvaluationMembreProjet ----
+            modelBuilder.Entity<EvaluationMembreProjet>()
+                .HasOne(e => e.Projet)
+                .WithMany(p => p.EvaluationsMembres)
+                .HasForeignKey(e => e.ProjetId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<EvaluationMembreProjet>()
+                .HasOne(e => e.MembreProjet)
+                .WithMany()
+                .HasForeignKey(e => e.MembreProjetId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<EvaluationMembreProjet>()
+                .HasOne(e => e.Evaluateur)
+                .WithMany()
+                .HasForeignKey(e => e.EvaluateurId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<EvaluationMembreProjet>()
+                .HasIndex(e => new { e.ProjetId, e.MembreProjetId })
+                .IsUnique()
+                .HasFilter("[EstSupprime] = 0");
 
             // Index pour améliorer les performances des requêtes de charges
             modelBuilder.Entity<ChargeProjet>()

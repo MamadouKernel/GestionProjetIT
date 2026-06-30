@@ -150,6 +150,34 @@ public static class DatabaseExtensions
             END
         ");
 
+        ExecutePatch(db, "EvaluationsMembresProjets", @"
+            IF NOT EXISTS (SELECT 1 FROM sys.objects WHERE object_id=OBJECT_ID('EvaluationsMembresProjets') AND type='U')
+            BEGIN
+                CREATE TABLE [EvaluationsMembresProjets] (
+                    [Id] uniqueidentifier NOT NULL,
+                    [ProjetId] uniqueidentifier NOT NULL,
+                    [MembreProjetId] uniqueidentifier NOT NULL,
+                    [EvaluateurId] uniqueidentifier NOT NULL,
+                    [DateEvaluation] datetime2 NOT NULL,
+                    [NoteQualite] int NOT NULL,
+                    [NoteRespectDelais] int NOT NULL,
+                    [NoteCollaboration] int NOT NULL,
+                    [Commentaire] nvarchar(max) NULL,
+                    [DateCreation] datetime2 NOT NULL,
+                    [CreePar] nvarchar(4000) NOT NULL,
+                    [DateModification] datetime2 NULL,
+                    [ModifiePar] nvarchar(4000) NULL,
+                    [EstSupprime] bit NOT NULL,
+                    CONSTRAINT [PK_EvaluationsMembresProjets] PRIMARY KEY ([Id]),
+                    CONSTRAINT [FK_EvaluationsMembresProjets_Projets] FOREIGN KEY ([ProjetId]) REFERENCES [Projets]([Id]) ON DELETE CASCADE,
+                    CONSTRAINT [FK_EvaluationsMembresProjets_MembresProjets] FOREIGN KEY ([MembreProjetId]) REFERENCES [MembresProjets]([Id]),
+                    CONSTRAINT [FK_EvaluationsMembresProjets_Utilisateurs] FOREIGN KEY ([EvaluateurId]) REFERENCES [Utilisateurs]([Id])
+                );
+                CREATE INDEX [IX_EvaluationsMembresProjets_ProjetId] ON [EvaluationsMembresProjets]([ProjetId]);
+                CREATE UNIQUE INDEX [IX_EvaluationsMembresProjets_ProjetId_MembreProjetId] ON [EvaluationsMembresProjets]([ProjetId], [MembreProjetId]) WHERE [EstSupprime] = 0;
+            END
+        ");
+
         ExecutePatch(db, "SignaturesCharte", @"
             IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id=OBJECT_ID('CharteProjets') AND name='SignatureImageCP')
                 ALTER TABLE [CharteProjets] ADD [SignatureImageCP] nvarchar(max) NULL;

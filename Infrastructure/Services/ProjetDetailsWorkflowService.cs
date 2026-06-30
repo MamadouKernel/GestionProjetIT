@@ -263,6 +263,7 @@ namespace GestionProjects.Infrastructure.Services
             List<Utilisateur> chefsProjet = new();
             List<AvenantProjet> avenants = new();
             List<BeneficeProjet> benefices = new();
+            List<EvaluationMembreProjet> evaluationsMembres = new();
 
             if (tab == "uat")
             {
@@ -321,6 +322,13 @@ namespace GestionProjects.Infrastructure.Services
                 benefices = await _db.BeneficesProjets
                     .Where(b => b.ProjetId == id && !b.EstSupprime)
                     .OrderBy(b => b.DateCreation)
+                    .ToListAsync();
+            }
+
+            if (tab == "cloture")
+            {
+                evaluationsMembres = await _db.EvaluationsMembresProjets
+                    .Where(e => e.ProjetId == id && !e.EstSupprime)
                     .ToListAsync();
             }
 
@@ -387,6 +395,7 @@ namespace GestionProjects.Infrastructure.Services
                 ChefsProjet        = chefsProjet,
                 Avenants           = avenants,
                 Benefices          = benefices,
+                EvaluationsMembres = evaluationsMembres,
             };
         }
     }

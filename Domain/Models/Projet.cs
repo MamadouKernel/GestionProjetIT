@@ -155,6 +155,7 @@ namespace GestionProjects.Domain.Models
         public ICollection<AvenantProjet> Avenants { get; set; } = new List<AvenantProjet>();
         public ICollection<BeneficeProjet> Benefices { get; set; } = new List<BeneficeProjet>();
         public ICollection<ChargeProjet> Charges { get; set; } = new List<ChargeProjet>();
+        public ICollection<EvaluationMembreProjet> EvaluationsMembres { get; set; } = new List<EvaluationMembreProjet>();
         public ICollection<TachePlanningProjet> TachesPlanning { get; set; } = new List<TachePlanningProjet>();
         public ICollection<LigneRaciProjet> LignesRaci { get; set; } = new List<LigneRaciProjet>();
         public ICollection<LigneCommunicationProjet> LignesCommunication { get; set; } = new List<LigneCommunicationProjet>();

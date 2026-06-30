@@ -32,6 +32,7 @@ public static class ServiceCollectionExtensions
         services.AddHostedService<RappelsAutomatiquesBackgroundService>();
         services.AddScoped<ILivrableProjetService, LivrableProjetService>();
         services.AddScoped<IChargeProjetService, ChargeProjetService>();
+        services.AddScoped<IEvaluationMembreProjetService, EvaluationMembreProjetService>();
         services.AddScoped<IMembreProjetService, MembreProjetService>();
         services.AddScoped<IProjetDetailsWorkflowService, ProjetDetailsWorkflowService>();
         services.AddScoped<IFicheProjetService, FicheProjetService>();

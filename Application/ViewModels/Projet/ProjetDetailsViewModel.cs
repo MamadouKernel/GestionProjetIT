@@ -33,6 +33,9 @@ public class ProjetDetailsViewModel
     // Données onglet Bénéfices (réalisation de la valeur)
     public List<BeneficeProjet> Benefices { get; set; } = new();
 
+    // Données onglet Clôture (évaluation des membres)
+    public List<EvaluationMembreProjet> EvaluationsMembres { get; set; } = new();
+
     // Données pour sélection du chef de projet (synthèse)
     public List<Utilisateur> ChefsProjet { get; set; } = new();
 }

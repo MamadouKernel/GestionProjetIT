@@ -521,6 +521,130 @@
     }
 
     <section class="phase-panel">
+        <div class="form-help-title-row">
+            <h4 class="phase-panel-title">Évaluation de l'équipe</h4>
+            @RenderHelpPopover(
+                "Évaluation de l'équipe",
+                "Ce bloc sert à évaluer chaque membre de l'équipe projet sur la qualité du travail, le respect des délais et la collaboration.",
+                "Notez chaque critère de 1 (insuffisant) à 5 (excellent) et ajoutez un commentaire si utile. Une seule évaluation par membre : la noter à nouveau met à jour l'évaluation existante.")
+        </div>
+        @{
+            var membresActifs = projet.Membres?.Where(m => !m.EstSupprime && m.EstActif).OrderBy(m => m.Nom).ToList() ?? new List<MembreProjet>();
+        }
+        @if (membresActifs.Count == 0)
+        {
+            <div class="phase-empty">
+                <i class="bi bi-people"></i>
+                <p>Aucun membre actif sur ce projet.</p>
+            </div>
+        }
+        else
+        {
+            <div class="record-stack">
+                @foreach (var membre in membresActifs)
+                {
+                    var evaluation = Model.EvaluationsMembres.FirstOrDefault(e => e.MembreProjetId == membre.Id);
+                    var moyenne = evaluation != null
+                        ? Math.Round((evaluation.NoteQualite + evaluation.NoteRespectDelais + evaluation.NoteCollaboration) / 3.0, 1)
+                        : (double?)null;
+
+                    <article class="record-card">
+                        <div class="record-card-header">
+                            <div class="record-card-title">
+                                @membre.Nom @membre.Prenom
+                                @if (moyenne.HasValue)
+                                {
+                                    <span class="badge-modern badge-modern-success">Moyenne @moyenne/5</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-modern badge-modern-secondary">Non évalué</span>
+                                }
+                            </div>
+                            <div class="record-card-subtitle">@membre.RoleDansProjet</div>
+                        </div>
+
+                        @if (evaluation != null)
+                        {
+                            <div class="record-card-note">
+                                Qualité : @evaluation.NoteQualite/5 · Délais : @evaluation.NoteRespectDelais/5 · Collaboration : @evaluation.NoteCollaboration/5
+                                @if (!string.IsNullOrWhiteSpace(evaluation.Commentaire))
+                                {
+                                    <br><text>@evaluation.Commentaire</text>
+                                }
+                            </div>
+                        }
+
+                        @if (canEditCloture)
+                        {
+                            <div class="phase-action-row">
+                                <button type="button" class="btn-modern btn-modern-secondary" data-bs-toggle="modal" data-bs-target="#evaluerMembreModal_@membre.Id">
+                                    <i class="bi bi-star"></i> Évaluer
+                                </button>
+                            </div>
+
+                            <div class="modal fade" id="evaluerMembreModal_@membre.Id" tabindex="-1">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content app-modal-content">
+                                        <form asp-action="EnregistrerEvaluationMembre" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@projet.Id" />
+                                            <input type="hidden" name="membreProjetId" value="@membre.Id" />
+                                            <div class="modal-header app-modal-header">
+                                                <h5 class="modal-title"><i class="bi bi-star"></i> Évaluer @membre.Nom @membre.Prenom</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body app-modal-body">
+                                                <div class="form-group-modern">
+                                                    <label class="form-label-modern">Qualité du travail *</label>
+                                                    <select name="noteQualite" class="form-control-modern" required>
+                                                        @for (var n = 1; n <= 5; n++)
+                                                        {
+                                                            <option value="@n" selected="@(evaluation?.NoteQualite == n)">@n</option>
+                                                        }
+                                                    </select>
+                                                </div>
+                                                <div class="form-group-modern">
+                                                    <label class="form-label-modern">Respect des délais *</label>
+                                                    <select name="noteRespectDelais" class="form-control-modern" required>
+                                                        @for (var n = 1; n <= 5; n++)
+                                                        {
+                                                            <option value="@n" selected="@(evaluation?.NoteRespectDelais == n)">@n</option>
+                                                        }
+                                                    </select>
+                                                </div>
+                                                <div class="form-group-modern">
+                                                    <label class="form-label-modern">Collaboration *</label>
+                                                    <select name="noteCollaboration" class="form-control-modern" required>
+                                                        @for (var n = 1; n <= 5; n++)
+                                                        {
+                                                            <option value="@n" selected="@(evaluation?.NoteCollaboration == n)">@n</option>
+                                                        }
+                                                    </select>
+                                                </div>
+                                                <div class="form-group-modern">
+                                                    <label class="form-label-modern">Commentaire</label>
+                                                    <textarea name="commentaire" class="form-control-modern" rows="2">@evaluation?.Commentaire</textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer app-modal-footer">
+                                                <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                <button type="submit" class="btn-modern btn-modern-primary">
+                                                    <i class="bi bi-save"></i> Enregistrer l'évaluation
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </article>
+                }
+            </div>
+        }
+    </section>
+
+    <section class="phase-panel">
         <div class="phase-section-header">
             <div>
                 <div class="form-help-title-row">
