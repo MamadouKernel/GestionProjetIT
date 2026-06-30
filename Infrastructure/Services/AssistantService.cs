@@ -136,11 +136,22 @@ namespace GestionProjects.Infrastructure.Services
                 Titre = projet.Titre,
                 PhaseActuelle = projet.PhaseActuelle,
                 PhaseLabel = projet.PhaseWorkflowLabel,
+                OngletCible = OngletPourPhase(projet.PhaseActuelle),
                 EstCloture = estCloture,
                 ElementsManquants = manquants,
                 ProchaineAction = prochaineAction
             };
         }
+
+        private static string OngletPourPhase(PhaseProjet phase) => phase switch
+        {
+            PhaseProjet.AnalyseClarification => "analyse",
+            PhaseProjet.PlanificationValidation => "planification",
+            PhaseProjet.ExecutionSuivi => "execution",
+            PhaseProjet.UatMep => "uat",
+            PhaseProjet.ClotureLeconsApprises => "cloture",
+            _ => "synthese"
+        };
 
         private void AjouterLivrablesManquants(Projet projet, PhaseProjet phaseCible, List<string> destination)
         {
@@ -308,6 +319,80 @@ namespace GestionProjects.Infrastructure.Services
             return anomalies.Count > 0
                 ? $"Anticiper davantage les risques techniques : {anomalies.Count} anomalie(s) de priorité haute/critique ont été détectées en cours de projet."
                 : "À compléter par le chef de projet en fonction du retour des parties prenantes.";
+        }
+
+        public async Task<BrouillonAnalyseResult?> GenererBrouillonAnalyseAsync(Guid projetId, Guid userId)
+        {
+            var projet = await _db.Projets
+                .Include(p => p.DemandeProjet)
+                .Include(p => p.CharteProjet)
+                .FirstOrDefaultAsync(p => p.Id == projetId);
+
+            if (projet == null)
+            {
+                return null;
+            }
+
+            var demande = projet.DemandeProjet;
+
+            return new BrouillonAnalyseResult
+            {
+                NotesClarification = string.IsNullOrWhiteSpace(demande?.Contexte)
+                    ? $"Besoin exprimé pour le projet \"{projet.Titre}\"."
+                    : $"Contexte de la demande : {demande.Contexte.Trim()}",
+                DecisionsPrises = string.IsNullOrWhiteSpace(demande?.Objectifs)
+                    ? "Objectifs à clarifier avec le demandeur."
+                    : $"Objectifs confirmés avec le demandeur : {demande.Objectifs.Trim()}",
+                HypothesesProjet = string.IsNullOrWhiteSpace(projet.CharteProjet?.ContraintesInitiales)
+                    ? "Aucune contrainte particulière identifiée à ce stade."
+                    : $"Contraintes identifiées : {projet.CharteProjet.ContraintesInitiales.Trim()}"
+            };
+        }
+
+        public async Task<BrouillonExecutionResult?> GenererBrouillonExecutionAsync(Guid projetId, Guid userId)
+        {
+            var projet = await _db.Projets
+                .Include(p => p.TachesPlanning)
+                .Include(p => p.Anomalies)
+                .Include(p => p.Charges)
+                .FirstOrDefaultAsync(p => p.Id == projetId);
+
+            if (projet == null)
+            {
+                return null;
+            }
+
+            var taches = projet.TachesPlanning.Where(t => !t.EstSupprime).ToList();
+            var tachesTerminees = taches.Count(t => t.Avancement >= 100);
+            var tachesEnCours = taches.Where(t => t.Avancement > 0 && t.Avancement < 100).ToList();
+            var tachesNonDemarrees = taches.Where(t => t.Avancement == 0).ToList();
+
+            var commentaireAvancement = taches.Count == 0
+                ? $"Avancement global du projet : {projet.PourcentageAvancementAffiche}%."
+                : $"Avancement global : {projet.PourcentageAvancementAffiche}% ({tachesTerminees}/{taches.Count} tâche(s) terminée(s)).";
+
+            var actionsRealisees = tachesTerminees > 0
+                ? string.Join(", ", taches.Where(t => t.Avancement >= 100).Take(5).Select(t => t.Libelle))
+                : "Aucune tâche terminée pour le moment.";
+
+            var actionsAVenir = tachesEnCours.Count + tachesNonDemarrees.Count > 0
+                ? string.Join(", ", tachesEnCours.Concat(tachesNonDemarrees).Take(5).Select(t => t.Libelle))
+                : "Aucune tâche restante identifiée.";
+
+            var anomaliesOuvertes = projet.Anomalies.Count(a => !a.EstSupprime &&
+                a.Statut != StatutAnomalie.Corrigee && a.Statut != StatutAnomalie.Fermee && a.Statut != StatutAnomalie.Rejetee);
+
+            var problemes = anomaliesOuvertes > 0
+                ? $"{anomaliesOuvertes} anomalie(s) encore ouverte(s) à traiter."
+                : "Aucun blocage majeur identifié à ce jour.";
+
+            return new BrouillonExecutionResult
+            {
+                CommentaireAvancementExecution = commentaireAvancement,
+                ActionsRealiseesExecution = $"Tâches terminées : {actionsRealisees}",
+                ActionsAVenirExecution = $"Tâches restantes : {actionsAVenir}",
+                ProblemesBlocagesExecution = problemes
+            };
         }
     }
 }

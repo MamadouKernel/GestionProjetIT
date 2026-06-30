@@ -61,6 +61,54 @@ namespace GestionProjects.Controllers
             return Json(resultat);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> BrouillonAnalyse(Guid projetId)
+        {
+            if (!await PeutGererLAnalyseAsync(projetId))
+                return Forbid();
+
+            var userId = User.GetUserIdOrThrow();
+            var resultat = await _assistantService.GenererBrouillonAnalyseAsync(projetId, userId);
+            if (resultat == null)
+                return NotFound();
+
+            return Json(resultat);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> BrouillonExecution(Guid projetId)
+        {
+            if (!await PeutGererLExecutionAsync(projetId))
+                return Forbid();
+
+            var userId = User.GetUserIdOrThrow();
+            var resultat = await _assistantService.GenererBrouillonExecutionAsync(projetId, userId);
+            if (resultat == null)
+                return NotFound();
+
+            return Json(resultat);
+        }
+
+        private async Task<bool> PeutGererLAnalyseAsync(Guid projetId)
+        {
+            var projet = await _db.Projets.FindAsync(projetId);
+            if (projet == null)
+                return false;
+
+            var ui = await ConstruireUiAsync(projet);
+            return ui.CanEditAnalyse || ui.HasDsiGovernanceAccess;
+        }
+
+        private async Task<bool> PeutGererLExecutionAsync(Guid projetId)
+        {
+            var projet = await _db.Projets.FindAsync(projetId);
+            if (projet == null)
+                return false;
+
+            var ui = await ConstruireUiAsync(projet);
+            return ui.CanEditExecution || ui.HasDsiGovernanceAccess;
+        }
+
         private async Task<bool> PeutVoirLeProjetAsync(Guid projetId)
         {
             var projet = await _db.Projets.FindAsync(projetId);

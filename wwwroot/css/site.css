@@ -8019,12 +8019,32 @@ body.screen-guide-open .screen-guide-drawer {
   color: var(--gray-900, #0f172a);
 }
 
-.assistant-panel-close {
+.assistant-panel-close,
+.assistant-panel-clear {
   border: none;
   background: transparent;
   color: var(--gray-500, #64748b);
   font-size: 1.1rem;
   line-height: 1;
+}
+
+.assistant-panel-clear {
+  font-size: 0.95rem;
+  margin-right: 0.25rem;
+}
+
+.assistant-quick-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  font-weight: 600;
+  color: var(--primary-blue);
+  text-decoration: none;
+}
+
+.assistant-quick-link:hover {
+  text-decoration: underline;
 }
 
 .assistant-panel-body {

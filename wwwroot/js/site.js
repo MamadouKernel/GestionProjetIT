@@ -1278,12 +1278,54 @@
         }
     });
 
+    // Synonymes/variantes courantes -> terme canonique présent dans les catalogues d'aide.
+    // Reste déterministe (pas de LLM) : simple table de correspondance, étendue au besoin.
+    const helpSynonyms = {
+        creer: "creation", cree: "creation", creation: "creation",
+        valider: "validation", validee: "validation", validation: "validation", approuver: "validation",
+        deposer: "depot", depose: "depot", upload: "depot", televerser: "depot",
+        rejeter: "rejet", refuser: "rejet", rejet: "rejet",
+        cloturer: "cloture", fermer: "cloture", terminer: "cloture", cloture: "cloture",
+        echec: "echecs", echouer: "echecs", probleme: "blocage", bloque: "blocage", bloquant: "blocage",
+        charte: "charte", signer: "signature", signature: "signature",
+        budget: "budget", cout: "budget", couts: "budget",
+        risque: "risque", risques: "risque",
+        anomalie: "anomalie", bug: "anomalie", incident: "anomalie",
+        delai: "planning", retard: "planning", planning: "planning", planifier: "planning",
+        equipe: "membre", membre: "membre", participant: "membre"
+    };
+
+    function expandQueryWords(words) {
+        const expanded = new Set();
+        words.forEach((w) => {
+            expanded.add(w);
+            if (helpSynonyms[w]) {
+                expanded.add(helpSynonyms[w]);
+            }
+        });
+        return Array.from(expanded);
+    }
+
+    function haystackMatchesWord(haystack, word) {
+        if (haystack.includes(word)) {
+            return true;
+        }
+        // Tolère les variations de fin de mot (singulier/pluriel, conjugaisons courtes)
+        // en comparant un préfixe suffisamment long pour rester pertinent.
+        if (word.length >= 5) {
+            const prefix = word.slice(0, word.length - 2);
+            return haystack.split(" ").some((token) => token.startsWith(prefix));
+        }
+        return false;
+    }
+
     function searchHelpCatalog(query) {
-        const words = normalize(query).split(" ").filter((w) => w.length > 2);
-        if (words.length === 0) {
+        const rawWords = normalize(query).split(" ").filter((w) => w.length > 2);
+        if (rawWords.length === 0) {
             return [];
         }
 
+        const words = expandQueryWords(rawWords);
         const candidates = [];
 
         Object.keys(sectionHelpCatalog).forEach((key) => {
@@ -1308,7 +1350,7 @@
         return candidates
             .map((candidate) => ({
                 candidate,
-                score: words.reduce((acc, w) => acc + (candidate.haystack.includes(w) ? 1 : 0), 0)
+                score: words.reduce((acc, w) => acc + (haystackMatchesWord(candidate.haystack, w) ? 1 : 0), 0)
             }))
             .filter((scored) => scored.score > 0)
             .sort((a, b) => b.score - a.score)

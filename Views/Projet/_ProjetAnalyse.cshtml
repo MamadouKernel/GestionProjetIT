@@ -423,6 +423,9 @@
 
         <section class="phase-panel">
             <h4 class="phase-panel-title">Notes de clarification</h4>
+            <button type="button" class="btn-modern btn-modern-secondary" id="genererBrouillonAnalyseBtn" data-projet-id="@Model.Id">
+                <i class="bi bi-magic"></i> Générer un brouillon
+            </button>
             <form asp-action="SauvegarderClarification" method="post">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.Id" />
@@ -458,6 +461,40 @@
                     </button>
                 </div>
             </form>
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    const btn = document.getElementById('genererBrouillonAnalyseBtn');
+                    if (!btn || !window.ZeinabLayout || !window.ZeinabLayout.assistantBrouillonAnalyseUrl) {
+                        return;
+                    }
+
+                    btn.addEventListener('click', function () {
+                        const projetId = btn.getAttribute('data-projet-id');
+                        const form = btn.nextElementSibling;
+                        btn.disabled = true;
+                        btn.querySelector('i').className = 'bi bi-arrow-repeat';
+
+                        fetch(`${window.ZeinabLayout.assistantBrouillonAnalyseUrl}?projetId=${projetId}`)
+                            .then(function (response) { return response.ok ? response.json() : null; })
+                            .then(function (data) {
+                                if (!data) {
+                                    return;
+                                }
+
+                                Object.keys(data).forEach(function (key) {
+                                    const field = form.querySelector(`[name="${key}"]`);
+                                    if (field) {
+                                        field.value = data[key];
+                                    }
+                                });
+                            })
+                            .finally(function () {
+                                btn.disabled = false;
+                                btn.querySelector('i').className = 'bi bi-magic';
+                            });
+                    });
+                });
+            </script>
         </section>
 
         <section class="phase-panel">

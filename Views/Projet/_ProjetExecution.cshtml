@@ -109,7 +109,10 @@
 
     @if (canEditExecution)
     {
-        <form asp-action="UpdateExecution" method="post" class="phase-shell">
+        <button type="button" class="btn-modern btn-modern-secondary" id="genererBrouillonExecutionBtn" data-projet-id="@projet.Id" style="margin-bottom: 0.75rem;">
+            <i class="bi bi-magic"></i> Générer un brouillon
+        </button>
+        <form asp-action="UpdateExecution" method="post" class="phase-shell" id="formUpdateExecution">
             @Html.AntiForgeryToken()
             <input type="hidden" name="id" value="@projet.Id" />
 
@@ -262,6 +265,40 @@
                 </button>
             </div>
         </form>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const btn = document.getElementById('genererBrouillonExecutionBtn');
+                if (!btn || !window.ZeinabLayout || !window.ZeinabLayout.assistantBrouillonExecutionUrl) {
+                    return;
+                }
+
+                btn.addEventListener('click', function () {
+                    const projetId = btn.getAttribute('data-projet-id');
+                    const form = document.getElementById('formUpdateExecution');
+                    btn.disabled = true;
+                    btn.querySelector('i').className = 'bi bi-arrow-repeat';
+
+                    fetch(`${window.ZeinabLayout.assistantBrouillonExecutionUrl}?projetId=${projetId}`)
+                        .then(function (response) { return response.ok ? response.json() : null; })
+                        .then(function (data) {
+                            if (!data || !form) {
+                                return;
+                            }
+
+                            Object.keys(data).forEach(function (key) {
+                                const field = form.querySelector(`[name="${key}"]`);
+                                if (field) {
+                                    field.value = data[key];
+                                }
+                            });
+                        })
+                        .finally(function () {
+                            btn.disabled = false;
+                            btn.querySelector('i').className = 'bi bi-magic';
+                        });
+                });
+            });
+        </script>
     }
     else
     {

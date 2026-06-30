@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using GestionProjects.Domain.Enums;
 
 namespace GestionProjects.Application.Common.Interfaces
@@ -20,6 +21,18 @@ namespace GestionProjects.Application.Common.Interfaces
         /// déterministes, pas par génération libre.
         /// </summary>
         Task<BrouillonBilanResult?> GenererBrouillonBilanAsync(Guid projetId, Guid userId);
+
+        /// <summary>
+        /// Construit un brouillon de notes de clarification (phase Analyse) à partir
+        /// des données déjà saisies sur la demande de projet et la charte.
+        /// </summary>
+        Task<BrouillonAnalyseResult?> GenererBrouillonAnalyseAsync(Guid projetId, Guid userId);
+
+        /// <summary>
+        /// Construit un brouillon de synthèse d'exécution à partir de l'avancement des
+        /// tâches de planning, des anomalies et des charges du projet.
+        /// </summary>
+        Task<BrouillonExecutionResult?> GenererBrouillonExecutionAsync(Guid projetId, Guid userId);
     }
 
     public sealed class ProchainesEtapesResult
@@ -28,6 +41,7 @@ namespace GestionProjects.Application.Common.Interfaces
         public required string Titre { get; init; }
         public required PhaseProjet PhaseActuelle { get; init; }
         public required string PhaseLabel { get; init; }
+        public required string OngletCible { get; init; }
         public required bool EstCloture { get; init; }
         public required IReadOnlyList<string> ElementsManquants { get; init; }
         public required string ProchaineAction { get; init; }
@@ -42,5 +56,36 @@ namespace GestionProjects.Application.Common.Interfaces
         public required string BilanReussites { get; init; }
         public required string LeconsReussites { get; init; }
         public required string LeconsEchecs { get; init; }
+    }
+
+    /// <summary>
+    /// Noms de propriétés forcés en PascalCase (JsonPropertyName) car le formulaire
+    /// d'exécution lie directement les noms de champs sans préfixe camelCase.
+    /// </summary>
+    public sealed class BrouillonAnalyseResult
+    {
+        [JsonPropertyName("notesClarification")]
+        public required string NotesClarification { get; init; }
+
+        [JsonPropertyName("decisionsPrises")]
+        public required string DecisionsPrises { get; init; }
+
+        [JsonPropertyName("hypothesesProjet")]
+        public required string HypothesesProjet { get; init; }
+    }
+
+    public sealed class BrouillonExecutionResult
+    {
+        [JsonPropertyName("CommentaireAvancementExecution")]
+        public required string CommentaireAvancementExecution { get; init; }
+
+        [JsonPropertyName("ActionsRealiseesExecution")]
+        public required string ActionsRealiseesExecution { get; init; }
+
+        [JsonPropertyName("ActionsAVenirExecution")]
+        public required string ActionsAVenirExecution { get; init; }
+
+        [JsonPropertyName("ProblemesBlocagesExecution")]
+        public required string ProblemesBlocagesExecution { get; init; }
     }
 }
