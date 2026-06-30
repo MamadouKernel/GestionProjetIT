@@ -159,6 +159,16 @@ namespace GestionProjects.Infrastructure.Services
         {
             var alertes = new List<string>();
 
+            if (projet.PhaseActuelle == PhaseProjet.ClotureLeconsApprises && projet.StatutProjet != StatutProjet.Cloture)
+            {
+                var membresActifs = await _db.MembresProjets.CountAsync(m => m.ProjetId == projet.Id && !m.EstSupprime && m.EstActif);
+                var membresEvalues = await _db.EvaluationsMembresProjets.CountAsync(e => e.ProjetId == projet.Id && !e.EstSupprime);
+                if (membresActifs > 0 && membresEvalues < membresActifs)
+                {
+                    alertes.Add($"{membresEvalues}/{membresActifs} membre(s) de l'équipe évalué(s). Pensez à compléter les évaluations dans l'onglet Clôture.");
+                }
+            }
+
             if (projet.StatutProjet != StatutProjet.EnCours)
             {
                 return alertes;

@@ -246,6 +246,10 @@
             purpose: "Ce bloc sert au Directeur Métier pour confirmer que le dossier est conforme aux attentes du métier.",
             guidance: "Ne validez qu'après contrôle des livrables, du planning ou de la charte selon la phase. Utilisez le refus si un point structurant manque."
         },
+        "evaluation de l equipe": {
+            purpose: "Ce bloc sert à évaluer chaque membre actif de l'équipe projet (qualité du travail, respect des délais, collaboration) typiquement à la clôture.",
+            guidance: "Notez chaque critère de 1 à 5 et ajoutez un commentaire si utile, dans l'onglet Clôture. Une seule évaluation par membre : la noter à nouveau met à jour l'évaluation existante."
+        },
         "validation dsi": {
             purpose: "Ce bloc sert à la DSI ou à son délégué pour prononcer la validation technique ou de gouvernance finale de la phase.",
             guidance: "Vérifiez les prérequis métier, les livrables obligatoires et les éléments de faisabilité avant de faire passer la phase suivante."
