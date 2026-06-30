@@ -40,6 +40,19 @@ public sealed class NotificationTargetResolver : INotificationTargetResolver
                     .Select(l => (Guid?)l.ProjetId)
                     .FirstOrDefaultAsync(),
                 ProjectDetailTabs.Livrables),
+            DomainEntityTypes.ChargeProjet => await ProjectChildAsync(
+                await _db.ChargesProjets
+                    .Where(c => c.Id == entiteId.Value && !c.EstSupprime)
+                    .Select(c => (Guid?)c.ProjetId)
+                    .FirstOrDefaultAsync(),
+                ProjectDetailTabs.Charges),
+            DomainEntityTypes.BeneficeProjet => await ProjectChildAsync(
+                await _db.BeneficesProjets
+                    .Where(b => b.Id == entiteId.Value && !b.EstSupprime)
+                    .Select(b => (Guid?)b.ProjetId)
+                    .FirstOrDefaultAsync(),
+                ProjectDetailTabs.Benefices),
+            DomainEntityTypes.AvenantSuggestion => ProjectDetails(entiteId.Value, ProjectDetailTabs.Avenants),
             _ => NotificationTarget.NotificationsIndex()
         };
     }

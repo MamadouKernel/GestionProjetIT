@@ -17,7 +17,12 @@ namespace GestionProjects.Domain.Enums
         
         // Notifications DSI
         DelegationDSIActivee = 10,
-        DelegationDSIExpiree = 11
+        DelegationDSIExpiree = 11,
+
+        // Rappels automatiques (assistant)
+        ChargeHebdomadaireManquante = 12,
+        BeneficeAEvaluer = 13,
+        AvenantSuggere = 14
     }
 }
 
