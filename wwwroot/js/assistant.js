@@ -74,12 +74,24 @@
         return bubble;
     }
 
+    function renderAlertes(data) {
+        if (!data.alertesComplementaires || data.alertesComplementaires.length === 0) {
+            return '';
+        }
+
+        return '<div class="assistant-alert-block">' +
+            '<strong><i class="bi bi-exclamation-triangle"></i> À surveiller</strong>' +
+            '<ul class="assistant-missing-list">' +
+            data.alertesComplementaires.map((item) => `<li>${escapeHtml(item)}</li>`).join('') +
+            '</ul></div>';
+    }
+
     function renderProchainesEtapes(data) {
         const titre = `<strong>${escapeHtml(data.titre)}</strong> (${escapeHtml(data.codeProjet)})`;
         const phase = `Phase actuelle : <strong>${escapeHtml(data.phaseLabel)}</strong>`;
 
         if (data.estCloture) {
-            return `${titre}<br>${phase}<br>Le projet est clôturé. 🎉`;
+            return `${titre}<br>${phase}<br>Le projet est clôturé. 🎉` + renderAlertes(data);
         }
 
         let html = `${titre}<br>${phase}<br>${escapeHtml(data.prochaineAction)}`;
@@ -95,6 +107,8 @@
             html += `<a class="assistant-quick-link" href="/Projet/Details/${projetId}?tab=${data.ongletCible}">` +
                 `Aller à l'onglet ${escapeHtml(label)} <i class="bi bi-arrow-right"></i></a>`;
         }
+
+        html += renderAlertes(data);
 
         return html;
     }

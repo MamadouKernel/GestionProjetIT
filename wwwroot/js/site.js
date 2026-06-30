@@ -77,7 +77,19 @@
             match: (ctx) => ctx.controller === "Projet" && ctx.action === "Charges",
             title: "Charges & Capacité",
             purpose: "Cet écran sert à piloter l'effort prévu et réel par ressource, par semaine et par projet.",
-            guidance: "Renseignez les charges prévues et réalisées, ajoutez les commentaires utiles puis vérifiez les alertes de surcharge avant les arbitrages de capacité."
+            guidance: "Renseignez les charges prévues et réalisées, ajoutez les commentaires utiles puis vérifiez les alertes de surcharge avant les arbitrages de capacité. Une ressource qui n'a pas saisi sa charge de la semaine reçoit un rappel automatique chaque jeudi."
+        },
+        {
+            match: (ctx) => ctx.controller === "Projet" && ctx.action === "Details" && ctx.tab === "avenants",
+            title: "Avenants projet",
+            purpose: "Cet écran sert à formaliser un changement maîtrisé de budget, de délai ou de périmètre après que la baseline a été posée.",
+            guidance: "Créez l'avenant avec une justification claire (type Périmètre/Budget/Délai/Mixte), faites-le valider par le Directeur Métier puis par la DSI : c'est cette dernière validation qui applique réellement le changement au projet. Un avenant est automatiquement suggéré chaque lundi si l'écart budgétaire dépasse 15% ou le retard dépasse 15 jours."
+        },
+        {
+            match: (ctx) => ctx.controller === "Projet" && ctx.action === "Details" && ctx.tab === "benefices",
+            title: "Bénéfices projet",
+            purpose: "Cet écran sert à suivre la valeur métier attendue du projet (indicateur, valeur cible) puis à l'évaluer après mise en production.",
+            guidance: "Définissez chaque bénéfice avec un indicateur mesurable et une date cible. Après la date cible, évaluez la valeur réellement obtenue (Réalisé / Partiellement réalisé / Non réalisé) : un rappel automatique est envoyé au chef de projet le jour de l'échéance."
         },
         {
             match: (ctx) => ctx.controller === "Projet" && ctx.action === "Portefeuille",

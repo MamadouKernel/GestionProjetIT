@@ -130,6 +130,8 @@ namespace GestionProjects.Infrastructure.Services
                     break;
             }
 
+            var alertes = await ObtenirAlertesComplementairesAsync(projet, userId);
+
             return new ProchainesEtapesResult
             {
                 CodeProjet = projet.CodeProjet,
@@ -139,8 +141,94 @@ namespace GestionProjects.Infrastructure.Services
                 OngletCible = OngletPourPhase(projet.PhaseActuelle),
                 EstCloture = estCloture,
                 ElementsManquants = manquants,
-                ProchaineAction = prochaineAction
+                ProchaineAction = prochaineAction,
+                AlertesComplementaires = alertes
             };
+        }
+
+        /// <summary>
+        /// Alertes non bloquantes (charges, bénéfices, avenant) : mêmes règles que
+        /// RappelsAutomatiquesBackgroundService, mais calculées à la demande pour
+        /// l'affichage immédiat dans le chat, sans attendre le cycle de notification.
+        /// </summary>
+        private async Task<List<string>> ObtenirAlertesComplementairesAsync(Projet projet, Guid userId)
+        {
+            var alertes = new List<string>();
+
+            if (projet.StatutProjet != StatutProjet.EnCours)
+            {
+                return alertes;
+            }
+
+            var aujourdhui = DateTime.Today;
+            var lundiSemaineCourante = aujourdhui.AddDays(-(int)aujourdhui.DayOfWeek + (int)DayOfWeek.Monday).Date;
+            if (lundiSemaineCourante > aujourdhui)
+            {
+                lundiSemaineCourante = lundiSemaineCourante.AddDays(-7);
+            }
+
+            var estRessourceSuivie = await _db.ChargesProjets.AnyAsync(c =>
+                c.ProjetId == projet.Id && c.RessourceId == userId && !c.EstSupprime);
+            if (estRessourceSuivie)
+            {
+                var aDejaSaisi = await _db.ChargesProjets.AnyAsync(c =>
+                    c.ProjetId == projet.Id && c.RessourceId == userId && !c.EstSupprime &&
+                    c.SemaineDebut.Date == lundiSemaineCourante);
+                if (!aDejaSaisi)
+                {
+                    alertes.Add($"Vous n'avez pas encore saisi votre charge de la semaine du {lundiSemaineCourante:dd/MM/yyyy}.");
+                }
+            }
+
+            var beneficesProches = await _db.BeneficesProjets
+                .Where(b => b.ProjetId == projet.Id && !b.EstSupprime &&
+                            b.Statut == StatutBenefice.Attendu &&
+                            b.DateCibleRealisation.HasValue &&
+                            b.DateCibleRealisation.Value.Date <= aujourdhui.AddDays(14))
+                .OrderBy(b => b.DateCibleRealisation)
+                .Select(b => new { b.Libelle, b.DateCibleRealisation })
+                .ToListAsync();
+
+            foreach (var benefice in beneficesProches)
+            {
+                var enRetard = benefice.DateCibleRealisation!.Value.Date < aujourdhui;
+                alertes.Add(enRetard
+                    ? $"Bénéfice \"{benefice.Libelle}\" en retard d'évaluation (échéance {benefice.DateCibleRealisation:dd/MM/yyyy})."
+                    : $"Bénéfice \"{benefice.Libelle}\" à évaluer prochainement (échéance {benefice.DateCibleRealisation:dd/MM/yyyy}).");
+            }
+
+            const decimal seuilEcartBudgetaire = 0.15m;
+            const int seuilEcartJours = 15;
+            var motifsAvenant = new List<string>();
+
+            if (projet.FicheProjet?.BudgetPrevisionnel is decimal prevu && prevu > 0 &&
+                projet.FicheProjet?.BudgetConsomme is decimal consomme)
+            {
+                var ecart = Math.Abs(consomme - prevu) / prevu;
+                if (ecart > seuilEcartBudgetaire)
+                {
+                    motifsAvenant.Add($"écart budgétaire de {ecart:P0}");
+                }
+            }
+
+            if (projet.EcartJoursDelai is int ecartJours && ecartJours > seuilEcartJours)
+            {
+                motifsAvenant.Add($"retard de {ecartJours} jour(s) par rapport à la baseline");
+            }
+
+            if (motifsAvenant.Count > 0)
+            {
+                var aUnAvenantEnCours = await _db.AvenantsProjets.AnyAsync(a =>
+                    a.ProjetId == projet.Id && !a.EstSupprime &&
+                    (a.Statut == StatutAvenant.EnAttenteValidationDM || a.Statut == StatutAvenant.EnAttenteValidationDSI));
+
+                if (!aUnAvenantEnCours)
+                {
+                    alertes.Add($"Un avenant pourrait être nécessaire : {string.Join(" et ", motifsAvenant)}.");
+                }
+            }
+
+            return alertes;
         }
 
         private static string OngletPourPhase(PhaseProjet phase) => phase switch

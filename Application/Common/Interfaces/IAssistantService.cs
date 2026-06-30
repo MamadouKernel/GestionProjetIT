@@ -45,6 +45,7 @@ namespace GestionProjects.Application.Common.Interfaces
         public required bool EstCloture { get; init; }
         public required IReadOnlyList<string> ElementsManquants { get; init; }
         public required string ProchaineAction { get; init; }
+        public required IReadOnlyList<string> AlertesComplementaires { get; init; }
     }
 
     public sealed class BrouillonBilanResult

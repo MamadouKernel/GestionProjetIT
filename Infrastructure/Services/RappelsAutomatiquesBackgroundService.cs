@@ -60,24 +60,44 @@ namespace GestionProjects.Infrastructure.Services
             using var scope = _scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var notifications = scope.ServiceProvider.GetRequiredService<INotificationService>();
+            var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
 
             var aujourdhui = DateTime.Today;
 
             if (aujourdhui.DayOfWeek == DayOfWeek.Thursday)
             {
-                await RappellerChargesManquantesAsync(db, notifications, aujourdhui, cancellationToken);
+                await RappellerChargesManquantesAsync(db, notifications, emailService, aujourdhui, cancellationToken);
             }
 
-            await RappellerBeneficesAEvaluerAsync(db, notifications, aujourdhui, cancellationToken);
+            await RappellerBeneficesAEvaluerAsync(db, notifications, emailService, aujourdhui, cancellationToken);
 
             if (aujourdhui.DayOfWeek == DayOfWeek.Monday)
             {
-                await SuggererAvenantsAsync(db, notifications, cancellationToken);
+                await SuggererAvenantsAsync(db, notifications, emailService, cancellationToken);
+            }
+        }
+
+        /// <summary>
+        /// Envoie aussi un e-mail (en plus de la notification en application) au destinataire,
+        /// si son adresse est connue. Réutilise IEmailService.EnvoyerAsync, qui gère déjà le
+        /// flag SmtpSettings:Enabled et les erreurs SMTP en interne — pas de try/catch requis ici.
+        /// </summary>
+        private static async Task EnvoyerEmailRappelAsync(
+            ApplicationDbContext db, IEmailService emailService, Guid destinataireId, string sujet, string corpsTexte)
+        {
+            var email = await db.Utilisateurs
+                .Where(u => u.Id == destinataireId && !u.EstSupprime)
+                .Select(u => u.Email)
+                .FirstOrDefaultAsync();
+
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                await emailService.EnvoyerAsync(email, sujet, $"<p>{corpsTexte}</p>");
             }
         }
 
         private static async Task RappellerChargesManquantesAsync(
-            ApplicationDbContext db, INotificationService notifications, DateTime aujourdhui, CancellationToken ct)
+            ApplicationDbContext db, INotificationService notifications, IEmailService emailService, DateTime aujourdhui, CancellationToken ct)
         {
             var lundiSemaineCourante = aujourdhui.AddDays(-(int)aujourdhui.DayOfWeek + (int)DayOfWeek.Monday).Date;
             if (lundiSemaineCourante > aujourdhui)
@@ -108,20 +128,20 @@ namespace GestionProjects.Infrastructure.Services
 
                     if (!aDejaSaisi)
                     {
+                        var sujet = $"Charge hebdomadaire non saisie - {projet.CodeProjet}";
+                        var message = $"Vous n'avez pas encore saisi votre charge de la semaine du {lundiSemaineCourante:dd/MM/yyyy} sur le projet \"{projet.Titre}\".";
+
                         await notifications.NotifierUtilisateurAsync(
-                            ressourceId,
-                            TypeNotification.ChargeHebdomadaireManquante,
-                            $"Charge hebdomadaire non saisie - {projet.CodeProjet}",
-                            $"Vous n'avez pas encore saisi votre charge de la semaine du {lundiSemaineCourante:dd/MM/yyyy} sur le projet \"{projet.Titre}\".",
-                            DomainEntityTypes.ChargeProjet,
-                            projet.Id);
+                            ressourceId, TypeNotification.ChargeHebdomadaireManquante, sujet, message,
+                            DomainEntityTypes.ChargeProjet, projet.Id);
+                        await EnvoyerEmailRappelAsync(db, emailService, ressourceId, sujet, message);
                     }
                 }
             }
         }
 
         private static async Task RappellerBeneficesAEvaluerAsync(
-            ApplicationDbContext db, INotificationService notifications, DateTime aujourdhui, CancellationToken ct)
+            ApplicationDbContext db, INotificationService notifications, IEmailService emailService, DateTime aujourdhui, CancellationToken ct)
         {
             var beneficesAEvaluer = await db.BeneficesProjets
                 .Include(b => b.Projet)
@@ -134,17 +154,18 @@ namespace GestionProjects.Infrastructure.Services
             foreach (var benefice in beneficesAEvaluer)
             {
                 var destinataire = benefice.Projet.ChefProjetId ?? benefice.Projet.SponsorId;
+                var sujet = $"Bénéfice à évaluer - {benefice.Projet.CodeProjet}";
+                var message = $"Le bénéfice \"{benefice.Libelle}\" arrive à échéance d'évaluation aujourd'hui sur le projet \"{benefice.Projet.Titre}\".";
+
                 await notifications.NotifierUtilisateurAsync(
-                    destinataire,
-                    TypeNotification.BeneficeAEvaluer,
-                    $"Bénéfice à évaluer - {benefice.Projet.CodeProjet}",
-                    $"Le bénéfice \"{benefice.Libelle}\" arrive à échéance d'évaluation aujourd'hui sur le projet \"{benefice.Projet.Titre}\".",
-                    DomainEntityTypes.BeneficeProjet,
-                    benefice.Id);
+                    destinataire, TypeNotification.BeneficeAEvaluer, sujet, message,
+                    DomainEntityTypes.BeneficeProjet, benefice.Id);
+                await EnvoyerEmailRappelAsync(db, emailService, destinataire, sujet, message);
             }
         }
 
-        private static async Task SuggererAvenantsAsync(ApplicationDbContext db, INotificationService notifications, CancellationToken ct)
+        private static async Task SuggererAvenantsAsync(
+            ApplicationDbContext db, INotificationService notifications, IEmailService emailService, CancellationToken ct)
         {
             const decimal seuilEcartBudgetaire = 0.15m; // 15%
             const int seuilEcartJours = 15;
@@ -189,13 +210,13 @@ namespace GestionProjects.Infrastructure.Services
                 }
 
                 var destinataire = projet.ChefProjetId ?? projet.SponsorId;
+                var sujet = $"Avenant suggéré - {projet.CodeProjet}";
+                var message = $"Le projet \"{projet.Titre}\" présente un {string.Join(" et un ", motifs)}. Un avenant pourrait être nécessaire pour officialiser le changement.";
+
                 await notifications.NotifierUtilisateurAsync(
-                    destinataire,
-                    TypeNotification.AvenantSuggere,
-                    $"Avenant suggéré - {projet.CodeProjet}",
-                    $"Le projet \"{projet.Titre}\" présente un {string.Join(" et un ", motifs)}. Un avenant pourrait être nécessaire pour officialiser le changement.",
-                    DomainEntityTypes.AvenantSuggestion,
-                    projet.Id);
+                    destinataire, TypeNotification.AvenantSuggere, sujet, message,
+                    DomainEntityTypes.AvenantSuggestion, projet.Id);
+                await EnvoyerEmailRappelAsync(db, emailService, destinataire, sujet, message);
             }
         }
     }

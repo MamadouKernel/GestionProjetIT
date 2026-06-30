@@ -8086,6 +8086,13 @@ body.screen-guide-open .screen-guide-drawer {
   padding-left: 1.1rem;
 }
 
+.assistant-alert-block {
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed rgba(217, 119, 6, 0.35);
+  color: #92400e;
+}
+
 .assistant-answer-block + .assistant-answer-block {
   margin-top: 0.6rem;
   padding-top: 0.6rem;
