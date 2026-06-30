@@ -106,6 +106,10 @@ namespace GestionProjects.Infrastructure.Services
                         if (!aLivrableCloture)
                             manquants.Add("Dépôt d'au moins un livrable de clôture (rapport, PV ou dossier d'exploitation)");
 
+                        var aAuMoinsUnBenefice = await _db.BeneficesProjets.AnyAsync(b => b.ProjetId == projetId && !b.EstSupprime);
+                        if (!aAuMoinsUnBenefice)
+                            manquants.Add("Définition d'au moins un bénéfice attendu (onglet Bénéfices)");
+
                         if (demandeCloture == null)
                         {
                             prochaineAction = "Complétez le bilan puis lancez la demande de clôture.";

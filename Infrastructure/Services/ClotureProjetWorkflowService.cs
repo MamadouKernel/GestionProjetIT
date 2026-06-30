@@ -64,6 +64,14 @@ public class ClotureProjetWorkflowService : IClotureProjetWorkflowService
             return WorkflowResult.Error("Le transfert RUN doit être entièrement renseigné avant la soumission de la clôture.");
         }
 
+        var aAuMoinsUnBenefice = await _db.BeneficesProjets
+            .AnyAsync(b => b.ProjetId == projet.Id && !b.EstSupprime);
+
+        if (!aAuMoinsUnBenefice)
+        {
+            return WorkflowResult.Error("Veuillez définir au moins un bénéfice attendu (onglet Bénéfices) avant de soumettre la demande de clôture : il formalise la valeur que le projet devait apporter.");
+        }
+
         var demande = new DemandeClotureProjet
         {
             Id = Guid.NewGuid(),
