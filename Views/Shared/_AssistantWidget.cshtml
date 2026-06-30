@@ -1,0 +1,22 @@
+<button type="button" class="assistant-fab" id="assistantFab" aria-label="Ouvrir l'assistant">
+    <i class="bi bi-chat-dots-fill"></i>
+</button>
+
+<div class="assistant-panel" id="assistantPanel" aria-hidden="true">
+    <div class="assistant-panel-header">
+        <div>
+            <span class="assistant-panel-kicker">Assistant Zéïnab</span>
+            <h2 class="assistant-panel-title">Aide &amp; brouillons</h2>
+        </div>
+        <button type="button" class="assistant-panel-close" id="assistantPanelClose" aria-label="Fermer l'assistant">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+    <div class="assistant-panel-body" id="assistantMessages"></div>
+    <form class="assistant-panel-input" id="assistantForm">
+        <input type="text" id="assistantInput" placeholder="Posez une question (ex: comment valider la charte ?)" autocomplete="off" />
+        <button type="submit" aria-label="Envoyer">
+            <i class="bi bi-send-fill"></i>
+        </button>
+    </form>
+</div>

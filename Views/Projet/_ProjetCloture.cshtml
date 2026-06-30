@@ -305,6 +305,12 @@
                             "Ce bloc sert à formaliser le bilan final du périmètre, du planning et du budget.",
                             "Renseignez un bilan sincère et exploitable : ce qui a été livré, les écarts de planning et les écarts budgétaires.")
                     </div>
+                    <button type="button" class="btn-modern btn-modern-secondary" id="genererBrouillonBilanBtn" data-projet-id="@projet.Id">
+                        <i class="bi bi-magic"></i> Générer un brouillon
+                    </button>
+                    <p class="form-help-text" style="margin: 0.4rem 0 0.8rem;">
+                        Pré-remplit les champs ci-dessous à partir des données du projet (dates, anomalies, charges). Relisez et ajustez avant d'enregistrer.
+                    </p>
                     <div class="form-group-modern">
                         <label class="form-label-modern">Bilan périmètre</label>
                         <textarea name="bilanPerimetre" class="form-control-modern" rows="3">@projet.BilanPerimetre</textarea>
@@ -432,6 +438,40 @@
                 </button>
             </div>
         </form>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const btn = document.getElementById('genererBrouillonBilanBtn');
+                if (!btn || !window.ZeinabLayout || !window.ZeinabLayout.assistantBrouillonBilanUrl) {
+                    return;
+                }
+
+                btn.addEventListener('click', function () {
+                    const projetId = btn.getAttribute('data-projet-id');
+                    btn.disabled = true;
+                    btn.querySelector('i').className = 'bi bi-arrow-repeat';
+
+                    fetch(`${window.ZeinabLayout.assistantBrouillonBilanUrl}?projetId=${projetId}`)
+                        .then(function (response) { return response.ok ? response.json() : null; })
+                        .then(function (data) {
+                            if (!data) {
+                                return;
+                            }
+
+                            const form = btn.closest('form');
+                            Object.keys(data).forEach(function (key) {
+                                const field = form.querySelector(`[name="${key}"]`);
+                                if (field) {
+                                    field.value = data[key];
+                                }
+                            });
+                        })
+                        .finally(function () {
+                            btn.disabled = false;
+                            btn.querySelector('i').className = 'bi bi-magic';
+                        });
+                });
+            });
+        </script>
     }
     else
     {

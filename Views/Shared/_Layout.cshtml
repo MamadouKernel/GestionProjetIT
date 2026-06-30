@@ -199,6 +199,7 @@
                 </div>
             </div>
         </div>
+        @await Html.PartialAsync("_AssistantWidget")
     }
     else
     {
@@ -215,10 +216,16 @@
             keepAliveUrl: '@Url.Action("KeepAlive", "Account")',
             notificationCountUrl: '@Url.Action("GetUnreadCount", "Notification")',
             notificationsUrl: '@Url.Action("GetUnreadNotifications", "Notification")?count=5',
-            notificationFallbackUrl: '@Url.Action("Index", "Notification")'
+            notificationFallbackUrl: '@Url.Action("Index", "Notification")',
+            assistantProchainesEtapesUrl: '@Url.Action("ProchainesEtapes", "Assistant")',
+            assistantBrouillonBilanUrl: '@Url.Action("BrouillonBilan", "Assistant")'
         };
     </script>
     <script src="~/js/layout-shell.js" asp-append-version="true"></script>
+    @if (User?.Identity?.IsAuthenticated == true)
+    {
+        <script src="~/js/assistant.js" asp-append-version="true"></script>
+    }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

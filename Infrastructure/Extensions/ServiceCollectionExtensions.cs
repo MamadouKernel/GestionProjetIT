@@ -28,6 +28,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<INotificationQueryService, NotificationQueryService>();
         services.AddScoped<INotificationTargetResolver, NotificationTargetResolver>();
         services.AddScoped<ILivrableValidationService, LivrableValidationService>();
+        services.AddScoped<IAssistantService, AssistantService>();
         services.AddScoped<ILivrableProjetService, LivrableProjetService>();
         services.AddScoped<IChargeProjetService, ChargeProjetService>();
         services.AddScoped<IMembreProjetService, MembreProjetService>();

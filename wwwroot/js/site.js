@@ -1277,4 +1277,50 @@
             closeGuideDrawer();
         }
     });
+
+    function searchHelpCatalog(query) {
+        const words = normalize(query).split(" ").filter((w) => w.length > 2);
+        if (words.length === 0) {
+            return [];
+        }
+
+        const candidates = [];
+
+        Object.keys(sectionHelpCatalog).forEach((key) => {
+            const entry = sectionHelpCatalog[key];
+            candidates.push({
+                title: key.replace(/\b\w/g, (c) => c.toUpperCase()),
+                purpose: entry.purpose,
+                guidance: entry.guidance,
+                haystack: normalize(`${key} ${entry.purpose} ${entry.guidance}`)
+            });
+        });
+
+        routeHelpCatalog.forEach((entry) => {
+            candidates.push({
+                title: entry.title,
+                purpose: entry.purpose,
+                guidance: entry.guidance,
+                haystack: normalize(`${entry.title} ${entry.purpose} ${entry.guidance}`)
+            });
+        });
+
+        return candidates
+            .map((candidate) => ({
+                candidate,
+                score: words.reduce((acc, w) => acc + (candidate.haystack.includes(w) ? 1 : 0), 0)
+            }))
+            .filter((scored) => scored.score > 0)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 3)
+            .map((scored) => scored.candidate);
+    }
+
+    window.ZeinabHelp = {
+        normalize,
+        getContext,
+        resolveRouteHelp,
+        resolveSectionHelp,
+        searchHelpCatalog
+    };
 })();
