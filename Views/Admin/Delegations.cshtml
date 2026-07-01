@@ -179,7 +179,7 @@
                                             </td>
                                             <td class="text-center">
                                                 <div class="table-actions justify-content-center">
-                                                    <button type="button" class="btn-modern btn-modern-gold btn-icon btn-edit-dsi-delegation" data-id="@delegation.Id" title="Modifier la délégation" aria-label="Modifier la délégation">
+                                                    <button type="button" class="btn-modern btn-modern-gold btn-icon btn-edit-dsi-delegation" data-id="@delegation.Id" onclick="editDSIDelegation('@delegation.Id')" title="Modifier la délégation" aria-label="Modifier la délégation">
                                                         <i class="bi bi-pencil-square"></i>
                                                     </button>
                                                     <form asp-action="DeleteDelegation" asp-route-id="@delegation.Id" method="post" class="d-inline" onsubmit="return confirm('Êtes-vous sûr de vouloir clôturer cette délégation ?');">
@@ -357,7 +357,7 @@
                                             </td>
                                             <td class="text-center">
                                                 <div class="table-actions justify-content-center">
-                                                    <button type="button" class="btn-modern btn-modern-gold btn-icon btn-edit-cp-delegation" data-id="@delegation.Id" title="Modifier la délégation" aria-label="Modifier la délégation">
+                                                    <button type="button" class="btn-modern btn-modern-gold btn-icon btn-edit-cp-delegation" data-id="@delegation.Id" onclick="editChefProjetDelegation('@delegation.Id')" title="Modifier la délégation" aria-label="Modifier la délégation">
                                                         <i class="bi bi-pencil-square"></i>
                                                     </button>
                                                     <form asp-action="DeleteDelegationChefProjet" asp-route-id="@delegation.Id" method="post" class="d-inline" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette délégation ?');">
