@@ -51,7 +51,7 @@ namespace GestionProjects.Controllers
                 return Forbid();
             }
 
-            var isReadOnly = ui.HasDmGovernanceAccess && !ui.IsProjectSponsor;
+            var isReadOnly = ui.HasDmGovernanceAccess && !ui.IsProjectSponsor && !ui.HasDsiGovernanceAccess;
 
             await RecalculateProjectProgressAsync(projet, persistChanges: true);
 
@@ -73,7 +73,12 @@ namespace GestionProjects.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateChefProjet(Guid id, Guid? chefProjetId, [FromServices] IProjetDetailsWorkflowService detailsWorkflow)
         {
-            if (!await HasPortfolioGovernanceAccessAsync())
+            var projet = await _db.Projets.FindAsync(id);
+            if (projet == null)
+                return NotFound();
+
+            var ui = await BuildProjectUiAsync(projet);
+            if (!ui.CanReassignChefProjet)
                 return Forbid();
 
             var result = await detailsWorkflow.UpdateChefProjetAsync(id, chefProjetId);

@@ -25,16 +25,16 @@ public interface IDemandeProjetWorkflowService
 
     // ── Côté DSI ──────────────────────────────────────────────────────────────
     Task<ValiderDsiResult> ValiderDsiAsync(
-        Guid id, string? commentaire, Guid? chefProjetId, bool isDelegue, string nomActeur);
+        Guid id, string? commentaire, Guid? chefProjetId, Guid currentUserId, bool isDelegue, string nomActeur);
 
     Task<WorkflowResult> RejeterDsiAsync(
-        Guid id, string? commentaire, bool isDelegue, string nomActeur);
+        Guid id, string? commentaire, Guid currentUserId, bool isDelegue, string nomActeur);
 
     Task<WorkflowResult> RenvoyerAuDemandeurDsiAsync(
-        Guid id, string? commentaire, bool isDelegue, string nomActeur);
+        Guid id, string? commentaire, Guid currentUserId, bool isDelegue, string nomActeur);
 
     Task<WorkflowResult> RenvoyerAuDmDsiAsync(
-        Guid id, string commentaire, bool isDelegue, string nomActeur);
+        Guid id, string commentaire, Guid currentUserId, bool isDelegue, string nomActeur);
 
     // ── Documents / duplication ────────────────────────────────────────────────
     Task<WorkflowResult> AjouterDocumentsComplementairesAsync(

@@ -13,14 +13,16 @@ namespace GestionProjects.Controllers
             string? tab = "dsi",
             string? rechercheDsi = null,
             string? rechercheChef = null,
-            int pageDsi = 1, int pageChef = 1,
+            string? rechercheDm = null,
+            int pageDsi = 1, int pageChef = 1, int pageDm = 1,
             int pageSize = 15)
         {
             var userId       = User.GetUserIdOrThrow();
             var hasFullScope = await HasFullAdminScopeAsync();
 
             var vm = await _delegationService.GetPageAsync(
-                userId, hasFullScope, tab, rechercheDsi, rechercheChef, pageDsi, pageChef, pageSize);
+                userId, hasFullScope, tab, rechercheDsi, rechercheChef, rechercheDm,
+                pageDsi, pageChef, pageDm, pageSize);
 
             PopulateDelegationsViewBag(vm);
             return View(vm);
@@ -98,6 +100,39 @@ namespace GestionProjects.Controllers
             return MapDelegationResult(result, "chefprojet");
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetDelegationDm(Guid id)
+        {
+            var result = await _delegationService.GetDmAsync(id, User.GetUserIdOrThrow(), await HasFullAdminScopeAsync());
+            return MapDelegationDetails(result);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateDelegationDm(string DirecteurMetierId, string DelegueId, DateTime DateDebut, DateTime DateFin)
+        {
+            var input = new CreateDelegationDmInput(DirecteurMetierId, DelegueId, DateDebut, DateFin,
+                ReadEstActive(), User.GetUserIdOrThrow(), await HasFullAdminScopeAsync());
+            return MapDelegationResult(await _delegationService.CreateDmAsync(input), "dm");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateDelegationDm(Guid id, string DirecteurMetierId, string DelegueId, DateTime DateDebut, DateTime DateFin)
+        {
+            var input = new UpdateDelegationDmInput(id, DirecteurMetierId, DelegueId, DateDebut, DateFin,
+                ReadEstActive(), User.GetUserIdOrThrow(), await HasFullAdminScopeAsync());
+            return MapDelegationResult(await _delegationService.UpdateDmAsync(input), "dm");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteDelegationDm(Guid id)
+        {
+            var result = await _delegationService.DeleteDmAsync(id, User.GetUserIdOrThrow(), await HasFullAdminScopeAsync());
+            return MapDelegationResult(result, "dm");
+        }
+
         // ── Helpers HTTP (présentation uniquement) ────────────────────────────
         private IActionResult MapDelegationDetails(DelegationDetailsResult result)
         {
@@ -136,6 +171,13 @@ namespace GestionProjects.Controllers
             ViewBag.Projets        = vm.Projets;
             ViewBag.Delegants      = vm.Delegants;
             ViewBag.DeleguesChefProjet = vm.DeleguesChefProjet;
+            ViewBag.PageNumberDm  = vm.PageNumberDm;
+            ViewBag.TotalPagesDm  = vm.TotalPagesDm;
+            ViewBag.TotalCountDm  = vm.TotalCountDm;
+            ViewBag.PageSizeDm    = vm.PageSizeDm;
+            ViewBag.RechercheDm   = vm.RechercheDm;
+            ViewBag.DirecteursMetier = vm.DirecteursMetier;
+            ViewBag.DeleguesDM    = vm.DeleguesDM;
             ViewBag.CurrentUserId  = vm.CurrentUserId;
             ViewBag.CanAdminDelegations = vm.CanAdminDelegations;
             ViewBag.ActiveTab      = vm.ActiveTab;

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using GestionProjects.Application.Common.Interfaces;
 using GestionProjects.Application.ViewModels;
+using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 
 namespace GestionProjects.Web.Ui
@@ -26,6 +27,9 @@ namespace GestionProjects.Web.Ui
 
             var chefProjetId = projet?.ChefProjetId;
             var sponsorId = projet?.SponsorId;
+            var isProjectSponsor = userId != Guid.Empty && sponsorId.HasValue && sponsorId.Value == userId;
+            var isDelegatedSponsor = !isProjectSponsor && userId != Guid.Empty && sponsorId.HasValue &&
+                await permissionService.IsActiveDmDelegateAsync(sponsorId.Value, userId);
 
             return new ProjetUiPermissions
             {
@@ -34,8 +38,10 @@ namespace GestionProjects.Web.Ui
                 IsReadOnly = isReadOnly,
                 IsDemandeurProject = isDemandeurProject,
                 IsAssignedChefProjet = userId != Guid.Empty && chefProjetId.HasValue && chefProjetId.Value == userId,
-                IsProjectSponsor = userId != Guid.Empty && sponsorId.HasValue && sponsorId.Value == userId,
+                IsProjectSponsor = isProjectSponsor,
+                IsDelegatedSponsor = isDelegatedSponsor,
                 IsProjectInUserDirection = currentUserDirectionId.HasValue && projet?.DirectionId == currentUserDirectionId.Value,
+                IsAdminIT = user.IsInRole(nameof(RoleUtilisateur.AdminIT)),
                 ActivePermissionKeys = keys
             };
         }

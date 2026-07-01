@@ -7,8 +7,8 @@
     var demandesEnCours = Model.DemandesEnCours;
     var portefeuilleId = portefeuille?.Id ?? Guid.Empty;
     var objectifStrategiqueGlobal = portefeuille?.ObjectifStrategiqueGlobal;
-    var avantagesAttendus = portefeuille?.AvantagesAttendus ?? string.Empty;
-    var risquesEtMitigations = portefeuille?.RisquesEtMitigations ?? string.Empty;
+    var avantagesParProjet = Model.AvantagesParProjet;
+    var risquesParProjet = Model.RisquesParProjet;
     var canManagePortfolio = await PermissionService.CurrentUserHasPermissionAsync("Projet", "Portefeuille");
     var canEditPortefeuille = await PermissionService.CurrentUserHasPermissionAsync("Projet", "ForcerStatut");
 }
@@ -97,23 +97,33 @@
                     </h3>
                 </div>
                 <div class="card-body-modern module-scroll">
-                    <ul class="list-soft">
-                        @if (!string.IsNullOrEmpty(avantagesAttendus))
+                    @if (avantagesParProjet.Any())
+                    {
+                        @foreach (var groupe in avantagesParProjet)
                         {
-                            @foreach (var avantage in avantagesAttendus.Split('\n', StringSplitOptions.RemoveEmptyEntries))
-                            {
-                                var avantageNettoye = avantage.Trim();
-                                if (!string.IsNullOrWhiteSpace(avantageNettoye))
-                                {
-                                    var libelleAvantage = avantageNettoye.TrimStart('•', '-', ' ').Trim();
-                                    <li class="list-soft-item">
-                                        <i class="bi bi-check-circle-fill" style="color: var(--success);"></i>
-                                        <span>@libelleAvantage</span>
-                                    </li>
-                                }
-                            }
+                            <div class="mb-3">
+                                <div class="soft-note" style="font-weight:600;">@groupe.ProjetTitre</div>
+                                <ul class="list-soft">
+                                    @foreach (var avantage in groupe.AvantagesAttendus.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                                    {
+                                        var avantageNettoye = avantage.Trim();
+                                        if (!string.IsNullOrWhiteSpace(avantageNettoye))
+                                        {
+                                            var libelleAvantage = avantageNettoye.TrimStart('•', '-', ' ').Trim();
+                                            <li class="list-soft-item">
+                                                <i class="bi bi-check-circle-fill" style="color: var(--success);"></i>
+                                                <span>@libelleAvantage</span>
+                                            </li>
+                                        }
+                                    }
+                                </ul>
+                            </div>
                         }
-                    </ul>
+                    }
+                    else
+                    {
+                        <p class="soft-note mb-0">Aucun avantage attendu renseigné pour les projets du portefeuille.</p>
+                    }
                 </div>
             </div>
         </div>
@@ -127,37 +137,36 @@
                     </h3>
                 </div>
                 <div class="card-body-modern module-scroll">
-                    <div class="risk-stack">
-                        @if (!string.IsNullOrEmpty(risquesEtMitigations))
+                    @if (risquesParProjet.Any())
+                    {
+                        @foreach (var groupe in risquesParProjet)
                         {
-                            @foreach (var ligne in risquesEtMitigations.Split('\n', StringSplitOptions.RemoveEmptyEntries))
-                            {
-                                var ligneNettoyee = ligne.Trim();
-                                if (!string.IsNullOrWhiteSpace(ligneNettoyee))
-                                {
-                                    var parts = ligneNettoyee.Split(':', 2);
-                                    if (parts.Length == 2)
+                            <div class="mb-3">
+                                <div class="soft-note" style="font-weight:600;">@groupe.ProjetTitre</div>
+                                <div class="risk-stack">
+                                    @foreach (var risque in groupe.Risques)
                                     {
                                         <div class="risk-card">
                                             <h4 class="risk-card-title">
                                                 <i class="bi bi-exclamation-triangle-fill"></i>
-                                                @parts[0].Trim()
+                                                @risque.Description
                                             </h4>
-                                            <div class="risk-card-body">
-                                                <strong>Mitigation :</strong> @parts[1].Trim()
-                                            </div>
+                                            @if (!string.IsNullOrWhiteSpace(risque.PlanMitigation))
+                                            {
+                                                <div class="risk-card-body">
+                                                    <strong>Mitigation :</strong> @risque.PlanMitigation
+                                                </div>
+                                            }
                                         </div>
                                     }
-                                    else
-                                    {
-                                        <div class="risk-card">
-                                            <div class="risk-card-body">@ligneNettoyee</div>
-                                        </div>
-                                    }
-                                }
-                            }
+                                </div>
+                            </div>
                         }
-                    </div>
+                    }
+                    else
+                    {
+                        <p class="soft-note mb-0">Aucun risque renseigné pour les projets du portefeuille.</p>
+                    }
                 </div>
             </div>
         </div>
@@ -410,16 +419,10 @@
                             <label class="form-label-modern">Objectif stratégique global *</label>
                             <textarea name="ObjectifStrategiqueGlobal" class="form-control-modern" rows="3" required>@objectifStrategiqueGlobal</textarea>
                         </div>
-                        <div class="form-group-modern mb-3">
-                            <label class="form-label-modern">Avantages attendus du portefeuille *</label>
-                            <textarea name="AvantagesAttendus" class="form-control-modern" rows="10" required placeholder="Un avantage par ligne, commencer par •">@avantagesAttendus</textarea>
-                            <small class="text-muted">Un avantage par ligne, en commençant chaque ligne par une puce.</small>
-                        </div>
-                        <div class="form-group-modern mb-3">
-                            <label class="form-label-modern">Risques et mitigations globaux *</label>
-                            <textarea name="RisquesEtMitigations" class="form-control-modern" rows="10" required placeholder="Format : Risque: Mitigation">@risquesEtMitigations</textarea>
-                            <small class="text-muted">Format attendu : <code>Risque: Mitigation</code>, un élément par ligne.</small>
-                        </div>
+                        <p class="soft-note mb-0">
+                            Les avantages attendus et les risques &amp; mitigations sont désormais alimentés automatiquement
+                            à partir des projets inclus dans le portefeuille.
+                        </p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">

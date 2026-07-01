@@ -48,6 +48,7 @@ namespace GestionProjects.Infrastructure.Persistence
 
         public DbSet<DelegationValidationDSI> DelegationsValidationDSI { get; set; }
         public DbSet<DelegationChefProjet> DelegationsChefProjet { get; set; }
+        public DbSet<DelegationValidationDM> DelegationsValidationDM { get; set; }
         public DbSet<ParametreSysteme> ParametresSysteme { get; set; }
 
         public DbSet<AuditLog> AuditLogs { get; set; }
@@ -530,6 +531,19 @@ namespace GestionProjects.Infrastructure.Persistence
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<DelegationValidationDSI>()
+                .HasOne(d => d.Delegue)
+                .WithMany()
+                .HasForeignKey(d => d.DelegueId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ---- Délégations Directeur Métier ----
+            modelBuilder.Entity<DelegationValidationDM>()
+                .HasOne(d => d.DirecteurMetier)
+                .WithMany()
+                .HasForeignKey(d => d.DirecteurMetierId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<DelegationValidationDM>()
                 .HasOne(d => d.Delegue)
                 .WithMany()
                 .HasForeignKey(d => d.DelegueId)

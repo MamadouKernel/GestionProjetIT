@@ -28,11 +28,12 @@ public class DelegationAdminService : IDelegationAdminService
 
     public async Task<DelegationsPageViewModel> GetPageAsync(
         Guid currentUserId, bool hasFullScope, string? tab,
-        string? rechercheDsi, string? rechercheChef,
-        int pageDsi, int pageChef, int pageSize)
+        string? rechercheDsi, string? rechercheChef, string? rechercheDm,
+        int pageDsi, int pageChef, int pageDm, int pageSize)
     {
         pageDsi  = Math.Max(1, pageDsi);
         pageChef = Math.Max(1, pageChef);
+        pageDm   = Math.Max(1, pageDm);
         pageSize = Math.Clamp(pageSize, 5, 100);
 
         var dsiQuery = _db.DelegationsValidationDSI
@@ -93,14 +94,57 @@ public class DelegationAdminService : IDelegationAdminService
             .OrderBy(u => u.Nom)
             .ToListAsync();
 
+        // ── Délégations Directeur Métier ───────────────────────────────────────
+        var currentUserDirectionId = await _db.Utilisateurs
+            .Where(u => u.Id == currentUserId).Select(u => u.DirectionId).FirstOrDefaultAsync();
+        var estDirecteurMetier = await EstDirecteurMetierAsync(currentUserId);
+
+        var dmQuery = _db.DelegationsValidationDM
+            .Include(d => d.DirecteurMetier).Include(d => d.Delegue)
+            .Where(d => !d.EstSupprime).AsQueryable();
+
+        if (!hasFullScope)
+        {
+            if (estDirecteurMetier && currentUserDirectionId.HasValue)
+                dmQuery = dmQuery.Where(d => d.DirecteurMetierId == currentUserId || d.DelegueId == currentUserId ||
+                    (d.DirecteurMetier != null && d.DirecteurMetier.DirectionId == currentUserDirectionId));
+            else
+                dmQuery = dmQuery.Where(d => d.DirecteurMetierId == currentUserId || d.DelegueId == currentUserId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(rechercheDm))
+            dmQuery = dmQuery.Where(d =>
+                (d.DirecteurMetier != null && (d.DirecteurMetier.Nom.Contains(rechercheDm) || d.DirecteurMetier.Prenoms.Contains(rechercheDm))) ||
+                (d.Delegue != null && (d.Delegue.Nom.Contains(rechercheDm) || d.Delegue.Prenoms.Contains(rechercheDm))));
+
+        var pagedDm = await dmQuery.OrderByDescending(d => d.DateDebut).ToPagedResultAsync(pageDm, pageSize);
+
+        var directeursMetierQuery = _db.Utilisateurs
+            .Include(u => u.UtilisateurRoles)
+            .Where(u => !u.EstSupprime && u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.DirecteurMetier));
+        if (!hasFullScope && estDirecteurMetier && currentUserDirectionId.HasValue)
+            directeursMetierQuery = directeursMetierQuery.Where(u => u.DirectionId == currentUserDirectionId || u.Id == currentUserId);
+        else if (!hasFullScope)
+            directeursMetierQuery = directeursMetierQuery.Where(u => u.Id == currentUserId);
+        var directeursMetier = await directeursMetierQuery.OrderBy(u => u.Nom).ToListAsync();
+
+        var deleguesDm = await _db.Utilisateurs
+            .Include(u => u.UtilisateurRoles)
+            .Where(u => !u.EstSupprime && !u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.Demandeur))
+            .OrderBy(u => u.Nom)
+            .ToListAsync();
+
         return new DelegationsPageViewModel
         {
             DelegationsDSI        = pagedDsi.Items,
             DelegationsChefProjet = pagedChef.Items,
+            DelegationsDM         = pagedDm.Items,
             DSIs                  = dsis,
             DeleguesDSI           = deleguesDsi,
             Delegants             = delegants,
             DeleguesChefProjet    = deleguesChefProjet,
+            DirecteursMetier      = directeursMetier,
+            DeleguesDM            = deleguesDm,
             Projets               = projets,
             ActiveTab             = tab ?? "dsi",
             CanAdminDelegations   = hasFullScope,
@@ -114,7 +158,12 @@ public class DelegationAdminService : IDelegationAdminService
             TotalPagesChef        = pagedChef.TotalPages,
             TotalCountChef        = pagedChef.TotalCount,
             PageSizeChef          = pagedChef.PageSize,
-            RechercheChef         = rechercheChef
+            RechercheChef         = rechercheChef,
+            PageNumberDm          = pagedDm.PageNumber,
+            TotalPagesDm          = pagedDm.TotalPages,
+            TotalCountDm          = pagedDm.TotalCount,
+            PageSizeDm            = pagedDm.PageSize,
+            RechercheDm           = rechercheDm
         };
     }
 
@@ -374,5 +423,128 @@ public class DelegationAdminService : IDelegationAdminService
         return await _db.UtilisateurRoles.AnyAsync(ur =>
             ur.UtilisateurId == utilisateurId && !ur.EstSupprime &&
             (ur.Role == RoleUtilisateur.DSI || ur.Role == RoleUtilisateur.ResponsableSolutionsIT));
+    }
+
+    // ── Délégations Directeur Métier ────────────────────────────────────────────
+    public async Task<DelegationDetailsResult> GetDmAsync(Guid id, Guid currentUserId, bool hasFullScope)
+    {
+        var d = await _db.DelegationsValidationDM.FirstOrDefaultAsync(x => x.Id == id && !x.EstSupprime);
+        if (d == null) return DelegationDetailsResult.NotFound();
+        if (!hasFullScope && d.DirecteurMetierId != currentUserId && d.DelegueId != currentUserId &&
+            !await PeutGererDelegationDmAsync(currentUserId, d.DirecteurMetierId))
+            return DelegationDetailsResult.Forbidden();
+
+        return DelegationDetailsResult.Ok(new DelegationDmDetailsDto(
+            d.Id, d.DirecteurMetierId.ToString(), d.DelegueId.ToString(),
+            d.DateDebut.ToString("yyyy-MM-ddTHH:mm:ss"),
+            d.DateFin.ToString("yyyy-MM-ddTHH:mm:ss"), d.EstActive));
+    }
+
+    public async Task<WorkflowResult> CreateDmAsync(CreateDelegationDmInput input)
+    {
+        var errors = new List<string>();
+        var hasDm      = Guid.TryParse(input.DirecteurMetierId, out var dmGuid);
+        var hasDelegue = Guid.TryParse(input.DelegueId, out var delegueGuid);
+
+        if (string.IsNullOrWhiteSpace(input.DirecteurMetierId) || !hasDm)         errors.Add("Le Directeur Métier est requis.");
+        if (string.IsNullOrWhiteSpace(input.DelegueId) || !hasDelegue)            errors.Add("Le délégué est requis.");
+        if (input.DateDebut >= input.DateFin)                                     errors.Add("La date de fin doit être postérieure à la date de début.");
+
+        if (hasDm && !input.HasFullScope && dmGuid != input.CurrentUserId &&
+            !await PeutGererDelegationDmAsync(input.CurrentUserId, dmGuid))
+            errors.Add("Vous ne pouvez créer une délégation que pour vous-même ou pour un collaborateur de votre direction.");
+
+        if (errors.Count > 0) return WorkflowResult.Error(errors[0]);
+
+        var delegation = new DelegationValidationDM
+        {
+            Id = Guid.NewGuid(), DirecteurMetierId = dmGuid, DelegueId = delegueGuid,
+            DateDebut = input.DateDebut, DateFin = input.DateFin, EstActive = input.EstActive,
+            DateCreation = DateTime.Now, CreePar = _currentUser.Matricule ?? "SYSTEM", EstSupprime = false
+        };
+        _db.DelegationsValidationDM.Add(delegation);
+        await _db.SaveChangesAsync();
+
+        await _audit.LogActionAsync("CreationDelegationDM", "DelegationValidationDM", delegation.Id,
+            null, new { delegation.DirecteurMetierId, delegation.DelegueId, delegation.DateDebut, delegation.DateFin });
+
+        return WorkflowResult.Success("Délégation Directeur Métier créée avec succès.");
+    }
+
+    public async Task<WorkflowResult> UpdateDmAsync(UpdateDelegationDmInput input)
+    {
+        var existing = await _db.DelegationsValidationDM.FindAsync(input.Id);
+        if (existing == null) return WorkflowResult.NotFound();
+        if (!input.HasFullScope && existing.DirecteurMetierId != input.CurrentUserId &&
+            !await PeutGererDelegationDmAsync(input.CurrentUserId, existing.DirecteurMetierId))
+            return WorkflowResult.Forbidden();
+
+        var errors = new List<string>();
+        var hasDm      = Guid.TryParse(input.DirecteurMetierId, out var dmGuid);
+        var hasDelegue = Guid.TryParse(input.DelegueId, out var delegueGuid);
+        if (string.IsNullOrWhiteSpace(input.DirecteurMetierId) || !hasDm)         errors.Add("Le Directeur Métier est requis.");
+        if (string.IsNullOrWhiteSpace(input.DelegueId) || !hasDelegue)            errors.Add("Le délégué est requis.");
+        if (input.DateDebut >= input.DateFin)                                     errors.Add("La date de fin doit être postérieure à la date de début.");
+
+        if (errors.Count > 0) return WorkflowResult.Error(errors[0]);
+
+        existing.DirecteurMetierId = dmGuid;
+        existing.DelegueId        = delegueGuid;
+        existing.DateDebut        = input.DateDebut;
+        existing.DateFin          = input.DateFin;
+        existing.EstActive        = input.EstActive;
+        existing.DateModification = DateTime.Now;
+        existing.ModifiePar       = _currentUser.Matricule;
+        await _db.SaveChangesAsync();
+
+        await _audit.LogActionAsync("ModificationDelegationDM", "DelegationValidationDM", existing.Id);
+        return WorkflowResult.Success("Délégation Directeur Métier modifiée avec succès.");
+    }
+
+    public async Task<WorkflowResult> DeleteDmAsync(Guid id, Guid currentUserId, bool hasFullScope)
+    {
+        var delegation = await _db.DelegationsValidationDM.FindAsync(id);
+        if (delegation == null) return WorkflowResult.NotFound();
+        if (!hasFullScope && delegation.DirecteurMetierId != currentUserId &&
+            !await PeutGererDelegationDmAsync(currentUserId, delegation.DirecteurMetierId))
+            return WorkflowResult.Forbidden();
+
+        delegation.EstSupprime      = true;
+        delegation.EstActive        = false;
+        delegation.DateModification = DateTime.Now;
+        delegation.ModifiePar       = _currentUser.Matricule;
+        await _db.SaveChangesAsync();
+
+        await _audit.LogActionAsync("ClotureDelegationDM", "DelegationValidationDM", delegation.Id,
+            new { delegation.DirecteurMetierId, delegation.DelegueId, delegation.DateDebut, delegation.DateFin });
+
+        return WorkflowResult.Success("Délégation Directeur Métier clôturée.");
+    }
+
+    private async Task<bool> EstDirecteurMetierAsync(Guid utilisateurId)
+    {
+        return await _db.UtilisateurRoles.AnyAsync(ur =>
+            ur.UtilisateurId == utilisateurId && !ur.EstSupprime && ur.Role == RoleUtilisateur.DirecteurMetier);
+    }
+
+    /// <summary>
+    /// Un utilisateur ayant le rôle DirecteurMetier peut gérer les délégations des
+    /// collaborateurs de sa propre direction (délégation créée "par un Directeur pour
+    /// les collaborateurs de sa direction").
+    /// </summary>
+    private async Task<bool> PeutGererDelegationDmAsync(Guid currentUserId, Guid delegantId)
+    {
+        if (!await EstDirecteurMetierAsync(currentUserId))
+            return false;
+
+        var currentUserDirectionId = await _db.Utilisateurs
+            .Where(u => u.Id == currentUserId).Select(u => u.DirectionId).FirstOrDefaultAsync();
+        if (!currentUserDirectionId.HasValue)
+            return false;
+
+        var delegantDirectionId = await _db.Utilisateurs
+            .Where(u => u.Id == delegantId).Select(u => u.DirectionId).FirstOrDefaultAsync();
+
+        return delegantDirectionId.HasValue && delegantDirectionId == currentUserDirectionId;
     }
 }

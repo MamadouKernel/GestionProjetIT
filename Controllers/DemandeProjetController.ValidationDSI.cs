@@ -12,14 +12,15 @@ namespace GestionProjects.Controllers
         [Authorize]
         public async Task<IActionResult> ValiderDSI(Guid id, string? commentaire, Guid? chefProjetId)
         {
-            var isDelegue = await IsActiveDsiDelegateAsync(User.GetUserIdOrThrow());
+            var userId = User.GetUserIdOrThrow();
+            var isDelegue = await IsActiveDsiDelegateAsync(userId);
             if (!await CanHandleDsiValidationAsync(isDelegue))
             {
                 TempData["Error"] = "Vous n'avez pas l'autorisation de valider cette demande.";
                 return RedirectToAction(nameof(Details), new { id });
             }
 
-            var result = await _demandeWorkflowService.ValiderDsiAsync(id, commentaire, chefProjetId, isDelegue, NomActeurCourant());
+            var result = await _demandeWorkflowService.ValiderDsiAsync(id, commentaire, chefProjetId, userId, isDelegue, NomActeurCourant());
 
             if (result.IsNotFound)
                 return NotFound();
@@ -40,14 +41,15 @@ namespace GestionProjects.Controllers
         [Authorize]
         public async Task<IActionResult> RejeterDSI(Guid id, string? commentaire)
         {
-            var isDelegue = await IsActiveDsiDelegateAsync(User.GetUserIdOrThrow());
+            var userId = User.GetUserIdOrThrow();
+            var isDelegue = await IsActiveDsiDelegateAsync(userId);
             if (!await CanHandleDsiValidationAsync(isDelegue))
             {
                 TempData["Error"] = "Vous n'avez pas l'autorisation de rejeter cette demande.";
                 return RedirectToAction(nameof(Details), new { id });
             }
 
-            var result = await _demandeWorkflowService.RejeterDsiAsync(id, commentaire, isDelegue, NomActeurCourant());
+            var result = await _demandeWorkflowService.RejeterDsiAsync(id, commentaire, userId, isDelegue, NomActeurCourant());
             return MapWorkflowToDetails(result, id);
         }
 
@@ -60,14 +62,15 @@ namespace GestionProjects.Controllers
             if (!await _permissionService.CurrentUserHasPermissionAsync("DemandeProjet", "HistoriqueActionsDM"))
                 return Forbid();
 
-            var isDelegue = await IsActiveDsiDelegateAsync(User.GetUserIdOrThrow());
+            var userId = User.GetUserIdOrThrow();
+            var isDelegue = await IsActiveDsiDelegateAsync(userId);
             if (!await CanHandleDsiValidationAsync(isDelegue))
             {
                 TempData["Error"] = "Vous n'avez pas l'autorisation de renvoyer cette demande.";
                 return RedirectToAction(nameof(Details), new { id });
             }
 
-            var result = await _demandeWorkflowService.RenvoyerAuDemandeurDsiAsync(id, commentaire, isDelegue, NomActeurCourant());
+            var result = await _demandeWorkflowService.RenvoyerAuDemandeurDsiAsync(id, commentaire, userId, isDelegue, NomActeurCourant());
             return MapWorkflowToDetails(result, id);
         }
 
@@ -77,14 +80,15 @@ namespace GestionProjects.Controllers
         [Authorize]
         public async Task<IActionResult> RenvoyerAuDMDSI(Guid id, string commentaire)
         {
-            var isDelegue = await IsActiveDsiDelegateAsync(User.GetUserIdOrThrow());
+            var userId = User.GetUserIdOrThrow();
+            var isDelegue = await IsActiveDsiDelegateAsync(userId);
             if (!await CanHandleDsiValidationAsync(isDelegue))
             {
                 TempData["Error"] = "Vous n'avez pas l'autorisation de renvoyer cette demande.";
                 return RedirectToAction(nameof(Details), new { id });
             }
 
-            var result = await _demandeWorkflowService.RenvoyerAuDmDsiAsync(id, commentaire, isDelegue, NomActeurCourant());
+            var result = await _demandeWorkflowService.RenvoyerAuDmDsiAsync(id, commentaire, userId, isDelegue, NomActeurCourant());
             return MapWorkflowToDetails(result, id);
         }
     }

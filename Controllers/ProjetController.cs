@@ -219,6 +219,11 @@ namespace GestionProjects.Controllers
                 return true;
             }
 
+            if (await _permissionService.IsActiveDmDelegateAsync(demande.Projet.SponsorId, userId))
+            {
+                return true;
+            }
+
             var currentUserDirectionId = await GetCurrentUserDirectionIdAsync(userId);
             return currentUserDirectionId.HasValue && demande.Projet.DirectionId == currentUserDirectionId.Value;
         }
@@ -1185,6 +1190,11 @@ namespace GestionProjects.Controllers
             }
 
             if (projet.SponsorId == userId)
+            {
+                return true;
+            }
+
+            if (await _permissionService.IsActiveDmDelegateAsync(projet.SponsorId, userId))
             {
                 return true;
             }

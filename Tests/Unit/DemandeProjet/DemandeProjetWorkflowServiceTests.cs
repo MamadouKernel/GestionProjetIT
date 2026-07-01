@@ -38,7 +38,7 @@ public class DemandeProjetWorkflowServiceTests
         var demande = await CreerDemandeAsync(db, StatutDemande.EnAttenteValidationDSI);
         var service = CreerService(db);
 
-        var result = await service.ValiderDsiAsync(demande.Id, commentaire: null, chefProjetId: null, isDelegue: false, nomActeur: "DSI");
+        var result = await service.ValiderDsiAsync(demande.Id, commentaire: null, chefProjetId: null, currentUserId: Guid.NewGuid(), isDelegue: false, nomActeur: "DSI");
 
         result.ErrorMessage.Should().Contain("Aucun portefeuille actif");
         result.ProjetId.Should().BeNull();
@@ -69,7 +69,7 @@ public class DemandeProjetWorkflowServiceTests
         await db.SaveChangesAsync();
         var service = CreerService(db);
 
-        var result = await service.ValiderDsiAsync(demande.Id, commentaire: "OK", chefProjetId: null, isDelegue: false, nomActeur: "DSI");
+        var result = await service.ValiderDsiAsync(demande.Id, commentaire: "OK", chefProjetId: null, currentUserId: Guid.NewGuid(), isDelegue: false, nomActeur: "DSI");
 
         result.ErrorMessage.Should().BeNull();
         result.ProjetId.Should().NotBeNull();
@@ -162,6 +162,7 @@ public class DemandeProjetWorkflowServiceTests
             DirectionId = direction.Id,
             DirecteurMetierId = directeurMetier.Id,
             StatutDemande = statut,
+            CahierChargesPath = "demandes/cahier-des-charges-test.pdf",
             DateCreation = DateTime.Now,
             CreePar = "TEST"
         };

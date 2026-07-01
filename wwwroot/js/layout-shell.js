@@ -52,6 +52,20 @@
         }
     }
 
+    function initModalPortal() {
+        // Les modales statiques (rendues par Razor dans le contenu de page) restent
+        // imbriquees dans .content-wrapper/.main-content, qui sont en overflow:hidden/auto.
+        // Le backdrop de Bootstrap est toujours ajoute en enfant direct de <body>, ce qui
+        // piege les clics de la modale derriere le backdrop malgre un z-index superieur.
+        // On deplace donc les modales au niveau de <body>, comme deja fait pour la modale
+        // de session generee en JS (voir showSessionWarning).
+        document.querySelectorAll('.modal').forEach((modal) => {
+            if (modal.parentElement !== document.body) {
+                document.body.appendChild(modal);
+            }
+        });
+    }
+
     function initSidebar() {
         restoreSidebarState();
         byId('sidebarOverlay')?.addEventListener('click', toggleSidebar);
@@ -281,6 +295,7 @@
     }
 
     function init() {
+        initModalPortal();
         initSidebar();
         initUserDropdown();
         initInactivityTimer();

@@ -118,30 +118,15 @@ namespace GestionProjects.Controllers
 
             if (portefeuille == null)
             {
-                // Créer un portefeuille par défaut
+                // Créer un portefeuille par défaut (sans données de démonstration : les avantages
+                // attendus et les risques sont désormais dérivés automatiquement des projets réels).
                 portefeuille = new PortefeuilleProjet
                 {
                     Id = Guid.NewGuid(),
                     Nom = "Portefeuille de Projet DSI",
-                    ObjectifStrategiqueGlobal = "Assurer l'amélioration globale de l'efficacité opérationnelle et de la satisfaction des parties prenantes au Côte d'Ivoire Terminal.",
-                    AvantagesAttendus = @"• Gestion automatisée des notes de frais pour une amélioration de l'efficacité opérationnelle
-• Mobilité des employés optimisée avec un système de réservation de bus efficace
-• Opérations du centre médical optimisées
-• Qualité du parcours client améliorée
-• Suivi amélioré de la gestion des équipements
-• Flux de contenu vers le scanner optimisé
-• Suivi amélioré des demandes, conduisant à une meilleure visibilité des besoins et anticipation des ressources
-• Efficacité de prise de décision améliorée grâce à la classification et priorisation des demandes basées sur des critères définis (budget, impact, urgence)
-• Support utilisateur amélioré, réduisant le temps de résolution des incidents et augmentant la satisfaction utilisateur
-• Gouvernance IT améliorée grâce à la mise en place de processus alignés avec les meilleures pratiques ITIL
-• Gestion de la formation optimisée, incluant une planification centralisée, réduction des conflits d'horaires et suivi détaillé des sessions
-• Conformité aux politiques de gouvernance IT, cybersécurité et groupe
-• Sécurité et autonomie renforcées des échanges de données avec les partenaires externes via une solution SFTP",
-                    RisquesEtMitigations = @"Résistance des utilisateurs au changement: Atténué par la sensibilisation des utilisateurs, la formation et le support de déploiement
-Retards possibles dans la livraison des composants logiciels: Atténué par la mise en place d'un processus de validation avec des critères clairs et un cadre commun
-Risque d'interruption de service pendant la transition: Atténué par une planification détaillée avec une phase de test avant la migration finale et des plans de retour en arrière, ainsi que des campagnes de communication et de sensibilisation actives
-Perte ou corruption de données pendant la migration: Atténué par un plan complet de sauvegarde et de restauration, et validation des données à chaque étape de migration
-Risques de sécurité liés aux échanges de données sensibles: Atténué par l'implémentation de solutions sécurisées et conformes aux politiques de sécurité",
+                    ObjectifStrategiqueGlobal = string.Empty,
+                    AvantagesAttendus = string.Empty,
+                    RisquesEtMitigations = string.Empty,
                     EstActif = true,
                     DateCreation = DateTime.Now,
                     CreePar = _currentUserService.Matricule ?? "SYSTEM",
@@ -173,11 +158,38 @@ Risques de sécurité liés aux échanges de données sensibles: Atténué par l
                 .OrderByDescending(d => d.DateSoumission)
                 .ToListAsync();
 
+            // Avantages attendus : repris directement des demandes d'origine des projets du portefeuille.
+            var avantagesParProjet = projets
+                .Where(p => !string.IsNullOrWhiteSpace(p.DemandeProjet?.AvantagesAttendus))
+                .Select(p => new AvantageProjetPortefeuille
+                {
+                    ProjetTitre = p.Titre,
+                    AvantagesAttendus = p.DemandeProjet!.AvantagesAttendus
+                })
+                .ToList();
+
+            // Risques et mitigations : issus des risques réellement saisis sur chaque projet.
+            var projetIds = projets.Select(p => p.Id).ToList();
+            var risquesProjets = await _db.RisquesProjets
+                .Where(r => !r.EstSupprime && projetIds.Contains(r.ProjetId))
+                .OrderBy(r => r.DateCreationRisque)
+                .ToListAsync();
+            var risquesParProjet = projets
+                .Select(p => new RisquesProjetPortefeuille
+                {
+                    ProjetTitre = p.Titre,
+                    Risques = risquesProjets.Where(r => r.ProjetId == p.Id).ToList()
+                })
+                .Where(g => g.Risques.Count > 0)
+                .ToList();
+
             var vmPortefeuille = new PortefeuilleViewModel
             {
-                Projets         = projets,
-                Portefeuille    = portefeuille,
-                DemandesEnCours = demandesEnCours
+                Projets          = projets,
+                Portefeuille     = portefeuille,
+                DemandesEnCours  = demandesEnCours,
+                AvantagesParProjet = avantagesParProjet,
+                RisquesParProjet   = risquesParProjet
             };
             return View(vmPortefeuille);
         }
@@ -186,7 +198,7 @@ Risques de sécurité liés aux échanges de données sensibles: Atténué par l
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
-        public async Task<IActionResult> UpdatePortefeuille(Guid id, string ObjectifStrategiqueGlobal, string AvantagesAttendus, string RisquesEtMitigations)
+        public async Task<IActionResult> UpdatePortefeuille(Guid id, string ObjectifStrategiqueGlobal)
         {
             if (!await HasPortfolioGovernanceAccessAsync())
             {
@@ -202,21 +214,9 @@ Risques de sécurité liés aux échanges de données sensibles: Atténué par l
                 ModelState.AddModelError("ObjectifStrategiqueGlobal", "L'objectif stratégique global est requis.");
             }
 
-            if (string.IsNullOrWhiteSpace(AvantagesAttendus))
-            {
-                ModelState.AddModelError("AvantagesAttendus", "Les avantages attendus sont requis.");
-            }
-
-            if (string.IsNullOrWhiteSpace(RisquesEtMitigations))
-            {
-                ModelState.AddModelError("RisquesEtMitigations", "Les risques et mitigations sont requis.");
-            }
-
             if (ModelState.IsValid)
             {
                 portefeuille.ObjectifStrategiqueGlobal = ObjectifStrategiqueGlobal.Trim();
-                portefeuille.AvantagesAttendus = AvantagesAttendus.Trim();
-                portefeuille.RisquesEtMitigations = RisquesEtMitigations.Trim();
                 portefeuille.DateModification = DateTime.Now;
                 portefeuille.ModifiePar = _currentUserService.Matricule;
 

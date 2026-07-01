@@ -245,13 +245,13 @@ public class SecurityTests : IDisposable
     }
 
     [Theory]
-    [InlineData(nameof(ProjetController.ValiderPlanifDM), "DirecteurMetier")]
-    [InlineData(nameof(ProjetController.ValiderPlanifDSI), "DSI,ResponsableSolutionsIT")]
-    [InlineData(nameof(ProjetController.ValiderRecette), "DirecteurMetier")]
-    [InlineData(nameof(ProjetController.ValiderCharteDM), "DirecteurMetier")]
-    [InlineData(nameof(ProjetController.RejeterCharteDM), "DirecteurMetier")]
-    [InlineData(nameof(ProjetController.ValiderCharteDSI), "DSI,ResponsableSolutionsIT")]
-    [InlineData(nameof(ProjetController.RejeterCharteDSI), "DSI,ResponsableSolutionsIT")]
+    [InlineData(nameof(ProjetController.ValiderPlanifDM), "DirecteurMetier,AdminIT")]
+    [InlineData(nameof(ProjetController.ValiderPlanifDSI), "DSI,ResponsableSolutionsIT,AdminIT")]
+    [InlineData(nameof(ProjetController.ValiderRecette), "DirecteurMetier,AdminIT")]
+    [InlineData(nameof(ProjetController.ValiderCharteDM), "DirecteurMetier,AdminIT")]
+    [InlineData(nameof(ProjetController.RejeterCharteDM), "DirecteurMetier,AdminIT")]
+    [InlineData(nameof(ProjetController.ValiderCharteDSI), "DSI,ResponsableSolutionsIT,AdminIT")]
+    [InlineData(nameof(ProjetController.RejeterCharteDSI), "DSI,ResponsableSolutionsIT,AdminIT")]
     public void ValidationCharteEndpoints_ShouldExposeExpectedRoles(string actionName, string expectedRoles)
     {
         var method = typeof(ProjetController).GetMethod(actionName);

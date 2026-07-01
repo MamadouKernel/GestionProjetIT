@@ -44,7 +44,10 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
         var demande = await _db.DemandesProjets.FindAsync(id);
         if (demande == null) return WorkflowResult.NotFound();
 
-        if (!hasAdminScope && demande.DirecteurMetierId != currentUserId)
+        var isDelegue = !hasAdminScope && demande.DirecteurMetierId != currentUserId &&
+            await IsActiveDmDelegateAsync(demande.DirecteurMetierId, currentUserId);
+
+        if (!hasAdminScope && !isDelegue && demande.DirecteurMetierId != currentUserId)
             return WorkflowResult.Forbidden();
 
         if (!hasAdminScope && demande.DemandeurId == currentUserId)
@@ -53,6 +56,9 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
         if (demande.StatutDemande != StatutDemande.EnAttenteValidationDirecteurMetier &&
             demande.StatutDemande != StatutDemande.RetourneeAuDirecteurMetierParDSI)
             return WorkflowResult.Error("Cette demande n'est pas en attente de validation.");
+
+        if (string.IsNullOrWhiteSpace(demande.CahierChargesPath))
+            return WorkflowResult.Error("Impossible de valider : aucun cahier des charges n'a été déposé.");
 
         var ancienStatut = demande.StatutDemande;
         var avant = new { demande.Titre, demande.Description, demande.Objectifs, demande.AvantagesAttendus, StatutDemande = ancienStatut.ToString() };
@@ -70,7 +76,9 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
         await _db.SaveChangesAsync();
 
         var apres = new { demande.Titre, demande.Description, demande.Objectifs, demande.AvantagesAttendus, StatutDemande = demande.StatutDemande.ToString(), Commentaire = commentaire };
-        await _audit.LogActionAsync("VALIDATION_DM", "DemandeProjet", demande.Id, avant, apres);
+        var actionLogDm = isDelegue ? "VALIDATION_DM_PAR_DELEGUE" : "VALIDATION_DM";
+        await _audit.LogActionAsync(actionLogDm, "DemandeProjet", demande.Id, avant,
+            isDelegue ? await AvecTitulaireInitialAsync(apres, demande.DirecteurMetierId) : apres);
 
         await _teams.EnvoyerValidationDMAsync(demande.Titre ?? string.Empty, nomActeur, true, commentaire, demande.Id);
 
@@ -91,7 +99,10 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
         var demande = await _db.DemandesProjets.FindAsync(id);
         if (demande == null) return WorkflowResult.NotFound();
 
-        if (!hasAdminScope && demande.DirecteurMetierId != currentUserId)
+        var isDelegue = !hasAdminScope && demande.DirecteurMetierId != currentUserId &&
+            await IsActiveDmDelegateAsync(demande.DirecteurMetierId, currentUserId);
+
+        if (!hasAdminScope && !isDelegue && demande.DirecteurMetierId != currentUserId)
             return WorkflowResult.Forbidden();
 
         if (string.IsNullOrWhiteSpace(commentaire))
@@ -108,9 +119,10 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
         demande.ModifiePar                 = _currentUser.Matricule;
         await _db.SaveChangesAsync();
 
-        await _audit.LogActionAsync("REJET_DM", "DemandeProjet", demande.Id,
+        var apresRejetDm = new { demande.StatutDemande, Commentaire = commentaire };
+        await _audit.LogActionAsync(isDelegue ? "REJET_DM_PAR_DELEGUE" : "REJET_DM", "DemandeProjet", demande.Id,
             new { StatutDemande = ancienStatut },
-            new { demande.StatutDemande, Commentaire = commentaire });
+            isDelegue ? await AvecTitulaireInitialAsync(apresRejetDm, demande.DirecteurMetierId) : apresRejetDm);
 
         await _teams.EnvoyerRejetOuRenvoiAsync(demande.Titre ?? string.Empty, nomActeur, "Rejet par Directeur métier", commentaire, demande.Id);
         var demandeur = await _db.Utilisateurs.FindAsync(demande.DemandeurId);
@@ -128,7 +140,10 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
         var demande = await _db.DemandesProjets.FindAsync(id);
         if (demande == null) return WorkflowResult.NotFound();
 
-        if (!hasAdminScope && demande.DirecteurMetierId != currentUserId)
+        var isDelegue = !hasAdminScope && demande.DirecteurMetierId != currentUserId &&
+            await IsActiveDmDelegateAsync(demande.DirecteurMetierId, currentUserId);
+
+        if (!hasAdminScope && !isDelegue && demande.DirecteurMetierId != currentUserId)
             return WorkflowResult.Forbidden();
 
         if (string.IsNullOrWhiteSpace(commentaire))
@@ -145,9 +160,10 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
         demande.ModifiePar                 = _currentUser.Matricule;
         await _db.SaveChangesAsync();
 
-        await _audit.LogActionAsync("CORRECTION_DM", "DemandeProjet", demande.Id,
+        var apresCorrectionDm = new { demande.StatutDemande, Commentaire = commentaire };
+        await _audit.LogActionAsync(isDelegue ? "CORRECTION_DM_PAR_DELEGUE" : "CORRECTION_DM", "DemandeProjet", demande.Id,
             new { StatutDemande = ancienStatut },
-            new { demande.StatutDemande, Commentaire = commentaire });
+            isDelegue ? await AvecTitulaireInitialAsync(apresCorrectionDm, demande.DirecteurMetierId) : apresCorrectionDm);
 
         await _teams.EnvoyerRejetOuRenvoiAsync(demande.Titre ?? string.Empty, nomActeur, "Correction demandée par le Directeur métier", commentaire, demande.Id);
         var demandeur = await _db.Utilisateurs.FindAsync(demande.DemandeurId);
@@ -161,7 +177,7 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
 
     // ── Côté DSI ───────────────────────────────────────────────────────────────
     public async Task<ValiderDsiResult> ValiderDsiAsync(
-        Guid id, string? commentaire, Guid? chefProjetId, bool isDelegue, string nomActeur)
+        Guid id, string? commentaire, Guid? chefProjetId, Guid currentUserId, bool isDelegue, string nomActeur)
     {
         var demande = await _db.DemandesProjets.Include(d => d.Direction).FirstOrDefaultAsync(d => d.Id == id);
         if (demande == null) return ValiderDsiResult.NotFound();
@@ -169,9 +185,25 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
         if (demande.StatutDemande != StatutDemande.EnAttenteValidationDSI)
             return ValiderDsiResult.Error("Cette demande n'est pas en attente de validation DSI.");
 
+        if (string.IsNullOrWhiteSpace(demande.CahierChargesPath))
+            return ValiderDsiResult.Error("Impossible de valider : aucun cahier des charges n'a été déposé.");
+
         var portefeuilleActif = await _db.PortefeuillesProjets.FirstOrDefaultAsync(p => p.EstActif && !p.EstSupprime);
         if (portefeuilleActif == null)
             return ValiderDsiResult.Error("Aucun portefeuille actif n'est configure. Creez ou activez un portefeuille avant de valider la demande.");
+
+        var effectiveChefProjetId = chefProjetId;
+        if (!effectiveChefProjetId.HasValue)
+        {
+            var responsableSolutionIT = await _db.Utilisateurs
+                .Where(u => !u.EstSupprime)
+                .Join(_db.UtilisateurRoles.Where(r => r.Role == RoleUtilisateur.ResponsableSolutionsIT && !r.EstSupprime),
+                      u => u.Id, r => r.UtilisateurId, (u, r) => u)
+                .OrderBy(u => u.Nom).ThenBy(u => u.Prenoms)
+                .Select(u => (Guid?)u.Id)
+                .FirstOrDefaultAsync();
+            effectiveChefProjetId = responsableSolutionIT;
+        }
 
         var ancienStatut = demande.StatutDemande;
         demande.StatutDemande     = StatutDemande.ValideeParDSI;
@@ -188,7 +220,7 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
             DemandeProjetId       = demande.Id,
             DirectionId           = demande.DirectionId,
             SponsorId             = demande.DirecteurMetierId,
-            ChefProjetId          = chefProjetId,
+            ChefProjetId          = effectiveChefProjetId,
             StatutProjet          = StatutProjet.NonDemarre,
             PhaseActuelle         = PhaseProjet.AnalyseClarification,
             EtatProjet            = EtatProjet.Vert,
@@ -202,9 +234,10 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
         await _db.SaveChangesAsync();
 
         var actionLog = isDelegue ? "VALIDATION_DSI_PAR_DELEGUE" : "VALIDATION_DSI";
+        var apresValidationDsi = new { demande.StatutDemande, Commentaire = commentaire };
         await _audit.LogActionAsync(actionLog, "DemandeProjet", demande.Id,
             new { StatutDemande = ancienStatut },
-            new { demande.StatutDemande, Commentaire = commentaire });
+            isDelegue ? await AvecTitulaireInitialDsiAsync(apresValidationDsi, currentUserId) : apresValidationDsi);
         await _audit.LogActionAsync("CreationProjet", "Projet", projet.Id, null,
             new { projet.CodeProjet, projet.Titre, projet.StatutProjet, projet.PhaseActuelle });
 
@@ -217,7 +250,7 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
         return ValiderDsiResult.Success($"Demande validée et projet {projet.CodeProjet} créé automatiquement.", projet.Id);
     }
 
-    public async Task<WorkflowResult> RejeterDsiAsync(Guid id, string? commentaire, bool isDelegue, string nomActeur)
+    public async Task<WorkflowResult> RejeterDsiAsync(Guid id, string? commentaire, Guid currentUserId, bool isDelegue, string nomActeur)
     {
         var demande = await _db.DemandesProjets.FindAsync(id);
         if (demande == null) return WorkflowResult.NotFound();
@@ -236,9 +269,10 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
         await _db.SaveChangesAsync();
 
         var actionLog = isDelegue ? "REJET_DSI_PAR_DELEGUE" : "REJET_DSI";
+        var apresRejetDsi = new { demande.StatutDemande, Commentaire = commentaire };
         await _audit.LogActionAsync(actionLog, "DemandeProjet", demande.Id,
             new { StatutDemande = ancienStatut },
-            new { demande.StatutDemande, Commentaire = commentaire });
+            isDelegue ? await AvecTitulaireInitialDsiAsync(apresRejetDsi, currentUserId) : apresRejetDsi);
 
         await _teams.EnvoyerRejetOuRenvoiAsync(demande.Titre ?? string.Empty, nomActeur, "Rejet par la DSI", commentaire, demande.Id);
         var demandeur = await _db.Utilisateurs.FindAsync(demande.DemandeurId);
@@ -249,7 +283,7 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
         return WorkflowResult.Success("Demande rejetée par la DSI.");
     }
 
-    public async Task<WorkflowResult> RenvoyerAuDemandeurDsiAsync(Guid id, string? commentaire, bool isDelegue, string nomActeur)
+    public async Task<WorkflowResult> RenvoyerAuDemandeurDsiAsync(Guid id, string? commentaire, Guid currentUserId, bool isDelegue, string nomActeur)
     {
         var demande = await _db.DemandesProjets.FindAsync(id);
         if (demande == null) return WorkflowResult.NotFound();
@@ -268,9 +302,10 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
         await _db.SaveChangesAsync();
 
         var actionLog = isDelegue ? "CORRECTION_DSI_DEMANDEUR_PAR_DELEGUE" : "CORRECTION_DSI_DEMANDEUR";
+        var apresCorrectionDsiDemandeur = new { demande.StatutDemande, Commentaire = commentaire };
         await _audit.LogActionAsync(actionLog, "DemandeProjet", demande.Id,
             new { StatutDemande = ancienStatut },
-            new { demande.StatutDemande, Commentaire = commentaire });
+            isDelegue ? await AvecTitulaireInitialDsiAsync(apresCorrectionDsiDemandeur, currentUserId) : apresCorrectionDsiDemandeur);
 
         await _teams.EnvoyerRejetOuRenvoiAsync(demande.Titre ?? string.Empty, nomActeur, "Renvoi au demandeur par la DSI", commentaire, demande.Id);
         var demandeur = await _db.Utilisateurs.FindAsync(demande.DemandeurId);
@@ -282,7 +317,7 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
         return WorkflowResult.Success("Demande renvoyée au demandeur pour correction.");
     }
 
-    public async Task<WorkflowResult> RenvoyerAuDmDsiAsync(Guid id, string commentaire, bool isDelegue, string nomActeur)
+    public async Task<WorkflowResult> RenvoyerAuDmDsiAsync(Guid id, string commentaire, Guid currentUserId, bool isDelegue, string nomActeur)
     {
         var demande = await _db.DemandesProjets.FindAsync(id);
         if (demande == null) return WorkflowResult.NotFound();
@@ -301,9 +336,10 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
         await _db.SaveChangesAsync();
 
         var actionLog = isDelegue ? "CORRECTION_DSI_DM_PAR_DELEGUE" : "CORRECTION_DSI_DM";
+        var apresCorrectionDsiDm = new { demande.StatutDemande, Commentaire = commentaire };
         await _audit.LogActionAsync(actionLog, "DemandeProjet", demande.Id,
             new { StatutDemande = ancienStatut },
-            new { demande.StatutDemande, Commentaire = commentaire });
+            isDelegue ? await AvecTitulaireInitialDsiAsync(apresCorrectionDsiDm, currentUserId) : apresCorrectionDsiDm);
 
         var dm = await _db.Utilisateurs.FindAsync(demande.DirecteurMetierId);
         if (dm?.Email != null)
@@ -312,6 +348,42 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
                 demande.Titre ?? string.Empty, nomActeur, "Renvoi au Directeur Métier par la DSI", commentaire);
 
         return WorkflowResult.Success("Demande renvoyée au Directeur Métier.");
+    }
+
+    // ── Traçabilité des délégations ─────────────────────────────────────────────
+    // Enrichit le log d'audit d'une action réalisée au titre d'une délégation avec
+    // le nom du titulaire initial du rôle, conformément à l'exigence de traçabilité
+    // ("Validation effectuée par X (délégation de Y)").
+    private async Task<object> AvecTitulaireInitialAsync(object valeurs, Guid titulaireInitialId)
+    {
+        var titulaire = await _db.Utilisateurs.FindAsync(titulaireInitialId);
+        var nomTitulaire = titulaire != null ? $"{titulaire.Nom} {titulaire.Prenoms}".Trim() : null;
+        return new { TitulaireInitialDuRole = nomTitulaire, Details = valeurs };
+    }
+
+    private async Task<object> AvecTitulaireInitialDsiAsync(object valeurs, Guid delegueId)
+    {
+        var dsiTitulaireId = await _db.DelegationsValidationDSI
+            .Where(d => d.DelegueId == delegueId && d.EstActive &&
+                        d.DateDebut <= DateTime.Now && d.DateFin >= DateTime.Now && !d.EstSupprime)
+            .OrderByDescending(d => d.DateDebut)
+            .Select(d => (Guid?)d.DSIId)
+            .FirstOrDefaultAsync();
+
+        return dsiTitulaireId.HasValue
+            ? await AvecTitulaireInitialAsync(valeurs, dsiTitulaireId.Value)
+            : valeurs;
+    }
+
+    private async Task<bool> IsActiveDmDelegateAsync(Guid directeurMetierId, Guid delegueId)
+    {
+        return await _db.DelegationsValidationDM.AnyAsync(d =>
+            d.DirecteurMetierId == directeurMetierId &&
+            d.DelegueId == delegueId &&
+            d.EstActive &&
+            d.DateDebut <= DateTime.Now &&
+            d.DateFin >= DateTime.Now &&
+            !d.EstSupprime);
     }
 
     // ── Documents / duplication ────────────────────────────────────────────────
@@ -461,6 +533,9 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
 
         if (demande.StatutDemande != StatutDemande.Brouillon)
             return SoumissionResult.Error("Cette demande ne peut plus etre modifiee.");
+
+        if (string.IsNullOrWhiteSpace(demande.CahierChargesPath))
+            return SoumissionResult.Error("Le cahier des charges est obligatoire avant la soumission.");
 
         if (!ignorerDoublons)
         {

@@ -64,8 +64,15 @@ namespace GestionProjects.Controllers
                 allowedExtensions,
                 maxSize);
 
-            await livrableService.DeposerAsync(
+            var livrableId = await livrableService.DeposerAsync(
                 projetId, phase, typeLivrable, fichier.FileName, path, userId, commentaire, version);
+
+            var uiLivrable = await BuildProjectUiAsync(projet);
+            if (!uiLivrable.IsAssignedChefProjet && uiLivrable.HasDsiGovernanceAccess)
+            {
+                await _auditService.LogActionAsync("UPLOAD_LIVRABLE_REMPLACEMENT_CHEFPROJET", "LivrableProjet", livrableId,
+                    null, new { Note = "Responsable Solution IT en remplacement du Chef de projet affecté" });
+            }
 
             TempData["Success"] = "Livrable déposé avec succès.";
             return RedirectToAction(nameof(Details), new { id = projetId, tab = GetTabForPhase(phase) });

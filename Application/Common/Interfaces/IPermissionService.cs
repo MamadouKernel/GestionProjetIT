@@ -23,5 +23,11 @@ namespace GestionProjects.Application.Common.Interfaces
         /// Récupère toutes les permissions actives pour l'utilisateur actuel
         /// </summary>
         Task<List<(string Controleur, string Action)>> GetCurrentUserActivePermissionsAsync();
+
+        /// <summary>
+        /// Vérifie si l'utilisateur dispose d'une délégation active pour valider à la place
+        /// du Directeur Métier donné (délégation temporaire de rôle).
+        /// </summary>
+        Task<bool> IsActiveDmDelegateAsync(Guid directeurMetierId, Guid delegueId);
     }
 }

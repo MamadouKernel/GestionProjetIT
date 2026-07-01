@@ -16,6 +16,12 @@
     var totalCtChef  = Model.TotalCountChef;
     var pgSizeChef   = Model.PageSizeChef > 0 ? Model.PageSizeChef : 15;
     var rechChef     = Model.RechercheChef ?? string.Empty;
+
+    var pageNumDm    = Model.PageNumberDm;
+    var totalPgDm    = Model.TotalPagesDm;
+    var totalCtDm    = Model.TotalCountDm;
+    var pgSizeDm     = Model.PageSizeDm > 0 ? Model.PageSizeDm : 15;
+    var rechDm       = Model.RechercheDm ?? string.Empty;
 }
 
 <div class="fade-in admin-page">
@@ -29,6 +35,7 @@
             <div class="page-hero-meta">
                 <span class="badge-modern badge-modern-info">@totalCtDsi délégation(s) DSI</span>
                 <span class="badge-modern badge-modern-secondary">@totalCtChef délégation(s) chef projet</span>
+                <span class="badge-modern badge-modern-secondary">@totalCtDm délégation(s) Directeur Métier</span>
                 @if (canCreateForOthers)
                 {
                     <span class="badge-modern badge-modern-dark">Administration globale</span>
@@ -52,6 +59,13 @@
                 <i class="bi bi-person-workspace"></i>
                 Délégations chef projet
                 <span class="badge-modern badge-modern-info ms-2">@Model.DelegationsChefProjet.Count()</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(activeTab == "dm" ? "active" : "")" id="dm-tab" data-bs-toggle="tab" data-bs-target="#dm-pane" type="button" role="tab" aria-controls="dm-pane" aria-selected="@(activeTab == "dm" ? "true" : "false")">
+                <i class="bi bi-person-badge"></i>
+                Délégations Directeur Métier
+                <span class="badge-modern badge-modern-info ms-2">@Model.DelegationsDM.Count()</span>
             </button>
         </li>
     </ul>
@@ -402,11 +416,180 @@
                 </div>
             </div>
         </div>
+
+        <div class="tab-pane fade @(activeTab == "dm" ? "show active" : "")" id="dm-pane" role="tabpanel" aria-labelledby="dm-tab">
+            <div class="page-toolbar mb-3">
+                <h3 class="card-title-modern">
+                    <i class="bi bi-person-badge"></i>
+                    Délégations Directeur Métier
+                </h3>
+                <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#createDelegationDMModal" onclick="resetDmForm()">
+                    <i class="bi bi-plus-circle"></i>
+                    Nouvelle délégation Directeur Métier
+                </button>
+            </div>
+
+            <div class="card-modern mb-3">
+                <div class="card-body-modern">
+                    <form method="get" asp-action="Delegations" class="d-flex gap-3 align-items-end">
+                        <input type="hidden" name="tab" value="dm" />
+                        <div class="flex-grow-1">
+                            <label class="form-label-modern">Rechercher (Directeur Métier ou délégué)</label>
+                            <input type="text" name="rechercheDm" value="@rechDm"
+                                   class="form-control-modern" placeholder="Nom ou prénom..." />
+                        </div>
+                        <button type="submit" class="btn-modern btn-modern-primary">
+                            <i class="bi bi-search"></i> Filtrer
+                        </button>
+                        @if (!string.IsNullOrWhiteSpace(rechDm))
+                        {
+                            <a asp-action="Delegations" asp-route-tab="dm" class="btn-modern btn-modern-secondary">
+                                <i class="bi bi-x-circle"></i>
+                            </a>
+                        }
+                    </form>
+                </div>
+            </div>
+
+            <div class="card-modern">
+                <div class="card-body-modern p-0">
+                    <div class="table-responsive">
+                        <table class="table-modern">
+                            <thead>
+                                <tr>
+                                    <th>Directeur Métier</th>
+                                    <th>Délégué</th>
+                                    <th>Date début</th>
+                                    <th>Date fin</th>
+                                    <th>Statut</th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.DelegationsDM.Any())
+                                {
+                                    @foreach (var delegation in Model.DelegationsDM)
+                                    {
+                                        var isActive = delegation.EstActive && delegation.DateFin >= DateTime.Now;
+                                        var isExpired = delegation.DateFin < DateTime.Now;
+                                        var isUpcoming = delegation.DateDebut > DateTime.Now;
+
+                                        <tr>
+                                            <td>
+                                                <div class="table-person">
+                                                    <span class="table-avatar primary">@GetInitiales(delegation.DirecteurMetier?.Nom, delegation.DirecteurMetier?.Prenoms)</span>
+                                                    <div class="table-person-main">
+                                                        <div class="table-person-title">@(delegation.DirecteurMetier?.Nom ?? "N/A") @(delegation.DirecteurMetier?.Prenoms ?? "")</div>
+                                                        <div class="table-person-subtitle">@(delegation.DirecteurMetier?.Email ?? "")</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="table-person">
+                                                    <span class="table-avatar gold">@GetInitiales(delegation.Delegue?.Nom, delegation.Delegue?.Prenoms)</span>
+                                                    <div class="table-person-main">
+                                                        <div class="table-person-title">@(delegation.Delegue?.Nom ?? "N/A") @(delegation.Delegue?.Prenoms ?? "")</div>
+                                                        <div class="table-person-subtitle">@(delegation.Delegue?.Email ?? "")</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="table-inline-stack column">
+                                                    <span class="table-person-title">@delegation.DateDebut.ToString("dd/MM/yyyy")</span>
+                                                    <span class="table-person-subtitle">@delegation.DateDebut.ToString("HH:mm")</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="table-inline-stack column">
+                                                    <span class="table-person-title @(isExpired ? "text-danger" : string.Empty)">@delegation.DateFin.ToString("dd/MM/yyyy")</span>
+                                                    <span class="table-person-subtitle">@delegation.DateFin.ToString("HH:mm")</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                @if (isActive)
+                                                {
+                                                    <span class="badge-modern badge-modern-success">Active</span>
+                                                }
+                                                else if (isExpired)
+                                                {
+                                                    <span class="badge-modern badge-modern-danger">Expirée</span>
+                                                }
+                                                else if (isUpcoming)
+                                                {
+                                                    <span class="badge-modern badge-modern-info">À venir</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge-modern badge-modern-secondary">Inactive</span>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="table-actions justify-content-center">
+                                                    <button type="button" class="btn-modern btn-modern-gold btn-icon" onclick="editDmDelegation('@delegation.Id')" title="Modifier la délégation" aria-label="Modifier la délégation">
+                                                        <i class="bi bi-pencil-square"></i>
+                                                    </button>
+                                                    <form asp-action="DeleteDelegationDm" asp-route-id="@delegation.Id" method="post" class="d-inline" onsubmit="return confirm('Êtes-vous sûr de vouloir clôturer cette délégation ?');">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="btn-modern btn-modern-danger btn-icon" title="Clôturer la délégation" aria-label="Clôturer la délégation">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="6" class="text-center py-5">
+                                            <div class="empty-state-soft">
+                                                <i class="bi bi-inbox"></i>
+                                                <p>Aucune délégation Directeur Métier configurée.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    @if (totalPgDm > 1)
+                    {
+                        <div class="card-body-modern pt-0">
+                            @{
+                                int dmStart = Math.Max(1, pageNumDm - 2);
+                                int dmEnd   = Math.Min(totalPgDm, pageNumDm + 2);
+                            }
+                            <nav aria-label="Pagination DM" class="mt-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="text-muted">@((pageNumDm-1)*pgSizeDm+1)–@(Math.Min(pageNumDm*pgSizeDm, totalCtDm)) sur @totalCtDm</div>
+                                    <ul class="pagination mb-0">
+                                        <li class="page-item @(pageNumDm==1?"disabled":"")">
+                                            <a class="page-link" href="?tab=dm&rechercheDm=@rechDm&pageDm=@(pageNumDm-1)">&laquo;</a>
+                                        </li>
+                                        @for (int pi = dmStart; pi <= dmEnd; pi++)
+                                        {
+                                            <li class="page-item @(pi==pageNumDm?"active":"")">
+                                                <a class="page-link" href="?tab=dm&rechercheDm=@rechDm&pageDm=@pi">@pi</a>
+                                            </li>
+                                        }
+                                        <li class="page-item @(pageNumDm>=totalPgDm?"disabled":"")">
+                                            <a class="page-link" href="?tab=dm&rechercheDm=@rechDm&pageDm=@(pageNumDm+1)">&raquo;</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </nav>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 @await Html.PartialAsync("_ModalDelegationDSI", Model)
 @await Html.PartialAsync("_ModalDelegationChefProjet", Model)
+@await Html.PartialAsync("_ModalDelegationDM", Model)
 
 @section Scripts {
     <script>
@@ -414,6 +597,9 @@
             const activeTab = '@activeTab';
             if (activeTab === 'chefprojet') {
                 const tab = new bootstrap.Tab(document.getElementById('chefprojet-tab'));
+                tab.show();
+            } else if (activeTab === 'dm') {
+                const tab = new bootstrap.Tab(document.getElementById('dm-tab'));
                 tab.show();
             }
         });
@@ -481,6 +667,41 @@
                 const dateDebut = new Date(delegation.dateDebut);
                 document.getElementById('dateDebutChefProjet').value = dateDebut.toISOString().split('T')[0];
                 document.getElementById('estActiveChefProjet').checked = delegation.estActive || false;
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors du chargement des données de la délégation');
+            }
+        }
+
+        function resetDmForm() {
+            document.getElementById('delegationDMForm').reset();
+            document.getElementById('delegationDMId').value = '';
+            document.getElementById('delegationDMForm').action = '@Url.Action("CreateDelegationDm")';
+            document.getElementById('modalDMTitle').textContent = 'Nouvelle délégation Directeur Métier';
+            document.getElementById('estActiveDM').checked = true;
+        }
+
+        async function editDmDelegation(delegationId) {
+            try {
+                const modal = new bootstrap.Modal(document.getElementById('createDelegationDMModal'));
+                modal.show();
+
+                document.getElementById('modalDMTitle').textContent = 'Modifier la délégation Directeur Métier';
+                document.getElementById('delegationDMId').value = delegationId;
+                document.getElementById('delegationDMForm').action = '@Url.Action("UpdateDelegationDm")';
+
+                const response = await fetch('@Url.Action("GetDelegationDm")?id=' + delegationId);
+                if (!response.ok) throw new Error('Erreur lors du chargement des données');
+
+                const delegation = await response.json();
+                document.getElementById('directeurMetierId').value = delegation.directeurMetierId || '';
+                document.getElementById('delegueDMId').value = delegation.delegueId || '';
+
+                const dateDebut = new Date(delegation.dateDebut);
+                const dateFin = new Date(delegation.dateFin);
+                document.getElementById('dateDebutDM').value = dateDebut.toISOString().split('T')[0];
+                document.getElementById('dateFinDM').value = dateFin.toISOString().split('T')[0];
+                document.getElementById('estActiveDM').checked = delegation.estActive || false;
             } catch (error) {
                 console.error('Erreur:', error);
                 alert('Erreur lors du chargement des données de la délégation');

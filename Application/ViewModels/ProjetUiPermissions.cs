@@ -9,6 +9,19 @@ namespace GestionProjects.Application.ViewModels
         public bool IsAssignedChefProjet { get; init; }
         public bool IsProjectSponsor { get; init; }
         public bool IsProjectInUserDirection { get; init; }
+        /// <summary>
+        /// L'utilisateur agit comme délégataire du Directeur Métier (sponsor) de ce projet,
+        /// via une délégation temporaire de rôle active (voir DelegationValidationDM).
+        /// </summary>
+        public bool IsDelegatedSponsor { get; init; }
+        /// <summary>
+        /// L'AdminIT ne doit subir aucune restriction dans l'application : les vérifications
+        /// de permission nommée sont déjà contournées pour ce rôle (PermissionService),
+        /// mais certaines actions exigent en plus d'être littéralement le sponsor / chef de
+        /// projet / demandeur assigné (identité, pas permission) — cet indicateur lève aussi
+        /// ces dernières restrictions pour l'AdminIT.
+        /// </summary>
+        public bool IsAdminIT { get; init; }
         public HashSet<string> ActivePermissionKeys { get; init; } = new(StringComparer.OrdinalIgnoreCase);
 
         public bool Has(string controleur, string action)
@@ -35,6 +48,7 @@ namespace GestionProjects.Application.ViewModels
             Has("Projet", "AddRisk") ||
             Has("Projet", "ValiderAnalyse");
         public bool CanViewProject =>
+            IsAdminIT ||
             HasDsiGovernanceAccess ||
             IsAssignedChefProjet ||
             IsDemandeurProject ||
@@ -46,31 +60,31 @@ namespace GestionProjects.Application.ViewModels
         public bool CanEditCharte => Has("Projet", "EditCharte") && (IsAssignedChefProjet || HasDsiGovernanceAccess);
         public bool CanEditAnalyse => Has("Projet", "EditAnalyse") && (IsAssignedChefProjet || HasDsiGovernanceAccess);
         public bool CanStartProject => CanEditAnalyse || HasDsiGovernanceAccess;
-        public bool CanValidateAnalysePhase => Has("Projet", "ValiderAnalyse") && IsAssignedChefProjet;
-        public bool CanValidateCharteDm => Has("Projet", "ValiderCharteDM") && IsProjectSponsor && !IsReadOnly;
+        public bool CanValidateAnalysePhase => IsAdminIT || (Has("Projet", "ValiderAnalyse") && IsAssignedChefProjet);
+        public bool CanValidateCharteDm => IsAdminIT || (Has("Projet", "ValiderCharteDM") && (IsProjectSponsor || IsDelegatedSponsor) && !IsReadOnly);
         public bool CanValidateCharteDsi => Has("Projet", "ValiderCharteDSI");
         public bool CanManageDossierSignature => Has("Projet", "ManageDossierSignature") && (IsAssignedChefProjet || HasDsiGovernanceAccess);
         public bool CanEditTechnicalComment => Has("Projet", "EditCommentaireTechnique") && HasDsiGovernanceAccess;
 
         public bool CanEditPlanification => Has("Projet", "EditPlanification") && (IsAssignedChefProjet || HasDsiGovernanceAccess);
-        public bool CanValidatePlanificationDm => Has("Projet", "ValiderPlanificationDM") && IsProjectSponsor && !IsReadOnly;
+        public bool CanValidatePlanificationDm => IsAdminIT || (Has("Projet", "ValiderPlanificationDM") && (IsProjectSponsor || IsDelegatedSponsor) && !IsReadOnly);
         public bool CanValidatePlanificationDsi => Has("Projet", "ValiderPlanificationDSI");
 
         public bool CanEditExecution => Has("Projet", "EditExecution") && (IsAssignedChefProjet || HasDsiGovernanceAccess);
         public bool CanEditUat => Has("Projet", "EditUat") && (IsAssignedChefProjet || HasDsiGovernanceAccess);
-        public bool CanValidateRecette => Has("Projet", "ValiderRecette") && IsProjectSponsor && !IsReadOnly;
+        public bool CanValidateRecette => IsAdminIT || (Has("Projet", "ValiderRecette") && (IsProjectSponsor || IsDelegatedSponsor) && !IsReadOnly);
         public bool CanEditCloture => Has("Projet", "EditCloture") && (IsAssignedChefProjet || HasDsiGovernanceAccess);
         public bool CanEditCollaboration => Has("Projet", "EditCollaboration") && (IsAssignedChefProjet || HasDsiGovernanceAccess);
 
-        public bool CanUpdateProgress => Has("Projet", "UpdateProgress") && IsAssignedChefProjet;
-        public bool CanAddRisk => Has("Projet", "AddRisk") && IsAssignedChefProjet;
+        public bool CanUpdateProgress => IsAdminIT || (Has("Projet", "UpdateProgress") && IsAssignedChefProjet);
+        public bool CanAddRisk => IsAdminIT || (Has("Projet", "AddRisk") && IsAssignedChefProjet);
         public bool CanChangePhase => Has("Projet", "ChangerPhase") && (IsAssignedChefProjet || HasDsiGovernanceAccess);
         public bool CanForceStatus => Has("Projet", "ForcerStatut");
-        public bool CanReassignChefProjet => HasPortfolioAccess;
+        public bool CanReassignChefProjet => HasPortfolioAccess || HasDsiGovernanceAccess;
 
-        public bool CanValidateClotureDm => HasClotureDmAccess && IsProjectSponsor && !IsReadOnly;
+        public bool CanValidateClotureDm => IsAdminIT || (HasClotureDmAccess && (IsProjectSponsor || IsDelegatedSponsor) && !IsReadOnly);
         public bool CanValidateClotureDsi => HasClotureDsiAccess;
-        public bool CanValidateClotureDemandeur => HasClotureDemandeurAccess && IsDemandeurProject;
+        public bool CanValidateClotureDemandeur => IsAdminIT || (HasClotureDemandeurAccess && IsDemandeurProject);
 
         public bool CanUseProjectModals =>
             CanEditAnalyse ||

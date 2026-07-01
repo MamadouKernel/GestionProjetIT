@@ -15,7 +15,7 @@ public static class DatabaseExtensions
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(
                 configuration.GetConnectionString("DefaultConnection"),
-                sql => sql.CommandTimeout(30)));
+                sql => sql.CommandTimeout(30).MigrationsAssembly("GestionProjects")));
 
         return services;
     }

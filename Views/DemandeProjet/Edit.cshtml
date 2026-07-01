@@ -123,7 +123,8 @@
 
                 <div class="form-group-modern">
                     <label asp-for="Demande.DirecteurMetierId" class="form-label-modern">Directeur metier *</label>
-                    <select asp-for="Demande.DirecteurMetierId" id="DirecteurMetierId" class="form-control-modern" required>
+                    <select asp-for="Demande.DirecteurMetierId" id="DirecteurMetierId" class="form-control-modern"
+                            asp-items="Model.DirecteursMetier.ToSelectListItems()" required>
                         <option value="">-- Selectionner d'abord une direction --</option>
                     </select>
                     <span asp-validation-for="Demande.DirecteurMetierId" class="text-danger"></span>

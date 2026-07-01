@@ -13,8 +13,8 @@ public interface IDelegationAdminService
 {
     Task<DelegationsPageViewModel> GetPageAsync(
         Guid currentUserId, bool hasFullScope, string? tab,
-        string? rechercheDsi, string? rechercheChef,
-        int pageDsi, int pageChef, int pageSize);
+        string? rechercheDsi, string? rechercheChef, string? rechercheDm,
+        int pageDsi, int pageChef, int pageDm, int pageSize);
 
     Task<DelegationDetailsResult> GetDsiAsync(Guid id, Guid currentUserId, bool hasFullScope);
     Task<WorkflowResult> CreateDsiAsync(CreateDelegationDsiInput input);
@@ -26,6 +26,11 @@ public interface IDelegationAdminService
     Task<WorkflowResult> CreateChefAsync(CreateDelegationChefInput input);
     Task<WorkflowResult> UpdateChefAsync(UpdateDelegationChefInput input);
     Task<WorkflowResult> DeleteChefAsync(Guid id, Guid currentUserId, bool hasFullScope);
+
+    Task<DelegationDetailsResult> GetDmAsync(Guid id, Guid currentUserId, bool hasFullScope);
+    Task<WorkflowResult> CreateDmAsync(CreateDelegationDmInput input);
+    Task<WorkflowResult> UpdateDmAsync(UpdateDelegationDmInput input);
+    Task<WorkflowResult> DeleteDmAsync(Guid id, Guid currentUserId, bool hasFullScope);
 }
 
 /// <summary>Résultat d'une lecture de détail : introuvable / interdit / données JSON.</summary>

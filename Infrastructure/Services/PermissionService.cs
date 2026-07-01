@@ -187,5 +187,16 @@ namespace GestionProjects.Infrastructure.Services
                 return new List<(string, string)>();
             }
         }
+
+        public async Task<bool> IsActiveDmDelegateAsync(Guid directeurMetierId, Guid delegueId)
+        {
+            return await _context.DelegationsValidationDM.AnyAsync(d =>
+                d.DirecteurMetierId == directeurMetierId &&
+                d.DelegueId == delegueId &&
+                d.EstActive &&
+                d.DateDebut <= DateTime.Now &&
+                d.DateFin >= DateTime.Now &&
+                !d.EstSupprime);
+        }
     }
 }

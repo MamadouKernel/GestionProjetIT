@@ -1,0 +1,129 @@
+@model GestionProjects.Application.ViewModels.Admin.DelegationsPageViewModel
+@{
+    var currentUserId = Model.CurrentUserId;
+    var canCreateForOthers = Model.CanAdminDelegations;
+}
+
+<!-- Modal Délégation Directeur Métier -->
+<div class="modal fade" id="createDelegationDMModal" tabindex="-1" aria-labelledby="createDelegationDMModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content admin-modal-content">
+            <form id="delegationDMForm" method="post" asp-action="CreateDelegationDm">
+                @Html.AntiForgeryToken()
+                <div class="modal-header admin-modal-header">
+                    <h5 class="modal-title" id="createDelegationDMModalLabel">
+                        <i class="bi bi-person-badge"></i>
+                        <span id="modalDMTitle">Nouvelle délégation Directeur Métier</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body admin-modal-body">
+                    <input type="hidden" name="Id" id="delegationDMId" />
+                    <div class="stack-sections">
+                        <div class="admin-form-section">
+                            <h6 class="admin-form-section-title">
+                                <i class="bi bi-people"></i>
+                                Affectation
+                            </h6>
+                            <div class="detail-grid">
+                                <div class="form-group-modern">
+                                    <label class="form-label-modern" for="directeurMetierId">Directeur Métier *</label>
+                                    <select name="DirecteurMetierId" id="directeurMetierId" class="form-control-modern" required>
+                                        <option value="">-- Sélectionner un Directeur Métier --</option>
+                                        @foreach (var dm in Model.DirecteursMetier)
+                                        {
+                                            <option value="@dm.Id">@dm.Nom @dm.Prenoms</option>
+                                        }
+                                    </select>
+                                    <small class="text-muted">
+                                        @(canCreateForOthers ? "Tout Directeur Métier." : "Vous-même ou un collaborateur de votre direction.")
+                                    </small>
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="DirecteurMetierId" data-valmsg-replace="true"></span>
+                                </div>
+                                <div class="form-group-modern">
+                                    <label class="form-label-modern" for="delegueDMId">Délégué *</label>
+                                    <select name="DelegueId" id="delegueDMId" class="form-control-modern" required>
+                                        <option value="">-- Sélectionner un délégué --</option>
+                                        @foreach (var delegue in Model.DeleguesDM)
+                                        {
+                                            <option value="@delegue.Id">@delegue.Nom @delegue.Prenoms (@delegue.Role)</option>
+                                        }
+                                    </select>
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="DelegueId" data-valmsg-replace="true"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="admin-form-section">
+                            <h6 class="admin-form-section-title">
+                                <i class="bi bi-calendar-range"></i>
+                                Fenêtre d'activation
+                            </h6>
+                            <div class="detail-grid">
+                                <div class="form-group-modern">
+                                    <label class="form-label-modern" for="dateDebutDM">Date début *</label>
+                                    <input type="date" name="DateDebut" id="dateDebutDM" class="form-control-modern" required />
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="DateDebut" data-valmsg-replace="true"></span>
+                                </div>
+                                <div class="form-group-modern">
+                                    <label class="form-label-modern" for="dateFinDM">Date fin *</label>
+                                    <input type="date" name="DateFin" id="dateFinDM" class="form-control-modern" required />
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="DateFin" data-valmsg-replace="true"></span>
+                                </div>
+                            </div>
+                            <div class="admin-inline-note">
+                                <i class="bi bi-info-circle"></i>
+                                <div>
+                                    Le délégué pourra valider chartes, planifications, recettes et clôtures à la place
+                                    du Directeur Métier pendant cette période. L'historique conservera la mention de la
+                                    délégation et le nom du titulaire initial.
+                                </div>
+                            </div>
+                            <div class="admin-permission-card mt-3">
+                                <input type="checkbox" name="EstActive" id="estActiveDM" class="form-check-input" checked />
+                                <label class="form-check-label m-0" for="estActiveDM">
+                                    <strong>Délégation active</strong>
+                                    <small class="d-block text-muted">Décochez si vous souhaitez préparer la délégation sans l'activer immédiatement.</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer admin-modal-footer">
+                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn-modern btn-modern-primary">
+                        <i class="bi bi-save"></i>
+                        Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateFinDM = document.getElementById('dateFinDM');
+        if (dateFinDM) {
+            dateFinDM.addEventListener('change', function() {
+                const dateDebut = document.getElementById('dateDebutDM').value;
+                const dateFin = this.value;
+
+                if (dateDebut && dateFin && new Date(dateFin) < new Date(dateDebut)) {
+                    alert('La date de fin doit être postérieure à la date de début');
+                    this.value = '';
+                }
+            });
+        }
+
+        const modal = document.getElementById('createDelegationDMModal');
+        if (modal) {
+            modal.addEventListener('hidden.bs.modal', function () {
+                resetDmForm();
+            });
+        }
+    });
+</script>
