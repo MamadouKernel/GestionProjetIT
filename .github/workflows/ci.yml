@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test-migrations:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore -c Release
+
+      - name: Test
+        run: dotnet test --no-restore -c Release
+
+      - name: Install dotnet-ef
+        run: dotnet tool install --global dotnet-ef --version 9.*
+
+      - name: Verifier qu'aucun changement de modele EF n'est laisse sans migration
+        run: dotnet ef migrations has-pending-model-changes --project GestionProjects.csproj --startup-project GestionProjects.csproj
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
