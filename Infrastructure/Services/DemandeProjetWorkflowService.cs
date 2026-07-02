@@ -555,4 +555,42 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
 
         return SoumissionResult.Success("Demande soumise avec succes.");
     }
+
+    // ── Corbeille (réservé AdminIT — gating fait par le contrôleur) ────────────
+    // IgnoreQueryFilters() : le filtre global "EstSupprime == false" (voir
+    // ApplicationDbContext.AppliquerFiltreSoftDelete) masquerait sinon l'entité
+    // ciblée dès qu'elle est déjà supprimée (FindAsync applique aussi ce filtre).
+    public async Task<WorkflowResult> SupprimerAsync(Guid id, string nomActeur)
+    {
+        var demande = await _db.DemandesProjets.IgnoreQueryFilters().FirstOrDefaultAsync(d => d.Id == id);
+        if (demande == null) return WorkflowResult.NotFound();
+        if (demande.EstSupprime) return WorkflowResult.Error("Cette demande est déjà dans la corbeille.");
+
+        demande.EstSupprime      = true;
+        demande.DateModification = DateTime.Now;
+        demande.ModifiePar       = _currentUser.Matricule;
+        await _db.SaveChangesAsync();
+
+        await _audit.LogActionAsync("SUPPRESSION_DEMANDE", "DemandeProjet", demande.Id,
+            null, new { demande.Titre, ActeurSuppression = nomActeur });
+
+        return WorkflowResult.Success("Demande envoyée à la corbeille.");
+    }
+
+    public async Task<WorkflowResult> RestaurerAsync(Guid id, string nomActeur)
+    {
+        var demande = await _db.DemandesProjets.IgnoreQueryFilters().FirstOrDefaultAsync(d => d.Id == id);
+        if (demande == null) return WorkflowResult.NotFound();
+        if (!demande.EstSupprime) return WorkflowResult.Error("Cette demande n'est pas dans la corbeille.");
+
+        demande.EstSupprime      = false;
+        demande.DateModification = DateTime.Now;
+        demande.ModifiePar       = _currentUser.Matricule;
+        await _db.SaveChangesAsync();
+
+        await _audit.LogActionAsync("RESTAURATION_DEMANDE", "DemandeProjet", demande.Id,
+            null, new { demande.Titre, ActeurRestauration = nomActeur });
+
+        return WorkflowResult.Success("Demande restaurée avec succès.");
+    }
 }

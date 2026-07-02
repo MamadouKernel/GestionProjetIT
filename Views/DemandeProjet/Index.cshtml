@@ -57,6 +57,16 @@
                             </select>
                         </div>
                     </div>
+                    @if (Model.CanGererCorbeille)
+                    {
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" type="checkbox" name="afficherSupprimees" value="true" id="afficherSupprimeesCheck"
+                                   onchange="this.form.submit()" @(Model.AfficherSupprimees ? "checked" : string.Empty) />
+                            <label class="form-check-label" for="afficherSupprimeesCheck">
+                                <i class="bi bi-trash"></i> Afficher les demandes supprimées (corbeille)
+                            </label>
+                        </div>
+                    }
                     <div class="filter-actions mt-3">
                         <button type="submit" class="btn-modern btn-modern-primary">
                             <i class="bi bi-search"></i>
@@ -242,6 +252,12 @@
                                     <span class="badge-modern badge-modern-@GetBadgeClass(demande.StatutDemande)">
                                         @demande.StatutWorkflowLabel
                                     </span>
+                                    @if (demande.EstSupprime)
+                                    {
+                                        <span class="badge-modern badge-modern-danger" title="Dans la corbeille">
+                                            <i class="bi bi-trash"></i> Supprimée
+                                        </span>
+                                    }
                                 </td>
                                 <td>@demande.DateSoumission.ToString("dd/MM/yyyy")</td>
                                 <td>
@@ -275,6 +291,27 @@
                                                     <i class="bi bi-send"></i>
                                                 </button>
                                             </form>
+                                        }
+                                        @if (Model.CanGererCorbeille)
+                                        {
+                                            @if (demande.EstSupprime)
+                                            {
+                                                <form asp-action="RestaurerDemande" asp-route-id="@demande.Id" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn-modern btn-modern-secondary btn-icon" title="Restaurer la demande" aria-label="Restaurer la demande" onclick="return confirm('Restaurer cette demande depuis la corbeille ?');">
+                                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <form asp-action="SupprimerDemande" asp-route-id="@demande.Id" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn-modern btn-modern-danger btn-icon" title="Envoyer à la corbeille" aria-label="Envoyer à la corbeille" onclick="return confirm('Envoyer cette demande à la corbeille ?');">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            }
                                         }
                                     </div>
                                 </td>

@@ -244,6 +244,44 @@ namespace GestionProjects.Infrastructure.Services
             return WorkflowResult.Success("Projet repris. Il repasse en cours.");
         }
 
+        // ── Corbeille (réservé AdminIT — gating fait par le contrôleur) ────────
+        // IgnoreQueryFilters() : le filtre global "EstSupprime == false" (voir
+        // ApplicationDbContext.AppliquerFiltreSoftDelete) masquerait sinon l'entité
+        // ciblée dès qu'elle est déjà supprimée.
+        public async Task<WorkflowResult> SupprimerAsync(Guid projetId, string nomActeur)
+        {
+            var projet = await _db.Projets.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == projetId);
+            if (projet == null) return WorkflowResult.NotFound();
+            if (projet.EstSupprime) return WorkflowResult.Error("Ce projet est déjà dans la corbeille.");
+
+            projet.EstSupprime = true;
+            projet.DateModification = DateTime.Now;
+            projet.ModifiePar = _currentUserService.Matricule ?? "SYSTEM";
+            await _db.SaveChangesAsync();
+
+            await _auditService.LogActionAsync("SUPPRESSION_PROJET", "Projet", projet.Id,
+                null, new { projet.CodeProjet, projet.Titre, ActeurSuppression = nomActeur });
+
+            return WorkflowResult.Success("Projet envoyé à la corbeille.");
+        }
+
+        public async Task<WorkflowResult> RestaurerAsync(Guid projetId, string nomActeur)
+        {
+            var projet = await _db.Projets.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == projetId);
+            if (projet == null) return WorkflowResult.NotFound();
+            if (!projet.EstSupprime) return WorkflowResult.Error("Ce projet n'est pas dans la corbeille.");
+
+            projet.EstSupprime = false;
+            projet.DateModification = DateTime.Now;
+            projet.ModifiePar = _currentUserService.Matricule ?? "SYSTEM";
+            await _db.SaveChangesAsync();
+
+            await _auditService.LogActionAsync("RESTAURATION_PROJET", "Projet", projet.Id,
+                null, new { projet.CodeProjet, projet.Titre, ActeurRestauration = nomActeur });
+
+            return WorkflowResult.Success("Projet restauré avec succès.");
+        }
+
         public async Task<ProjetDetailsViewModel> BuildDetailsViewModelAsync(
             Projet projet,
             Guid userId,

@@ -11,7 +11,9 @@ namespace GestionProjects.Controllers
     public partial class ProjetController
     {
         // GET: Liste des projets
-        public async Task<IActionResult> Index(Guid? directionId, Guid? chefProjetId, PhaseProjet? phase, StatutProjet? statut, EtatProjet? etat, int page = 1, int pageSize = 20)
+        public async Task<IActionResult> Index(
+            Guid? directionId, Guid? chefProjetId, PhaseProjet? phase, StatutProjet? statut, EtatProjet? etat,
+            int page = 1, int pageSize = 20, bool afficherSupprimes = false)
         {
             var userId = User.GetUserIdOrThrow();
             var currentUserDirectionId = await _projetQuery.GetUserDirectionIdAsync(userId);
@@ -19,12 +21,20 @@ namespace GestionProjects.Controllers
             var hasChefProjetScope = await HasChefProjetWorkflowAccessAsync();
             var hasDmScope = await HasDmWorkflowAccessAsync();
             var hasDemandeurScope = await HasDemandeurProjectAccessAsync();
+            var isAdminIT = User.IsInRole(nameof(RoleUtilisateur.AdminIT));
+            afficherSupprimes = isAdminIT && afficherSupprimes;
 
             IQueryable<Projet> query = _db.Projets
                 .Include(p => p.Direction)
                 .Include(p => p.Sponsor)
                 .Include(p => p.ChefProjet)
                 .Include(p => p.DemandeProjet);
+
+            // Le filtre global "EstSupprime == false" (voir ApplicationDbContext.AppliquerFiltreSoftDelete)
+            // s'applique par défaut à toute requête sur Projets ; on le désactive explicitement
+            // pour afficher aussi les projets supprimés dans la corbeille (réservé AdminIT).
+            if (afficherSupprimes)
+                query = query.IgnoreQueryFilters();
 
             // Appliquer le scope par rôle via le service
             query = await _projetQuery.AppliquerScopeAsync(
@@ -33,7 +43,11 @@ namespace GestionProjects.Controllers
                 currentUserDirectionId);
 
             // Filtres additionnels (portefeuille seulement)
-            var vm = new ProjetIndexViewModel();
+            var vm = new ProjetIndexViewModel
+            {
+                CanGererCorbeille = isAdminIT,
+                AfficherSupprimes = afficherSupprimes
+            };
 
             if (canPortfolioAccess)
             {

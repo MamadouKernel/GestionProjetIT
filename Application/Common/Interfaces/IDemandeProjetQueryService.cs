@@ -15,7 +15,7 @@ public interface IDemandeProjetQueryService
     Task<DemandeProjetIndexViewModel> GetIndexAsync(
         Guid userId, bool canManageDemandes,
         Guid? directionId, Guid? demandeurId, Guid? directeurMetierId,
-        int page, int pageSize);
+        int page, int pageSize, bool afficherSupprimees = false);
 
     Task<PagedResult<DemandeProjet>> GetListeValidationDMAsync(
         Guid userId, bool hasAdminScope, string? recherche, int page, int pageSize);

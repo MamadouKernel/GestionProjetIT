@@ -18,12 +18,17 @@ public class DemandeProjetQueryService : IDemandeProjetQueryService
     public async Task<DemandeProjetIndexViewModel> GetIndexAsync(
         Guid userId, bool canManageDemandes,
         Guid? directionId, Guid? demandeurId, Guid? directeurMetierId,
-        int page, int pageSize)
+        int page, int pageSize, bool afficherSupprimees = false)
     {
         IQueryable<DemandeProjet> query = _db.DemandesProjets
             .Include(d => d.Direction)
             .Include(d => d.Demandeur)
             .Include(d => d.DirecteurMetier);
+
+        // Le filtre global "EstSupprime == false" (voir ApplicationDbContext.AppliquerFiltreSoftDelete)
+        // s'applique par défaut ; on le désactive explicitement pour la corbeille (réservé AdminIT).
+        if (afficherSupprimees)
+            query = query.IgnoreQueryFilters();
 
         if (!canManageDemandes)
         {
@@ -47,11 +52,12 @@ public class DemandeProjetQueryService : IDemandeProjetQueryService
 
         var vm = new DemandeProjetIndexViewModel
         {
-            Demandes   = paged.Items,
-            PageNumber = paged.PageNumber,
-            TotalPages = paged.TotalPages,
-            TotalCount = paged.TotalCount,
-            PageSize   = paged.PageSize
+            Demandes           = paged.Items,
+            AfficherSupprimees = afficherSupprimees,
+            PageNumber         = paged.PageNumber,
+            TotalPages         = paged.TotalPages,
+            TotalCount         = paged.TotalCount,
+            PageSize           = paged.PageSize
         };
 
         if (canManageDemandes)
@@ -90,9 +96,10 @@ public class DemandeProjetQueryService : IDemandeProjetQueryService
             .Include(d => d.Direction)
             .Include(d => d.Demandeur)
             .Include(d => d.DirecteurMetier)
-            .Where(d => d.StatutDemande == StatutDemande.EnAttenteValidationDirecteurMetier ||
+            .Where(d => !d.EstSupprime &&
+                        (d.StatutDemande == StatutDemande.EnAttenteValidationDirecteurMetier ||
                         d.StatutDemande == StatutDemande.CorrectionDemandeeParDirecteurMetier ||
-                        d.StatutDemande == StatutDemande.RetourneeAuDirecteurMetierParDSI);
+                        d.StatutDemande == StatutDemande.RetourneeAuDirecteurMetierParDSI));
 
         if (!hasAdminScope)
             query = query.Where(d => d.DirecteurMetierId == userId);
@@ -115,7 +122,7 @@ public class DemandeProjetQueryService : IDemandeProjetQueryService
             .Include(d => d.Direction)
             .Include(d => d.Demandeur)
             .Include(d => d.DirecteurMetier)
-            .Where(d => d.StatutDemande == StatutDemande.EnAttenteValidationDSI);
+            .Where(d => !d.EstSupprime && d.StatutDemande == StatutDemande.EnAttenteValidationDSI);
 
         if (!string.IsNullOrWhiteSpace(recherche))
             query = query.Where(d => (d.Titre != null && d.Titre.Contains(recherche)) ||
@@ -146,10 +153,11 @@ public class DemandeProjetQueryService : IDemandeProjetQueryService
             .Include(d => d.Direction)
             .Include(d => d.Demandeur)
             .Include(d => d.DirecteurMetier)
-            .Where(d => d.StatutDemande == StatutDemande.ValideeParDSI ||
+            .Where(d => !d.EstSupprime &&
+                        (d.StatutDemande == StatutDemande.ValideeParDSI ||
                         d.StatutDemande == StatutDemande.RejeteeParDSI ||
                         d.StatutDemande == StatutDemande.RetourneeAuDirecteurMetierParDSI ||
-                        d.StatutDemande == StatutDemande.RetourneeAuDemandeurParDSI);
+                        d.StatutDemande == StatutDemande.RetourneeAuDemandeurParDSI));
 
         if (!string.IsNullOrWhiteSpace(recherche))
             query = query.Where(d => (d.Titre != null && d.Titre.Contains(recherche)) ||

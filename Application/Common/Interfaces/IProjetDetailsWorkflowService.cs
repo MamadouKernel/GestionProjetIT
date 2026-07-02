@@ -31,6 +31,10 @@ namespace GestionProjects.Application.Common.Interfaces
         Task<WorkflowResult> SuspendreProjetAsync(Guid projetId, Guid userId, string motif);
         Task<WorkflowResult> ReprendreProjetAsync(Guid projetId, Guid userId);
 
+        // ── Corbeille (réservé AdminIT — gating fait par le contrôleur) ────────
+        Task<WorkflowResult> SupprimerAsync(Guid projetId, string nomActeur);
+        Task<WorkflowResult> RestaurerAsync(Guid projetId, string nomActeur);
+
         /// <summary>
         /// Assemble le ProjetDetailsViewModel : chargements conditionnels par onglet,
         /// liste des chefs de projet réassignables et audit de prise en charge.

@@ -10,6 +10,10 @@ namespace GestionProjects.Application.ViewModels.DemandeProjet
         public IEnumerable<SelectOption> Demandeurs { get; set; } = Enumerable.Empty<SelectOption>();
         public IEnumerable<SelectOption> DirecteursMetier { get; set; } = Enumerable.Empty<SelectOption>();
 
+        // Corbeille (réservé AdminIT)
+        public bool CanGererCorbeille { get; set; }
+        public bool AfficherSupprimees { get; set; }
+
         // Pagination
         public int PageNumber { get; set; }
         public int TotalPages { get; set; }

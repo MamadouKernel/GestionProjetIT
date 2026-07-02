@@ -44,6 +44,10 @@ public interface IDemandeProjetWorkflowService
 
     // ── Soumission ──────────────────────────────────────────────────────────────
     Task<SoumissionResult> SoumettreAsync(Guid id, Guid currentUserId, bool hasAdminScope, bool ignorerDoublons);
+
+    // ── Corbeille (réservé AdminIT — gating fait par le contrôleur) ────────────
+    Task<WorkflowResult> SupprimerAsync(Guid id, string nomActeur);
+    Task<WorkflowResult> RestaurerAsync(Guid id, string nomActeur);
 }
 
 /// <summary>

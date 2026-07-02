@@ -1,5 +1,6 @@
 using GestionProjects.Application.Common.Extensions;
 using GestionProjects.Application.ViewModels.DemandeProjet;
+using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,16 +11,21 @@ namespace GestionProjects.Controllers
     {
         // GET: Mes demandes (pour Demandeur)
         [Authorize]
-        public async Task<IActionResult> Index(Guid? directionId, Guid? demandeurId, Guid? directeurMetierId, int page = 1, int pageSize = 20)
+        public async Task<IActionResult> Index(
+            Guid? directionId, Guid? demandeurId, Guid? directeurMetierId,
+            int page = 1, int pageSize = 20, bool afficherSupprimees = false)
         {
             if (!await _permissionService.CurrentUserHasPermissionAsync("DemandeProjet", "Index"))
                 return Forbid();
 
             var userId = User.GetUserIdOrThrow();
             var canManageDemandes = await CanManageDemandesBackofficeAsync();
+            var isAdminIT = User.IsInRole(nameof(RoleUtilisateur.AdminIT));
 
             var vm = await _demandeQueryService.GetIndexAsync(
-                userId, canManageDemandes, directionId, demandeurId, directeurMetierId, page, pageSize);
+                userId, canManageDemandes, directionId, demandeurId, directeurMetierId,
+                page, pageSize, afficherSupprimees: isAdminIT && afficherSupprimees);
+            vm.CanGererCorbeille = isAdminIT;
 
             return View(vm);
         }

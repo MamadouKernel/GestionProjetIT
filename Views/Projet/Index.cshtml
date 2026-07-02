@@ -90,6 +90,16 @@
                             </div>
                         </div>
                     </div>
+                    @if (Model.CanGererCorbeille)
+                    {
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" type="checkbox" name="afficherSupprimes" value="true" id="afficherSupprimesCheck"
+                                   onchange="this.form.submit()" @(Model.AfficherSupprimes ? "checked" : string.Empty) />
+                            <label class="form-check-label" for="afficherSupprimesCheck">
+                                <i class="bi bi-trash"></i> Afficher les projets supprimés (corbeille)
+                            </label>
+                        </div>
+                    }
                     <div class="filter-actions mt-3">
                             <button type="submit" class="btn-modern btn-modern-primary">
                                 <i class="bi bi-search"></i>
@@ -183,6 +193,12 @@
                                 </td>
                                 <td>
                                     <span class="badge-modern badge-modern-@GetStatutClass(projet.StatutProjet)">@projet.StatutWorkflowLabel</span>
+                                    @if (projet.EstSupprime)
+                                    {
+                                        <span class="badge-modern badge-modern-danger" title="Dans la corbeille">
+                                            <i class="bi bi-trash"></i> Supprimé
+                                        </span>
+                                    }
                                 </td>
                                 <td>
                                     <span class="badge-modern badge-modern-@GetEtatClass(projet.EtatProjet)">@projet.EtatProjet</span>
@@ -196,9 +212,32 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <a asp-action="Details" asp-route-id="@projet.Id" class="btn-modern btn-modern-primary btn-icon" title="Consulter le projet" aria-label="Consulter le projet">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
+                                    <div class="table-actions">
+                                        <a asp-action="Details" asp-route-id="@projet.Id" class="btn-modern btn-modern-primary btn-icon" title="Consulter le projet" aria-label="Consulter le projet">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        @if (Model.CanGererCorbeille)
+                                        {
+                                            @if (projet.EstSupprime)
+                                            {
+                                                <form asp-action="RestaurerProjet" asp-route-id="@projet.Id" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn-modern btn-modern-secondary btn-icon" title="Restaurer le projet" aria-label="Restaurer le projet" onclick="return confirm('Restaurer ce projet depuis la corbeille ?');">
+                                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <form asp-action="SupprimerProjet" asp-route-id="@projet.Id" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn-modern btn-modern-danger btn-icon" title="Envoyer à la corbeille" aria-label="Envoyer à la corbeille" onclick="return confirm('Envoyer ce projet à la corbeille ?');">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                        }
+                                    </div>
                                 </td>
                             </tr>
                         }

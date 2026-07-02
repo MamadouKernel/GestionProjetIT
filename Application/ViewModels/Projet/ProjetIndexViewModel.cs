@@ -19,6 +19,10 @@ public class ProjetIndexViewModel
     public bool IsDemandeurOnlyView { get; set; }
     public bool IsDirecteurMetierProjectsView { get; set; }
 
+    // Corbeille (réservé AdminIT)
+    public bool CanGererCorbeille { get; set; }
+    public bool AfficherSupprimes { get; set; }
+
     // Projets accessibles en lecture seule (pour DM sans être sponsor)
     public HashSet<Guid> ReadOnlyProjets { get; set; } = new();
 
