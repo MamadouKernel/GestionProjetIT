@@ -15,15 +15,18 @@ public sealed class AutorisationMatrixService : IAutorisationMatrixService
     private readonly ApplicationDbContext _context;
     private readonly IMemoryCache _cache;
     private readonly ILogger<AutorisationMatrixService> _logger;
+    private readonly IAuditService _auditService;
 
     public AutorisationMatrixService(
         ApplicationDbContext context,
         IMemoryCache cache,
-        ILogger<AutorisationMatrixService> logger)
+        ILogger<AutorisationMatrixService> logger,
+        IAuditService auditService)
     {
         _context = context;
         _cache = cache;
         _logger = logger;
+        _auditService = auditService;
     }
 
     public async Task<AutorisationsViewModel> BuildIndexAsync()
@@ -75,11 +78,16 @@ public sealed class AutorisationMatrixService : IAutorisationMatrixService
                 .ToList();
         }
 
+        var managedKeys = ObtenirClesGerees(vuesDisponibles);
+        var entreesObsoletesCount = permissionsPersisted
+            .Count(p => !managedKeys.Contains($"{p.Controleur}::{p.Action}"));
+
         return new AutorisationsViewModel
         {
             Roles = roles,
             PermissionsParRole = permissionsParRole,
-            VuesDisponibles = vuesDisponibles
+            VuesDisponibles = vuesDisponibles,
+            EntreesObsoletesCount = entreesObsoletesCount
         };
     }
 
@@ -97,6 +105,8 @@ public sealed class AutorisationMatrixService : IAutorisationMatrixService
                 rp.Role == input.Role &&
                 rp.Controleur == input.Controleur &&
                 rp.Action == input.Action);
+
+        var ancienEstActif = permission?.EstActif;
 
         var vueInfo = ObtenirInfoVue(input.Controleur, input.Action);
         if (permission == null)
@@ -131,8 +141,15 @@ public sealed class AutorisationMatrixService : IAutorisationMatrixService
         await _context.SaveChangesAsync();
         ViderCachePermissions(input.Role);
 
+        await _auditService.LogActionAsync(
+            "MODIFICATION_PERMISSION_ROLE",
+            "RolePermission",
+            permission.Id,
+            new { input.Role, input.Controleur, input.Action, EstActif = ancienEstActif },
+            new { input.Role, input.Controleur, input.Action, input.EstActif });
+
         return OperationResult.Success(
-            "Permission mise a jour avec succes. Les changements sont pris en compte au prochain chargement de page.");
+            "Permission mise a jour avec succes. Le changement est effectif des la prochaine verification de droits de l'utilisateur concerne.");
     }
 
     public async Task<OperationResult> InitialiserPermissionsAsync()
@@ -140,6 +157,9 @@ public sealed class AutorisationMatrixService : IAutorisationMatrixService
         var vuesDisponibles = ObtenirVuesDisponibles();
         var roles = Enum.GetValues<RoleUtilisateur>();
         var permissionsPersisted = await _context.RolePermissions.ToListAsync();
+
+        var nombreCrees = 0;
+        var nombreModifies = 0;
 
         foreach (var role in roles)
         {
@@ -169,9 +189,15 @@ public sealed class AutorisationMatrixService : IAutorisationMatrixService
                         EstActif = estActifParDefaut
                     };
                     _context.RolePermissions.Add(permission);
+                    nombreCrees++;
                 }
                 else
                 {
+                    if (permission.EstActif != estActifParDefaut)
+                    {
+                        nombreModifies++;
+                    }
+
                     permission.NomAffichage = vue.NomAffichage;
                     permission.Description = vue.Description;
                     permission.Categorie = vue.Categorie;
@@ -183,9 +209,7 @@ public sealed class AutorisationMatrixService : IAutorisationMatrixService
             }
         }
 
-        var managedKeys = new HashSet<string>(
-            vuesDisponibles.Select(v => $"{v.Controleur}::{v.Action}"),
-            StringComparer.OrdinalIgnoreCase);
+        var managedKeys = ObtenirClesGerees(vuesDisponibles);
 
         var obsoletePermissions = permissionsPersisted
             .Where(p => managedKeys.Contains($"{p.Controleur}::{p.Action}") == false)
@@ -199,8 +223,23 @@ public sealed class AutorisationMatrixService : IAutorisationMatrixService
         await _context.SaveChangesAsync();
         ViderCachePermissions();
 
+        await _auditService.LogActionAsync(
+            "REINITIALISATION_PERMISSIONS",
+            "RolePermission",
+            null,
+            null,
+            new { NombreCrees = nombreCrees, NombreModifies = nombreModifies, NombreSupprimes = obsoletePermissions.Count });
+
         return OperationResult.Success(
-            "Permissions reinitialisees avec succes. Les changements sont pris en compte au prochain chargement de page.");
+            $"Permissions reinitialisees avec succes ({nombreCrees} creee(s), {nombreModifies} modifiee(s), {obsoletePermissions.Count} obsolete(s) supprimee(s)). " +
+            "Le changement est effectif des la prochaine verification de droits des utilisateurs concernes.");
+    }
+
+    private static HashSet<string> ObtenirClesGerees(List<VueInfo> vuesDisponibles)
+    {
+        return new HashSet<string>(
+            vuesDisponibles.Select(v => $"{v.Controleur}::{v.Action}"),
+            StringComparer.OrdinalIgnoreCase);
     }
 
     private static List<VueInfo> ObtenirVuesDisponibles()

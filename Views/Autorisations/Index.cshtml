@@ -36,9 +36,14 @@
             <div id="saveStatus" class="save-status-chip" style="display:none;"></div>
             <form asp-action="InitialiserPermissions" method="post">
                 @Html.AntiForgeryToken()
+                @{
+                    var messageConfirmation = Model.EntreesObsoletesCount > 0
+                        ? $"Réinitialiser toutes les permissions par défaut pour tous les rôles ? Cela supprimera aussi {Model.EntreesObsoletesCount} entrée(s) obsolète(s) (permissions renommées ou retirées du catalogue)."
+                        : "Réinitialiser toutes les permissions par défaut pour tous les rôles ?";
+                }
                 <button type="submit"
                         class="btn-modern btn-modern-secondary"
-                        onclick="return confirm('Réinitialiser toutes les permissions par défaut pour tous les rôles ?');">
+                        onclick="return confirm('@messageConfirmation');">
                     <i class="bi bi-arrow-clockwise"></i>
                     Réinitialiser
                 </button>
@@ -140,6 +145,14 @@
                         Matrice des permissions
                     </h3>
                     <p class="soft-note mb-0">Chaque rôle dispose de son propre panneau, avec catégories et bascule immédiate des autorisations.</p>
+                </div>
+                <div class="permission-search">
+                    <i class="bi bi-search"></i>
+                    <input type="search"
+                           id="permissionSearch"
+                           class="form-control-modern"
+                           placeholder="Rechercher une permission (nom, contrôleur, action)..."
+                           autocomplete="off" />
                 </div>
             </div>
 
@@ -515,6 +528,25 @@
                 }
             });
         });
+
+        const permissionSearchInput = document.getElementById('permissionSearch');
+        if (permissionSearchInput) {
+            permissionSearchInput.addEventListener('input', function () {
+                const terme = this.value.trim().toLowerCase();
+
+                document.querySelectorAll('.permission-tile').forEach(tile => {
+                    const titre = tile.querySelector('.permission-tile-title')?.textContent.toLowerCase() || '';
+                    const route = tile.querySelector('.permission-tile-route')?.textContent.toLowerCase() || '';
+                    const correspond = terme === '' || titre.includes(terme) || route.includes(terme);
+                    tile.classList.toggle('is-search-hidden', !correspond);
+                });
+
+                document.querySelectorAll('.permission-group').forEach(group => {
+                    const aUneCorrespondance = group.querySelector('.permission-tile:not(.is-search-hidden)') !== null;
+                    group.classList.toggle('is-search-hidden', !aUneCorrespondance);
+                });
+            });
+        }
     </script>
 }
 

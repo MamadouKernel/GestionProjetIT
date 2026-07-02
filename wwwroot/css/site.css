@@ -1650,6 +1650,27 @@ label.form-label {
   display: inline-flex;
 }
 
+.permission-search {
+  position: relative;
+  min-width: 260px;
+  flex: 0 0 auto;
+}
+.permission-search i {
+  position: absolute;
+  left: 0.95rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray-400);
+  pointer-events: none;
+}
+.permission-search input {
+  padding-left: 2.4rem;
+}
+.permission-tile.is-search-hidden,
+.permission-group.is-search-hidden {
+  display: none;
+}
+
 .detail-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
