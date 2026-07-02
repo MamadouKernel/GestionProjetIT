@@ -75,10 +75,11 @@ namespace GestionProjects.Controllers
             int page = 1, int pageSize = 15,
             [FromServices] IDemandeAccesDmQueryService? dmQuery = null)
         {
-            if (!User.IsInRole(nameof(RoleUtilisateur.DirecteurMetier)))
+            var isAdminIT = User.IsInRole(nameof(RoleUtilisateur.AdminIT));
+            if (!User.IsInRole(nameof(RoleUtilisateur.DirecteurMetier)) && !isAdminIT)
                 return Forbid();
 
-            var vm = await dmQuery!.GetIndexPourDmAsync(User.GetUserIdOrThrow(), recherche, statut, focusId, page, pageSize);
+            var vm = await dmQuery!.GetIndexPourDmAsync(User.GetUserIdOrThrow(), isAdminIT, recherche, statut, focusId, page, pageSize);
             return View(vm);
         }
 
@@ -86,7 +87,7 @@ namespace GestionProjects.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ValiderParDm(Guid id, RoleUtilisateur roleConfirme, string? commentaire)
         {
-            if (!User.IsInRole(nameof(RoleUtilisateur.DirecteurMetier)))
+            if (!User.IsInRole(nameof(RoleUtilisateur.DirecteurMetier)) && !User.IsInRole(nameof(RoleUtilisateur.AdminIT)))
                 return Forbid();
 
             var result = await _demandeAccesWorkflow.ValiderParDmAsync(
@@ -98,7 +99,7 @@ namespace GestionProjects.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RejeterParDm(Guid id, string commentaire)
         {
-            if (!User.IsInRole(nameof(RoleUtilisateur.DirecteurMetier)))
+            if (!User.IsInRole(nameof(RoleUtilisateur.DirecteurMetier)) && !User.IsInRole(nameof(RoleUtilisateur.AdminIT)))
                 return Forbid();
 
             var result = await _demandeAccesWorkflow.RejeterParDmAsync(

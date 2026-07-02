@@ -19,6 +19,7 @@ public sealed class DemandeAccesDmQueryService : IDemandeAccesDmQueryService
 
     public async Task<DemandesAccesIndexViewModel> GetIndexPourDmAsync(
         Guid dmUtilisateurId,
+        bool isAdminIT,
         string? recherche,
         StatutDemandeAcces? statut,
         Guid? focusId,
@@ -29,14 +30,26 @@ public sealed class DemandeAccesDmQueryService : IDemandeAccesDmQueryService
         pageSize = Math.Clamp(pageSize, 5, 100);
 
         // 1. Quelles directions ce DM couvre ? (son rattachement + role DM actif)
-        var directionsCouvertes = await _db.Utilisateurs
-            .Where(u => u.Id == dmUtilisateurId &&
-                        !u.EstSupprime &&
-                        u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.DirecteurMetier))
-            .Select(u => u.DirectionId)
-            .Where(id => id.HasValue)
-            .Select(id => id!.Value)
-            .ToListAsync();
+        // AdminIT n'a pas besoin du role DM : acces total, toutes directions confondues.
+        List<Guid> directionsCouvertes;
+        if (isAdminIT)
+        {
+            directionsCouvertes = await _db.Directions
+                .Where(d => !d.EstSupprime)
+                .Select(d => d.Id)
+                .ToListAsync();
+        }
+        else
+        {
+            directionsCouvertes = await _db.Utilisateurs
+                .Where(u => u.Id == dmUtilisateurId &&
+                            !u.EstSupprime &&
+                            u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.DirecteurMetier))
+                .Select(u => u.DirectionId)
+                .Where(id => id.HasValue)
+                .Select(id => id!.Value)
+                .ToListAsync();
+        }
 
         var query = _db.DemandesAccesAzureAd
             .Include(d => d.DirectionDetectee)

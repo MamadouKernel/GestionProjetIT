@@ -172,8 +172,8 @@ public sealed class DemandeAccesWorkflowService : IDemandeAccesWorkflowService
             return await BuildDejaTraiteeParDmAsync(demande);
 
         // Verification : ce DM est-il bien rattache a la direction de la demande ?
-        if (!demande.DirectionDetecteeId.HasValue ||
-            !await EstDmDeLaDirectionAsync(input.DmId, demande.DirectionDetecteeId.Value))
+        // AdminIT contourne cette verification (acces total, toutes directions).
+        if (!await EstAutoriseAValiderPourDirectionAsync(input.DmId, demande.DirectionDetecteeId))
         {
             return DemandeAccesWorkflowResult.Error(
                 "Vous n'etes pas le Directeur Metier de la direction concernee par cette demande.", demande.Id);
@@ -215,8 +215,7 @@ public sealed class DemandeAccesWorkflowService : IDemandeAccesWorkflowService
         if (demande.Statut != StatutDemandeAcces.EnAttente)
             return await BuildDejaTraiteeParDmAsync(demande);
 
-        if (!demande.DirectionDetecteeId.HasValue ||
-            !await EstDmDeLaDirectionAsync(input.DmId, demande.DirectionDetecteeId.Value))
+        if (!await EstAutoriseAValiderPourDirectionAsync(input.DmId, demande.DirectionDetecteeId))
         {
             return DemandeAccesWorkflowResult.Error(
                 "Vous n'etes pas le Directeur Metier de la direction concernee par cette demande.", demande.Id);
@@ -249,6 +248,22 @@ public sealed class DemandeAccesWorkflowService : IDemandeAccesWorkflowService
             !u.EstSupprime &&
             u.DirectionId == directionId &&
             u.UtilisateurRoles.Any(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.DirecteurMetier));
+    }
+
+    /// <summary>AdminIT peut valider/rejeter pour n'importe quelle direction (acces total).</summary>
+    private async Task<bool> EstAutoriseAValiderPourDirectionAsync(Guid utilisateurId, Guid? directionId)
+    {
+        var estAdminIT = await _db.Utilisateurs
+            .Where(u => u.Id == utilisateurId && !u.EstSupprime)
+            .SelectMany(u => u.UtilisateurRoles)
+            .AnyAsync(ur => !ur.EstSupprime && ur.Role == RoleUtilisateur.AdminIT);
+
+        if (estAdminIT)
+        {
+            return true;
+        }
+
+        return directionId.HasValue && await EstDmDeLaDirectionAsync(utilisateurId, directionId.Value);
     }
 
     private async Task<DemandeAccesWorkflowResult> BuildDejaTraiteeParDmAsync(DemandeAccesAzureAd demande)
