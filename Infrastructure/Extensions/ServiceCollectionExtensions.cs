@@ -67,6 +67,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUatProjetWorkflowService, UatProjetWorkflowService>();
         services.AddScoped<IAvenantProjetService, AvenantProjetService>();
         services.AddScoped<IBeneficeProjetService, BeneficeProjetService>();
+        services.AddScoped<IProjetProgressService, ProjetProgressService>();
+        services.AddScoped<IPlanificationNativeService, PlanificationNativeService>();
 
         services.AddHttpClient("Teams")
             .ConfigureHttpClient(c => c.Timeout = TimeSpan.FromSeconds(10));

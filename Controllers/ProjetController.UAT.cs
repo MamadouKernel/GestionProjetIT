@@ -58,7 +58,7 @@ namespace GestionProjects.Controllers
             };
             _db.HistoriquePhasesProjets.Add(historique);
 
-            await RecalculateProjectProgressAsync(projet);
+            await _projetProgress.RecalculateAsync(projet);
             await _db.SaveChangesAsync();
 
             await _auditService.LogActionAsync("PASSAGE_UAT", "Projet", projet.Id);
@@ -100,7 +100,7 @@ namespace GestionProjects.Controllers
             projet.RecetteValidee = true;
             projet.DateRecetteValidee = DateTime.Now;
             projet.RecetteValideeParId = userId;
-            await RecalculateProjectProgressAsync(projet);
+            await _projetProgress.RecalculateAsync(projet);
             await _db.SaveChangesAsync();
 
             await _auditService.LogActionAsync("VALIDATION_RECETTE", "Projet", projet.Id);

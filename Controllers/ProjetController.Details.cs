@@ -53,7 +53,7 @@ namespace GestionProjects.Controllers
 
             var isReadOnly = ui.HasDmGovernanceAccess && !ui.IsProjectSponsor && !ui.HasDsiGovernanceAccess;
 
-            await RecalculateProjectProgressAsync(projet, persistChanges: true);
+            await _projetProgress.RecalculateAsync(projet, persistChanges: true);
 
             var vm = await detailsWorkflow.BuildDetailsViewModelAsync(
                 projet,
@@ -319,7 +319,7 @@ namespace GestionProjects.Controllers
                 projet.EtatProjet = etatProjet.Value;
             }
 
-            await RecalculateProjectProgressAsync(projet);
+            await _projetProgress.RecalculateAsync(projet);
 
             // Calcul automatique du RAG
             projet.IndicateurRAG = await _ragCalculationService.CalculerRAGAsync(projet);

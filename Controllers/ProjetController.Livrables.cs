@@ -136,49 +136,5 @@ namespace GestionProjects.Controllers
                 _ => false
             };
         }
-
-        private async Task ReplaceGeneratedPlanningLivrableAsync(
-            Projet projet,
-            Guid userId,
-            TypeLivrable typeLivrable,
-            string fileName,
-            byte[] content,
-            string comment)
-        {
-            var existingLivrables = await _db.LivrablesProjets
-                .Where(l => l.ProjetId == projet.Id
-                    && l.Phase == PhaseProjet.PlanificationValidation
-                    && l.TypeLivrable == typeLivrable
-                    && !l.EstSupprime)
-                .ToListAsync();
-
-            foreach (var existing in existingLivrables)
-            {
-                existing.EstSupprime = true;
-                existing.DateModification = DateTime.Now;
-                existing.ModifiePar = _currentUserService.Matricule;
-            }
-
-            var relativePath = await _fileStorage.SaveGeneratedFileAsync(
-                content,
-                fileName,
-                Path.Combine("projets", projet.CodeProjet, "planification", "generated"));
-
-            _db.LivrablesProjets.Add(new LivrableProjet
-            {
-                Id = Guid.NewGuid(),
-                ProjetId = projet.Id,
-                Phase = PhaseProjet.PlanificationValidation,
-                TypeLivrable = typeLivrable,
-                NomDocument = fileName,
-                CheminRelatif = relativePath,
-                DateDepot = DateTime.Now,
-                DeposeParId = userId,
-                Commentaire = comment,
-                Version = $"auto-{DateTime.Now:yyyyMMddHHmmss}",
-                DateCreation = DateTime.Now,
-                CreePar = _currentUserService.Matricule ?? "SYSTEM"
-            });
-        }
     }
 }

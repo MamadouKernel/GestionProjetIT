@@ -92,7 +92,7 @@ namespace GestionProjects.Controllers
             if (!await CanManagePlanificationAsync(projet))
                 return Forbid();
 
-            var ficheProjet = await GetOrCreateFicheProjetAsync(id, userId);
+            var ficheProjet = await _planificationNative.GetOrCreateFicheProjetAsync(id, userId);
             ficheProjet.ProchainJalon = fiche.ProchainJalon;
             ficheProjet.JalonsPrincipaux = fiche.JalonsPrincipaux;
             ficheProjet.DecoupageLotsTravail = fiche.DecoupageLotsTravail;
@@ -118,11 +118,11 @@ namespace GestionProjects.Controllers
             PvKickOffInputViewModel kickOff;
             try
             {
-                planningTasks = ParsePlanningTaches(ganttPayload);
-                raciLines = ParseRaciLignes(raciPayload);
-                communicationLines = ParseCommunicationLignes(communicationPayload);
-                budgetLines = ParseBudgetLignes(budgetPayload);
-                kickOff = ParsePvKickOff(kickOffPayload);
+                planningTasks = _planificationNative.ParsePlanningTaches(ganttPayload);
+                raciLines = _planificationNative.ParseRaciLignes(raciPayload);
+                communicationLines = _planificationNative.ParseCommunicationLignes(communicationPayload);
+                budgetLines = _planificationNative.ParseBudgetLignes(budgetPayload);
+                kickOff = _planificationNative.ParsePvKickOff(kickOffPayload);
             }
             catch (Exception ex)
             {
@@ -137,22 +137,22 @@ namespace GestionProjects.Controllers
 
             if (planningTasks.Count > 0)
             {
-                SynchronizePlanningSummary(projet, ficheProjet, planningTasks);
+                _planificationNative.SynchronizePlanningSummary(projet, ficheProjet, planningTasks);
             }
 
-            SynchronizeRaciSummary(ficheProjet, raciLines);
-            SynchronizeCommunicationSummary(ficheProjet, communicationLines);
-            SynchronizeBudgetSummary(ficheProjet, budgetLines);
+            _planificationNative.SynchronizeRaciSummary(ficheProjet, raciLines);
+            _planificationNative.SynchronizeCommunicationSummary(ficheProjet, communicationLines);
+            _planificationNative.SynchronizeBudgetSummary(ficheProjet, budgetLines);
 
-            await ReplacePlanningTasksAsync(projet, userId, planningTasks);
-            await ReplaceRaciLinesAsync(projet, raciLines);
-            await ReplaceCommunicationLinesAsync(projet, communicationLines);
-            await ReplaceBudgetLinesAsync(projet, budgetLines);
-            await UpsertPvKickOffAsync(projet, userId, kickOff);
+            await _planificationNative.ReplacePlanningTasksAsync(projet, userId, planningTasks);
+            await _planificationNative.ReplaceRaciLinesAsync(projet, raciLines);
+            await _planificationNative.ReplaceCommunicationLinesAsync(projet, communicationLines);
+            await _planificationNative.ReplaceBudgetLinesAsync(projet, budgetLines);
+            await _planificationNative.UpsertPvKickOffAsync(projet, userId, kickOff);
 
             await _db.SaveChangesAsync();
 
-            var generation = await GenerateNativePlanificationLivrablesAsync(
+            var generation = await _planificationNative.GenerateLivrablesAsync(
                 projet,
                 userId,
                 planningTasks,
@@ -161,7 +161,7 @@ namespace GestionProjects.Controllers
                 budgetLines,
                 kickOff);
 
-            await RecalculateProjectProgressAsync(projet);
+            await _projetProgress.RecalculateAsync(projet);
             await _db.SaveChangesAsync();
             await _auditService.LogActionAsync("UPDATE_PLANIFICATION", "Projet", projet.Id);
 
@@ -271,7 +271,7 @@ namespace GestionProjects.Controllers
                     Commentaires = projet.PvKickOff.Commentaires
                 };
 
-            var generation = await GenerateNativePlanificationLivrablesAsync(
+            var generation = await _planificationNative.GenerateLivrablesAsync(
                 projet,
                 userId,
                 tasks,
@@ -309,7 +309,7 @@ namespace GestionProjects.Controllers
             if (!await CanManageExecutionAsync(projet))
                 return Forbid();
 
-            var ficheProjet = await GetOrCreateFicheProjetAsync(id, userId);
+            var ficheProjet = await _planificationNative.GetOrCreateFicheProjetAsync(id, userId);
             ficheProjet.DateDebutReelleExecution = fiche.DateDebutReelleExecution;
             ficheProjet.DateFinEstimeeExecution = fiche.DateFinEstimeeExecution ?? dateFinPrevue;
             ficheProjet.JustificationRetardExecution = fiche.JustificationRetardExecution;
@@ -335,7 +335,7 @@ namespace GestionProjects.Controllers
                 ficheProjet.EcartsBudget = ficheProjet.BudgetConsomme.Value - ficheProjet.BudgetPrevisionnel.Value;
             }
 
-            await RecalculateProjectProgressAsync(projet);
+            await _projetProgress.RecalculateAsync(projet);
             await _db.SaveChangesAsync();
             await _auditService.LogActionAsync("UPDATE_EXECUTION", "Projet", projet.Id);
 
@@ -359,7 +359,7 @@ namespace GestionProjects.Controllers
             if (!await CanManageUatAsync(projet))
                 return Forbid();
 
-            var ficheProjet = await GetOrCreateFicheProjetAsync(id, userId);
+            var ficheProjet = await _planificationNative.GetOrCreateFicheProjetAsync(id, userId);
             ficheProjet.DateDebutRecette = fiche.DateDebutRecette;
             ficheProjet.DateFinRecette = fiche.DateFinRecette;
             ficheProjet.UtilisateursTesteurs = fiche.UtilisateursTesteurs;
@@ -385,7 +385,7 @@ namespace GestionProjects.Controllers
             projet.MepEffectuee = mepEffectuee;
             projet.DateMep = mepEffectuee ? dateMepReelle ?? projet.DateMep ?? DateTime.Now : null;
 
-            await RecalculateProjectProgressAsync(projet);
+            await _projetProgress.RecalculateAsync(projet);
             await _db.SaveChangesAsync();
             await _auditService.LogActionAsync("UPDATE_UAT_MEP", "Projet", projet.Id);
 
@@ -425,7 +425,7 @@ namespace GestionProjects.Controllers
             if (!await CanManageClotureAsync(projet))
                 return Forbid();
 
-            var ficheProjet = await GetOrCreateFicheProjetAsync(id, userId);
+            var ficheProjet = await _planificationNative.GetOrCreateFicheProjetAsync(id, userId);
 
             projet.BilanPerimetre = bilanPerimetre?.Trim();
             projet.BilanPlanning = bilanPlanning?.Trim();
@@ -462,7 +462,7 @@ namespace GestionProjects.Controllers
                 $"Échecs: {projet.LeconsEchecs}\n" +
                 $"Recommandations: {projet.LeconsRecommandations}";
 
-            await RecalculateProjectProgressAsync(projet);
+            await _projetProgress.RecalculateAsync(projet);
             await _db.SaveChangesAsync();
 
             await _auditService.LogActionAsync("UPDATE_BILAN", "Projet", projet.Id);
@@ -494,7 +494,7 @@ namespace GestionProjects.Controllers
 
             projet.PlanningValideParDM = true;
             projet.DatePlanningValideParDM = DateTime.Now;
-            await RecalculateProjectProgressAsync(projet);
+            await _projetProgress.RecalculateAsync(projet);
             await _db.SaveChangesAsync();
 
             await _auditService.LogActionAsync("VALIDATION_PLANIF_DM", "Projet", projet.Id);
@@ -588,7 +588,7 @@ namespace GestionProjects.Controllers
             };
             _db.HistoriquePhasesProjets.Add(historique);
 
-            await RecalculateProjectProgressAsync(projet);
+            await _projetProgress.RecalculateAsync(projet);
             await _db.SaveChangesAsync();
 
             await _auditService.LogActionAsync("VALIDATION_PLANIF_DSI", "Projet", projet.Id);
