@@ -18,9 +18,9 @@ namespace GestionProjects.Application.Common.Interfaces
         Task<WorkflowResult> UpdateChefProjetAsync(Guid projetId, Guid? chefProjetId);
 
         /// <summary>
-        /// DÃ©marre opÃ©rationnellement un projet crÃ©Ã© aprÃ¨s validation DSI.
-        /// La crÃ©ation administrative reste NonDemarre/0%; cette action marque la prise
-        /// en charge rÃ©elle sans gonfler artificiellement l'avancement.
+        /// Démarre opérationnellement un projet créé après validation DSI.
+        /// La création administrative reste NonDemarre/0%; cette action marque la prise
+        /// en charge réelle sans gonfler artificiellement l'avancement.
         /// </summary>
         Task<WorkflowResult> DemarrerProjetAsync(Guid projetId, Guid userId);
 

@@ -45,14 +45,14 @@ public sealed class UserImportService : IUserImportService
 
         if (fichierExcel == null || fileLength == 0)
         {
-            erreurs.Add("Aucun fichier n'a Ã©tÃ© sÃ©lectionnÃ©.");
+            erreurs.Add("Aucun fichier n'a été sélectionné.");
             return new UserImportResult(BuildVm());
         }
 
         const long maxFileSize = 5 * 1024 * 1024;
         if (fileLength > maxFileSize)
         {
-            erreurs.Add("Le fichier dÃ©passe la taille maximale autorisÃ©e (5 Mo).");
+            erreurs.Add("Le fichier dépasse la taille maximale autorisée (5 Mo).");
             return new UserImportResult(BuildVm());
         }
 
@@ -61,14 +61,14 @@ public sealed class UserImportService : IUserImportService
             !motDePasseParDefaut.Any(char.IsUpper) ||
             !motDePasseParDefaut.Any(char.IsDigit))
         {
-            erreurs.Add("Le mot de passe par dÃ©faut doit contenir au moins 12 caractÃ¨res, une majuscule et un chiffre.");
+            erreurs.Add("Le mot de passe par défaut doit contenir au moins 12 caractères, une majuscule et un chiffre.");
             return new UserImportResult(BuildVm());
         }
 
         var extension = Path.GetExtension(fileName ?? string.Empty).ToLowerInvariant();
         if (extension != ".xlsx" && extension != ".xls")
         {
-            erreurs.Add("Le fichier doit Ãªtre au format Excel (.xlsx ou .xls).");
+            erreurs.Add("Le fichier doit être au format Excel (.xlsx ou .xls).");
             return new UserImportResult(BuildVm());
         }
 
@@ -91,7 +91,7 @@ public sealed class UserImportService : IUserImportService
             var rowCount = worksheet.Dimension?.Rows ?? 0;
             if (rowCount < 2)
             {
-                erreurs.Add("Le fichier Excel doit contenir au moins une ligne de donnÃ©es (en plus de l'en-tÃªte).");
+                erreurs.Add("Le fichier Excel doit contenir au moins une ligne de données (en plus de l'en-tête).");
                 return new UserImportResult(BuildVm());
             }
 
@@ -134,7 +134,7 @@ public sealed class UserImportService : IUserImportService
 
                         if (string.IsNullOrWhiteSpace(matricule)) { resultat.Statut = "Erreur"; resultat.Message = "Le matricule est requis."; resultats.Add(resultat); continue; }
                         if (string.IsNullOrWhiteSpace(nom)) { resultat.Statut = "Erreur"; resultat.Message = "Le nom est requis."; resultats.Add(resultat); continue; }
-                        if (string.IsNullOrWhiteSpace(prenoms)) { resultat.Statut = "Erreur"; resultat.Message = "Les prÃ©noms sont requis."; resultats.Add(resultat); continue; }
+                        if (string.IsNullOrWhiteSpace(prenoms)) { resultat.Statut = "Erreur"; resultat.Message = "Les prénoms sont requis."; resultats.Add(resultat); continue; }
                         if (string.IsNullOrWhiteSpace(email)) { resultat.Statut = "Erreur"; resultat.Message = "L'email est requis."; resultats.Add(resultat); continue; }
 
                         if (!System.Text.RegularExpressions.Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
@@ -145,10 +145,10 @@ public sealed class UserImportService : IUserImportService
 
                         if (matriculeExists || emailExists)
                         {
-                            var msg = matriculeExists && emailExists ? "Matricule et email existent dÃ©jÃ ."
-                                : matriculeExists ? "Matricule existe dÃ©jÃ ."
-                                : "Email existe dÃ©jÃ .";
-                            resultat.Statut = ignorerDoublons ? "IgnorÃ©" : "Erreur";
+                            var msg = matriculeExists && emailExists ? "Matricule et email existent déjà."
+                                : matriculeExists ? "Matricule existe déjà."
+                                : "Email existe déjà.";
+                            resultat.Statut = ignorerDoublons ? "Ignoré" : "Erreur";
                             resultat.Message = msg;
                             resultats.Add(resultat);
                             continue;
@@ -185,11 +185,11 @@ public sealed class UserImportService : IUserImportService
                                 directionId = newDir.Id;
                                 directionCache[codeDirection] = newDir.Id;
                                 directionsDb[codeDirection] = newDir.Id;
-                                avertissements.Add($"Direction '{codeDirection}' crÃ©Ã©e.");
+                                avertissements.Add($"Direction '{codeDirection}' créée.");
                             }
                             else
                             {
-                                avertissements.Add($"Direction '{codeDirection}' introuvable â€” utilisateur crÃ©Ã© sans direction.");
+                                avertissements.Add($"Direction '{codeDirection}' introuvable — utilisateur créé sans direction.");
                             }
                         }
 
@@ -214,7 +214,7 @@ public sealed class UserImportService : IUserImportService
 
                         if (rolesInvalides.Any())
                         {
-                            avertissements.Add($"RÃ´le(s) inconnu(s) ignorÃ©(s) : {string.Join(", ", rolesInvalides)}.");
+                            avertissements.Add($"Rôle(s) inconnu(s) ignoré(s) : {string.Join(", ", rolesInvalides)}.");
                         }
 
                         if (!roles.Any())
@@ -254,13 +254,13 @@ public sealed class UserImportService : IUserImportService
                         existingMatricules.Add(matricule.ToLower());
                         existingEmails.Add(email.ToLower());
 
-                        var messageOk = $"Utilisateur crÃ©Ã©. RÃ´les : {string.Join(", ", roles)}.";
+                        var messageOk = $"Utilisateur créé. Rôles : {string.Join(", ", roles)}.";
                         if (avertissements.Any())
                         {
-                            messageOk += " âš  " + string.Join(" ", avertissements);
+                            messageOk += " ⚠ " + string.Join(" ", avertissements);
                         }
 
-                        resultat.Statut = "CrÃ©Ã©";
+                        resultat.Statut = "Créé";
                         resultat.Message = messageOk;
                         resultats.Add(resultat);
                     }
@@ -278,16 +278,16 @@ public sealed class UserImportService : IUserImportService
             catch
             {
                 await transaction.RollbackAsync();
-                erreurs.Add("Une erreur critique s'est produite. Aucun utilisateur n'a Ã©tÃ© importÃ©.");
+                erreurs.Add("Une erreur critique s'est produite. Aucun utilisateur n'a été importé.");
             }
 
-            var successMessage = $"Import terminÃ©. {resultats.Count(r => r.Statut == "CrÃ©Ã©")} utilisateur(s) crÃ©Ã©(s), {resultats.Count(r => r.Statut == "IgnorÃ©")} ignorÃ©(s), {resultats.Count(r => r.Statut == "Erreur")} erreur(s).";
+            var successMessage = $"Import terminé. {resultats.Count(r => r.Statut == "Créé")} utilisateur(s) créé(s), {resultats.Count(r => r.Statut == "Ignoré")} ignoré(s), {resultats.Count(r => r.Statut == "Erreur")} erreur(s).";
             return new UserImportResult(BuildVm(), successMessage);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "ImportUsers: Ã©chec lecture fichier Excel");
-            erreurs.Add("Erreur lors de la lecture du fichier Excel. VÃ©rifiez que le fichier n'est pas corrompu.");
+            _logger.LogError(ex, "ImportUsers: échec lecture fichier Excel");
+            erreurs.Add("Erreur lors de la lecture du fichier Excel. Vérifiez que le fichier n'est pas corrompu.");
         }
 
         return new UserImportResult(BuildVm());

@@ -22,7 +22,7 @@ public sealed class HomeDashboardService : IHomeDashboardService
     {
             var stats = new DashboardStatsViewModel();
 
-            // RÃ©cupÃ©rer tous les rÃ´les actifs
+            // Récupérer tous les rôles actifs
             var activePermissions = (await _permissionService.GetCurrentUserActivePermissionsAsync())
                 .ToHashSet();
 
@@ -65,7 +65,7 @@ public sealed class HomeDashboardService : IHomeDashboardService
             var sixMoisAgo = DateTime.UtcNow.AddMonths(-6);
             var frCulture = new System.Globalization.CultureInfo("fr-FR");
 
-            // DSI/AdminIT : vue globale (prioritaire, pas de cumul nÃ©cessaire)
+            // DSI/AdminIT : vue globale (prioritaire, pas de cumul nécessaire)
             if (isDsiOrAdmin)
             {
                 var now = DateTime.UtcNow;
@@ -317,7 +317,7 @@ public sealed class HomeDashboardService : IHomeDashboardService
 
                         var risque = risqueParProjet.TryGetValue(p.Id, out var risqueProjet)
                             ? risqueProjet.Critiques > 0
-                                ? ("Ã‰levÃ©", "badge-modern-danger")
+                                ? ("Élevé", "badge-modern-danger")
                                 : risqueProjet.Eleves > 0
                                     ? ("Moyen", "badge-modern-warning")
                                     : ("Faible", "badge-modern-info")
@@ -358,7 +358,7 @@ public sealed class HomeDashboardService : IHomeDashboardService
                     new DashboardValidationItem
                     {
                         Type = "Demande",
-                        Element = "Validation Directeur mÃ©tier",
+                        Element = "Validation Directeur métier",
                         Projet = d.Titre ?? string.Empty,
                         Demandeur = FormatUtilisateurCourt(d.Demandeur?.Nom, d.Demandeur?.Prenoms),
                         DateLabel = d.DateSoumission.ToString("dd/MM/yyyy"),
@@ -392,7 +392,7 @@ public sealed class HomeDashboardService : IHomeDashboardService
                         new DashboardValidationItem
                         {
                             Type = "Charte",
-                            Element = "Charte Ã  valider DSI",
+                            Element = "Charte à  valider DSI",
                             Projet = p.Titre,
                             Demandeur = FormatUtilisateurCourt(p.DemandeProjet?.Demandeur?.Nom, p.DemandeProjet?.Demandeur?.Prenoms),
                             DateLabel = (p.DateModification ?? p.DateCreation).ToString("dd/MM/yyyy"),
@@ -407,7 +407,7 @@ public sealed class HomeDashboardService : IHomeDashboardService
                         new DashboardValidationItem
                         {
                             Type = "Planning",
-                            Element = "Planning Ã  valider DSI",
+                            Element = "Planning à  valider DSI",
                             Projet = p.Titre,
                             Demandeur = FormatUtilisateurCourt(p.DemandeProjet?.Demandeur?.Nom, p.DemandeProjet?.Demandeur?.Prenoms),
                             DateLabel = (p.DateModification ?? p.DateCreation).ToString("dd/MM/yyyy"),
@@ -425,8 +425,8 @@ public sealed class HomeDashboardService : IHomeDashboardService
                         dc.DateDemande,
                         new DashboardValidationItem
                         {
-                            Type = "ClÃ´ture",
-                            Element = "ClÃ´ture de projet",
+                            Type = "Clôture",
+                            Element = "Clôture de projet",
                             Projet = dc.Projet.Titre,
                             Demandeur = FormatUtilisateurCourt(dc.DemandePar.Nom, dc.DemandePar.Prenoms),
                             DateLabel = dc.DateDemande.ToString("dd/MM/yyyy"),
@@ -528,7 +528,7 @@ public sealed class HomeDashboardService : IHomeDashboardService
                         {
                             ProjetId = p.Id,
                             Projet = p.Titre,
-                            Direction = p.Direction?.Libelle ?? "Non dÃ©finie",
+                            Direction = p.Direction?.Libelle ?? "Non définie",
                             Phase = FormatPhaseProjet(p.PhaseActuelle),
                             Etat = FormatEtatProjet(p.EtatProjet),
                             Avancement = p.PourcentageAvancementAffiche,
@@ -546,7 +546,7 @@ public sealed class HomeDashboardService : IHomeDashboardService
             }
             else
             {
-                // Pour les autres rÃ´les : cumuler les stats de CHAQUE rÃ´le actif
+                // Pour les autres rôles : cumuler les stats de CHAQUE rôle actif
 
                 // ===== ResponsableSolutionsIT =====
                 if (isRsi)
@@ -657,12 +657,12 @@ public sealed class HomeDashboardService : IHomeDashboardService
         {
             return statut switch
             {
-                StatutProjet.NonDemarre => "Non DÃ©marrÃ©",
+                StatutProjet.NonDemarre => "Non Démarré",
                 StatutProjet.EnCours => "En Cours",
                 StatutProjet.Suspendu => "Suspendu",
-                StatutProjet.ClotureEnCours => "ClÃ´ture en Cours",
-                StatutProjet.Cloture => "ClÃ´turÃ©",
-                StatutProjet.Annule => "AnnulÃ©",
+                StatutProjet.ClotureEnCours => "Clôture en Cours",
+                StatutProjet.Cloture => "Clôturé",
+                StatutProjet.Annule => "Annulé",
                 _ => statut.ToString()
             };
         }
@@ -673,13 +673,13 @@ public sealed class HomeDashboardService : IHomeDashboardService
             {
                 StatutDemande.Brouillon => "Brouillon",
                 StatutDemande.EnAttenteValidationDirecteurMetier => "En Attente DM",
-                StatutDemande.CorrectionDemandeeParDirecteurMetier => "Correction DemandÃ©e",
-                StatutDemande.RejeteeParDirecteurMetier => "RejetÃ©e par DM",
+                StatutDemande.CorrectionDemandeeParDirecteurMetier => "Correction Demandée",
+                StatutDemande.RejeteeParDirecteurMetier => "Rejetée par DM",
                 StatutDemande.EnAttenteValidationDSI => "En Attente DSI",
                 StatutDemande.RetourneeAuDemandeurParDSI => "Retour Demandeur",
                 StatutDemande.RetourneeAuDirecteurMetierParDSI => "Retour DM",
-                StatutDemande.RejeteeParDSI => "RejetÃ©e par DSI",
-                StatutDemande.ValideeParDSI => "ValidÃ©e",
+                StatutDemande.RejeteeParDSI => "Rejetée par DSI",
+                StatutDemande.ValideeParDSI => "Validée",
                 _ => statut.ToString()
             };
         }
@@ -691,9 +691,9 @@ public sealed class HomeDashboardService : IHomeDashboardService
                 PhaseProjet.Demande => "Demande",
                 PhaseProjet.AnalyseClarification => "Analyse & Clarification",
                 PhaseProjet.PlanificationValidation => "Planification",
-                PhaseProjet.ExecutionSuivi => "ExÃ©cution",
+                PhaseProjet.ExecutionSuivi => "Exécution",
                 PhaseProjet.UatMep => "UAT & MEP",
-                PhaseProjet.ClotureLeconsApprises => "ClÃ´ture",
+                PhaseProjet.ClotureLeconsApprises => "Clôture",
                 _ => phase.ToString()
             };
         }
@@ -713,7 +713,7 @@ public sealed class HomeDashboardService : IHomeDashboardService
         {
             return profil switch
             {
-                ProfilRessource.Developpement => "DÃ©veloppement",
+                ProfilRessource.Developpement => "Développement",
                 ProfilRessource.Infrastructure => "Infrastructure",
                 ProfilRessource.Support => "Support",
                 ProfilRessource.DBA => "DBA",
@@ -721,7 +721,7 @@ public sealed class HomeDashboardService : IHomeDashboardService
                 ProfilRessource.Architecte => "Architecture",
                 ProfilRessource.Analyste => "Analyse",
                 ProfilRessource.Autre => "Autres",
-                _ => "Non dÃ©fini"
+                _ => "Non défini"
             };
         }
 
@@ -729,7 +729,7 @@ public sealed class HomeDashboardService : IHomeDashboardService
         {
             if (string.IsNullOrWhiteSpace(nom) && string.IsNullOrWhiteSpace(prenoms))
             {
-                return "Non affectÃ©";
+                return "Non affecté";
             }
 
             if (string.IsNullOrWhiteSpace(prenoms))

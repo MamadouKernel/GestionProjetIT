@@ -44,8 +44,8 @@ namespace GestionProjects.Controllers
                 clientId.Contains("PLACEHOLDER", StringComparison.OrdinalIgnoreCase) ||
                 clientSecret.Contains("PLACEHOLDER", StringComparison.OrdinalIgnoreCase))
             {
-                _logger.LogWarning("Tentative de connexion Azure AD avec une configuration incomplÃ¨te");
-                TempData["ErrorMessage"] = "Azure AD n'est pas configurÃ©. Veuillez utiliser la connexion locale ou contacter l'administrateur.";
+                _logger.LogWarning("Tentative de connexion Azure AD avec une configuration incomplète");
+                TempData["ErrorMessage"] = "Azure AD n'est pas configuré. Veuillez utiliser la connexion locale ou contacter l'administrateur.";
                 return RedirectToAction("Login", "Account");
             }
 
@@ -65,8 +65,8 @@ namespace GestionProjects.Controllers
             {
                 if (User?.Identity?.IsAuthenticated != true)
                 {
-                    _logger.LogError("Ã‰chec de l'authentification Azure AD");
-                    TempData["Error"] = "Erreur lors de l'authentification Azure AD. Veuillez rÃ©essayer.";
+                    _logger.LogError("Échec de l'authentification Azure AD");
+                    TempData["Error"] = "Erreur lors de l'authentification Azure AD. Veuillez réessayer.";
                     return RedirectToAction("Login", "Account");
                 }
 
@@ -90,8 +90,8 @@ namespace GestionProjects.Controllers
 
                 if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(matricule))
                 {
-                    _logger.LogError("Impossible de rÃ©cupÃ©rer les informations de l'utilisateur Azure AD");
-                    TempData["Error"] = "Erreur lors de la rÃ©cupÃ©ration de vos informations. Veuillez rÃ©essayer.";
+                    _logger.LogError("Impossible de récupérer les informations de l'utilisateur Azure AD");
+                    TempData["Error"] = "Erreur lors de la récupération de vos informations. Veuillez réessayer.";
                     return RedirectToAction("Login", "Account");
                 }
 
@@ -119,7 +119,7 @@ namespace GestionProjects.Controllers
                 {
                     var demandeAccesExistante = await _azureAuthWorkflow.HasPendingAccessRequestAsync(email, matricule);
 
-                    _logger.LogDebug("Utilisateur non rÃ©fÃ©rencÃ© (Azure AD login attempt)");
+                    _logger.LogDebug("Utilisateur non référencé (Azure AD login attempt)");
 
                     TempData["AzureEmail"] = email;
                     TempData["AzureNom"] = nom ?? string.Empty;
@@ -127,11 +127,11 @@ namespace GestionProjects.Controllers
                     TempData["AzureMatricule"] = matricule;
                     TempData["AzureDepartment"] = azureDepartment ?? string.Empty;
                     TempData["AzureDirectionDetecteeId"] = directionDetectee.DirectionId?.ToString() ?? string.Empty;
-                    TempData["AzureDirectionDetecteeNom"] = directionDetectee.DirectionLibelle ?? "Non dÃ©terminÃ©e";
+                    TempData["AzureDirectionDetecteeNom"] = directionDetectee.DirectionLibelle ?? "Non déterminée";
 
                     if (demandeAccesExistante)
                     {
-                        TempData["Info"] = "Une demande d'accÃ¨s est dÃ©jÃ  en attente de traitement pour votre compte.";
+                        TempData["Info"] = "Une demande d'accès est déjà en attente de traitement pour votre compte.";
                     }
 
                     await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -184,13 +184,13 @@ namespace GestionProjects.Controllers
 
                 await _azureAuthWorkflow.RecordSuccessfulLoginAsync(utilisateur.Id);
 
-                _logger.LogInformation("Connexion Azure AD rÃ©ussie pour {Matricule}", utilisateur.Matricule);
+                _logger.LogInformation("Connexion Azure AD réussie pour {Matricule}", utilisateur.Matricule);
                 return RedirectToAction("Index", "Home");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erreur lors du callback Azure AD");
-                TempData["Error"] = "Erreur lors de la connexion. Veuillez rÃ©essayer.";
+                TempData["Error"] = "Erreur lors de la connexion. Veuillez réessayer.";
                 return RedirectToAction("Login", "Account");
             }
         }
@@ -206,7 +206,7 @@ namespace GestionProjects.Controllers
                 Matricule          = TempData["AzureMatricule"] as string ?? string.Empty,
                 AzureDepartment    = TempData["AzureDepartment"] as string ?? string.Empty,
                 DirectionDetecteeId  = TempData["AzureDirectionDetecteeId"] as string ?? string.Empty,
-                DirectionDetecteeNom = TempData["AzureDirectionDetecteeNom"] as string ?? "Non dÃ©terminÃ©e"
+                DirectionDetecteeNom = TempData["AzureDirectionDetecteeNom"] as string ?? "Non déterminée"
             };
 
             return View(vm);
@@ -253,8 +253,8 @@ namespace GestionProjects.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Erreur lors de la crÃ©ation de la demande d'accÃ¨s");
-                TempData["Error"] = "Erreur lors de l'envoi de la demande. Veuillez rÃ©essayer.";
+                _logger.LogError(ex, "Erreur lors de la création de la demande d'accès");
+                TempData["Error"] = "Erreur lors de l'envoi de la demande. Veuillez réessayer.";
                 return RedirectToAction("Login", "Account");
             }
         }

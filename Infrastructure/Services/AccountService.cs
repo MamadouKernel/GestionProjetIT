@@ -53,7 +53,7 @@ public sealed class AccountService : IAccountService
         }
         catch (Exception ex)
         {
-            return new AccountLoginResult(null, $"Erreur lors de la vÃ©rification du mot de passe : {ex.Message}");
+            return new AccountLoginResult(null, $"Erreur lors de la vérification du mot de passe : {ex.Message}");
         }
     }
 
@@ -118,7 +118,7 @@ public sealed class AccountService : IAccountService
                 {
                     errors.Add(new AccountValidationError(
                         string.Empty,
-                        $"Erreur lors de la vÃ©rification du mot de passe : {ex.Message}"));
+                        $"Erreur lors de la vérification du mot de passe : {ex.Message}"));
                 }
             }
         }

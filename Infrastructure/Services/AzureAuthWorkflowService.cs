@@ -80,7 +80,7 @@ public sealed class AzureAuthWorkflowService : IAzureAuthWorkflowService
 
         if (demandeExiste)
         {
-            return DemandeAccesWorkflowResult.Info("Une demande d'accÃ¨s a dÃ©jÃ  Ã©tÃ© envoyÃ©e pour ce compte. Veuillez patienter.");
+            return DemandeAccesWorkflowResult.Info("Une demande d'accès a déjà été envoyée pour ce compte. Veuillez patienter.");
         }
 
         Guid? parsedDirectionId = null;
@@ -106,7 +106,7 @@ public sealed class AzureAuthWorkflowService : IAzureAuthWorkflowService
         _db.DemandesAccesAzureAd.Add(demandeAcces);
         await _db.SaveChangesAsync();
 
-        var directionLabel = "Non dÃ©terminÃ©e";
+        var directionLabel = "Non déterminée";
         if (parsedDirectionId.HasValue)
         {
             directionLabel = await _db.Directions
@@ -118,8 +118,8 @@ public sealed class AzureAuthWorkflowService : IAzureAuthWorkflowService
         await _notificationService.NotifierRoleAsync(
             RoleUtilisateur.AdminIT,
             TypeNotification.DemandeSupportTechnique,
-            "Nouvelle demande d'accÃ¨s Azure AD",
-            $"Demande d'accÃ¨s Azure AD de {demandeAcces.Prenoms} {demandeAcces.Nom} ({demandeAcces.Email}). Direction dÃ©tectÃ©e : {directionLabel}.",
+            "Nouvelle demande d'accès Azure AD",
+            $"Demande d'accès Azure AD de {demandeAcces.Prenoms} {demandeAcces.Nom} ({demandeAcces.Email}). Direction détectée : {directionLabel}.",
             DomainEntityTypes.DemandeAccesAzureAd,
             demandeAcces.Id,
             new
@@ -131,7 +131,7 @@ public sealed class AzureAuthWorkflowService : IAzureAuthWorkflowService
             });
 
         return DemandeAccesWorkflowResult.Success(
-            "Votre demande d'accÃ¨s a Ã©tÃ© envoyÃ©e aux administrateurs. Vous recevrez un retour aprÃ¨s traitement.",
+            "Votre demande d'accès a été envoyée aux administrateurs. Vous recevrez un retour après traitement.",
             demandeAcces.Id);
     }
 
