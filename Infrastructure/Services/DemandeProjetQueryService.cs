@@ -34,12 +34,11 @@ public class DemandeProjetQueryService : IDemandeProjetQueryService
         {
             query = query.Where(d => d.DemandeurId == userId);
         }
-        else if (!directionId.HasValue && !demandeurId.HasValue && !directeurMetierId.HasValue)
-        {
-            query = query.Where(d => d.DemandeurId == userId);
-        }
         else
         {
+            // Vue de gouvernance (DSI/ResponsableSolutionsIT/AdminIT) : sans filtre, on voit
+            // toutes les demandes de toutes les directions. Les filtres, s'ils sont renseignes,
+            // restreignent la vue.
             if (directionId.HasValue)        query = query.Where(d => d.DirectionId == directionId.Value);
             if (demandeurId.HasValue)        query = query.Where(d => d.DemandeurId == demandeurId.Value);
             if (directeurMetierId.HasValue)  query = query.Where(d => d.DirecteurMetierId == directeurMetierId.Value);
