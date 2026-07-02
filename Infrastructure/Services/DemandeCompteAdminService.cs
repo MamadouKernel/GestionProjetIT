@@ -63,7 +63,7 @@ public class DemandeCompteAdminService : IDemandeCompteAdminService
 
         demande.Statut           = StatutDemandeCompte.ValideeParDM;
         demande.CommentaireDM     = commentaire;
-        demande.DateModification = DateTime.Now;
+        demande.DateModification = DateTime.UtcNow;
         demande.ModifiePar       = _currentUser.Matricule;
         await _db.SaveChangesAsync();
 
@@ -102,7 +102,7 @@ public class DemandeCompteAdminService : IDemandeCompteAdminService
 
         demande.Statut           = StatutDemandeCompte.RefuseeParDM;
         demande.CommentaireDM     = commentaire;
-        demande.DateModification = DateTime.Now;
+        demande.DateModification = DateTime.UtcNow;
         demande.ModifiePar       = _currentUser.Matricule;
         await _db.SaveChangesAsync();
 
@@ -138,7 +138,7 @@ public class DemandeCompteAdminService : IDemandeCompteAdminService
         {
             Id = Guid.NewGuid(), Matricule = matricule, MotDePasse = string.Empty,
             Nom = demande.Nom, Prenoms = demande.Prenoms, Email = demande.Email,
-            DirectionId = demande.DirectionId, DateCreation = DateTime.Now,
+            DirectionId = demande.DirectionId, DateCreation = DateTime.UtcNow,
             CreePar = _currentUser.Matricule ?? "SYSTEM", ModifiePar = string.Empty,
             EstSupprime = false, NombreConnexion = 0
         };
@@ -147,14 +147,14 @@ public class DemandeCompteAdminService : IDemandeCompteAdminService
         _db.UtilisateurRoles.Add(new UtilisateurRole
         {
             Id = Guid.NewGuid(), UtilisateurId = utilisateur.Id, Role = role,
-            DateDebut = DateTime.Now, DateCreation = DateTime.Now,
+            DateDebut = DateTime.UtcNow, DateCreation = DateTime.UtcNow,
             CreePar = _currentUser.Matricule ?? "SYSTEM", EstSupprime = false
         });
 
         demande.Statut             = StatutDemandeCompte.CompteCree;
         demande.CommentaireDSI      = commentaire;
         demande.UtilisateurCreePar = utilisateur.Id;
-        demande.DateModification   = DateTime.Now;
+        demande.DateModification   = DateTime.UtcNow;
         demande.ModifiePar         = _currentUser.Matricule;
 
         var jeton = await _passwordSetupTokenService.CreerAsync(
@@ -192,7 +192,7 @@ public class DemandeCompteAdminService : IDemandeCompteAdminService
 
         demande.Statut           = StatutDemandeCompte.RefuseeParDSI;
         demande.CommentaireDSI    = commentaire;
-        demande.DateModification = DateTime.Now;
+        demande.DateModification = DateTime.UtcNow;
         demande.ModifiePar       = _currentUser.Matricule;
         await _db.SaveChangesAsync();
 

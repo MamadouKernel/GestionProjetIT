@@ -47,7 +47,7 @@ namespace GestionProjects.Infrastructure.Services
                     DescriptionSynthetique = projet.DemandeProjet?.Description ?? string.Empty,
                     ResultatsAttendus = projet.DemandeProjet?.AvantagesAttendus ?? string.Empty,
                     CriticiteUrgence = $"{projet.DemandeProjet?.Criticite} / {projet.DemandeProjet?.Urgence}",
-                    DateCreation = DateTime.Now,
+                    DateCreation = DateTime.UtcNow,
                     CreePar = _currentUserService.Matricule ?? "SYSTEM",
                     EstSupprime = false
                 };
@@ -100,10 +100,10 @@ namespace GestionProjects.Infrastructure.Services
             {
                 fiche.Id = Guid.NewGuid();
                 fiche.ProjetId = projetId;
-                fiche.DateCreation = DateTime.Now;
+                fiche.DateCreation = DateTime.UtcNow;
                 fiche.CreePar = _currentUserService.Matricule ?? "SYSTEM";
                 fiche.EstSupprime = false;
-                fiche.DateDerniereMiseAJour = DateTime.Now;
+                fiche.DateDerniereMiseAJour = DateTime.UtcNow;
                 fiche.DerniereMiseAJourParId = userId;
                 _db.FicheProjets.Add(fiche);
             }
@@ -152,7 +152,7 @@ namespace GestionProjects.Infrastructure.Services
                     if (ecartPourcentage > 10 && !string.IsNullOrWhiteSpace(fiche.JustificationEcartBudget))
                     {
                         ficheExistante.JustificationEcartBudget = fiche.JustificationEcartBudget;
-                        ficheExistante.DateJustificationEcart = DateTime.Now;
+                        ficheExistante.DateJustificationEcart = DateTime.UtcNow;
                         ficheExistante.JustificationParId = userId;
                     }
                 }
@@ -193,9 +193,9 @@ namespace GestionProjects.Infrastructure.Services
                 ficheExistante.PointsVigilance = fiche.PointsVigilance;
                 ficheExistante.DecisionsAttendues = fiche.DecisionsAttendues;
                 ficheExistante.DemandesArbitrage = fiche.DemandesArbitrage;
-                ficheExistante.DateDerniereMiseAJour = DateTime.Now;
+                ficheExistante.DateDerniereMiseAJour = DateTime.UtcNow;
                 ficheExistante.DerniereMiseAJourParId = userId;
-                ficheExistante.DateModification = DateTime.Now;
+                ficheExistante.DateModification = DateTime.UtcNow;
                 ficheExistante.ModifiePar = _currentUserService.Matricule;
             }
 

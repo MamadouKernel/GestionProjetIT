@@ -86,8 +86,8 @@ public sealed class DemandeCreationCompteWorkflowService : IDemandeCreationCompt
             DirectionId = direction.Id,
             DirecteurMetierId = directeurMetier.Id,
             Statut = StatutDemandeCompte.EnAttenteValidationDM,
-            DateSoumission = DateTime.Now,
-            DateCreation = DateTime.Now,
+            DateSoumission = DateTime.UtcNow,
+            DateCreation = DateTime.UtcNow,
             CreePar = "ANONYMOUS",
             EstSupprime = false
         };
@@ -112,7 +112,7 @@ public sealed class DemandeCreationCompteWorkflowService : IDemandeCreationCompt
 
     private static bool HasActiveRole(Utilisateur utilisateur, RoleUtilisateur role)
     {
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
         return utilisateur.UtilisateurRoles.Any(ur =>
             !ur.EstSupprime &&
             ur.Role == role &&

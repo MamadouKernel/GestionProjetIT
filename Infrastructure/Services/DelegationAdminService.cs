@@ -199,7 +199,7 @@ public class DelegationAdminService : IDelegationAdminService
         {
             Id = Guid.NewGuid(), DSIId = dsiGuid, DelegueId = delegueGuid,
             DateDebut = input.DateDebut, DateFin = input.DateFin, EstActive = input.EstActive,
-            DateCreation = DateTime.Now, CreePar = _currentUser.Matricule ?? "SYSTEM", EstSupprime = false
+            DateCreation = DateTime.UtcNow, CreePar = _currentUser.Matricule ?? "SYSTEM", EstSupprime = false
         };
         _db.DelegationsValidationDSI.Add(delegation);
         await _db.SaveChangesAsync();
@@ -230,7 +230,7 @@ public class DelegationAdminService : IDelegationAdminService
         existing.DateDebut        = input.DateDebut;
         existing.DateFin          = input.DateFin;
         existing.EstActive        = input.EstActive;
-        existing.DateModification = DateTime.Now;
+        existing.DateModification = DateTime.UtcNow;
         existing.ModifiePar       = _currentUser.Matricule;
         await _db.SaveChangesAsync();
 
@@ -246,7 +246,7 @@ public class DelegationAdminService : IDelegationAdminService
 
         delegation.EstSupprime      = true;
         delegation.EstActive        = false;
-        delegation.DateModification = DateTime.Now;
+        delegation.DateModification = DateTime.UtcNow;
         delegation.ModifiePar       = _currentUser.Matricule;
         await _db.SaveChangesAsync();
 
@@ -342,7 +342,7 @@ public class DelegationAdminService : IDelegationAdminService
         {
             Id = Guid.NewGuid(), ProjetId = projetGuid, DelegantId = delegantGuid, DelegueId = delegueGuid,
             DateDebut = input.DateDebut, DateFin = null, EstActive = input.EstActive,
-            DateCreation = DateTime.Now, CreePar = _currentUser.Matricule ?? "SYSTEM", EstSupprime = false
+            DateCreation = DateTime.UtcNow, CreePar = _currentUser.Matricule ?? "SYSTEM", EstSupprime = false
         };
         _db.DelegationsChefProjet.Add(delegation);
         await _db.SaveChangesAsync();
@@ -395,7 +395,7 @@ public class DelegationAdminService : IDelegationAdminService
         existing.DelegueId        = delegueGuid;
         existing.DateDebut        = input.DateDebut;
         existing.EstActive        = input.EstActive;
-        existing.DateModification = DateTime.Now;
+        existing.DateModification = DateTime.UtcNow;
         existing.ModifiePar       = _currentUser.Matricule;
         await _db.SaveChangesAsync();
 
@@ -460,7 +460,7 @@ public class DelegationAdminService : IDelegationAdminService
         {
             Id = Guid.NewGuid(), DirecteurMetierId = dmGuid, DelegueId = delegueGuid,
             DateDebut = input.DateDebut, DateFin = input.DateFin, EstActive = input.EstActive,
-            DateCreation = DateTime.Now, CreePar = _currentUser.Matricule ?? "SYSTEM", EstSupprime = false
+            DateCreation = DateTime.UtcNow, CreePar = _currentUser.Matricule ?? "SYSTEM", EstSupprime = false
         };
         _db.DelegationsValidationDM.Add(delegation);
         await _db.SaveChangesAsync();
@@ -493,7 +493,7 @@ public class DelegationAdminService : IDelegationAdminService
         existing.DateDebut        = input.DateDebut;
         existing.DateFin          = input.DateFin;
         existing.EstActive        = input.EstActive;
-        existing.DateModification = DateTime.Now;
+        existing.DateModification = DateTime.UtcNow;
         existing.ModifiePar       = _currentUser.Matricule;
         await _db.SaveChangesAsync();
 
@@ -511,7 +511,7 @@ public class DelegationAdminService : IDelegationAdminService
 
         delegation.EstSupprime      = true;
         delegation.EstActive        = false;
-        delegation.DateModification = DateTime.Now;
+        delegation.DateModification = DateTime.UtcNow;
         delegation.ModifiePar       = _currentUser.Matricule;
         await _db.SaveChangesAsync();
 

@@ -61,7 +61,7 @@ public sealed class AzureAuthWorkflowService : IAzureAuthWorkflowService
             return;
         }
 
-        utilisateur.DateDerniereConnexion = DateTime.Now;
+        utilisateur.DateDerniereConnexion = DateTime.UtcNow;
         utilisateur.NombreConnexion++;
         await _db.SaveChangesAsync();
     }

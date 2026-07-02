@@ -120,7 +120,7 @@ public sealed class DashboardAnalyticsService : IDashboardAnalyticsService
             return DashboardAnalyticsResult<IReadOnlyList<DashboardMonthlyTrendItem>>.Forbidden();
         }
 
-        var depuis = DateTime.Now.AddMonths(-11);
+        var depuis = DateTime.UtcNow.AddMonths(-11);
         var data = await ApplyProjectScope(
                 _db.Projets.Where(p => !p.EstSupprime && p.DateCreation >= depuis),
                 scope,
@@ -198,7 +198,7 @@ public sealed class DashboardAnalyticsService : IDashboardAnalyticsService
             d.StatutDemande == StatutDemande.EnAttenteValidationDirecteurMetier ||
             d.StatutDemande == StatutDemande.EnAttenteValidationDSI);
 
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
         var projetsEnRetard = projets.Count(p =>
             p.DateFinPrevue.HasValue &&
             p.DateFinPrevue.Value < now &&
@@ -248,7 +248,7 @@ public sealed class DashboardAnalyticsService : IDashboardAnalyticsService
             TotalProjets: projets.Count,
             ProjetsEnCours: projets.Count(p => p.StatutProjet == StatutProjet.EnCours),
             ProjetsCloturesThisYear: projets.Count(p => p.StatutProjet == StatutProjet.Cloture &&
-                p.DateModification?.Year == DateTime.Now.Year),
+                p.DateModification?.Year == DateTime.UtcNow.Year),
             ProjetsRouges: projets.Count(p => p.EtatProjet == EtatProjet.Rouge),
             ProjetsOranges: projets.Count(p => p.EtatProjet == EtatProjet.Orange),
             ProjetsVerts: projets.Count(p => p.EtatProjet == EtatProjet.Vert),

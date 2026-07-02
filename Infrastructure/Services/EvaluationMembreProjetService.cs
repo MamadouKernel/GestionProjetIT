@@ -58,7 +58,7 @@ namespace GestionProjects.Infrastructure.Services
             }
 
             evaluation.EvaluateurId = evaluateurId;
-            evaluation.DateEvaluation = DateTime.Now;
+            evaluation.DateEvaluation = DateTime.UtcNow;
             evaluation.NoteQualite = noteQualite;
             evaluation.NoteRespectDelais = noteRespectDelais;
             evaluation.NoteCollaboration = noteCollaboration;

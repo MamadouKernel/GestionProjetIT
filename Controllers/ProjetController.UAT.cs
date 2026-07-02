@@ -50,10 +50,10 @@ namespace GestionProjects.Controllers
                 ProjetId = projet.Id,
                 Phase = PhaseProjet.UatMep,
                 StatutProjet = projet.StatutProjet,
-                DateDebut = DateTime.Now,
+                DateDebut = DateTime.UtcNow,
                 ModifieParId = userId,
                 Commentaire = "Projet prêt pour UAT",
-                DateCreation = DateTime.Now,
+                DateCreation = DateTime.UtcNow,
                 CreePar = _currentUserService.Matricule
             };
             _db.HistoriquePhasesProjets.Add(historique);
@@ -98,7 +98,7 @@ namespace GestionProjects.Controllers
             }
 
             projet.RecetteValidee = true;
-            projet.DateRecetteValidee = DateTime.Now;
+            projet.DateRecetteValidee = DateTime.UtcNow;
             projet.RecetteValideeParId = userId;
             await _projetProgress.RecalculateAsync(projet);
             await _db.SaveChangesAsync();
@@ -183,10 +183,10 @@ namespace GestionProjects.Controllers
                 ProjetId = projet.Id,
                 Phase = PhaseProjet.ClotureLeconsApprises,
                 StatutProjet = projet.StatutProjet,
-                DateDebut = DateTime.Now,
+                DateDebut = DateTime.UtcNow,
                 ModifieParId = userId,
                 Commentaire = "Fin UAT - Passage en phase Clôture",
-                DateCreation = DateTime.Now,
+                DateCreation = DateTime.UtcNow,
                 CreePar = _currentUserService.Matricule
             };
             _db.HistoriquePhasesProjets.Add(historique);

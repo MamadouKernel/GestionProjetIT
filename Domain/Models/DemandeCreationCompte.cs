@@ -23,7 +23,7 @@ namespace GestionProjects.Domain.Models
         public string? CommentaireDM { get; set; }
         public string? CommentaireDSI { get; set; }
 
-        public DateTime DateSoumission { get; set; } = DateTime.Now;
+        public DateTime DateSoumission { get; set; } = DateTime.UtcNow;
 
         /// <summary>Id de l'utilisateur créé après approbation DSI.</summary>
         public Guid? UtilisateurCreePar { get; set; }

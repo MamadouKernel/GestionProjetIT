@@ -69,9 +69,9 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
         if (avantagesAttendus != null)               demande.AvantagesAttendus = avantagesAttendus.Trim();
 
         demande.StatutDemande              = StatutDemande.EnAttenteValidationDSI;
-        demande.DateValidationDM           = DateTime.Now;
+        demande.DateValidationDM           = DateTime.UtcNow;
         demande.CommentaireDirecteurMetier = commentaire ?? string.Empty;
-        demande.DateModification           = DateTime.Now;
+        demande.DateModification           = DateTime.UtcNow;
         demande.ModifiePar                 = _currentUser.Matricule;
         await _db.SaveChangesAsync();
 
@@ -115,7 +115,7 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
         var ancienStatut = demande.StatutDemande;
         demande.StatutDemande              = StatutDemande.RejeteeParDirecteurMetier;
         demande.CommentaireDirecteurMetier = commentaire.Trim();
-        demande.DateModification           = DateTime.Now;
+        demande.DateModification           = DateTime.UtcNow;
         demande.ModifiePar                 = _currentUser.Matricule;
         await _db.SaveChangesAsync();
 
@@ -156,7 +156,7 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
         var ancienStatut = demande.StatutDemande;
         demande.StatutDemande              = StatutDemande.CorrectionDemandeeParDirecteurMetier;
         demande.CommentaireDirecteurMetier = commentaire.Trim();
-        demande.DateModification           = DateTime.Now;
+        demande.DateModification           = DateTime.UtcNow;
         demande.ModifiePar                 = _currentUser.Matricule;
         await _db.SaveChangesAsync();
 
@@ -207,13 +207,13 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
 
         var ancienStatut = demande.StatutDemande;
         demande.StatutDemande     = StatutDemande.ValideeParDSI;
-        demande.DateValidationDSI = DateTime.Now;
+        demande.DateValidationDSI = DateTime.UtcNow;
         demande.CommentaireDSI    = commentaire ?? string.Empty;
 
         var projet = new Projet
         {
             Id                    = Guid.NewGuid(),
-            CodeProjet            = $"PROJ-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}",
+            CodeProjet            = $"PROJ-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}",
             Titre                 = demande.Titre ?? string.Empty,
             Objectif              = demande.Objectifs,
             PortefeuilleProjetId  = portefeuilleActif.Id,
@@ -227,7 +227,7 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
             PourcentageAvancement = 0,
             BilanCloture          = string.Empty,
             LeconsApprises        = string.Empty,
-            DateCreation          = DateTime.Now,
+            DateCreation          = DateTime.UtcNow,
             CreePar               = _currentUser.Matricule ?? string.Empty
         };
         _db.Projets.Add(projet);
@@ -264,7 +264,7 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
         var ancienStatut = demande.StatutDemande;
         demande.StatutDemande    = StatutDemande.RejeteeParDSI;
         demande.CommentaireDSI   = commentaire.Trim();
-        demande.DateModification = DateTime.Now;
+        demande.DateModification = DateTime.UtcNow;
         demande.ModifiePar       = _currentUser.Matricule;
         await _db.SaveChangesAsync();
 
@@ -297,7 +297,7 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
         var ancienStatut = demande.StatutDemande;
         demande.StatutDemande    = StatutDemande.RetourneeAuDemandeurParDSI;
         demande.CommentaireDSI   = commentaire.Trim();
-        demande.DateModification = DateTime.Now;
+        demande.DateModification = DateTime.UtcNow;
         demande.ModifiePar       = _currentUser.Matricule;
         await _db.SaveChangesAsync();
 
@@ -331,7 +331,7 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
         var ancienStatut = demande.StatutDemande;
         demande.StatutDemande    = StatutDemande.RetourneeAuDirecteurMetierParDSI;
         demande.CommentaireDSI   = commentaire.Trim();
-        demande.DateModification = DateTime.Now;
+        demande.DateModification = DateTime.UtcNow;
         demande.ModifiePar       = _currentUser.Matricule;
         await _db.SaveChangesAsync();
 
@@ -365,7 +365,7 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
     {
         var dsiTitulaireId = await _db.DelegationsValidationDSI
             .Where(d => d.DelegueId == delegueId && d.EstActive &&
-                        d.DateDebut <= DateTime.Now && d.DateFin >= DateTime.Now && !d.EstSupprime)
+                        d.DateDebut <= DateTime.UtcNow && d.DateFin >= DateTime.UtcNow && !d.EstSupprime)
             .OrderByDescending(d => d.DateDebut)
             .Select(d => (Guid?)d.DSIId)
             .FirstOrDefaultAsync();
@@ -381,8 +381,8 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
             d.DirecteurMetierId == directeurMetierId &&
             d.DelegueId == delegueId &&
             d.EstActive &&
-            d.DateDebut <= DateTime.Now &&
-            d.DateFin >= DateTime.Now &&
+            d.DateDebut <= DateTime.UtcNow &&
+            d.DateFin >= DateTime.UtcNow &&
             !d.EstSupprime);
     }
 
@@ -421,9 +421,9 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
                 DemandeProjetId = demande.Id,
                 NomFichier      = document.FileName,
                 CheminRelatif   = path,
-                DateDepot       = DateTime.Now,
+                DateDepot       = DateTime.UtcNow,
                 DeposeParId     = currentUserId,
-                DateCreation    = DateTime.Now,
+                DateCreation    = DateTime.UtcNow,
                 CreePar         = _currentUser.Matricule
             });
             documentsAjoutes++;
@@ -482,8 +482,8 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
             Criticite                  = originale.Criticite,
             DateMiseEnOeuvreSouhaitee  = originale.DateMiseEnOeuvreSouhaitee,
             StatutDemande              = StatutDemande.Brouillon,
-            DateSoumission             = DateTime.Now,
-            DateCreation               = DateTime.Now,
+            DateSoumission             = DateTime.UtcNow,
+            DateCreation               = DateTime.UtcNow,
             CreePar                    = _currentUser.Matricule,
             CahierChargesPath          = string.Empty,
             CommentaireDirecteurMetier = string.Empty,
@@ -502,9 +502,9 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
                     DemandeProjetId = nouvelle.Id,
                     NomFichier      = annexe.NomFichier,
                     CheminRelatif   = annexe.CheminRelatif,
-                    DateDepot       = DateTime.Now,
+                    DateDepot       = DateTime.UtcNow,
                     DeposeParId     = currentUserId,
-                    DateCreation    = DateTime.Now,
+                    DateCreation    = DateTime.UtcNow,
                     CreePar         = _currentUser.Matricule
                 });
             }
@@ -546,7 +546,7 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
 
         var ancienStatut = demande.StatutDemande;
         demande.StatutDemande  = StatutDemande.EnAttenteValidationDirecteurMetier;
-        demande.DateSoumission = DateTime.Now;
+        demande.DateSoumission = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 
         await _audit.LogActionAsync("SOUMISSION_DEMANDE", "DemandeProjet", demande.Id,
@@ -567,7 +567,7 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
         if (demande.EstSupprime) return WorkflowResult.Error("Cette demande est déjà dans la corbeille.");
 
         demande.EstSupprime      = true;
-        demande.DateModification = DateTime.Now;
+        demande.DateModification = DateTime.UtcNow;
         demande.ModifiePar       = _currentUser.Matricule;
         await _db.SaveChangesAsync();
 
@@ -584,7 +584,7 @@ public class DemandeProjetWorkflowService : IDemandeProjetWorkflowService
         if (!demande.EstSupprime) return WorkflowResult.Error("Cette demande n'est pas dans la corbeille.");
 
         demande.EstSupprime      = false;
-        demande.DateModification = DateTime.Now;
+        demande.DateModification = DateTime.UtcNow;
         demande.ModifiePar       = _currentUser.Matricule;
         await _db.SaveChangesAsync();
 

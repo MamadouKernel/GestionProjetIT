@@ -101,7 +101,7 @@ public class ServiceAdminService : IServiceAdminService
             Libelle      = input.Libelle!.Trim(),
             DirectionId  = directionGuid,
             EstActive    = input.EstActive,
-            DateCreation = DateTime.Now,
+            DateCreation = DateTime.UtcNow,
             CreePar      = _currentUser.Matricule ?? "SYSTEM",
             EstSupprime  = false
         };
@@ -147,7 +147,7 @@ public class ServiceAdminService : IServiceAdminService
         existing.Code             = input.Code!.Trim();
         existing.Libelle          = input.Libelle!.Trim();
         existing.DirectionId      = directionGuid;
-        existing.DateModification = DateTime.Now;
+        existing.DateModification = DateTime.UtcNow;
         existing.ModifiePar       = _currentUser.Matricule;
 
         await _db.SaveChangesAsync();

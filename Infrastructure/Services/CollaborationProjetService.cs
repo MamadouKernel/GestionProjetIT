@@ -34,7 +34,7 @@ namespace GestionProjects.Infrastructure.Services
                 {
                     Id = Guid.NewGuid(),
                     ProjetId = projetId,
-                    DateCreation = DateTime.Now,
+                    DateCreation = DateTime.UtcNow,
                     CreePar = currentUserMatricule ?? "SYSTEM"
                 };
                 _context.Add(collaboration);
@@ -53,11 +53,11 @@ namespace GestionProjects.Infrastructure.Services
             collaboration.PlanUrl = Nettoyer(request.PlanUrl);
             collaboration.NomBucketPlanner = Nettoyer(request.NomBucketPlanner) ?? "Backlog Projet";
             collaboration.BucketId = Nettoyer(request.BucketId);
-            collaboration.DateProvisioning ??= DateTime.Now;
+            collaboration.DateProvisioning ??= DateTime.UtcNow;
             collaboration.MessageStatut = request.Mode == ModeCollaborationProjet.Microsoft365
                 ? "Espace Teams / Planner configure. Synchronisez l'equipe pour creer ou mettre a jour les taches de phase."
                 : "Espace de collaboration renseigne en mode manuel.";
-            collaboration.DateModification = DateTime.Now;
+            collaboration.DateModification = DateTime.UtcNow;
             collaboration.ModifiePar = currentUserMatricule;
 
             AssurerTachesParDefaut(projet, collaboration, currentUserMatricule);
@@ -93,10 +93,10 @@ namespace GestionProjects.Infrastructure.Services
 
             var nombreMembres = CalculerNombreMembres(projet);
             collaboration.NombreMembresSynchronises = nombreMembres;
-            collaboration.DerniereSynchronisationEquipe = DateTime.Now;
+            collaboration.DerniereSynchronisationEquipe = DateTime.UtcNow;
             collaboration.Statut = StatutCollaborationProjet.Synchronisee;
             collaboration.MessageStatut = $"Synchronisation effectuee. {nombreMembres} membre(s) et {collaboration.Taches.Count} tache(s) de phase suivis.";
-            collaboration.DateModification = DateTime.Now;
+            collaboration.DateModification = DateTime.UtcNow;
             collaboration.ModifiePar = currentUserMatricule;
 
             foreach (var tache in collaboration.Taches)
@@ -106,7 +106,7 @@ namespace GestionProjects.Infrastructure.Services
                 tache.ExternalBucketId ??= collaboration.BucketId;
                 tache.EstSynchronisee = true;
                 tache.Statut = DeterminerStatutTache(tache.Phase, projet.PhaseActuelle, projet.StatutProjet);
-                tache.DateModification = DateTime.Now;
+                tache.DateModification = DateTime.UtcNow;
                 tache.ModifiePar = currentUserMatricule;
             }
 
@@ -149,7 +149,7 @@ namespace GestionProjects.Infrastructure.Services
                     DateEcheance = EstimerDateEcheance(projet, phase),
                     AssigneeId = projet.ChefProjetId,
                     EstSynchronisee = false,
-                    DateCreation = DateTime.Now,
+                    DateCreation = DateTime.UtcNow,
                     CreePar = currentUserMatricule ?? "SYSTEM"
                 };
                 collaboration.Taches.Add(tache);

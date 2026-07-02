@@ -132,7 +132,7 @@ namespace GestionProjects.Infrastructure.Persistence
                 Code        = code,
                 Libelle     = libelle,
                 EstActive   = true,
-                DateCreation = DateTime.Now,
+                DateCreation = DateTime.UtcNow,
                 CreePar     = "SEED_DEMO",
                 EstSupprime = false
             };
@@ -158,8 +158,8 @@ namespace GestionProjects.Infrastructure.Persistence
                         Id           = Guid.NewGuid(),
                         UtilisateurId = existing.Id,
                         Role         = role,
-                        DateDebut    = DateTime.Now,
-                        DateCreation = DateTime.Now,
+                        DateDebut    = DateTime.UtcNow,
+                        DateCreation = DateTime.UtcNow,
                         CreePar      = "SEED_DEMO",
                         EstSupprime  = false
                     });
@@ -178,7 +178,7 @@ namespace GestionProjects.Infrastructure.Persistence
                 DirectionId  = directionId,
                 MotDePasse   = BCrypt.Net.BCrypt.HashPassword(motDePasseDemo),
                 NombreConnexion = 0,
-                DateCreation = DateTime.Now,
+                DateCreation = DateTime.UtcNow,
                 CreePar      = "SEED_DEMO",
                 EstSupprime  = false
             };
@@ -188,8 +188,8 @@ namespace GestionProjects.Infrastructure.Persistence
                 Id           = Guid.NewGuid(),
                 UtilisateurId = userId,
                 Role         = role,
-                DateDebut    = DateTime.Now,
-                DateCreation = DateTime.Now,
+                DateDebut    = DateTime.UtcNow,
+                DateCreation = DateTime.UtcNow,
                 CreePar      = "SEED_DEMO",
                 EstSupprime  = false
             });
@@ -209,7 +209,7 @@ namespace GestionProjects.Infrastructure.Persistence
                 AvantagesAttendus         = "• Digitalisation des processus RH et opérationnels\n• Réduction des coûts d'infrastructure IT\n• Amélioration de l'expérience collaborateur\n• Visibilité temps réel sur les KPI de l'entreprise",
                 RisquesEtMitigations      = "• Résistance au changement : formation et accompagnement\n• Retards de livraison : suivi rapproché et jalons hebdomadaires\n• Risques sécurité : revue de sécurité sur chaque projet",
                 EstActif                  = true,
-                DateCreation              = DateTime.Now,
+                DateCreation              = DateTime.UtcNow,
                 CreePar                   = "SEED_DEMO",
                 EstSupprime               = false
             };
@@ -255,15 +255,15 @@ namespace GestionProjects.Infrastructure.Persistence
                 Perimetre         = "Ensemble des collaborateurs CIT.",
                 Urgence           = UrgenceProjet.Moyenne,
                 Criticite         = CriticiteProjet.Moyenne,
-                DateMiseEnOeuvreSouhaitee = DateTime.Now.AddMonths(6),
+                DateMiseEnOeuvreSouhaitee = DateTime.UtcNow.AddMonths(6),
                 DemandeurId       = demandeur.Id,
                 DirectionId       = demandeur.DirectionId,
                 DirecteurMetierId = dm.Id,
                 StatutDemande     = statut,
-                DateSoumission    = DateTime.Now.AddDays(-30),
-                DateValidationDM  = statut >= StatutDemande.EnAttenteValidationDSI ? DateTime.Now.AddDays(-20) : null,
-                DateValidationDSI = statut == StatutDemande.ValideeParDSI ? DateTime.Now.AddDays(-10) : null,
-                DateCreation      = DateTime.Now.AddDays(-35),
+                DateSoumission    = DateTime.UtcNow.AddDays(-30),
+                DateValidationDM  = statut >= StatutDemande.EnAttenteValidationDSI ? DateTime.UtcNow.AddDays(-20) : null,
+                DateValidationDSI = statut == StatutDemande.ValideeParDSI ? DateTime.UtcNow.AddDays(-10) : null,
+                DateCreation      = DateTime.UtcNow.AddDays(-35),
                 CreePar           = "SEED_DEMO",
                 EstSupprime       = false
             };
@@ -287,10 +287,10 @@ namespace GestionProjects.Infrastructure.Persistence
                     PhaseActuelle        = phaseProjet.Value,
                     EtatProjet           = EtatProjet.Vert,
                     PourcentageAvancement = CalculerPourcentageDemo(phaseProjet.Value, statutProjet.Value),
-                    DateDebut            = statutProjet.Value == StatutProjet.EnCours ? DateTime.Now.AddDays(-15) : null,
+                    DateDebut            = statutProjet.Value == StatutProjet.EnCours ? DateTime.UtcNow.AddDays(-15) : null,
                     BilanCloture         = string.Empty,
                     LeconsApprises       = string.Empty,
-                    DateCreation         = DateTime.Now.AddDays(-10),
+                    DateCreation         = DateTime.UtcNow.AddDays(-10),
                     CreePar              = "SEED_DEMO",
                     EstSupprime          = false
                 };
@@ -332,7 +332,7 @@ namespace GestionProjects.Infrastructure.Persistence
             {
                 projet.PourcentageAvancement = 0;
                 projet.DateDebut = null;
-                projet.DateModification = DateTime.Now;
+                projet.DateModification = DateTime.UtcNow;
                 projet.ModifiePar = "SEED_DEMO_NORMALISATION";
             }
         }
@@ -365,8 +365,8 @@ namespace GestionProjects.Infrastructure.Persistence
                 DirectionId       = demandeur.DirectionId,
                 DirecteurMetierId = dm.Id,
                 StatutDemande     = statut,
-                DateSoumission    = statut == StatutDemande.Brouillon ? DateTime.Now : DateTime.Now.AddDays(-5),
-                DateCreation      = DateTime.Now.AddDays(-7),
+                DateSoumission    = statut == StatutDemande.Brouillon ? DateTime.UtcNow : DateTime.UtcNow.AddDays(-5),
+                DateCreation      = DateTime.UtcNow.AddDays(-7),
                 CreePar           = "SEED_DEMO",
                 EstSupprime       = false
             });

@@ -209,7 +209,7 @@ public static class DatabaseExtensions
             {
                 Id = adminId, Matricule = "admin", MotDePasse = hash,
                 Nom = "Administrateur", Prenoms = "DSI", Email = "admin@cit.ci",
-                DateCreation = DateTime.Now, CreePar = "SYSTEM",
+                DateCreation = DateTime.UtcNow, CreePar = "SYSTEM",
                 ModifiePar = string.Empty, EstSupprime = false, NombreConnexion = 0
             });
 
@@ -217,7 +217,7 @@ public static class DatabaseExtensions
             {
                 Id = Guid.NewGuid(), UtilisateurId = adminId,
                 Role = RoleUtilisateur.AdminIT,
-                DateDebut = DateTime.Now, DateCreation = DateTime.Now,
+                DateDebut = DateTime.UtcNow, DateCreation = DateTime.UtcNow,
                 CreePar = "SYSTEM", EstSupprime = false
             });
 

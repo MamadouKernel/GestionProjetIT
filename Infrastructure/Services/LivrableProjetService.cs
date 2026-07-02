@@ -41,11 +41,11 @@ namespace GestionProjects.Infrastructure.Services
                 TypeLivrable = typeLivrable,
                 NomDocument = nomDocument,
                 CheminRelatif = cheminRelatif,
-                DateDepot = DateTime.Now,
+                DateDepot = DateTime.UtcNow,
                 DeposeParId = deposeParId,
                 Commentaire = commentaire ?? string.Empty,
                 Version = version ?? string.Empty,
-                DateCreation = DateTime.Now,
+                DateCreation = DateTime.UtcNow,
                 CreePar = _currentUserService.Matricule
             };
 
@@ -75,7 +75,7 @@ namespace GestionProjects.Infrastructure.Services
             if (!string.IsNullOrWhiteSpace(version))
                 livrable.Version = version;
 
-            livrable.DateModification = DateTime.Now;
+            livrable.DateModification = DateTime.UtcNow;
             livrable.ModifiePar = _currentUserService.Matricule;
 
             await _db.SaveChangesAsync();

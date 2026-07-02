@@ -212,7 +212,7 @@ namespace GestionProjects.Controllers
             if (!projet.CharteValidee)
             {
                 projet.CharteValidee = true;
-                projet.DateCharteValidee = DateTime.Now;
+                projet.DateCharteValidee = DateTime.UtcNow;
             }
 
             // Passer à la phase Planification
@@ -229,10 +229,10 @@ namespace GestionProjects.Controllers
                 ProjetId = projet.Id,
                 Phase = PhaseProjet.PlanificationValidation,
                 StatutProjet = projet.StatutProjet,
-                DateDebut = DateTime.Now,
+                DateDebut = DateTime.UtcNow,
                 ModifieParId = userId,
                 Commentaire = "Validation de la phase Analyse - Passage en phase Planification",
-                DateCreation = DateTime.Now,
+                DateCreation = DateTime.UtcNow,
                 CreePar = _currentUserService.Matricule
             });
 
@@ -323,7 +323,7 @@ namespace GestionProjects.Controllers
 
             // Calcul automatique du RAG
             projet.IndicateurRAG = await _ragCalculationService.CalculerRAGAsync(projet);
-            projet.DateDernierCalculRAG = DateTime.Now;
+            projet.DateDernierCalculRAG = DateTime.UtcNow;
 
             await _db.SaveChangesAsync();
 
@@ -366,9 +366,9 @@ namespace GestionProjects.Controllers
                     PlanMitigation = string.IsNullOrWhiteSpace(planMitigation) ? string.Empty : planMitigation.Trim(),
                     Responsable = string.IsNullOrWhiteSpace(responsable) ? string.Empty : responsable.Trim(),
                     EstSupprime = false,
-                    DateCreationRisque = DateTime.Now,
+                    DateCreationRisque = DateTime.UtcNow,
                     Statut = StatutRisque.Identifie,
-                    DateCreation = DateTime.Now,
+                    DateCreation = DateTime.UtcNow,
                     CreePar = _currentUserService.Matricule ?? User.Identity?.Name ?? "SYSTEM"
                 };
 
@@ -417,7 +417,7 @@ namespace GestionProjects.Controllers
                 risque.Statut = statut.Value;
                 if (statut.Value == StatutRisque.Clos && !risque.DateCloture.HasValue)
                 {
-                    risque.DateCloture = DateTime.Now;
+                    risque.DateCloture = DateTime.UtcNow;
                 }
             }
 
@@ -427,7 +427,7 @@ namespace GestionProjects.Controllers
             if (!string.IsNullOrWhiteSpace(responsable))
                 risque.Responsable = string.IsNullOrWhiteSpace(responsable) ? string.Empty : responsable.Trim();
 
-            risque.DateModification = DateTime.Now;
+            risque.DateModification = DateTime.UtcNow;
             risque.ModifiePar = _currentUserService.Matricule;
 
             await _db.SaveChangesAsync();
@@ -459,11 +459,11 @@ namespace GestionProjects.Controllers
                 anomalie.Id = Guid.NewGuid();
                 anomalie.ProjetId = projetId;
                 anomalie.EstSupprime = false;
-                anomalie.Reference = $"ANOM-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 6).ToUpper()}";
-                anomalie.DateCreationAnomalie = DateTime.Now;
+                anomalie.Reference = $"ANOM-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 6).ToUpper()}";
+                anomalie.DateCreationAnomalie = DateTime.UtcNow;
                 anomalie.Statut = StatutAnomalie.Ouverte;
                 anomalie.RapporteePar = User.FindFirstValue("Nom") + " " + User.FindFirstValue("Prenoms");
-                anomalie.DateCreation = DateTime.Now;
+                anomalie.DateCreation = DateTime.UtcNow;
                 anomalie.CreePar = _currentUserService.Matricule ?? User.Identity?.Name ?? "SYSTEM";
 
                 _db.AnomaliesProjets.Add(anomalie);
@@ -522,9 +522,9 @@ namespace GestionProjects.Controllers
             if (commentaireResolution != null) anomalie.CommentaireResolution = commentaireResolution.Trim();
 
             if ((statut == StatutAnomalie.Corrigee || statut == StatutAnomalie.Fermee) && !anomalie.DateResolution.HasValue)
-                anomalie.DateResolution = DateTime.Now;
+                anomalie.DateResolution = DateTime.UtcNow;
 
-            anomalie.DateModification = DateTime.Now;
+            anomalie.DateModification = DateTime.UtcNow;
             anomalie.ModifiePar = _currentUserService.Matricule;
 
             await _db.SaveChangesAsync();
@@ -552,7 +552,7 @@ namespace GestionProjects.Controllers
                 return NotFound();
 
             anomalie.EstSupprime = true;
-            anomalie.DateModification = DateTime.Now;
+            anomalie.DateModification = DateTime.UtcNow;
             anomalie.ModifiePar = _currentUserService.Matricule;
 
             await _db.SaveChangesAsync();

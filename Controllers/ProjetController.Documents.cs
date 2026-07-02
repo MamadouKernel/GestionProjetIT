@@ -37,7 +37,7 @@ namespace GestionProjects.Controllers
             try
             {
                 var wordBytes = await _wordService.GenerateCharteProjetWordAsync(projet.CharteProjet);
-                var fileName = $"CharteProjet_Complet_{projet.CodeProjet}_{DateTime.Now:yyyyMMdd}.docx";
+                var fileName = $"CharteProjet_Complet_{projet.CodeProjet}_{DateTime.UtcNow:yyyyMMdd}.docx";
                 return File(wordBytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", fileName);
             }
             catch (Exception ex)
@@ -74,7 +74,7 @@ namespace GestionProjects.Controllers
             try
             {
                 var wordBytes = await _wordService.GenerateFicheProjetWordAsync(projet.FicheProjet);
-                var fileName = $"FicheProjet_{projet.CodeProjet}_{DateTime.Now:yyyyMMdd}.docx";
+                var fileName = $"FicheProjet_{projet.CodeProjet}_{DateTime.UtcNow:yyyyMMdd}.docx";
                 return File(wordBytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", fileName);
             }
             catch (Exception ex)
@@ -116,7 +116,7 @@ namespace GestionProjects.Controllers
             try
             {
                 var excelBytes = await _excelService.GeneratePortefeuilleProjetsExcelAsync(portefeuille, projets);
-                var fileName = $"PortefeuilleProjets_{DateTime.Now:yyyyMMdd}.xlsx";
+                var fileName = $"PortefeuilleProjets_{DateTime.UtcNow:yyyyMMdd}.xlsx";
                 return File(excelBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
             }
             catch (Exception ex)
@@ -158,7 +158,7 @@ namespace GestionProjects.Controllers
             try
             {
                 var pdfBytes = await _pdfService.GeneratePortefeuilleProjetsPdfAsync(portefeuille, projets);
-                var fileName = $"PortefeuilleProjets_{DateTime.Now:yyyyMMdd}.pdf";
+                var fileName = $"PortefeuilleProjets_{DateTime.UtcNow:yyyyMMdd}.pdf";
                 Response.Headers["Content-Disposition"] = $"inline; filename=\"{fileName}\"";
                 return File(pdfBytes, "application/pdf");
             }
@@ -193,7 +193,7 @@ namespace GestionProjects.Controllers
             try
             {
                 var pdfBytes = await _pdfService.GenerateRapportDSIDGPdfAsync(projets);
-                var fileName = $"Rapport_DSI_DG_{DateTime.Now:yyyyMMdd}.pdf";
+                var fileName = $"Rapport_DSI_DG_{DateTime.UtcNow:yyyyMMdd}.pdf";
                 Response.Headers["Content-Disposition"] = $"inline; filename=\"{fileName}\"";
                 return File(pdfBytes, "application/pdf");
             }
@@ -228,7 +228,7 @@ namespace GestionProjects.Controllers
             try
             {
                 var excelBytes = await _excelService.GenerateRapportDSIDGExcelAsync(projets);
-                var fileName = $"Rapport_DSI_DG_{DateTime.Now:yyyyMMdd}.xlsx";
+                var fileName = $"Rapport_DSI_DG_{DateTime.UtcNow:yyyyMMdd}.xlsx";
                 return File(excelBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
             }
             catch (Exception ex)

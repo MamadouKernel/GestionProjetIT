@@ -142,7 +142,7 @@ namespace GestionProjects.Controllers
                     AvantagesAttendus = string.Empty,
                     RisquesEtMitigations = string.Empty,
                     EstActif = true,
-                    DateCreation = DateTime.Now,
+                    DateCreation = DateTime.UtcNow,
                     CreePar = _currentUserService.Matricule ?? "SYSTEM",
                     EstSupprime = false
                 };
@@ -231,7 +231,7 @@ namespace GestionProjects.Controllers
             if (ModelState.IsValid)
             {
                 portefeuille.ObjectifStrategiqueGlobal = ObjectifStrategiqueGlobal.Trim();
-                portefeuille.DateModification = DateTime.Now;
+                portefeuille.DateModification = DateTime.UtcNow;
                 portefeuille.ModifiePar = _currentUserService.Matricule;
 
                 await _db.SaveChangesAsync();

@@ -97,7 +97,7 @@ public class ParametreAdminService : IParametreAdminService
             Cle          = input.Cle!.Trim(),
             Valeur       = input.Valeur?.Trim() ?? string.Empty,
             Description  = input.Description?.Trim() ?? string.Empty,
-            DateCreation = DateTime.Now,
+            DateCreation = DateTime.UtcNow,
             CreePar      = _currentUser.Matricule ?? "SYSTEM",
             EstSupprime  = false
         };
@@ -132,7 +132,7 @@ public class ParametreAdminService : IParametreAdminService
         existing.Cle              = input.Cle!.Trim();
         existing.Valeur           = input.Valeur?.Trim() ?? string.Empty;
         existing.Description      = input.Description?.Trim() ?? string.Empty;
-        existing.DateModification = DateTime.Now;
+        existing.DateModification = DateTime.UtcNow;
         existing.ModifiePar       = _currentUser.Matricule;
 
         await _db.SaveChangesAsync();
@@ -166,7 +166,7 @@ public class ParametreAdminService : IParametreAdminService
             if (param != null)
             {
                 param.Valeur           = url;
-                param.DateModification = DateTime.Now;
+                param.DateModification = DateTime.UtcNow;
                 param.ModifiePar       = _currentUser.Matricule;
                 await _db.SaveChangesAsync();
                 await _audit.LogActionAsync("MAJ_TEAMS_WEBHOOK", "ParametreSysteme", param.Id);
@@ -180,7 +180,7 @@ public class ParametreAdminService : IParametreAdminService
                 Cle          = "TeamsWebhookUrl",
                 Valeur       = url,
                 Description  = "URL du webhook entrant Microsoft Teams pour les notifications",
-                DateCreation = DateTime.Now,
+                DateCreation = DateTime.UtcNow,
                 CreePar      = _currentUser.Matricule ?? "SYSTEM",
                 EstSupprime  = false
             };
@@ -202,14 +202,14 @@ public class ParametreAdminService : IParametreAdminService
             _db.ParametresSysteme.Add(new ParametreSysteme
             {
                 Id = Guid.NewGuid(), Cle = cle, Valeur = valeur, Description = description,
-                DateCreation = DateTime.Now, CreePar = _currentUser.Matricule ?? "SYSTEM", EstSupprime = false
+                DateCreation = DateTime.UtcNow, CreePar = _currentUser.Matricule ?? "SYSTEM", EstSupprime = false
             });
         }
         else
         {
             parametre.Valeur           = valeur;
             parametre.Description      = description;
-            parametre.DateModification = DateTime.Now;
+            parametre.DateModification = DateTime.UtcNow;
             parametre.ModifiePar       = _currentUser.Matricule;
         }
     }

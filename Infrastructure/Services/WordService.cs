@@ -285,7 +285,7 @@ namespace GestionProjects.Infrastructure.Services
 
                         // Pied de page
                         body.AppendChild(new Paragraph(new Run(new Text(""))));
-                        body.AppendChild(CreateParagraph($"Document généré le {DateTime.Now:dd/MM/yyyy à HH:mm}", false, 8, "center"));
+                        body.AppendChild(CreateParagraph($"Document généré le {DateTime.UtcNow:dd/MM/yyyy à HH:mm}", false, 8, "center"));
                     }
 
                     return stream.ToArray();
@@ -512,7 +512,7 @@ namespace GestionProjects.Infrastructure.Services
 
                         // Pied de page
                         body.AppendChild(new Paragraph(new Run(new Text(""))));
-                        body.AppendChild(CreateParagraph($"Document généré le {DateTime.Now:dd/MM/yyyy à HH:mm}", false, 8, "center"));
+                        body.AppendChild(CreateParagraph($"Document généré le {DateTime.UtcNow:dd/MM/yyyy à HH:mm}", false, 8, "center"));
                     }
 
                     return stream.ToArray();

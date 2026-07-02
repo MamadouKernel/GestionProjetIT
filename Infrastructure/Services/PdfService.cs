@@ -180,7 +180,7 @@ namespace GestionProjects.Infrastructure.Services
                             .Text(text =>
                             {
                                 text.Span("Document généré le ").FontSize(8).FontColor(Colors.Grey.Medium);
-                                text.Span(DateTime.Now.ToString("dd/MM/yyyy à HH:mm")).Bold().FontSize(8).FontColor(Colors.Grey.Medium);
+                                text.Span(DateTime.UtcNow.ToString("dd/MM/yyyy à HH:mm")).Bold().FontSize(8).FontColor(Colors.Grey.Medium);
                             });
                     });
                 });
@@ -398,7 +398,7 @@ namespace GestionProjects.Infrastructure.Services
                             .Text(text =>
                             {
                                 text.Span("Document généré le ").FontSize(8).FontColor(Colors.Grey.Medium);
-                                text.Span(DateTime.Now.ToString("dd/MM/yyyy à HH:mm")).Bold().FontSize(8).FontColor(Colors.Grey.Medium);
+                                text.Span(DateTime.UtcNow.ToString("dd/MM/yyyy à HH:mm")).Bold().FontSize(8).FontColor(Colors.Grey.Medium);
                             });
                     });
                 });
@@ -592,7 +592,7 @@ namespace GestionProjects.Infrastructure.Services
                             .Text(text =>
                             {
                                 text.Span("Document généré le ").FontSize(8).FontColor(Colors.Grey.Medium);
-                                text.Span(DateTime.Now.ToString("dd/MM/yyyy à HH:mm")).Bold().FontSize(8).FontColor(Colors.Grey.Medium);
+                                text.Span(DateTime.UtcNow.ToString("dd/MM/yyyy à HH:mm")).Bold().FontSize(8).FontColor(Colors.Grey.Medium);
                             });
                     });
                 });
@@ -736,7 +736,7 @@ namespace GestionProjects.Infrastructure.Services
                             .Text(text =>
                             {
                                 text.Span("Document généré le ").FontSize(8).FontColor(Colors.Grey.Medium);
-                                text.Span(DateTime.Now.ToString("dd/MM/yyyy à HH:mm")).Bold().FontSize(8).FontColor(Colors.Grey.Medium);
+                                text.Span(DateTime.UtcNow.ToString("dd/MM/yyyy à HH:mm")).Bold().FontSize(8).FontColor(Colors.Grey.Medium);
                             });
                     });
                 });
@@ -762,7 +762,7 @@ namespace GestionProjects.Infrastructure.Services
                             .Element(container => ComposeBrandHeader(
                                 container,
                                 "Rapport de gouvernance DSI / DG",
-                                $"Edition du {DateTime.Now:dd/MM/yyyy HH:mm}"));
+                                $"Edition du {DateTime.UtcNow:dd/MM/yyyy HH:mm}"));
 
                         page.Footer()
                             .AlignCenter()
@@ -781,7 +781,7 @@ namespace GestionProjects.Infrastructure.Services
                                 column.Spacing(1, Unit.Centimetre);
 
                                 // En-tête avec date
-                                column.Item().Text($"Date du rapport: {DateTime.Now:dd/MM/yyyy HH:mm}")
+                                column.Item().Text($"Date du rapport: {DateTime.UtcNow:dd/MM/yyyy HH:mm}")
                                     .FontSize(9)
                                     .FontColor(Colors.Grey.Medium);
 

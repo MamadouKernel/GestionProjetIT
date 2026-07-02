@@ -77,7 +77,7 @@ namespace GestionProjects.Controllers
                 worksheet.Column(8).Width = 18;
 
                 var excelBytes = package.GetAsByteArray();
-                var fileName = $"Modele_Import_Utilisateurs_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                var fileName = $"Modele_Import_Utilisateurs_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
                 return File(excelBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
             }
         }

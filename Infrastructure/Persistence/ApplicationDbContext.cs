@@ -690,7 +690,7 @@ namespace GestionProjects.Infrastructure.Persistence
         private void AppliquerAuditAvantSave()
         {
             var userName = _currentUserService?.Matricule ?? "SYSTEM";
-            var maintenant = DateTime.Now;
+            var maintenant = DateTime.UtcNow;
 
             foreach (var entry in ChangeTracker.Entries<EntiteAudit>())
             {

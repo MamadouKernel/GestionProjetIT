@@ -56,7 +56,7 @@ namespace GestionProjects.Infrastructure.Services
             if (projetComplet.DateDebut.HasValue && projetComplet.DateFinPrevue.HasValue)
             {
                 var dureeTotale = (projetComplet.DateFinPrevue.Value - projetComplet.DateDebut.Value).TotalDays;
-                var joursEcoules = (DateTime.Now - projetComplet.DateDebut.Value).TotalDays;
+                var joursEcoules = (DateTime.UtcNow - projetComplet.DateDebut.Value).TotalDays;
                 
                 if (dureeTotale > 0 && joursEcoules > 0)
                 {
@@ -142,7 +142,7 @@ namespace GestionProjects.Infrastructure.Services
             {
                 var rag = await CalculerRAGAsync(projet);
                 projet.IndicateurRAG = rag;
-                projet.DateDernierCalculRAG = DateTime.Now;
+                projet.DateDernierCalculRAG = DateTime.UtcNow;
             }
 
             await _context.SaveChangesAsync();

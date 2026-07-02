@@ -184,7 +184,7 @@ namespace GestionProjects.Controllers
 
         private static List<RoleUtilisateur> GetActiveRoles(Utilisateur user)
         {
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
             var roles = user.UtilisateurRoles
                 .Where(ur => !ur.EstSupprime &&
                              (!ur.DateDebut.HasValue || ur.DateDebut.Value <= now) &&

@@ -227,7 +227,7 @@ public class UserAdminService : IUserAdminService
             return OperationResult.NotFound();
 
         user.EstSupprime      = true;
-        user.DateModification = DateTime.Now;
+        user.DateModification = DateTime.UtcNow;
         user.ModifiePar       = _currentUser.Matricule;
         await _db.SaveChangesAsync();
 
@@ -250,7 +250,7 @@ public class UserAdminService : IUserAdminService
             return OperationResult.Invalid("nouveauMotDePasse", ValidationHelper.StrongPasswordPolicyMessage);
 
         user.MotDePasse       = BCrypt.Net.BCrypt.HashPassword(nouveauMotDePasse);
-        user.DateModification = DateTime.Now;
+        user.DateModification = DateTime.UtcNow;
         user.ModifiePar       = _currentUser.Matricule;
         await _db.SaveChangesAsync();
 
@@ -276,7 +276,7 @@ public class UserAdminService : IUserAdminService
         foreach (var j in anciensJetons)
         {
             j.EstSupprime      = true;
-            j.DateModification = DateTime.Now;
+            j.DateModification = DateTime.UtcNow;
             j.ModifiePar       = _currentUser.Matricule;
         }
 

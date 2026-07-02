@@ -113,7 +113,7 @@ public class DirectionAdminService : IDirectionAdminService
             Code         = code,
             Libelle      = input.Libelle!.Trim(),
             EstActive    = input.EstActive,
-            DateCreation = DateTime.Now,
+            DateCreation = DateTime.UtcNow,
             CreePar      = _currentUser.Matricule ?? "SYSTEM",
             EstSupprime  = false,
             DSIId        = ParseDsiId(input.DSIId)
@@ -159,7 +159,7 @@ public class DirectionAdminService : IDirectionAdminService
         existing.Libelle          = input.Libelle!.Trim();
         existing.EstActive        = input.EstActive;
         existing.DSIId            = ParseDsiId(input.DSIId);
-        existing.DateModification = DateTime.Now;
+        existing.DateModification = DateTime.UtcNow;
         existing.ModifiePar       = _currentUser.Matricule;
 
         await _db.SaveChangesAsync();

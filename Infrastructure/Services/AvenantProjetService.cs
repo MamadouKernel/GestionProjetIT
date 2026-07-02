@@ -90,7 +90,7 @@ namespace GestionProjects.Infrastructure.Services
                 NouvelleDateFinPrevue = toucheDelai ? nouvelleDateFinPrevue : null,
                 Statut = StatutAvenant.EnAttenteValidationDM,
                 DemandeParId = userId,
-                DateDemande = DateTime.Now
+                DateDemande = DateTime.UtcNow
             };
 
             _db.AvenantsProjets.Add(avenant);
@@ -114,7 +114,7 @@ namespace GestionProjects.Infrastructure.Services
 
             avenant.Statut = StatutAvenant.EnAttenteValidationDSI;
             avenant.ValideParDMId = userId;
-            avenant.DateValidationDM = DateTime.Now;
+            avenant.DateValidationDM = DateTime.UtcNow;
             await _db.SaveChangesAsync();
 
             await _auditService.LogActionAsync("VALIDATION_AVENANT_DM", "AvenantProjet", avenant.Id);
@@ -146,8 +146,8 @@ namespace GestionProjects.Infrastructure.Services
 
             avenant.Statut = StatutAvenant.Applique;
             avenant.ValideParDSIId = userId;
-            avenant.DateValidationDSI = DateTime.Now;
-            avenant.DateApplication = DateTime.Now;
+            avenant.DateValidationDSI = DateTime.UtcNow;
+            avenant.DateApplication = DateTime.UtcNow;
             await _db.SaveChangesAsync();
 
             await _auditService.LogActionAsync("VALIDATION_AVENANT_DSI", "AvenantProjet", avenant.Id,

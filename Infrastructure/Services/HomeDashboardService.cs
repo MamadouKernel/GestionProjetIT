@@ -62,13 +62,13 @@ public sealed class HomeDashboardService : IHomeDashboardService
 
             stats.UserRoles = profileLabels;
 
-            var sixMoisAgo = DateTime.Now.AddMonths(-6);
+            var sixMoisAgo = DateTime.UtcNow.AddMonths(-6);
             var frCulture = new System.Globalization.CultureInfo("fr-FR");
 
             // DSI/AdminIT : vue globale (prioritaire, pas de cumul nÃ©cessaire)
             if (isDsiOrAdmin)
             {
-                var now = DateTime.Now;
+                var now = DateTime.UtcNow;
                 var startOfWeek = now.Date.AddDays(-(((int)now.DayOfWeek + 6) % 7));
                 var endOfWeek = startOfWeek.AddDays(7);
                 var startOfTrend = startOfWeek.AddDays(-28);

@@ -176,7 +176,7 @@ public sealed class UserImportService : IUserImportService
                                     Code = codeDirection,
                                     Libelle = libelleDirection,
                                     EstActive = true,
-                                    DateCreation = DateTime.Now,
+                                    DateCreation = DateTime.UtcNow,
                                     CreePar = _currentUserService.Matricule ?? "SYSTEM",
                                     EstSupprime = false
                                 };

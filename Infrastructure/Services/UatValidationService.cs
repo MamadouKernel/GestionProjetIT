@@ -85,8 +85,8 @@ namespace GestionProjects.Infrastructure.Services
                 Description = "Campagne initiale créée automatiquement à l'entrée en UAT.",
                 Environnement = Environnement.Recette,
                 Statut = StatutCampagneTest.EnCours,
-                DateLancement = DateTime.Now,
-                DateCreation = DateTime.Now,
+                DateLancement = DateTime.UtcNow,
+                DateCreation = DateTime.UtcNow,
                 CreePar = creePar ?? "SYSTEM"
             };
 

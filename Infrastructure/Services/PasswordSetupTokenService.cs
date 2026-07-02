@@ -26,7 +26,7 @@ public class PasswordSetupTokenService : IPasswordSetupTokenService
 
     public async Task<PasswordSetupTokenCreation> CreerAsync(Guid utilisateurId, string creePar)
     {
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
         var existingTokens = await _db.JetonsInitialisationMotDePasse
             .Where(j => j.UtilisateurId == utilisateurId && !j.EstSupprime && j.DateUtilisation == null)
             .ToListAsync();
@@ -68,7 +68,7 @@ public class PasswordSetupTokenService : IPasswordSetupTokenService
         if (!ValidationHelper.IsStrongPassword(nouveauMotDePasse))
             return OperationResult.Invalid("NouveauMotDePasse", ValidationHelper.StrongPasswordPolicyMessage);
 
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
         var tokenHash = HashToken(token);
         var jeton = await _db.JetonsInitialisationMotDePasse
             .Include(j => j.Utilisateur)

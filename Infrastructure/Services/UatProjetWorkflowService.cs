@@ -53,7 +53,7 @@ public class UatProjetWorkflowService : IUatProjetWorkflowService
             Priorite = priorite,
             EstObligatoire = estObligatoire,
             CreePar = _currentUserService.Matricule ?? "SYSTEM",
-            DateCreation = DateTime.Now
+            DateCreation = DateTime.UtcNow
         };
 
         _db.CasTestsProjets.Add(casTest);
@@ -82,10 +82,10 @@ public class UatProjetWorkflowService : IUatProjetWorkflowService
             CampagneTestProjetId = campagneId ?? casTest.CampagneTestProjetId,
             Statut = statut,
             Commentaire = commentaire ?? string.Empty,
-            DateExecution = DateTime.Now,
+            DateExecution = DateTime.UtcNow,
             ExecuteParId = executeParId,
             CreePar = _currentUserService.Matricule ?? "SYSTEM",
-            DateCreation = DateTime.Now
+            DateCreation = DateTime.UtcNow
         };
 
         _db.ExecutionsTestsProjets.Add(execution);
@@ -117,7 +117,7 @@ public class UatProjetWorkflowService : IUatProjetWorkflowService
             Statut = StatutCampagneTest.Brouillon,
             DateLancement = dateLancement,
             CreePar = _currentUserService.Matricule ?? "SYSTEM",
-            DateCreation = DateTime.Now
+            DateCreation = DateTime.UtcNow
         };
 
         _db.CampagnesTestsProjets.Add(campagne);
@@ -134,7 +134,7 @@ public class UatProjetWorkflowService : IUatProjetWorkflowService
 
         casTest.EstSupprime = true;
         casTest.ModifiePar = _currentUserService.Matricule ?? "SYSTEM";
-        casTest.DateModification = DateTime.Now;
+        casTest.DateModification = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 
         return WorkflowResult.Success("Cas de test supprimé.");

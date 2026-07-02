@@ -194,8 +194,8 @@ namespace GestionProjects.Infrastructure.Services
                 d.DirecteurMetierId == directeurMetierId &&
                 d.DelegueId == delegueId &&
                 d.EstActive &&
-                d.DateDebut <= DateTime.Now &&
-                d.DateFin >= DateTime.Now &&
+                d.DateDebut <= DateTime.UtcNow &&
+                d.DateFin >= DateTime.UtcNow &&
                 !d.EstSupprime);
         }
 
@@ -205,8 +205,8 @@ namespace GestionProjects.Infrastructure.Services
                 d.ProjetId == projetId &&
                 d.DelegueId == delegueId &&
                 d.EstActive &&
-                d.DateDebut <= DateTime.Now &&
-                (d.DateFin == null || d.DateFin >= DateTime.Now) &&
+                d.DateDebut <= DateTime.UtcNow &&
+                (d.DateFin == null || d.DateFin >= DateTime.UtcNow) &&
                 !d.EstSupprime);
         }
     }

@@ -30,7 +30,7 @@ public static class ChefProjetAuditContextExtensions
 
         var delegantId = await db.DelegationsChefProjet
             .Where(d => d.ProjetId == projetId && d.DelegueId == agissantId && d.EstActive &&
-                        d.DateDebut <= DateTime.Now && (d.DateFin == null || d.DateFin >= DateTime.Now) &&
+                        d.DateDebut <= DateTime.UtcNow && (d.DateFin == null || d.DateFin >= DateTime.UtcNow) &&
                         !d.EstSupprime)
             .OrderByDescending(d => d.DateDebut)
             .Select(d => (Guid?)d.DelegantId)

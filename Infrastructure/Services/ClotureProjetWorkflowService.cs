@@ -77,13 +77,13 @@ public class ClotureProjetWorkflowService : IClotureProjetWorkflowService
             Id = Guid.NewGuid(),
             ProjetId = projet.Id,
             DemandeParId = userId,
-            DateDemande = DateTime.Now,
+            DateDemande = DateTime.UtcNow,
             DateSouhaiteeCloture = dateSouhaiteeCloture,
             StatutValidationDemandeur = StatutValidationCloture.EnAttente,
             StatutValidationDirecteurMetier = StatutValidationCloture.EnAttente,
             StatutValidationDSI = StatutValidationCloture.EnAttente,
             EstTerminee = false,
-            DateCreation = DateTime.Now,
+            DateCreation = DateTime.UtcNow,
             CreePar = _currentUserService.Matricule,
             CommentaireInitiateur = commentaire ?? string.Empty,
             CommentaireDemandeur = string.Empty,
@@ -118,7 +118,7 @@ public class ClotureProjetWorkflowService : IClotureProjetWorkflowService
             return WorkflowResult.Error("Cette validation a déjà été effectuée.");
 
         demande.StatutValidationDemandeur = StatutValidationCloture.Validee;
-        demande.DateValidationDemandeur = DateTime.Now;
+        demande.DateValidationDemandeur = DateTime.UtcNow;
 
         await VerifierClotureComplete(demande);
 
@@ -142,8 +142,8 @@ public class ClotureProjetWorkflowService : IClotureProjetWorkflowService
             return WorkflowResult.Error("Cette validation a déjà été effectuée.");
 
         demande.StatutValidationDirecteurMetier = StatutValidationCloture.Validee;
-        demande.DateValidationDirecteurMetier = DateTime.Now;
-        demande.DateModification = DateTime.Now;
+        demande.DateValidationDirecteurMetier = DateTime.UtcNow;
+        demande.DateModification = DateTime.UtcNow;
         demande.ModifiePar = _currentUserService.Matricule;
 
         await VerifierClotureComplete(demande);
@@ -172,9 +172,9 @@ public class ClotureProjetWorkflowService : IClotureProjetWorkflowService
             return WorkflowResult.Error("Cette validation a déjà été effectuée.");
 
         demande.StatutValidationDirecteurMetier = StatutValidationCloture.Rejetee;
-        demande.DateValidationDirecteurMetier = DateTime.Now;
+        demande.DateValidationDirecteurMetier = DateTime.UtcNow;
         demande.CommentaireDirecteurMetier = commentaire.Trim();
-        demande.DateModification = DateTime.Now;
+        demande.DateModification = DateTime.UtcNow;
         demande.ModifiePar = _currentUserService.Matricule;
 
         await _db.SaveChangesAsync();
@@ -198,7 +198,7 @@ public class ClotureProjetWorkflowService : IClotureProjetWorkflowService
             return WorkflowResult.Error("Cette validation a déjà été effectuée.");
 
         demande.StatutValidationDSI = StatutValidationCloture.Validee;
-        demande.DateValidationDSI = DateTime.Now;
+        demande.DateValidationDSI = DateTime.UtcNow;
 
         await VerifierClotureComplete(demande);
 
@@ -226,7 +226,7 @@ public class ClotureProjetWorkflowService : IClotureProjetWorkflowService
 
         demande.StatutValidationDSI = StatutValidationCloture.Rejetee;
         demande.CommentaireDSI = commentaire.Trim();
-        demande.DateModification = DateTime.Now;
+        demande.DateModification = DateTime.UtcNow;
         demande.ModifiePar = _currentUserService.Matricule;
 
         demande.StatutValidationDemandeur = StatutValidationCloture.EnAttente;
@@ -259,9 +259,9 @@ public class ClotureProjetWorkflowService : IClotureProjetWorkflowService
             return WorkflowResult.NotFound();
 
         projet.CommentaireTechnique = commentaireTechnique?.Trim() ?? string.Empty;
-        projet.DateDernierCommentaireTechnique = DateTime.Now;
+        projet.DateDernierCommentaireTechnique = DateTime.UtcNow;
         projet.DernierCommentaireTechniqueParId = userId;
-        projet.DateModification = DateTime.Now;
+        projet.DateModification = DateTime.UtcNow;
         projet.ModifiePar = _currentUserService.Matricule;
 
         await _db.SaveChangesAsync();
@@ -288,7 +288,7 @@ public class ClotureProjetWorkflowService : IClotureProjetWorkflowService
         if (actionType == "Cloture")
         {
             projet.StatutProjet = StatutProjet.Cloture;
-            projet.DateFinReelle = DateTime.Now;
+            projet.DateFinReelle = DateTime.UtcNow;
             projet.PhaseActuelle = PhaseProjet.ClotureLeconsApprises;
 
             await CloturerDelegationsChefProjetActivesAsync(projet.Id);
@@ -300,7 +300,7 @@ public class ClotureProjetWorkflowService : IClotureProjetWorkflowService
         else if (actionType == "Abandon")
         {
             projet.StatutProjet = StatutProjet.Annule;
-            projet.DateFinReelle = DateTime.Now;
+            projet.DateFinReelle = DateTime.UtcNow;
 
             await CloturerDelegationsChefProjetActivesAsync(projet.Id);
 
@@ -335,14 +335,14 @@ public class ClotureProjetWorkflowService : IClotureProjetWorkflowService
         if (validationComplete && !demande.EstTerminee)
         {
             demande.EstTerminee = true;
-            demande.DateClotureFinale = DateTime.Now;
+            demande.DateClotureFinale = DateTime.UtcNow;
 
             var projet = demande.Projet;
             var statutFinal = demande.Projet.FicheProjet?.StatutFinalCloture?.Trim();
             projet.StatutProjet = string.Equals(statutFinal, "Abandonné", StringComparison.OrdinalIgnoreCase)
                 ? StatutProjet.Annule
                 : StatutProjet.Cloture;
-            projet.DateFinReelle = DateTime.Now;
+            projet.DateFinReelle = DateTime.UtcNow;
             projet.PhaseActuelle = PhaseProjet.ClotureLeconsApprises;
 
             await CloturerDelegationsChefProjetActivesAsync(projet.Id);
@@ -362,9 +362,9 @@ public class ClotureProjetWorkflowService : IClotureProjetWorkflowService
 
         foreach (var delegation in delegationsActives)
         {
-            delegation.DateFin = DateTime.Now;
+            delegation.DateFin = DateTime.UtcNow;
             delegation.EstActive = false;
-            delegation.DateModification = DateTime.Now;
+            delegation.DateModification = DateTime.UtcNow;
             delegation.ModifiePar = _currentUserService.Matricule;
         }
     }

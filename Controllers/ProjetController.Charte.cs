@@ -96,7 +96,7 @@ namespace GestionProjects.Controllers
                 var pdfBytes = await _pdfService.GenerateCharteProjetPdfAsync(projet);
 
                 // Sauvegarder le PDF comme livrable
-                var fileName = $"CharteProjet_{projet.CodeProjet}_{DateTime.Now:yyyyMMdd}.pdf";
+                var fileName = $"CharteProjet_{projet.CodeProjet}_{DateTime.UtcNow:yyyyMMdd}.pdf";
                 var filePath = Path.Combine("projets", projet.CodeProjet, "analyse", fileName);
                 var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", filePath);
 
@@ -111,9 +111,9 @@ namespace GestionProjects.Controllers
                     TypeLivrable = TypeLivrable.CharteProjet,
                     NomDocument = fileName,
                     CheminRelatif = Path.Combine("uploads", filePath).Replace('\\', '/'),
-                    DateDepot = DateTime.Now,
+                    DateDepot = DateTime.UtcNow,
                     DeposeParId = userId,
-                    DateCreation = DateTime.Now,
+                    DateCreation = DateTime.UtcNow,
                     CreePar = _currentUserService.Matricule
                 };
 
@@ -259,7 +259,7 @@ namespace GestionProjects.Controllers
                     if (signataire.Role == RoleSignataireProjet.Sponsor)
                     {
                         projet.CharteProjet.SignatureSponsor = approuver;
-                        projet.CharteProjet.DateSignatureSponsor = approuver ? (signataire.DateSignature ?? DateTime.Now) : null;
+                        projet.CharteProjet.DateSignatureSponsor = approuver ? (signataire.DateSignature ?? DateTime.UtcNow) : null;
                         projet.CharteProjet.SignatureSponsorId = approuver ? (signataire.UtilisateurId ?? projet.SponsorId) : null;
                         if (!approuver)
                         {
@@ -271,7 +271,7 @@ namespace GestionProjects.Controllers
                     if (signataire.Role == RoleSignataireProjet.ChefDeProjet)
                     {
                         projet.CharteProjet.SignatureChefProjet = approuver;
-                        projet.CharteProjet.DateSignatureChefProjet = approuver ? (signataire.DateSignature ?? DateTime.Now) : null;
+                        projet.CharteProjet.DateSignatureChefProjet = approuver ? (signataire.DateSignature ?? DateTime.UtcNow) : null;
                         projet.CharteProjet.SignatureChefProjetId = approuver ? (signataire.UtilisateurId ?? projet.ChefProjetId) : null;
                         if (!approuver)
                         {
@@ -281,9 +281,9 @@ namespace GestionProjects.Controllers
                     }
 
                     ResetCharteValidationState(projet);
-                    projet.DateModification = DateTime.Now;
+                    projet.DateModification = DateTime.UtcNow;
                     projet.ModifiePar = _currentUserService.Matricule;
-                    projet.CharteProjet.DateModification = DateTime.Now;
+                    projet.CharteProjet.DateModification = DateTime.UtcNow;
                     projet.CharteProjet.ModifiePar = _currentUserService.Matricule;
                     await _db.SaveChangesAsync();
                 }
@@ -392,20 +392,20 @@ namespace GestionProjects.Controllers
                     ProjetId = id,
                     Phase = PhaseProjet.AnalyseClarification,
                     TypeLivrable = TypeLivrable.CharteProjetSignee,
-                    DateCreation = DateTime.Now,
+                    DateCreation = DateTime.UtcNow,
                     CreePar = _currentUserService.Matricule
                 };
                 _db.LivrablesProjets.Add(livrable);
             }
             else
             {
-                livrable.DateModification = DateTime.Now;
+                livrable.DateModification = DateTime.UtcNow;
                 livrable.ModifiePar = _currentUserService.Matricule;
             }
 
             livrable.NomDocument = fichierSigne.FileName;
             livrable.CheminRelatif = path;
-            livrable.DateDepot = DateTime.Now;
+            livrable.DateDepot = DateTime.UtcNow;
             livrable.DeposeParId = userId;
             livrable.Commentaire = commentaire ?? string.Empty;
             livrable.Version = version ?? string.Empty;
@@ -413,7 +413,7 @@ namespace GestionProjects.Controllers
             livrable.TypeLivrable = TypeLivrable.CharteProjetSignee;
 
             projet.CharteProjet.SignatureSponsor = signatureSponsor;
-            projet.CharteProjet.DateSignatureSponsor = signatureSponsor ? DateTime.Now : null;
+            projet.CharteProjet.DateSignatureSponsor = signatureSponsor ? DateTime.UtcNow : null;
             projet.CharteProjet.SignatureSponsorId = signatureSponsor ? projet.SponsorId : null;
             if (!signatureSponsor)
             {
@@ -422,7 +422,7 @@ namespace GestionProjects.Controllers
             }
 
             projet.CharteProjet.SignatureChefProjet = signatureChefProjet;
-            projet.CharteProjet.DateSignatureChefProjet = signatureChefProjet ? DateTime.Now : null;
+            projet.CharteProjet.DateSignatureChefProjet = signatureChefProjet ? DateTime.UtcNow : null;
             projet.CharteProjet.SignatureChefProjetId = signatureChefProjet ? projet.ChefProjetId : null;
             if (!signatureChefProjet)
             {
@@ -431,9 +431,9 @@ namespace GestionProjects.Controllers
             }
 
             ResetCharteValidationState(projet);
-            projet.DateModification = DateTime.Now;
+            projet.DateModification = DateTime.UtcNow;
             projet.ModifiePar = _currentUserService.Matricule;
-            projet.CharteProjet.DateModification = DateTime.Now;
+            projet.CharteProjet.DateModification = DateTime.UtcNow;
             projet.CharteProjet.ModifiePar = _currentUserService.Matricule;
 
             await _db.SaveChangesAsync();
@@ -503,7 +503,7 @@ namespace GestionProjects.Controllers
             if (projet.CharteProjet.SignatureSponsor != signatureSponsor)
             {
                 projet.CharteProjet.SignatureSponsor = signatureSponsor;
-                projet.CharteProjet.DateSignatureSponsor = signatureSponsor ? DateTime.Now : null;
+                projet.CharteProjet.DateSignatureSponsor = signatureSponsor ? DateTime.UtcNow : null;
                 projet.CharteProjet.SignatureSponsorId = signatureSponsor ? projet.SponsorId : null;
                 if (!signatureSponsor)
                 {
@@ -517,7 +517,7 @@ namespace GestionProjects.Controllers
             if (projet.CharteProjet.SignatureChefProjet != signatureChefProjet)
             {
                 projet.CharteProjet.SignatureChefProjet = signatureChefProjet;
-                projet.CharteProjet.DateSignatureChefProjet = signatureChefProjet ? DateTime.Now : null;
+                projet.CharteProjet.DateSignatureChefProjet = signatureChefProjet ? DateTime.UtcNow : null;
                 projet.CharteProjet.SignatureChefProjetId = signatureChefProjet ? projet.ChefProjetId : null;
                 if (!signatureChefProjet)
                 {
@@ -535,9 +535,9 @@ namespace GestionProjects.Controllers
             }
 
             ResetCharteValidationState(projet);
-            projet.DateModification = DateTime.Now;
+            projet.DateModification = DateTime.UtcNow;
             projet.ModifiePar = _currentUserService.Matricule;
-            projet.CharteProjet.DateModification = DateTime.Now;
+            projet.CharteProjet.DateModification = DateTime.UtcNow;
             projet.CharteProjet.ModifiePar = _currentUserService.Matricule;
 
             await _db.SaveChangesAsync();
@@ -670,7 +670,7 @@ namespace GestionProjects.Controllers
             }
 
             dossier.Statut = StatutDossierSignature.Annule;
-            dossier.DateModification = DateTime.Now;
+            dossier.DateModification = DateTime.UtcNow;
             dossier.ModifiePar = _currentUserService.Matricule;
 
             await _db.SaveChangesAsync();
@@ -733,7 +733,7 @@ namespace GestionProjects.Controllers
             if (charte == null)
                 return NotFound();
 
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
             switch (role)
             {
                 case "CP":

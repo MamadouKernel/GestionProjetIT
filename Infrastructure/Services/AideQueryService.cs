@@ -27,8 +27,8 @@ public sealed class AideQueryService : IAideQueryService
 
         var roles = user.UtilisateurRoles
             .Where(ur => !ur.EstSupprime &&
-                         (!ur.DateDebut.HasValue || ur.DateDebut.Value <= DateTime.Now) &&
-                         (!ur.DateFin.HasValue || ur.DateFin.Value >= DateTime.Now))
+                         (!ur.DateDebut.HasValue || ur.DateDebut.Value <= DateTime.UtcNow) &&
+                         (!ur.DateFin.HasValue || ur.DateFin.Value >= DateTime.UtcNow))
             .Select(ur => ur.Role)
             .ToList();
 

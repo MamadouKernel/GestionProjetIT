@@ -75,7 +75,7 @@ namespace GestionProjects.Infrastructure.Services
             benefice.Statut = statut;
             benefice.ValeurRealisee = valeurRealisee?.Trim();
             benefice.CommentaireRevue = commentaire?.Trim();
-            benefice.DateRevue = DateTime.Now;
+            benefice.DateRevue = DateTime.UtcNow;
             await _db.SaveChangesAsync();
 
             await _auditService.LogActionAsync("REVUE_BENEFICE", "BeneficeProjet", benefice.Id,

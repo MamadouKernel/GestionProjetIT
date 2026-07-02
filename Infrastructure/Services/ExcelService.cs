@@ -148,7 +148,7 @@ namespace GestionProjects.Infrastructure.Services
                 var currentRow = ApplyBrandedHeader(
                     worksheet,
                     "Rapport de gouvernance DSI / DG",
-                    $"Edition du {DateTime.Now:dd/MM/yyyy HH:mm}",
+                    $"Edition du {DateTime.UtcNow:dd/MM/yyyy HH:mm}",
                     12);
 
                 worksheet.Cells[currentRow, 1].Value = "SYNTHESE GLOBALE";
@@ -545,7 +545,7 @@ namespace GestionProjects.Infrastructure.Services
             worksheet.Cells[4, textStartColumn].Style.Font.Color.SetColor(Color.DimGray);
             worksheet.Cells[4, textStartColumn, 4, lastColumn].Merge = true;
 
-            worksheet.Cells[6, textStartColumn].Value = $"Document généré le {DateTime.Now:dd/MM/yyyy à HH:mm}";
+            worksheet.Cells[6, textStartColumn].Value = $"Document généré le {DateTime.UtcNow:dd/MM/yyyy à HH:mm}";
             worksheet.Cells[6, textStartColumn].Style.Font.Size = 9;
             worksheet.Cells[6, textStartColumn].Style.Font.Color.SetColor(Color.Gray);
             worksheet.Cells[6, textStartColumn, 6, lastColumn].Merge = true;

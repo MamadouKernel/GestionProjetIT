@@ -78,9 +78,9 @@ namespace GestionProjects.Infrastructure.Services
                 if (deletedRole != null)
                 {
                     deletedRole.EstSupprime = false;
-                    deletedRole.DateDebut = DateTime.Now;
+                    deletedRole.DateDebut = DateTime.UtcNow;
                     deletedRole.DateFin = null;
-                    deletedRole.DateModification = DateTime.Now;
+                    deletedRole.DateModification = DateTime.UtcNow;
                     deletedRole.ModifiePar = operateur;
                 }
                 else
@@ -90,8 +90,8 @@ namespace GestionProjects.Infrastructure.Services
                         Id = Guid.NewGuid(),
                         UtilisateurId = user.Id,
                         Role = role,
-                        DateDebut = DateTime.Now,
-                        DateCreation = DateTime.Now,
+                        DateDebut = DateTime.UtcNow,
+                        DateCreation = DateTime.UtcNow,
                         CreePar = operateur,
                         EstSupprime = false
                     });
@@ -107,8 +107,8 @@ namespace GestionProjects.Infrastructure.Services
             foreach (var existingRole in rolesToRemove)
             {
                 existingRole.EstSupprime = true;
-                existingRole.DateFin = DateTime.Now;
-                existingRole.DateModification = DateTime.Now;
+                existingRole.DateFin = DateTime.UtcNow;
+                existingRole.DateModification = DateTime.UtcNow;
                 existingRole.ModifiePar = operateur;
             }
         }
@@ -151,7 +151,7 @@ namespace GestionProjects.Infrastructure.Services
                 ProfilRessource = profilRessource,
                 CapaciteHebdomadaire = capaciteHebdomadaire > 0 ? capaciteHebdomadaire : 40,
                 NombreConnexion = 0,
-                DateCreation = DateTime.Now,
+                DateCreation = DateTime.UtcNow,
                 CreePar = operateur,
                 EstSupprime = false
             };
@@ -204,7 +204,7 @@ namespace GestionProjects.Infrastructure.Services
             if (capaciteHebdomadaire.HasValue && capaciteHebdomadaire.Value > 0)
                 user.CapaciteHebdomadaire = capaciteHebdomadaire.Value;
 
-            user.DateModification = DateTime.Now;
+            user.DateModification = DateTime.UtcNow;
             user.ModifiePar = _currentUserService.Matricule;
 
             var rolesValides = ParseSelectedRoles(string.Join(",", roles.Select(r => (int)r)));

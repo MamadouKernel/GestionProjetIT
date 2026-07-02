@@ -52,8 +52,8 @@ namespace GestionProjects.Controllers
             return await _db.DelegationsValidationDSI.AnyAsync(d =>
                 d.DelegueId == userId &&
                 d.EstActive &&
-                d.DateDebut <= DateTime.Now &&
-                d.DateFin >= DateTime.Now &&
+                d.DateDebut <= DateTime.UtcNow &&
+                d.DateFin >= DateTime.UtcNow &&
                 !d.EstSupprime);
         }
 

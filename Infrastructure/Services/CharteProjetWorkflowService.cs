@@ -61,9 +61,9 @@ public class CharteProjetWorkflowService : ICharteProjetWorkflowService
                 TypeDocument = "Charte de projet",
                 Departement = "SYSTEME D'INFORMATION",
                 NumeroRevision = 1,
-                DateRevision = DateTime.Now,
+                DateRevision = DateTime.UtcNow,
                 DescriptionRevision = "Création",
-                DateCreation = DateTime.Now,
+                DateCreation = DateTime.UtcNow,
                 CreePar = _currentUserService.Matricule ?? "SYSTEM",
                 EstSupprime = false
             };
@@ -91,7 +91,7 @@ public class CharteProjetWorkflowService : ICharteProjetWorkflowService
                     Description = jalonsDefaut[i].Description,
                     CriteresApprobation = jalonsDefaut[i].Criteres,
                     Ordre = i + 1,
-                    DateCreation = DateTime.Now,
+                    DateCreation = DateTime.UtcNow,
                     CreePar = _currentUserService.Matricule ?? "SYSTEM",
                     EstSupprime = false
                 });
@@ -149,16 +149,16 @@ public class CharteProjetWorkflowService : ICharteProjetWorkflowService
             return WorkflowResult.Error("La charte signée complète doit être déposée avant la validation DM.");
 
         projet.CharteValideeParDM = true;
-        projet.DateCharteValideeParDM = DateTime.Now;
+        projet.DateCharteValideeParDM = DateTime.UtcNow;
         projet.CharteValideeParDMId = userId;
         projet.CommentaireRefusCharteDM = null;
-        projet.DateModification = DateTime.Now;
+        projet.DateModification = DateTime.UtcNow;
         projet.ModifiePar = _currentUserService.Matricule;
 
         if (projet.CharteValideeParDM && projet.CharteValideeParDSI)
         {
             projet.CharteValidee = true;
-            projet.DateCharteValidee = DateTime.Now;
+            projet.DateCharteValidee = DateTime.UtcNow;
         }
 
         await _db.SaveChangesAsync();
@@ -184,7 +184,7 @@ public class CharteProjetWorkflowService : ICharteProjetWorkflowService
         projet.CommentaireRefusCharteDM = commentaire.Trim();
         projet.CharteValidee = false;
         projet.DateCharteValidee = null;
-        projet.DateModification = DateTime.Now;
+        projet.DateModification = DateTime.UtcNow;
         projet.ModifiePar = _currentUserService.Matricule;
 
         await _db.SaveChangesAsync();
@@ -215,16 +215,16 @@ public class CharteProjetWorkflowService : ICharteProjetWorkflowService
             return WorkflowResult.Error("La charte signée complète doit être déposée avant la validation DSI.");
 
         projet.CharteValideeParDSI = true;
-        projet.DateCharteValideeParDSI = DateTime.Now;
+        projet.DateCharteValideeParDSI = DateTime.UtcNow;
         projet.CharteValideeParDSIId = userId;
         projet.CommentaireRefusCharteDSI = null;
-        projet.DateModification = DateTime.Now;
+        projet.DateModification = DateTime.UtcNow;
         projet.ModifiePar = _currentUserService.Matricule;
 
         if (projet.CharteValideeParDM && projet.CharteValideeParDSI)
         {
             projet.CharteValidee = true;
-            projet.DateCharteValidee = DateTime.Now;
+            projet.DateCharteValidee = DateTime.UtcNow;
         }
 
         await _db.SaveChangesAsync();
@@ -250,7 +250,7 @@ public class CharteProjetWorkflowService : ICharteProjetWorkflowService
         projet.CommentaireRefusCharteDSI = commentaire.Trim();
         projet.CharteValidee = false;
         projet.DateCharteValidee = null;
-        projet.DateModification = DateTime.Now;
+        projet.DateModification = DateTime.UtcNow;
         projet.ModifiePar = _currentUserService.Matricule;
 
         await _db.SaveChangesAsync();
@@ -281,7 +281,7 @@ public class CharteProjetWorkflowService : ICharteProjetWorkflowService
         {
             charte.Id = Guid.NewGuid();
             charte.ProjetId = projetId;
-            charte.DateCreation = DateTime.Now;
+            charte.DateCreation = DateTime.UtcNow;
             charte.CreePar = _currentUserService.Matricule ?? "SYSTEM";
             charte.EstSupprime = false;
 
@@ -291,7 +291,7 @@ public class CharteProjetWorkflowService : ICharteProjetWorkflowService
                 {
                     jalon.Id = jalon.Id == Guid.Empty ? Guid.NewGuid() : jalon.Id;
                     jalon.CharteProjetId = charte.Id;
-                    jalon.DateCreation = DateTime.Now;
+                    jalon.DateCreation = DateTime.UtcNow;
                     jalon.CreePar = _currentUserService.Matricule ?? "SYSTEM";
                     jalon.EstSupprime = false;
                     charte.Jalons.Add(jalon);
@@ -304,7 +304,7 @@ public class CharteProjetWorkflowService : ICharteProjetWorkflowService
                 {
                     partie.Id = partie.Id == Guid.Empty ? Guid.NewGuid() : partie.Id;
                     partie.CharteProjetId = charte.Id;
-                    partie.DateCreation = DateTime.Now;
+                    partie.DateCreation = DateTime.UtcNow;
                     partie.CreePar = _currentUserService.Matricule ?? "SYSTEM";
                     partie.EstSupprime = false;
                     charte.PartiesPrenantes.Add(partie);
@@ -331,7 +331,7 @@ public class CharteProjetWorkflowService : ICharteProjetWorkflowService
             charteExistante.ApprouvePar = charte.ApprouvePar;
             charteExistante.DemandeurId = charte.DemandeurId;
             charteExistante.ChefProjetId = charte.ChefProjetId;
-            charteExistante.DateModification = DateTime.Now;
+            charteExistante.DateModification = DateTime.UtcNow;
             charteExistante.ModifiePar = _currentUserService.Matricule;
 
             if (jalons != null)
@@ -341,7 +341,7 @@ public class CharteProjetWorkflowService : ICharteProjetWorkflowService
                 foreach (var jalon in jalonsASupprimer)
                 {
                     jalon.EstSupprime = true;
-                    jalon.DateModification = DateTime.Now;
+                    jalon.DateModification = DateTime.UtcNow;
                     jalon.ModifiePar = _currentUserService.Matricule;
                 }
 
@@ -358,7 +358,7 @@ public class CharteProjetWorkflowService : ICharteProjetWorkflowService
                             CriteresApprobation = jalon.CriteresApprobation,
                             DatePrevisionnelle = jalon.DatePrevisionnelle,
                             Ordre = jalon.Ordre,
-                            DateCreation = DateTime.Now,
+                            DateCreation = DateTime.UtcNow,
                             CreePar = _currentUserService.Matricule ?? "SYSTEM",
                             EstSupprime = false
                         };
@@ -374,7 +374,7 @@ public class CharteProjetWorkflowService : ICharteProjetWorkflowService
                             jalonExistant.CriteresApprobation = jalon.CriteresApprobation;
                             jalonExistant.DatePrevisionnelle = jalon.DatePrevisionnelle;
                             jalonExistant.Ordre = jalon.Ordre;
-                            jalonExistant.DateModification = DateTime.Now;
+                            jalonExistant.DateModification = DateTime.UtcNow;
                             jalonExistant.ModifiePar = _currentUserService.Matricule;
                         }
                     }
@@ -388,7 +388,7 @@ public class CharteProjetWorkflowService : ICharteProjetWorkflowService
                 foreach (var partie in partiesASupprimer)
                 {
                     partie.EstSupprime = true;
-                    partie.DateModification = DateTime.Now;
+                    partie.DateModification = DateTime.UtcNow;
                     partie.ModifiePar = _currentUserService.Matricule;
                 }
 
@@ -403,7 +403,7 @@ public class CharteProjetWorkflowService : ICharteProjetWorkflowService
                             Nom = partie.Nom,
                             Role = partie.Role,
                             UtilisateurId = partie.UtilisateurId,
-                            DateCreation = DateTime.Now,
+                            DateCreation = DateTime.UtcNow,
                             CreePar = _currentUserService.Matricule ?? "SYSTEM",
                             EstSupprime = false
                         };
@@ -417,7 +417,7 @@ public class CharteProjetWorkflowService : ICharteProjetWorkflowService
                             partieExistante.Nom = partie.Nom;
                             partieExistante.Role = partie.Role;
                             partieExistante.UtilisateurId = partie.UtilisateurId;
-                            partieExistante.DateModification = DateTime.Now;
+                            partieExistante.DateModification = DateTime.UtcNow;
                             partieExistante.ModifiePar = _currentUserService.Matricule;
                         }
                     }
@@ -453,7 +453,7 @@ public class CharteProjetWorkflowService : ICharteProjetWorkflowService
                 foreach (var livrableSigne in signedLivrables)
                 {
                     livrableSigne.EstSupprime = true;
-                    livrableSigne.DateModification = DateTime.Now;
+                    livrableSigne.DateModification = DateTime.UtcNow;
                     livrableSigne.ModifiePar = _currentUserService.Matricule;
                 }
 
@@ -467,7 +467,7 @@ public class CharteProjetWorkflowService : ICharteProjetWorkflowService
                 charteActive.SignatureChefProjetId = null;
                 charteActive.SignatureImageCP = null;
                 charteActive.DateSignatureImageCP = null;
-                charteActive.DateModification = DateTime.Now;
+                charteActive.DateModification = DateTime.UtcNow;
                 charteActive.ModifiePar = _currentUserService.Matricule;
 
                 if (dossierSignature != null)
@@ -479,20 +479,20 @@ public class CharteProjetWorkflowService : ICharteProjetWorkflowService
                     dossierSignature.DateFinalisation = null;
                     dossierSignature.DateExpiration = null;
                     dossierSignature.MessageStatut = "La charte a ete modifiee. Le circuit de signature doit etre relance.";
-                    dossierSignature.DateModification = DateTime.Now;
+                    dossierSignature.DateModification = DateTime.UtcNow;
                     dossierSignature.ModifiePar = _currentUserService.Matricule;
 
                     foreach (var signataire in dossierSignature.Signataires)
                     {
                         signataire.Statut = StatutSignataireDossierSignature.EnAttente;
                         signataire.DateSignature = null;
-                        signataire.DateModification = DateTime.Now;
+                        signataire.DateModification = DateTime.UtcNow;
                         signataire.ModifiePar = _currentUserService.Matricule;
                     }
                 }
 
                 ResetCharteValidationState(projet);
-                projet.DateModification = DateTime.Now;
+                projet.DateModification = DateTime.UtcNow;
                 projet.ModifiePar = _currentUserService.Matricule;
 
                 await _db.SaveChangesAsync();

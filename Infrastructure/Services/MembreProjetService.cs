@@ -36,7 +36,7 @@ namespace GestionProjects.Infrastructure.Services
                 Email = utilisateur.Email,
                 DirectionLibelle = utilisateur.Direction?.Libelle ?? string.Empty,
                 EstActif = true,
-                DateCreation = DateTime.Now,
+                DateCreation = DateTime.UtcNow,
                 CreePar = _currentUserService.Matricule
             };
 
@@ -55,7 +55,7 @@ namespace GestionProjects.Infrastructure.Services
 
             membre.EstActif = false;
             membre.EstSupprime = true;
-            membre.DateModification = DateTime.Now;
+            membre.DateModification = DateTime.UtcNow;
             membre.ModifiePar = _currentUserService.Matricule;
 
             await _db.SaveChangesAsync();

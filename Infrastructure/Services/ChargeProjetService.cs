@@ -73,7 +73,7 @@ namespace GestionProjects.Infrastructure.Services
                 .ThenBy(r => r.Prenoms)
                 .ToList();
 
-            var currentWeek = NormalizeToMonday(DateTime.Now);
+            var currentWeek = NormalizeToMonday(DateTime.UtcNow);
             var semaines = Enumerable.Range(-2, 6)
                 .Select(offset => currentWeek.AddDays(offset * 7))
                 .ToList();
@@ -428,12 +428,12 @@ namespace GestionProjects.Infrastructure.Services
                     SemaineDebut = lundiSemaine,
                     ChargePrevisionnelle = canEditForecast ? Math.Max(chargePrevisionnelle ?? 0, 0) : 0,
                     ChargeReelle = canEditActual ? chargeReelle : null,
-                    DateSaisieChargeReelle = canEditActual && chargeReelle.HasValue ? DateTime.Now : null,
+                    DateSaisieChargeReelle = canEditActual && chargeReelle.HasValue ? DateTime.UtcNow : null,
                     SaisieParId = canEditActual && chargeReelle.HasValue ? userId : null,
                     Commentaire = commentaire ?? string.Empty,
                     TypeActivite = typeActivite?.Trim() ?? string.Empty,
                     Activite = activite?.Trim() ?? string.Empty,
-                    DateCreation = DateTime.Now,
+                    DateCreation = DateTime.UtcNow,
                     CreePar = _currentUserService.Matricule
                 };
                 _db.ChargesProjets.Add(charge);
@@ -446,14 +446,14 @@ namespace GestionProjects.Infrastructure.Services
                 if (canEditActual)
                 {
                     charge.ChargeReelle = chargeReelle;
-                    charge.DateSaisieChargeReelle = chargeReelle.HasValue ? DateTime.Now : charge.DateSaisieChargeReelle;
+                    charge.DateSaisieChargeReelle = chargeReelle.HasValue ? DateTime.UtcNow : charge.DateSaisieChargeReelle;
                     charge.SaisieParId = chargeReelle.HasValue ? userId : charge.SaisieParId;
                     charge.Commentaire = commentaire ?? string.Empty;
                     charge.TypeActivite = typeActivite?.Trim() ?? string.Empty;
                     charge.Activite = activite?.Trim() ?? string.Empty;
                 }
 
-                charge.DateModification = DateTime.Now;
+                charge.DateModification = DateTime.UtcNow;
                 charge.ModifiePar = _currentUserService.Matricule;
             }
 
@@ -490,8 +490,8 @@ namespace GestionProjects.Infrastructure.Services
                 return null;
 
             charge.StatutValidation = StatutValidationCharge.EnAttente;
-            charge.DateSoumissionValidation = DateTime.Now;
-            charge.DateModification = DateTime.Now;
+            charge.DateSoumissionValidation = DateTime.UtcNow;
+            charge.DateModification = DateTime.UtcNow;
             charge.ModifiePar = _currentUserService.Matricule;
 
             await _db.SaveChangesAsync();
@@ -513,10 +513,10 @@ namespace GestionProjects.Infrastructure.Services
                 return null;
 
             charge.StatutValidation = statut;
-            charge.DateValidation = DateTime.Now;
+            charge.DateValidation = DateTime.UtcNow;
             charge.ValideeParId = userId;
             charge.CommentaireValidation = commentaireValidation?.Trim() ?? string.Empty;
-            charge.DateModification = DateTime.Now;
+            charge.DateModification = DateTime.UtcNow;
             charge.ModifiePar = _currentUserService.Matricule;
 
             await _db.SaveChangesAsync();

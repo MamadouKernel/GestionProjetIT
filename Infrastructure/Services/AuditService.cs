@@ -99,7 +99,7 @@ namespace GestionProjects.Infrastructure.Services
             {
                 Id = Guid.NewGuid(),
                 UtilisateurId = utilisateurId,
-                DateAction = DateTime.Now,
+                DateAction = DateTime.UtcNow,
                 TypeAction = typeAction,
                 Entite = entite,
                 EntiteId = entiteId?.ToString() ?? string.Empty,
@@ -107,7 +107,7 @@ namespace GestionProjects.Infrastructure.Services
                 NouvellesValeurs = SerializeIfNotNull(nouvellesValeurs),
                 AdresseIP = ip,
                 UserAgent = userAgent,
-                DateCreation = DateTime.Now,
+                DateCreation = DateTime.UtcNow,
                 CreePar = creePar
             };
         }

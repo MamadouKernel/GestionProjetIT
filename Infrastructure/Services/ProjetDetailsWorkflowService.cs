@@ -76,14 +76,14 @@ namespace GestionProjects.Infrastructure.Services
 
                 if (historiqueAncienChef != null)
                 {
-                    historiqueAncienChef.DateFin = DateTime.Now;
-                    historiqueAncienChef.DateModification = DateTime.Now;
+                    historiqueAncienChef.DateFin = DateTime.UtcNow;
+                    historiqueAncienChef.DateModification = DateTime.UtcNow;
                     historiqueAncienChef.ModifiePar = _currentUserService.Matricule;
                 }
             }
 
             projet.ChefProjetId = chefProjetId;
-            projet.DateModification = DateTime.Now;
+            projet.DateModification = DateTime.UtcNow;
             projet.ModifiePar = _currentUserService.Matricule ?? "SYSTEM";
 
             await _db.SaveChangesAsync();
@@ -95,10 +95,10 @@ namespace GestionProjects.Infrastructure.Services
                     Id = Guid.NewGuid(),
                     ProjetId = projet.Id,
                     ChefProjetId = chefProjetId.Value,
-                    DateDebut = DateTime.Now,
+                    DateDebut = DateTime.UtcNow,
                     DateFin = null,
                     Commentaire = "Assignation comme chef de projet",
-                    DateCreation = DateTime.Now,
+                    DateCreation = DateTime.UtcNow,
                     CreePar = _currentUserService.Matricule ?? "SYSTEM"
                 });
                 await _db.SaveChangesAsync();
@@ -143,8 +143,8 @@ namespace GestionProjects.Infrastructure.Services
 
             projet.StatutProjet = StatutProjet.EnCours;
             projet.PourcentageAvancement = 0;
-            projet.DateDebut ??= DateTime.Now;
-            projet.DateModification = DateTime.Now;
+            projet.DateDebut ??= DateTime.UtcNow;
+            projet.DateModification = DateTime.UtcNow;
             projet.ModifiePar = _currentUserService.Matricule ?? "SYSTEM";
 
             _db.HistoriquePhasesProjets.Add(new HistoriquePhaseProjet
@@ -156,7 +156,7 @@ namespace GestionProjects.Infrastructure.Services
                 DateDebut = projet.DateDebut.Value,
                 ModifieParId = userId,
                 Commentaire = "Demarrage operationnel du projet - prise en charge reelle",
-                DateCreation = DateTime.Now,
+                DateCreation = DateTime.UtcNow,
                 CreePar = _currentUserService.Matricule ?? "SYSTEM"
             });
 
@@ -183,8 +183,8 @@ namespace GestionProjects.Infrastructure.Services
 
             projet.StatutProjet = StatutProjet.Suspendu;
             projet.MotifSuspension = motif.Trim();
-            projet.DateSuspension = DateTime.Now;
-            projet.DateModification = DateTime.Now;
+            projet.DateSuspension = DateTime.UtcNow;
+            projet.DateModification = DateTime.UtcNow;
             projet.ModifiePar = _currentUserService.Matricule ?? "SYSTEM";
 
             _db.HistoriquePhasesProjets.Add(new HistoriquePhaseProjet
@@ -193,10 +193,10 @@ namespace GestionProjects.Infrastructure.Services
                 ProjetId = projet.Id,
                 Phase = projet.PhaseActuelle,
                 StatutProjet = projet.StatutProjet,
-                DateDebut = DateTime.Now,
+                DateDebut = DateTime.UtcNow,
                 ModifieParId = userId,
                 Commentaire = $"Projet suspendu : {projet.MotifSuspension}",
-                DateCreation = DateTime.Now,
+                DateCreation = DateTime.UtcNow,
                 CreePar = _currentUserService.Matricule ?? "SYSTEM"
             });
 
@@ -221,7 +221,7 @@ namespace GestionProjects.Infrastructure.Services
             projet.StatutProjet = StatutProjet.EnCours;
             projet.MotifSuspension = null;
             projet.DateSuspension = null;
-            projet.DateModification = DateTime.Now;
+            projet.DateModification = DateTime.UtcNow;
             projet.ModifiePar = _currentUserService.Matricule ?? "SYSTEM";
 
             _db.HistoriquePhasesProjets.Add(new HistoriquePhaseProjet
@@ -230,10 +230,10 @@ namespace GestionProjects.Infrastructure.Services
                 ProjetId = projet.Id,
                 Phase = projet.PhaseActuelle,
                 StatutProjet = projet.StatutProjet,
-                DateDebut = DateTime.Now,
+                DateDebut = DateTime.UtcNow,
                 ModifieParId = userId,
                 Commentaire = "Reprise du projet apres suspension",
-                DateCreation = DateTime.Now,
+                DateCreation = DateTime.UtcNow,
                 CreePar = _currentUserService.Matricule ?? "SYSTEM"
             });
 
@@ -255,7 +255,7 @@ namespace GestionProjects.Infrastructure.Services
             if (projet.EstSupprime) return WorkflowResult.Error("Ce projet est déjà dans la corbeille.");
 
             projet.EstSupprime = true;
-            projet.DateModification = DateTime.Now;
+            projet.DateModification = DateTime.UtcNow;
             projet.ModifiePar = _currentUserService.Matricule ?? "SYSTEM";
             await _db.SaveChangesAsync();
 
@@ -272,7 +272,7 @@ namespace GestionProjects.Infrastructure.Services
             if (!projet.EstSupprime) return WorkflowResult.Error("Ce projet n'est pas dans la corbeille.");
 
             projet.EstSupprime = false;
-            projet.DateModification = DateTime.Now;
+            projet.DateModification = DateTime.UtcNow;
             projet.ModifiePar = _currentUserService.Matricule ?? "SYSTEM";
             await _db.SaveChangesAsync();
 
@@ -384,7 +384,7 @@ namespace GestionProjects.Infrastructure.Services
                     .Where(d => !d.EstSupprime &&
                                 d.EstActive &&
                                 d.ProjetId == id &&
-                                d.DateDebut <= DateTime.Now &&
+                                d.DateDebut <= DateTime.UtcNow &&
                                 d.DateFin == null)
                     .Select(d => d.Delegue!)
                     .Where(u => !u.EstSupprime)

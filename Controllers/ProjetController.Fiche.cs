@@ -106,9 +106,9 @@ namespace GestionProjects.Controllers
             ficheProjet.CommentaireBudgetPlanification = fiche.CommentaireBudgetPlanification;
             ficheProjet.CommentaireValidationPlanification = fiche.CommentaireValidationPlanification;
             ficheProjet.SyntheseRisques = fiche.SyntheseRisques;
-            ficheProjet.DateDerniereMiseAJour = DateTime.Now;
+            ficheProjet.DateDerniereMiseAJour = DateTime.UtcNow;
             ficheProjet.DerniereMiseAJourParId = userId;
-            ficheProjet.DateModification = DateTime.Now;
+            ficheProjet.DateModification = DateTime.UtcNow;
             ficheProjet.ModifiePar = _currentUserService.Matricule;
 
             IReadOnlyList<PlanningTacheInputViewModel> planningTasks;
@@ -322,9 +322,9 @@ namespace GestionProjects.Controllers
             ficheProjet.SyntheseChargesExecution = fiche.SyntheseChargesExecution;
             ficheProjet.DecisionsExecution = fiche.DecisionsExecution;
             ficheProjet.ProchainJalon = prochainJalon;
-            ficheProjet.DateDerniereMiseAJour = DateTime.Now;
+            ficheProjet.DateDerniereMiseAJour = DateTime.UtcNow;
             ficheProjet.DerniereMiseAJourParId = userId;
-            ficheProjet.DateModification = DateTime.Now;
+            ficheProjet.DateModification = DateTime.UtcNow;
             ficheProjet.ModifiePar = _currentUserService.Matricule;
 
             projet.EtatProjet = etatProjet;
@@ -377,13 +377,13 @@ namespace GestionProjects.Controllers
             ficheProjet.IncidentsPostMep = fiche.IncidentsPostMep;
             ficheProjet.StatutHypercare = fiche.StatutHypercare;
             ficheProjet.HypercareTermine = fiche.HypercareTermine;
-            ficheProjet.DateDerniereMiseAJour = DateTime.Now;
+            ficheProjet.DateDerniereMiseAJour = DateTime.UtcNow;
             ficheProjet.DerniereMiseAJourParId = userId;
-            ficheProjet.DateModification = DateTime.Now;
+            ficheProjet.DateModification = DateTime.UtcNow;
             ficheProjet.ModifiePar = _currentUserService.Matricule;
 
             projet.MepEffectuee = mepEffectuee;
-            projet.DateMep = mepEffectuee ? dateMepReelle ?? projet.DateMep ?? DateTime.Now : null;
+            projet.DateMep = mepEffectuee ? dateMepReelle ?? projet.DateMep ?? DateTime.UtcNow : null;
 
             await _projetProgress.RecalculateAsync(projet);
             await _db.SaveChangesAsync();
@@ -442,9 +442,9 @@ namespace GestionProjects.Controllers
             ficheProjet.TransfertRunExploitationPrete = transfertRunExploitationPrete;
             ficheProjet.StatutFinalCloture = string.IsNullOrWhiteSpace(statutFinalCloture) ? "Clôturé" : statutFinalCloture.Trim();
             ficheProjet.CommentaireStatutFinal = commentaireStatutFinal?.Trim();
-            ficheProjet.DateDerniereMiseAJour = DateTime.Now;
+            ficheProjet.DateDerniereMiseAJour = DateTime.UtcNow;
             ficheProjet.DerniereMiseAJourParId = userId;
-            ficheProjet.DateModification = DateTime.Now;
+            ficheProjet.DateModification = DateTime.UtcNow;
             ficheProjet.ModifiePar = _currentUserService.Matricule;
 
             var chargePrevue = projet.Charges.Where(c => !c.EstSupprime).Sum(c => c.ChargePrevisionnelle);
@@ -493,7 +493,7 @@ namespace GestionProjects.Controllers
             }
 
             projet.PlanningValideParDM = true;
-            projet.DatePlanningValideParDM = DateTime.Now;
+            projet.DatePlanningValideParDM = DateTime.UtcNow;
             await _projetProgress.RecalculateAsync(projet);
             await _db.SaveChangesAsync();
 
@@ -556,13 +556,13 @@ namespace GestionProjects.Controllers
             }
 
             projet.PlanningValideParDSI = true;
-            projet.DatePlanningValideParDSI = DateTime.Now;
+            projet.DatePlanningValideParDSI = DateTime.UtcNow;
 
             // Figer la baseline (référentiel) au premier passage : délai + budget de
             // référence pour mesurer ensuite la dérive (notamment via les avenants).
             if (!projet.DateBaseline.HasValue)
             {
-                projet.DateBaseline = DateTime.Now;
+                projet.DateBaseline = DateTime.UtcNow;
                 projet.DateFinPrevueBaseline = projet.DateFinPrevue;
                 projet.BudgetBaseline = projet.FicheProjet?.BudgetPrevisionnel;
             }
@@ -571,7 +571,7 @@ namespace GestionProjects.Controllers
             projet.PhaseActuelle = PhaseProjet.ExecutionSuivi;
             projet.StatutProjet = StatutProjet.EnCours;
             if (!projet.DateDebut.HasValue)
-                projet.DateDebut = DateTime.Now;
+                projet.DateDebut = DateTime.UtcNow;
 
             // Enregistrer dans l'historique
             var historique = new HistoriquePhaseProjet
@@ -580,10 +580,10 @@ namespace GestionProjects.Controllers
                 ProjetId = projet.Id,
                 Phase = PhaseProjet.ExecutionSuivi,
                 StatutProjet = projet.StatutProjet,
-                DateDebut = DateTime.Now,
+                DateDebut = DateTime.UtcNow,
                 ModifieParId = userId,
                 Commentaire = "Passage en phase Exécution après validation planification DSI",
-                DateCreation = DateTime.Now,
+                DateCreation = DateTime.UtcNow,
                 CreePar = _currentUserService.Matricule
             };
             _db.HistoriquePhasesProjets.Add(historique);

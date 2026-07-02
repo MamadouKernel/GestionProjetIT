@@ -335,7 +335,7 @@ namespace GestionProjects.Infrastructure.Services
                 return "Aucune date de fin prévue n'a été renseignée, l'écart de planning ne peut pas être calculé automatiquement.";
             }
 
-            var dateReference = projet.DateFinReelle ?? DateTime.Now;
+            var dateReference = projet.DateFinReelle ?? DateTime.UtcNow;
             var ecartJours = (dateReference.Date - projet.DateFinPrevue.Value.Date).Days;
             var libelleStatut = projet.DateFinReelle.HasValue ? "Date de fin réelle" : "À ce jour";
 

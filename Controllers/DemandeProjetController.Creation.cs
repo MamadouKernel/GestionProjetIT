@@ -146,8 +146,8 @@ namespace GestionProjects.Controllers
                     StatutDemande = saveAsDraft
                         ? StatutDemande.Brouillon
                         : StatutDemande.EnAttenteValidationDirecteurMetier,
-                    DateSoumission = DateTime.Now,
-                    DateCreation = DateTime.Now,
+                    DateSoumission = DateTime.UtcNow,
+                    DateCreation = DateTime.UtcNow,
                     CreePar = _currentUserService.Matricule,
                     Titre = demandeForm.Titre?.Trim() ?? string.Empty,
                     Description = demandeForm.Description?.Trim() ?? string.Empty,
@@ -197,9 +197,9 @@ namespace GestionProjects.Controllers
                                 DemandeProjetId  = demande.Id,
                                 NomFichier       = annexe.FileName,
                                 CheminRelatif    = path,
-                                DateDepot        = DateTime.Now,
+                                DateDepot        = DateTime.UtcNow,
                                 DeposeParId      = userId,
-                                DateCreation     = DateTime.Now,
+                                DateCreation     = DateTime.UtcNow,
                                 CreePar          = _currentUserService.Matricule
                             });
                         }
@@ -370,14 +370,14 @@ namespace GestionProjects.Controllers
                             {
                                 Id = Guid.NewGuid(), DemandeProjetId = existingDemande.Id,
                                 NomFichier = annexe.FileName, CheminRelatif = path,
-                                DateDepot = DateTime.Now, DeposeParId = userId,
-                                DateCreation = DateTime.Now, CreePar = _currentUserService.Matricule
+                                DateDepot = DateTime.UtcNow, DeposeParId = userId,
+                                DateCreation = DateTime.UtcNow, CreePar = _currentUserService.Matricule
                             });
                         }
                     }
                 }
 
-                existingDemande.DateModification = DateTime.Now;
+                existingDemande.DateModification = DateTime.UtcNow;
                 existingDemande.ModifiePar        = _currentUserService.Matricule;
                 await _db.SaveChangesAsync();
 

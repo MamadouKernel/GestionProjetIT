@@ -188,7 +188,7 @@ public class DemandeProjetQueryService : IDemandeProjetQueryService
 
         var delegationsActives = await _db.DelegationsChefProjet
             .Include(d => d.Delegue)
-            .Where(d => !d.EstSupprime && d.EstActive && d.DateDebut <= DateTime.Now && d.DateFin == null)
+            .Where(d => !d.EstSupprime && d.EstActive && d.DateDebut <= DateTime.UtcNow && d.DateFin == null)
             .Select(d => d.Delegue!)
             .Where(u => !u.EstSupprime)
             .ToListAsync();

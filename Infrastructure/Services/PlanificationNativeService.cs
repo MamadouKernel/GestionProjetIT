@@ -39,9 +39,9 @@ namespace GestionProjects.Infrastructure.Services
             {
                 Id = Guid.NewGuid(),
                 ProjetId = projetId,
-                DateCreation = DateTime.Now,
+                DateCreation = DateTime.UtcNow,
                 CreePar = _currentUserService.Matricule ?? "SYSTEM",
-                DateDerniereMiseAJour = DateTime.Now,
+                DateDerniereMiseAJour = DateTime.UtcNow,
                 DerniereMiseAJourParId = userId
             };
 
@@ -114,7 +114,7 @@ namespace GestionProjects.Infrastructure.Services
             foreach (var existing in existingTasks)
             {
                 existing.EstSupprime = true;
-                existing.DateModification = DateTime.Now;
+                existing.DateModification = DateTime.UtcNow;
                 existing.ModifiePar = _currentUserService.Matricule;
             }
 
@@ -140,7 +140,7 @@ namespace GestionProjects.Infrastructure.Services
                     Avancement = Math.Clamp(task.Avancement, 0, 100),
                     Ordre = task.Ordre,
                     EstJalon = task.EstJalon,
-                    DateCreation = DateTime.Now,
+                    DateCreation = DateTime.UtcNow,
                     CreePar = createdBy
                 });
             }
@@ -384,7 +384,7 @@ namespace GestionProjects.Infrastructure.Services
             foreach (var existing in existingLines)
             {
                 existing.EstSupprime = true;
-                existing.DateModification = DateTime.Now;
+                existing.DateModification = DateTime.UtcNow;
                 existing.ModifiePar = _currentUserService.Matricule;
             }
 
@@ -402,7 +402,7 @@ namespace GestionProjects.Infrastructure.Services
                     Consulte = line.Consulte,
                     Informe = line.Informe,
                     Ordre = line.Ordre,
-                    DateCreation = DateTime.Now,
+                    DateCreation = DateTime.UtcNow,
                     CreePar = createdBy
                 });
             }
@@ -417,7 +417,7 @@ namespace GestionProjects.Infrastructure.Services
             foreach (var existing in existingLines)
             {
                 existing.EstSupprime = true;
-                existing.DateModification = DateTime.Now;
+                existing.DateModification = DateTime.UtcNow;
                 existing.ModifiePar = _currentUserService.Matricule;
             }
 
@@ -436,7 +436,7 @@ namespace GestionProjects.Infrastructure.Services
                     Responsable = line.Responsable,
                     EstCopil = line.EstCopil,
                     Ordre = line.Ordre,
-                    DateCreation = DateTime.Now,
+                    DateCreation = DateTime.UtcNow,
                     CreePar = createdBy
                 });
             }
@@ -451,7 +451,7 @@ namespace GestionProjects.Infrastructure.Services
             foreach (var existing in existingLines)
             {
                 existing.EstSupprime = true;
-                existing.DateModification = DateTime.Now;
+                existing.DateModification = DateTime.UtcNow;
                 existing.ModifiePar = _currentUserService.Matricule;
             }
 
@@ -467,7 +467,7 @@ namespace GestionProjects.Infrastructure.Services
                     Montant = line.Montant,
                     Commentaire = line.Commentaire,
                     Ordre = line.Ordre,
-                    DateCreation = DateTime.Now,
+                    DateCreation = DateTime.UtcNow,
                     CreePar = createdBy
                 });
             }
@@ -483,7 +483,7 @@ namespace GestionProjects.Infrastructure.Services
                 if (existing != null)
                 {
                     existing.EstSupprime = true;
-                    existing.DateModification = DateTime.Now;
+                    existing.DateModification = DateTime.UtcNow;
                     existing.ModifiePar = _currentUserService.Matricule;
                 }
 
@@ -496,7 +496,7 @@ namespace GestionProjects.Infrastructure.Services
                 {
                     Id = Guid.NewGuid(),
                     ProjetId = projet.Id,
-                    DateCreation = DateTime.Now,
+                    DateCreation = DateTime.UtcNow,
                     CreePar = _currentUserService.Matricule ?? "SYSTEM"
                 };
                 _db.PvKickOffProjets.Add(existing);
@@ -512,7 +512,7 @@ namespace GestionProjects.Infrastructure.Services
             existing.Decisions = kickOff.Decisions;
             existing.Actions = kickOff.Actions;
             existing.Commentaires = kickOff.Commentaires;
-            existing.DateModification = DateTime.Now;
+            existing.DateModification = DateTime.UtcNow;
             existing.ModifiePar = _currentUserService.Matricule;
         }
 
@@ -566,7 +566,7 @@ namespace GestionProjects.Infrastructure.Services
         {
             var generated = new List<string>();
             var missing = new List<string>();
-            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
             var planningEntities = planningTasks
                 .Select((task, index) => new TachePlanningProjet
                 {
@@ -761,7 +761,7 @@ namespace GestionProjects.Infrastructure.Services
             foreach (var existing in existingLivrables)
             {
                 existing.EstSupprime = true;
-                existing.DateModification = DateTime.Now;
+                existing.DateModification = DateTime.UtcNow;
                 existing.ModifiePar = _currentUserService.Matricule;
             }
 
@@ -778,11 +778,11 @@ namespace GestionProjects.Infrastructure.Services
                 TypeLivrable = typeLivrable,
                 NomDocument = fileName,
                 CheminRelatif = relativePath,
-                DateDepot = DateTime.Now,
+                DateDepot = DateTime.UtcNow,
                 DeposeParId = userId,
                 Commentaire = comment,
-                Version = $"auto-{DateTime.Now:yyyyMMddHHmmss}",
-                DateCreation = DateTime.Now,
+                Version = $"auto-{DateTime.UtcNow:yyyyMMddHHmmss}",
+                DateCreation = DateTime.UtcNow,
                 CreePar = _currentUserService.Matricule ?? "SYSTEM"
             });
         }

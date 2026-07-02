@@ -66,7 +66,7 @@ public sealed class AccountService : IAccountService
         }
 
         user.NombreConnexion += 1;
-        user.DateDerniereConnexion = DateTime.Now;
+        user.DateDerniereConnexion = DateTime.UtcNow;
         await _db.SaveChangesAsync();
     }
 

@@ -44,7 +44,7 @@ namespace GestionProjects.Infrastructure.Services
                     Id = Guid.NewGuid(),
                     ProjetId = projetId,
                     TypeDocument = TypeDocumentSignatureProjet.CharteProjet,
-                    DateCreation = DateTime.Now,
+                    DateCreation = DateTime.UtcNow,
                     CreePar = currentUserMatricule ?? "SYSTEM"
                 };
                 _context.Add(dossier);
@@ -65,7 +65,7 @@ namespace GestionProjects.Infrastructure.Services
             dossier.MessageStatut = livrableSource == null
                 ? "Dossier initialise. Generez d'abord la charte PDF du projet avant l'envoi a la signature."
                 : "Dossier initialise. Verifiez les signataires puis envoyez la demande de signature.";
-            dossier.DateModification = DateTime.Now;
+            dossier.DateModification = DateTime.UtcNow;
             dossier.ModifiePar = currentUserMatricule;
 
             SynchroniserSignataires(dossier, projet, currentUserMatricule);
@@ -90,11 +90,11 @@ namespace GestionProjects.Infrastructure.Services
 
             dossier.ExternalRequestId ??= GenererReferenceExterne(dossier.Fournisseur);
             dossier.UrlSuivi ??= ConstruireUrlSuivi(dossier.Fournisseur, dossier.ExternalRequestId);
-            dossier.DateEnvoi = DateTime.Now;
-            dossier.DateExpiration = DateTime.Now.AddDays(14);
+            dossier.DateEnvoi = DateTime.UtcNow;
+            dossier.DateExpiration = DateTime.UtcNow.AddDays(14);
             dossier.Statut = StatutDossierSignature.EnCoursSignature;
             dossier.MessageStatut = $"Demande envoyee via {dossier.Fournisseur}. Suivi externe: {dossier.ExternalRequestId}.";
-            dossier.DateModification = DateTime.Now;
+            dossier.DateModification = DateTime.UtcNow;
             dossier.ModifiePar = currentUserMatricule;
 
             await _context.SaveChangesAsync();
@@ -112,8 +112,8 @@ namespace GestionProjects.Infrastructure.Services
                 return Echec("Signataire introuvable.");
 
             signataire.Statut = approuver ? StatutSignataireDossierSignature.Signe : StatutSignataireDossierSignature.Refuse;
-            signataire.DateSignature = DateTime.Now;
-            signataire.DateModification = DateTime.Now;
+            signataire.DateSignature = DateTime.UtcNow;
+            signataire.DateModification = DateTime.UtcNow;
             signataire.ModifiePar = currentUserMatricule;
 
             if (!approuver)
@@ -124,7 +124,7 @@ namespace GestionProjects.Infrastructure.Services
             else if (dossier.Signataires.All(s => s.Statut == StatutSignataireDossierSignature.Signe))
             {
                 dossier.Statut = StatutDossierSignature.Signe;
-                dossier.DateFinalisation = DateTime.Now;
+                dossier.DateFinalisation = DateTime.UtcNow;
                 dossier.MessageStatut = "Tous les signataires ont approuve la demande. Le document signe peut etre verse au dossier projet.";
             }
             else
@@ -133,7 +133,7 @@ namespace GestionProjects.Infrastructure.Services
                 dossier.MessageStatut = $"Signature enregistree pour {signataire.NomComplet}.";
             }
 
-            dossier.DateModification = DateTime.Now;
+            dossier.DateModification = DateTime.UtcNow;
             dossier.ModifiePar = currentUserMatricule;
 
             await _context.SaveChangesAsync();
@@ -152,9 +152,9 @@ namespace GestionProjects.Infrastructure.Services
             dossier.NomDocumentSigne = nomDocumentSigne;
             dossier.CheminDocumentSigne = cheminDocumentSigne;
             dossier.Statut = StatutDossierSignature.Signe;
-            dossier.DateFinalisation ??= DateTime.Now;
+            dossier.DateFinalisation ??= DateTime.UtcNow;
             dossier.MessageStatut = "Document signe verse au dossier du projet.";
-            dossier.DateModification = DateTime.Now;
+            dossier.DateModification = DateTime.UtcNow;
             dossier.ModifiePar = currentUserMatricule;
 
             await _context.SaveChangesAsync();
@@ -199,7 +199,7 @@ namespace GestionProjects.Infrastructure.Services
                     {
                         Id = Guid.NewGuid(),
                         DossierSignatureProjetId = dossier.Id,
-                        DateCreation = DateTime.Now,
+                        DateCreation = DateTime.UtcNow,
                         CreePar = currentUserMatricule ?? "SYSTEM"
                     };
                     dossier.Signataires.Add(signataire);
@@ -212,7 +212,7 @@ namespace GestionProjects.Infrastructure.Services
                 signataire.OrdreSignature = definition.Ordre;
                 signataire.Statut = StatutSignataireDossierSignature.EnAttente;
                 signataire.DateSignature = null;
-                signataire.DateModification = DateTime.Now;
+                signataire.DateModification = DateTime.UtcNow;
                 signataire.ModifiePar = currentUserMatricule;
             }
         }
@@ -226,7 +226,7 @@ namespace GestionProjects.Infrastructure.Services
                 _ => "MANUEL"
             };
 
-            return $"{prefix}-{DateTime.Now:yyyyMMddHHmmss}";
+            return $"{prefix}-{DateTime.UtcNow:yyyyMMddHHmmss}";
         }
 
         private static string ConstruireUrlSuivi(FournisseurSignatureElectronique fournisseur, string? externalRequestId)

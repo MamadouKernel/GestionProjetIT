@@ -48,7 +48,7 @@ namespace GestionProjects.Infrastructure.Services
                     EntiteType = entiteType,
                     EntiteId = entiteId,
                     EstLue = false,
-                    DateCreation = DateTime.Now,
+                    DateCreation = DateTime.UtcNow,
                     CreePar = _currentUserService.Matricule ?? "SYSTEM",
                     EstSupprime = false,
                     DonneesSupplementaires = donneesSupplementaires != null ? JsonSerializer.Serialize(donneesSupplementaires) : null
@@ -101,8 +101,8 @@ namespace GestionProjects.Infrastructure.Services
                     .Where(u => !u.EstSupprime && 
                                u.UtilisateurRoles.Any(ur => !ur.EstSupprime && 
                                                            ur.Role == role &&
-                                                           (!ur.DateDebut.HasValue || ur.DateDebut.Value <= DateTime.Now) &&
-                                                           (!ur.DateFin.HasValue || ur.DateFin.Value >= DateTime.Now)))
+                                                           (!ur.DateDebut.HasValue || ur.DateDebut.Value <= DateTime.UtcNow) &&
+                                                           (!ur.DateFin.HasValue || ur.DateFin.Value >= DateTime.UtcNow)))
                     .ToListAsync();
 
                 foreach (var utilisateur in utilisateurs)
@@ -139,8 +139,8 @@ namespace GestionProjects.Infrastructure.Services
                 if (notification != null && !notification.EstLue)
                 {
                     notification.EstLue = true;
-                    notification.DateLecture = DateTime.Now;
-                    notification.DateModification = DateTime.Now;
+                    notification.DateLecture = DateTime.UtcNow;
+                    notification.DateModification = DateTime.UtcNow;
                     notification.ModifiePar = _currentUserService.Matricule;
                     await _context.SaveChangesAsync();
                 }
@@ -164,8 +164,8 @@ namespace GestionProjects.Infrastructure.Services
                 foreach (var notification in notifications)
                 {
                     notification.EstLue = true;
-                    notification.DateLecture = DateTime.Now;
-                    notification.DateModification = DateTime.Now;
+                    notification.DateLecture = DateTime.UtcNow;
+                    notification.DateModification = DateTime.UtcNow;
                     notification.ModifiePar = _currentUserService.Matricule;
                 }
 

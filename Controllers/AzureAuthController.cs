@@ -149,8 +149,8 @@ namespace GestionProjects.Controllers
 
                 var rolesActifs = utilisateur.UtilisateurRoles
                     .Where(r => !r.EstSupprime &&
-                        (!r.DateDebut.HasValue || r.DateDebut.Value <= DateTime.Now) &&
-                        (!r.DateFin.HasValue || r.DateFin.Value >= DateTime.Now))
+                        (!r.DateDebut.HasValue || r.DateDebut.Value <= DateTime.UtcNow) &&
+                        (!r.DateFin.HasValue || r.DateFin.Value >= DateTime.UtcNow))
                     .ToList();
 
                 foreach (var ur in rolesActifs)

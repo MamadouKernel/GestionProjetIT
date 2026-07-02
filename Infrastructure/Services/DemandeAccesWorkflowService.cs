@@ -98,7 +98,7 @@ public sealed class DemandeAccesWorkflowService : IDemandeAccesWorkflowService
             AzureDepartment = AccessRequestConstants.LocalAzureDepartment,
             DirectionDetecteeId = input.DirectionId,
             Statut = StatutDemandeAcces.EnAttente,
-            DateCreation = DateTime.Now,
+            DateCreation = DateTime.UtcNow,
             CreePar = "ANONYMOUS",
             EstSupprime = false
         };
@@ -181,7 +181,7 @@ public sealed class DemandeAccesWorkflowService : IDemandeAccesWorkflowService
 
         demande.Statut = StatutDemandeAcces.ApprouveeParDm;
         demande.ValideeParDmId = input.DmId;
-        demande.DateValidationDm = DateTime.Now;
+        demande.DateValidationDm = DateTime.UtcNow;
         demande.CommentaireDm = input.Commentaire?.Trim();
         demande.RoleConfirmeParDm = input.RoleConfirme.ToString();
 
@@ -224,7 +224,7 @@ public sealed class DemandeAccesWorkflowService : IDemandeAccesWorkflowService
 
         demande.Statut = StatutDemandeAcces.RejeteeParDm;
         demande.ValideeParDmId = input.DmId;
-        demande.DateValidationDm = DateTime.Now;
+        demande.DateValidationDm = DateTime.UtcNow;
         demande.CommentaireDm = input.Commentaire.Trim();
 
         try
@@ -422,8 +422,8 @@ public sealed class DemandeAccesWorkflowService : IDemandeAccesWorkflowService
         var aRoleAttribue = utilisateur.UtilisateurRoles.Any(ur =>
             !ur.EstSupprime &&
             ur.Role == roleAAttribuer &&
-            (!ur.DateDebut.HasValue || ur.DateDebut.Value <= DateTime.Now) &&
-            (!ur.DateFin.HasValue || ur.DateFin.Value >= DateTime.Now));
+            (!ur.DateDebut.HasValue || ur.DateDebut.Value <= DateTime.UtcNow) &&
+            (!ur.DateFin.HasValue || ur.DateFin.Value >= DateTime.UtcNow));
 
         if (!aRoleAttribue)
         {
@@ -432,7 +432,7 @@ public sealed class DemandeAccesWorkflowService : IDemandeAccesWorkflowService
                 Id = Guid.NewGuid(),
                 UtilisateurId = utilisateur.Id,
                 Role = roleAAttribuer,
-                DateDebut = DateTime.Now,
+                DateDebut = DateTime.UtcNow,
                 CreePar = _currentUserService.Matricule ?? "SYSTEM"
             });
         }
@@ -440,7 +440,7 @@ public sealed class DemandeAccesWorkflowService : IDemandeAccesWorkflowService
         demande.Statut = StatutDemandeAcces.Approuvee;
         demande.DirectionDetecteeId = input.DirectionId ?? demande.DirectionDetecteeId;
         demande.CommentaireTraitement = input.Commentaire?.Trim() ?? string.Empty;
-        demande.DateTraitement = DateTime.Now;
+        demande.DateTraitement = DateTime.UtcNow;
         demande.TraiteParId = input.TraiteParId;
         demande.UtilisateurCreeId = utilisateur.Id;
 
@@ -524,7 +524,7 @@ public sealed class DemandeAccesWorkflowService : IDemandeAccesWorkflowService
 
         demande.Statut = StatutDemandeAcces.Rejetee;
         demande.CommentaireTraitement = input.Commentaire.Trim();
-        demande.DateTraitement = DateTime.Now;
+        demande.DateTraitement = DateTime.UtcNow;
         demande.TraiteParId = input.TraiteParId;
 
         await _db.SaveChangesAsync();

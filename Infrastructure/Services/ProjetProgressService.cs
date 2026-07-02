@@ -60,7 +60,7 @@ namespace GestionProjects.Infrastructure.Services
             }
 
             projet.PourcentageAvancement = automaticProgress;
-            projet.DateModification = DateTime.Now;
+            projet.DateModification = DateTime.UtcNow;
             projet.ModifiePar = _currentUserService.Matricule;
 
             if (persistChanges)
