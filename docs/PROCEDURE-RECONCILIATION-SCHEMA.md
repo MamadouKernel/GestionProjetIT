@@ -4,6 +4,55 @@
 > Cette procédure supprime la dette « migrations EF + patches SQL » décrite
 > dans la revue de code. Elle est **irréversible sans backup**.
 
+## Incident réel du 02/07/2026 — RÉSOLU
+
+Le 01/07 à 16:12 (`a55d363`) et 15:13 (`c56a342`), `ApplyMigrationsOnStartup=true`
+et `MigrationsAssembly("GestionProjects")` ont été activés en prod sans dérouler
+cette procédure. Publié à 16:33 (MSDeploy). La prod (`zeinab`, `10.88.179.103`)
+est tombée en crash-loop (`.NET Runtime` Id=1000 / `IIS AspNetCore Module V2`
+Id=1018 dans l'Observateur d'événements) au boot suivant.
+
+**Cause réelle (différente de l'exemple ci-dessous) :** l'historique
+`__EFMigrationsHistory` en prod était figé à `FixUniqueIndexUtilisateurRoleFiltered`
+(12/06). `Migrate()` a donc rejoué 4 migrations d'un coup ; la 1ʳᵉ,
+`AddJetonsInitialisationMotDePasse`, a planté sur `SqlException 2714` — la table
+existait déjà (créée manuellement via `Scripts/patch-prod-nouvelles-features.sql`).
+
+**Résolution appliquée** (vérifiée colonne par colonne avant toute écriture) :
+1. `BACKUP DATABASE zeinab` sur le serveur.
+2. `ApplyMigrationsOnStartup` repassé à `false` le temps du diagnostic, republié
+   pour stabiliser le service.
+3. Comparaison schéma réel vs migration pour chacune des 4 migrations en attente
+   (`sys.columns`/`sys.indexes`/`sys.objects`) : une seule était un vrai fantôme
+   (`AddJetonsInitialisationMotDePasse`, schéma identique), les 3 autres
+   (`BornerLongueursChaines`, `AddIndexUtilisateurMatriculeEmail`,
+   `AddDelegationValidationDM`) n'existaient pas encore en base.
+4. Insertion manuelle de la seule ligne fantôme dans `__EFMigrationsHistory`.
+5. `ApplyMigrationsOnStartup` repassé à `true`, republié : `Migrate()` a appliqué
+   proprement les 3 migrations restantes. Confirmé sans erreur dans l'Observateur
+   d'événements + `/health` 200.
+6. Les 5 blocs de `ApplyCompatibilityPatches` devenus redondants (leur migration
+   EF est désormais marquée appliquée partout : dev **et** prod) ont été retirés
+   de `DatabaseExtensions.cs` : `SignaturesCharte`, `DemandeCreationCompte`,
+   `ProfilRessource/Bilan`, `ComplementPhases/ChargesWorkflow`,
+   `PlanificationNative`.
+
+**Restent des patches actifs** (`AvenantsProjets`, `SuspensionProjet`,
+`BaselineProjet`, `ValidationDmDemandeAcces`, `BeneficesProjets`,
+`EvaluationsMembresProjets`) — **aucune migration EF ne les couvre**, ils
+n'ont donc jamais pu devenir des « fantômes » vis-à-vis de `Migrate()`. Tant
+que ces 6 entités n'ont pas de vraie migration générée (`dotnet ef migrations
+add`), ces patches restent nécessaires pour provisionner un environnement
+neuf. Prochaine étape de nettoyage : générer ces migrations manquantes puis
+retirer les 6 patches restants.
+
+**Leçon retenue** : ne jamais activer `ApplyMigrationsOnStartup` ou poser
+`MigrationsAssembly` sans avoir d'abord constaté l'état réel de
+`__EFMigrationsHistory` en prod (étape 1 ci-dessous) — l'écart peut être
+plus large et différent de ce que documente cette procédure.
+
+---
+
 ---
 
 ## 1. Le problème (preuve concrète)
