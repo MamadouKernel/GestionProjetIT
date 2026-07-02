@@ -1300,6 +1300,7 @@
         creer: "creation", cree: "creation", creation: "creation",
         valider: "validation", validee: "validation", validation: "validation", approuver: "validation",
         deposer: "depot", depose: "depot", upload: "depot", televerser: "depot",
+        document: "depot", fichier: "depot", piece: "depot", livrable: "depot", rattacher: "depot", joindre: "depot",
         rejeter: "rejet", refuser: "rejet", rejet: "rejet",
         cloturer: "cloture", fermer: "cloture", terminer: "cloture", cloture: "cloture",
         echec: "echecs", echouer: "echecs", probleme: "blocage", bloque: "blocage", bloquant: "blocage",
@@ -1308,8 +1309,49 @@
         risque: "risque", risques: "risque",
         anomalie: "anomalie", bug: "anomalie", incident: "anomalie",
         delai: "planning", retard: "planning", planning: "planning", planifier: "planning",
-        equipe: "membre", membre: "membre", participant: "membre"
+        equipe: "membre", membre: "membre", participant: "membre",
+        deleguer: "delegation", delegation: "delegation", delegataire: "delegation",
+        absence: "delegation", absent: "delegation", remplacer: "delegation", remplacement: "delegation",
+        supprimer: "corbeille", suppression: "corbeille", corbeille: "corbeille",
+        restaurer: "corbeille", restauration: "corbeille",
+        brouillon: "brouillon", cdc: "cahier",
+        connexion: "connecter", connecter: "connecter", passe: "motdepasse"
     };
+
+    // Fiches thématiques transverses : jamais liées à une route précise, mais
+    // toujours proposées par la recherche de l'assistant (searchHelpCatalog).
+    const topicHelpCatalog = [
+        {
+            title: "Délégation de rôle (absence)",
+            purpose: "La délégation permet à un délégataire d'agir à la place du titulaire (Directeur Métier, DSI ou Chef de Projet) pendant une période définie, avec traçabilité complète dans l'historique.",
+            guidance: "Ouvrez Administration > Délégations. Un DM/DSI peut créer sa propre délégation ; un Directeur peut déléguer pour les collaborateurs de sa direction ; le DSI désigne le délégataire d'un Chef de Projet absent. Renseignez délégant, délégataire et période de validité."
+        },
+        {
+            title: "Remplacement par le Responsable Solution IT",
+            purpose: "Le Responsable Solution IT peut agir directement sur tout projet à la place du Chef de Projet affecté, sans délégation formelle : l'historique trace l'action « en remplacement du Chef de Projet ».",
+            guidance: "Aucune configuration nécessaire : connectez-vous avec le rôle ResponsableSolutionsIT et intervenez sur le projet. L'audit conserve le nom du Chef de Projet officiellement affecté."
+        },
+        {
+            title: "Changer le chef de projet",
+            purpose: "Après validation DSI, le chef de projet peut être affecté ou réaffecté à tout moment tant que le projet n'est pas clôturé. L'historique des changements est conservé.",
+            guidance: "Ouvrez la fiche du projet (onglet Synthèse) puis utilisez le bouton de modification du Chef de Projet. Action réservée à la gouvernance DSI et à l'AdminIT."
+        },
+        {
+            title: "Corbeille : supprimer ou restaurer une demande ou un projet",
+            purpose: "L'AdminIT peut envoyer une demande ou un projet à la corbeille (suppression réversible) puis le restaurer. Les éléments supprimés disparaissent des listes et des files de validation.",
+            guidance: "Dans la liste des demandes ou le portefeuille projets, utilisez le bouton corbeille d'une ligne. Cochez « Afficher les supprimés » dans les filtres pour voir la corbeille et restaurer. Réservé au rôle AdminIT ; chaque action est tracée dans l'audit."
+        },
+        {
+            title: "Cahier des charges obligatoire",
+            purpose: "Le cahier des charges est exigé avant la soumission d'une demande et bloque les validations DM et DSI tant qu'il n'est pas déposé.",
+            guidance: "Depuis la fiche de la demande, déposez le cahier des charges (PDF ou Word) avant de soumettre. Un brouillon peut être enregistré sans CDC, mais pas soumis."
+        },
+        {
+            title: "Enregistrer un brouillon de demande",
+            purpose: "Une demande peut être enregistrée en brouillon pour être complétée plus tard : aucun champ bloquant à ce stade hormis le titre, la direction et le directeur métier.",
+            guidance: "Sur le formulaire Nouvelle demande, utilisez « Enregistrer en brouillon ». Retrouvez-le dans Mes Demandes pour le modifier (y compris le Directeur métier) puis le soumettre."
+        }
+    ];
 
     function expandQueryWords(words) {
         const expanded = new Set();
@@ -1363,12 +1405,26 @@
             });
         });
 
+        topicHelpCatalog.forEach((entry) => {
+            candidates.push({
+                title: entry.title,
+                purpose: entry.purpose,
+                guidance: entry.guidance,
+                haystack: normalize(`${entry.title} ${entry.purpose} ${entry.guidance}`)
+            });
+        });
+
+        // Avec plusieurs mots significatifs, exiger au moins deux correspondances :
+        // le matching par préfixe est volontairement tolérant, un seul mot ne suffit
+        // pas à garantir la pertinence (évite les réponses hors sujet).
+        const minScore = Math.min(2, rawWords.length);
+
         return candidates
             .map((candidate) => ({
                 candidate,
                 score: words.reduce((acc, w) => acc + (haystackMatchesWord(candidate.haystack, w) ? 1 : 0), 0)
             }))
-            .filter((scored) => scored.score > 0)
+            .filter((scored) => scored.score >= minScore)
             .sort((a, b) => b.score - a.score)
             .slice(0, 3)
             .map((scored) => scored.candidate);

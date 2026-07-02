@@ -8099,6 +8099,30 @@ body.screen-guide-open .screen-guide-drawer {
   border-top: 1px dashed rgba(148, 163, 184, 0.3);
 }
 
+.assistant-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.assistant-chip {
+  border: 1px solid rgba(37, 99, 235, 0.35);
+  background: #fff;
+  color: var(--primary-blue);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.assistant-chip:hover {
+  background: var(--primary-blue);
+  color: #fff;
+}
+
 .assistant-panel-input {
   display: flex;
   gap: 0.5rem;

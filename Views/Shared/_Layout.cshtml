@@ -213,6 +213,9 @@
     <script>
         window.ZeinabLayout = {
             isAuthenticated: @(User?.Identity?.IsAuthenticated == true ? "true" : "false"),
+            userRoles: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                User?.Claims.Where(c => c.Type == System.Security.Claims.ClaimTypes.Role).Select(c => c.Value)
+                ?? Enumerable.Empty<string>())),
             keepAliveUrl: '@Url.Action("KeepAlive", "Account")',
             notificationCountUrl: '@Url.Action("GetUnreadCount", "Notification")',
             notificationsUrl: '@Url.Action("GetUnreadNotifications", "Notification")?count=5',
