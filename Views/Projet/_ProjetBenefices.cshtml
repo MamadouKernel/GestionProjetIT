@@ -5,7 +5,7 @@
 @{
     var projet = Model.Projet;
     var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, projet);
-    var canManage = ui.IsAssignedChefProjet || ui.HasDsiGovernanceAccess;
+    var canManage = ui.CanActAsChefProjet || ui.HasDsiGovernanceAccess;
 }
 
 <div class="phase-shell">

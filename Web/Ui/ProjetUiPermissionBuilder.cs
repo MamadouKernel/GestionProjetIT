@@ -31,17 +31,23 @@ namespace GestionProjects.Web.Ui
             var isDelegatedSponsor = !isProjectSponsor && userId != Guid.Empty && sponsorId.HasValue &&
                 await permissionService.IsActiveDmDelegateAsync(sponsorId.Value, userId);
 
+            var isAssignedChefProjet = userId != Guid.Empty && chefProjetId.HasValue && chefProjetId.Value == userId;
+            var isDelegatedChefProjet = !isAssignedChefProjet && userId != Guid.Empty && projet != null &&
+                await permissionService.IsActiveChefProjetDelegateAsync(projet.Id, userId);
+
             return new ProjetUiPermissions
             {
                 UserId = userId,
                 CurrentUserDirectionId = currentUserDirectionId,
                 IsReadOnly = isReadOnly,
                 IsDemandeurProject = isDemandeurProject,
-                IsAssignedChefProjet = userId != Guid.Empty && chefProjetId.HasValue && chefProjetId.Value == userId,
+                IsAssignedChefProjet = isAssignedChefProjet,
+                IsDelegatedChefProjet = isDelegatedChefProjet,
                 IsProjectSponsor = isProjectSponsor,
                 IsDelegatedSponsor = isDelegatedSponsor,
                 IsProjectInUserDirection = currentUserDirectionId.HasValue && projet?.DirectionId == currentUserDirectionId.Value,
                 IsAdminIT = user.IsInRole(nameof(RoleUtilisateur.AdminIT)),
+                IsResponsableSolutionIT = user.IsInRole(nameof(RoleUtilisateur.ResponsableSolutionsIT)),
                 ActivePermissionKeys = keys
             };
         }

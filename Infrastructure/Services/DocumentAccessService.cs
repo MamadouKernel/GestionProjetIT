@@ -1,5 +1,6 @@
 using GestionProjects.Application.Common.Interfaces;
 using GestionProjects.Application.ViewModels;
+using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using GestionProjects.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -181,14 +182,25 @@ public sealed class DocumentAccessService : IDocumentAccessService
             activePermissions.Select(p => $"{p.Controleur}::{p.Action}"),
             StringComparer.OrdinalIgnoreCase);
 
+        var isAssignedChefProjet = projet.ChefProjetId.HasValue && projet.ChefProjetId.Value == userId;
+        var isDelegatedChefProjet = !isAssignedChefProjet &&
+            await _permissionService.IsActiveChefProjetDelegateAsync(projet.Id, userId);
+        var utilisateurRoles = await _db.UtilisateurRoles
+            .Where(ur => ur.UtilisateurId == userId && !ur.EstSupprime)
+            .Select(ur => ur.Role)
+            .ToListAsync();
+
         var ui = new ProjetUiPermissions
         {
             UserId = userId,
             CurrentUserDirectionId = directionId,
             IsDemandeurProject = projet.DemandeProjet?.DemandeurId == userId,
-            IsAssignedChefProjet = projet.ChefProjetId.HasValue && projet.ChefProjetId.Value == userId,
+            IsAssignedChefProjet = isAssignedChefProjet,
+            IsDelegatedChefProjet = isDelegatedChefProjet,
             IsProjectSponsor = projet.SponsorId == userId,
             IsProjectInUserDirection = directionId.HasValue && projet.DirectionId == directionId.Value,
+            IsAdminIT = utilisateurRoles.Contains(RoleUtilisateur.AdminIT),
+            IsResponsableSolutionIT = utilisateurRoles.Contains(RoleUtilisateur.ResponsableSolutionsIT),
             ActivePermissionKeys = permissionKeys
         };
 

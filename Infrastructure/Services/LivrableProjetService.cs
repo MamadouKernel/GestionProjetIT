@@ -1,7 +1,9 @@
 using GestionProjects.Application.Common.Interfaces;
 using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
+using GestionProjects.Infrastructure.Extensions;
 using GestionProjects.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 namespace GestionProjects.Infrastructure.Services
 {
@@ -50,7 +52,9 @@ namespace GestionProjects.Infrastructure.Services
             _db.LivrablesProjets.Add(livrable);
             await _db.SaveChangesAsync();
 
-            await _auditService.LogActionAsync("UPLOAD_LIVRABLE", "LivrableProjet", livrable.Id);
+            var (typeAction, details) = await _db.BuildChefProjetAuditAsync(
+                "UPLOAD_LIVRABLE", projetId, deposeParId, new { livrable.NomDocument, livrable.Phase, livrable.TypeLivrable });
+            await _auditService.LogActionAsync(typeAction, "LivrableProjet", livrable.Id, null, details);
             return livrable.Id;
         }
 
@@ -76,10 +80,15 @@ namespace GestionProjects.Infrastructure.Services
 
             await _db.SaveChangesAsync();
 
-            await _auditService.LogActionAsync(
-                "MISE_A_JOUR_LIVRABLE", "LivrableProjet", livrable.Id,
-                new { ProjetId = projetId, NomDocument = livrable.NomDocument },
+            var agissantId = await _db.Utilisateurs
+                .Where(u => u.Matricule == _currentUserService.Matricule)
+                .Select(u => u.Id)
+                .FirstOrDefaultAsync();
+            var (typeAction, details) = await _db.BuildChefProjetAuditAsync(
+                "MISE_A_JOUR_LIVRABLE", projetId, agissantId,
                 new { Version = livrable.Version, Commentaire = livrable.Commentaire });
+            await _auditService.LogActionAsync(typeAction, "LivrableProjet", livrable.Id,
+                new { ProjetId = projetId, NomDocument = livrable.NomDocument }, details);
             return true;
         }
     }

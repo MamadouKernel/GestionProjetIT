@@ -115,7 +115,7 @@
                                             </div>
 
                                             @if (d.Statut == StatutDossierSignature.EnCoursSignature && sig.Statut == StatutSignataireDossierSignature.EnAttente &&
-                                                 (ui.CanValidateCharteDsi || ui.CanValidateCharteDm || (ui.IsAssignedChefProjet && sig.Role == RoleSignataireProjet.ChefDeProjet)))
+                                                 (ui.CanValidateCharteDsi || ui.CanValidateCharteDm || (ui.CanActAsChefProjet && sig.Role == RoleSignataireProjet.ChefDeProjet)))
                                             {
                                                 <div class="record-card-actions">
                                                     <form asp-action="DecisionSignataire" method="post">

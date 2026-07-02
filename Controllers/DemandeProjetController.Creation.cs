@@ -130,7 +130,7 @@ namespace GestionProjects.Controllers
                 ModelState.AddModelError("Demande.DirectionId", "La direction est requise.");
 
             var canManage = await CanManageDemandesBackofficeAsync();
-            var saveAsDraft = workflowAction == "draft" && canManage;
+            var saveAsDraft = workflowAction == "draft";
 
             if (!saveAsDraft && !canManage && (cahierCharges == null || cahierCharges.Length == 0))
                 ModelState.AddModelError("cahierCharges", "Le cahier des charges est obligatoire avant la soumission.");

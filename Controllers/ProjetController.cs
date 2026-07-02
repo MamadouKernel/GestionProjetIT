@@ -138,7 +138,7 @@ namespace GestionProjects.Controllers
         private async Task<bool> CanManageProjectAsChefProjetOrAdminAsync(Projet projet)
         {
             var ui = await BuildProjectUiAsync(projet);
-            return ui.IsAssignedChefProjet || ui.HasDsiGovernanceAccess;
+            return ui.CanActAsChefProjet || ui.HasDsiGovernanceAccess;
         }
 
         private async Task<bool> CanViewProjectAsync(Projet projet)
@@ -1169,7 +1169,7 @@ namespace GestionProjects.Controllers
         private async Task<bool> CanActAsChefProjetAsync(Projet projet)
         {
             var ui = await BuildProjectUiAsync(projet);
-            return ui.IsAssignedChefProjet || ui.HasDsiGovernanceAccess;
+            return ui.CanActAsChefProjet || ui.HasDsiGovernanceAccess;
         }
 
         private async Task<bool> IsActiveDsiDelegateAsync(Guid userId)

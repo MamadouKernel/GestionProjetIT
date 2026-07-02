@@ -207,6 +207,7 @@ namespace GestionProjects.Application.Common.Security
                     ("Admin", "DemandesCreationCompte") => true,
                     ("Admin", "ValiderDemandeCreationCompteDM") => true,
                     ("Admin", "RefuserDemandeCreationCompteDM") => true,
+                    ("Admin", "Delegations") => true,
                     ("DemandesAcces", "ValidationsDm") => true,
                     _ => false
                 },
@@ -253,6 +254,7 @@ namespace GestionProjects.Application.Common.Security
                     ("Admin", "DemandesCreationCompte") => true,
                     ("Admin", "ValiderDemandeCreationCompteDSI") => true,
                     ("Admin", "RefuserDemandeCreationCompteDSI") => true,
+                    ("Admin", "Delegations") => true,
                     _ => false
                 },
                 RoleUtilisateur.ResponsableSolutionsIT => (controleur, action) switch
@@ -287,6 +289,7 @@ namespace GestionProjects.Application.Common.Security
                     ("Admin", "DemandesCreationCompte") => true,
                     ("Admin", "ValiderDemandeCreationCompteDSI") => true,
                     ("Admin", "RefuserDemandeCreationCompteDSI") => true,
+                    ("Admin", "Delegations") => true,
                     _ => false
                 },
                 RoleUtilisateur.ChefDeProjet => (controleur, action) switch

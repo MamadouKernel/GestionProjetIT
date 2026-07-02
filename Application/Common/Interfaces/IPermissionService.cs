@@ -29,5 +29,11 @@ namespace GestionProjects.Application.Common.Interfaces
         /// du Directeur Métier donné (délégation temporaire de rôle).
         /// </summary>
         Task<bool> IsActiveDmDelegateAsync(Guid directeurMetierId, Guid delegueId);
+
+        /// <summary>
+        /// Vérifie si l'utilisateur dispose d'une délégation active pour agir comme
+        /// Chef de Projet sur le projet donné (absence du titulaire, délégation créée par le DSI).
+        /// </summary>
+        Task<bool> IsActiveChefProjetDelegateAsync(Guid projetId, Guid delegueId);
     }
 }

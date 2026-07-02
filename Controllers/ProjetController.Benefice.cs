@@ -23,7 +23,7 @@ namespace GestionProjects.Controllers
                 return NotFound();
 
             var ui = await BuildProjectUiAsync(projet);
-            if (!(ui.IsAssignedChefProjet || ui.HasDsiGovernanceAccess))
+            if (!(ui.CanActAsChefProjet || ui.HasDsiGovernanceAccess))
                 return Forbid();
 
             var result = await beneficeService.AjouterAsync(
@@ -45,7 +45,7 @@ namespace GestionProjects.Controllers
                 return NotFound();
 
             var ui = await BuildProjectUiAsync(projet);
-            if (!(ui.IsAssignedChefProjet || ui.HasDsiGovernanceAccess))
+            if (!(ui.CanActAsChefProjet || ui.HasDsiGovernanceAccess))
                 return Forbid();
 
             var result = await beneficeService.EvaluerAsync(
@@ -65,7 +65,7 @@ namespace GestionProjects.Controllers
                 return NotFound();
 
             var ui = await BuildProjectUiAsync(projet);
-            if (!(ui.IsAssignedChefProjet || ui.HasDsiGovernanceAccess))
+            if (!(ui.CanActAsChefProjet || ui.HasDsiGovernanceAccess))
                 return Forbid();
 
             var result = await beneficeService.SupprimerAsync(beneficeId, User.GetUserIdOrThrow());

@@ -7,7 +7,7 @@
     var ui = await ProjetUiPermissionBuilder.BuildAsync(PermissionService, User, projet);
 
     var projetActif = projet.StatutProjet != StatutProjet.Cloture && projet.StatutProjet != StatutProjet.Annule;
-    var canCreer = (ui.IsAssignedChefProjet || ui.HasDsiGovernanceAccess) && projetActif;
+    var canCreer = (ui.CanActAsChefProjet || ui.HasDsiGovernanceAccess) && projetActif;
     var canValiderDM = ui.HasDmGovernanceAccess && ui.IsProjectSponsor && !ui.IsReadOnly;
     var canValiderDSI = ui.HasDsiGovernanceAccess;
     var canRejeter = canValiderDSI || canValiderDM;

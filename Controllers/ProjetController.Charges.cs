@@ -33,7 +33,7 @@ namespace GestionProjects.Controllers
             var userId = User.GetUserIdOrThrow();
             var user = await _db.Utilisateurs.FirstOrDefaultAsync(u => u.Id == userId);
             var ui = await BuildProjectUiAsync(projet);
-            var isPilotage = ui.IsAssignedChefProjet || ui.HasDsiGovernanceAccess;
+            var isPilotage = ui.CanActAsChefProjet || ui.HasDsiGovernanceAccess;
             var isProjectMember = user != null &&
                                   projet.Membres.Any(m => !m.EstSupprime &&
                                                           !string.IsNullOrWhiteSpace(m.Email) &&
@@ -61,7 +61,7 @@ namespace GestionProjects.Controllers
 
             var userId = User.GetUserIdOrThrow();
             var ui = await BuildProjectUiAsync(projet);
-            var isPilotage = ui.IsAssignedChefProjet || ui.HasDsiGovernanceAccess;
+            var isPilotage = ui.CanActAsChefProjet || ui.HasDsiGovernanceAccess;
             var isResource = userId == ressourceId;
 
             if (!isPilotage && !isResource)
@@ -271,7 +271,7 @@ namespace GestionProjects.Controllers
         private async Task<bool> CanAccessChargesAsync(Projet projet, Guid userId, Guid? ressourceId = null)
         {
             var ui = await BuildProjectUiAsync(projet);
-            if (ui.IsAssignedChefProjet || ui.HasDsiGovernanceAccess)
+            if (ui.CanActAsChefProjet || ui.HasDsiGovernanceAccess)
             {
                 return true;
             }
@@ -296,7 +296,7 @@ namespace GestionProjects.Controllers
         private async Task<bool> CanValidateChargesAsync(Projet projet)
         {
             var ui = await BuildProjectUiAsync(projet);
-            return ui.IsAssignedChefProjet || ui.HasDsiGovernanceAccess;
+            return ui.CanActAsChefProjet || ui.HasDsiGovernanceAccess;
         }
     }
 }

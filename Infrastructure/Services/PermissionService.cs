@@ -198,5 +198,16 @@ namespace GestionProjects.Infrastructure.Services
                 d.DateFin >= DateTime.Now &&
                 !d.EstSupprime);
         }
+
+        public async Task<bool> IsActiveChefProjetDelegateAsync(Guid projetId, Guid delegueId)
+        {
+            return await _context.DelegationsChefProjet.AnyAsync(d =>
+                d.ProjetId == projetId &&
+                d.DelegueId == delegueId &&
+                d.EstActive &&
+                d.DateDebut <= DateTime.Now &&
+                (d.DateFin == null || d.DateFin >= DateTime.Now) &&
+                !d.EstSupprime);
+        }
     }
 }
