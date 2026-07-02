@@ -85,8 +85,10 @@ namespace GestionProjects.Controllers
                 return NotFound();
 
             var userId = User.GetUserIdOrThrow();
-            if (!await CurrentUserHasPermissionAsync("Projet", "ListeValidationClotureDemandeur") ||
-                demande.Projet.DemandeProjet?.DemandeurId != userId)
+            var isAdminIT = User.IsInRole(nameof(RoleUtilisateur.AdminIT));
+            if (!isAdminIT &&
+                (!await CurrentUserHasPermissionAsync("Projet", "ListeValidationClotureDemandeur") ||
+                demande.Projet.DemandeProjet?.DemandeurId != userId))
                 return Forbid();
 
             var result = await _clotureWorkflow.ValiderClotureDemandeurAsync(demandeClotureId);

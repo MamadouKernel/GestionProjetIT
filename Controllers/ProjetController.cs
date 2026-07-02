@@ -215,6 +215,11 @@ namespace GestionProjects.Controllers
 
         private async Task<bool> CanValidateClotureDmAsync(DemandeClotureProjet demande, Guid userId)
         {
+            if (User.IsInRole(nameof(RoleUtilisateur.AdminIT)))
+            {
+                return true;
+            }
+
             if (!await CurrentUserHasPermissionAsync("Projet", "ListeValidationClotureDM"))
             {
                 return false;
@@ -270,6 +275,11 @@ namespace GestionProjects.Controllers
 
         private async Task<bool> CanValidateCharteAsDirecteurMetierAsync(Projet projet, Guid userId)
         {
+            if (User.IsInRole(nameof(RoleUtilisateur.AdminIT)))
+            {
+                return true;
+            }
+
             if (!await CurrentUserHasPermissionAsync("Projet", "ValiderCharteDM"))
             {
                 return false;
