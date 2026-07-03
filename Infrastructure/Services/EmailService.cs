@@ -30,7 +30,7 @@ namespace GestionProjects.Infrastructure.Services
 
             if (!enabled || string.IsNullOrWhiteSpace(host))
             {
-                _logger.LogDebug("SMTP desactive ou non configure. Sujet ignore: {Sujet}", sujet);
+                _logger.LogDebug("SMTP désactivé ou non configuré. Sujet ignoré : {Sujet}", sujet);
                 return;
             }
 
@@ -42,7 +42,7 @@ namespace GestionProjects.Infrastructure.Services
 
             if (validRecipients.Count == 0)
             {
-                _logger.LogWarning("Aucun destinataire valide pour le mail: {Sujet}", sujet);
+                _logger.LogWarning("Aucun destinataire valide pour le mail : {Sujet}", sujet);
                 return;
             }
 
@@ -65,11 +65,11 @@ namespace GestionProjects.Infrastructure.Services
                 }
 
                 await client.SendMailAsync(mail);
-                _logger.LogInformation("Email envoye. Sujet: {Sujet}. Destinataires: {Destinataires}", sujet, string.Join(", ", validRecipients));
+                _logger.LogInformation("Email envoyé. Sujet : {Sujet}. Destinataires : {Destinataires}", sujet, string.Join(", ", validRecipients));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Erreur lors de l'envoi de l'email. Sujet: {Sujet}", sujet);
+                _logger.LogError(ex, "Erreur lors de l'envoi de l'email. Sujet : {Sujet}", sujet);
             }
         }
 
@@ -102,11 +102,11 @@ namespace GestionProjects.Infrastructure.Services
                 using var mail = new MailMessage
                 {
                     From = new MailAddress(from, $"{DocumentBrandingHelper.ApplicationName} - CIT"),
-                    Subject = $"[Action requise] Charte projet a signer - {titreDemande}",
+                    Subject = $"[Action requise] Charte projet à signer - {titreDemande}",
                     Body = CorpsHtml(
-                        $"Charte projet prete pour signature - <strong>{titreDemande}</strong>",
-                        $"<p>Le Chef de projet <strong>{nomChefProjet}</strong> a genere la charte pour le projet <strong>{titreDemande}</strong>.</p>" +
-                        "<p>Vous trouverez le document en piece jointe. Connectez-vous a l'application pour finaliser la signature et poursuivre le workflow projet.</p>",
+                        $"Charte projet prête pour signature - <strong>{titreDemande}</strong>",
+                        $"<p>Le Chef de projet <strong>{nomChefProjet}</strong> a généré la charte pour le projet <strong>{titreDemande}</strong>.</p>" +
+                        "<p>Vous trouverez le document en pièce jointe. Connectez-vous à l'application pour finaliser la signature et poursuivre le workflow projet.</p>",
                         "Charte projet",
                         "Ouvrir Zéïnab"),
                     IsBodyHtml = true,
@@ -136,20 +136,20 @@ namespace GestionProjects.Infrastructure.Services
                 CorpsHtml(
                     $"Nouvelle demande de projet - <strong>{titreDemande}</strong>",
                     $"<p>Bonjour <strong>{nomDM}</strong>,</p>" +
-                    $"<p>Une nouvelle demande de projet a ete soumise par <strong>{nomDemandeur}</strong> pour la direction <strong>{direction}</strong>.</p>" +
-                    "<p>Merci de vous connecter a Zéïnab pour consulter le dossier, l'analyser et rendre votre decision.</p>",
-                    "Demande a valider",
+                    $"<p>Une nouvelle demande de projet a été soumise par <strong>{nomDemandeur}</strong> pour la direction <strong>{direction}</strong>.</p>" +
+                    "<p>Merci de vous connecter à Zéïnab pour consulter le dossier, l'analyser et rendre votre décision.</p>",
+                    "Demande à valider",
                     "Traiter la demande"));
 
         public Task EnvoyerValidationDMVersdsIAsync(string emailDSI, string titreDemande, string nomDM, string? commentaire)
             => EnvoyerAsync(
                 emailDSI,
-                $"[Action requise] Validation DM recue - attente DSI - {titreDemande}",
+                $"[Action requise] Validation DM reçue - attente DSI - {titreDemande}",
                 CorpsHtml(
-                    $"Validation Directeur Metier recue - <strong>{titreDemande}</strong>",
-                    $"<p>La demande <strong>{titreDemande}</strong> a ete validee par le Directeur Metier <strong>{nomDM}</strong>.</p>" +
+                    $"Validation Directeur Métier reçue - <strong>{titreDemande}</strong>",
+                    $"<p>La demande <strong>{titreDemande}</strong> a été validée par le Directeur Métier <strong>{nomDM}</strong>.</p>" +
                     $"{FormatOptionalParagraph("Commentaire", commentaire)}" +
-                    "<p>Merci de vous connecter a Zéïnab pour poursuivre la validation cote DSI.</p>",
+                    "<p>Merci de vous connecter à Zéïnab pour poursuivre la validation côté DSI.</p>",
                     "Validation DSI",
                     "Ouvrir la validation"));
 
@@ -162,8 +162,8 @@ namespace GestionProjects.Infrastructure.Services
                     $"<p>Bonjour <strong>{nomDemandeur}</strong>,</p>" +
                     $"<p>Votre demande <strong>{titreDemande}</strong> a fait l'objet de l'action suivante par <strong>{acteur}</strong> : <strong>{action}</strong>.</p>" +
                     $"{FormatOptionalParagraph("Motif ou commentaire", commentaire)}" +
-                    "<p>Connectez-vous a Zéïnab pour consulter le detail et, si necessaire, completer le dossier.</p>",
-                    "Mise a jour du dossier",
+                    "<p>Connectez-vous à Zéïnab pour consulter le détail et, si nécessaire, compléter le dossier.</p>",
+                    "Mise à jour du dossier",
                     "Voir la demande"));
 
         public Task EnvoyerRejetDSIAsync(string emailDemandeur, string? emailDM, string titreDemande, string nomDSI, string? commentaire)
@@ -175,13 +175,13 @@ namespace GestionProjects.Infrastructure.Services
 
             return EnvoyerAsync(
                 destinataires,
-                $"[Information] Demande rejetee par la DSI - {titreDemande}",
+                $"[Information] Demande rejetée par la DSI - {titreDemande}",
                 CorpsHtml(
-                    $"Demande rejetee par la DSI - <strong>{titreDemande}</strong>",
-                    $"<p>La demande <strong>{titreDemande}</strong> a ete rejetee par <strong>{nomDSI}</strong>.</p>" +
+                    $"Demande rejetée par la DSI - <strong>{titreDemande}</strong>",
+                    $"<p>La demande <strong>{titreDemande}</strong> a été rejetée par <strong>{nomDSI}</strong>.</p>" +
                     $"{FormatOptionalParagraph("Motif", commentaire)}" +
-                    "<p>Merci de vous connecter a Zéïnab pour prendre connaissance du detail.</p>",
-                    "Decision DSI",
+                    "<p>Merci de vous connecter à Zéïnab pour prendre connaissance du détail.</p>",
+                    "Décision DSI",
                     "Consulter le dossier"));
         }
 
@@ -194,99 +194,99 @@ namespace GestionProjects.Infrastructure.Services
 
             return EnvoyerAsync(
                 destinataires,
-                $"[Information] Demande validee DSI - projet {codeProjet} cree - {titreDemande}",
+                $"[Information] Demande validée DSI - projet {codeProjet} créé - {titreDemande}",
                 CorpsHtml(
-                    $"Demande validee - projet <strong>{codeProjet}</strong> cree",
-                    $"<p>La demande <strong>{titreDemande}</strong> a ete validee par la DSI.</p>" +
-                    $"<p>Le projet <strong>{codeProjet}</strong> a ete cree automatiquement dans le portefeuille.</p>" +
-                    "<p>Connectez-vous a Zéïnab pour suivre l'avancement et demarrer le pilotage projet.</p>",
-                    "Projet cree",
+                    $"Demande validée - projet <strong>{codeProjet}</strong> créé",
+                    $"<p>La demande <strong>{titreDemande}</strong> a été validée par la DSI.</p>" +
+                    $"<p>Le projet <strong>{codeProjet}</strong> a été créé automatiquement dans le portefeuille.</p>" +
+                    "<p>Connectez-vous à Zéïnab pour suivre l'avancement et démarrer le pilotage projet.</p>",
+                    "Projet créé",
                     "Ouvrir le projet"));
         }
 
         public Task EnvoyerDemandeAccesAsync(string emailAdmin, string nomDemandeur, string emailDemandeur, string rolesSouhaites)
             => EnvoyerAsync(
                 emailAdmin,
-                $"[Action requise] Demande d'acces - {nomDemandeur}",
+                $"[Action requise] Demande d'accès - {nomDemandeur}",
                 CorpsHtml(
-                    $"Nouvelle demande d'acces - <strong>{nomDemandeur}</strong>",
-                    $"<p>L'utilisateur <strong>{nomDemandeur}</strong> ({emailDemandeur}) a demande un acces a l'application.</p>" +
-                    $"<p>Roles souhaites : <strong>{rolesSouhaites}</strong></p>" +
-                    "<p>Connectez-vous a Zéïnab pour verifier la demande et creer le compte si elle est approuvee.</p>",
-                    "Acces a traiter",
+                    $"Nouvelle demande d'accès - <strong>{nomDemandeur}</strong>",
+                    $"<p>L'utilisateur <strong>{nomDemandeur}</strong> ({emailDemandeur}) a demandé un accès à l'application.</p>" +
+                    $"<p>Rôles souhaités : <strong>{rolesSouhaites}</strong></p>" +
+                    "<p>Connectez-vous à Zéïnab pour vérifier la demande et créer le compte si elle est approuvée.</p>",
+                    "Accès à traiter",
                     "Ouvrir l'administration"));
 
         public Task EnvoyerDemandeAccesAuDmAsync(string emailDM, string nomDM, string nomDemandeur, string emailDemandeur, string direction, string roleSouhaite)
             => EnvoyerAsync(
                 emailDM,
-                $"[Action requise] Validation d'acces dans votre direction - {nomDemandeur}",
+                $"[Action requise] Validation d'accès dans votre direction - {nomDemandeur}",
                 CorpsHtml(
-                    $"Validation d'acces a effectuer - <strong>{nomDemandeur}</strong>",
+                    $"Validation d'accès à effectuer - <strong>{nomDemandeur}</strong>",
                     $"<p>Bonjour <strong>{nomDM}</strong>,</p>" +
-                    $"<p><strong>{nomDemandeur}</strong> ({emailDemandeur}) a soumis une demande d'acces a {DocumentBrandingHelper.ApplicationName} " +
-                    $"en se rattachant a la direction <strong>{direction}</strong> dont vous etes Directeur Metier.</p>" +
-                    $"<p>Role souhaite : <strong>{roleSouhaite}</strong></p>" +
-                    "<p>Votre validation est requise comme premier rang du workflow : confirmez le rattachement et le role, " +
-                    "ou refusez si la demande est incorrecte. La creation du compte par l'AdminIT/DSI/RSIT n'aura lieu qu'apres votre validation.</p>",
-                    "Validation acces - DM",
+                    $"<p><strong>{nomDemandeur}</strong> ({emailDemandeur}) a soumis une demande d'accès à {DocumentBrandingHelper.ApplicationName} " +
+                    $"en se rattachant à la direction <strong>{direction}</strong> dont vous êtes Directeur Métier.</p>" +
+                    $"<p>Rôle souhaité : <strong>{roleSouhaite}</strong></p>" +
+                    "<p>Votre validation est requise comme premier rang du workflow : confirmez le rattachement et le rôle, " +
+                    "ou refusez si la demande est incorrecte. La création du compte par l'AdminIT/DSI/RSIT n'aura lieu qu'après votre validation.</p>",
+                    "Validation accès - DM",
                     "Valider la demande"));
 
         public Task EnvoyerDemandeCreationCompteAuDMAsync(string emailDM, string nomDM, string nomComplet, string direction, string service, string emailDemandeur)
             => EnvoyerAsync(
                 emailDM,
-                $"[Action requise] Demande de creation de compte - {nomComplet}",
+                $"[Action requise] Demande de création de compte - {nomComplet}",
                 CorpsHtml(
-                    $"Demande de creation de compte - <strong>{nomComplet}</strong>",
+                    $"Demande de création de compte - <strong>{nomComplet}</strong>",
                     $"<p>Bonjour <strong>{nomDM}</strong>,</p>" +
-                    $"<p><strong>{nomComplet}</strong> ({emailDemandeur}) souhaite creer un compte dans l'application {DocumentBrandingHelper.ApplicationName}.</p>" +
+                    $"<p><strong>{nomComplet}</strong> ({emailDemandeur}) souhaite créer un compte dans l'application {DocumentBrandingHelper.ApplicationName}.</p>" +
                     $"<p>Direction : <strong>{direction}</strong><br/>Service : <strong>{service}</strong></p>" +
-                    "<p>Merci de vous connecter a Zéïnab pour valider ou refuser cette demande.</p>",
-                    "Creation de compte",
+                    "<p>Merci de vous connecter à Zéïnab pour valider ou refuser cette demande.</p>",
+                    "Création de compte",
                     "Traiter la demande"));
 
         public Task EnvoyerDemandeCreationCompteAuDSIAsync(string emailDSI, string nomComplet, string nomDM, string direction, string service)
             => EnvoyerAsync(
                 emailDSI,
-                $"[Action requise] Compte valide par le DM - {nomComplet}",
+                $"[Action requise] Compte validé par le DM - {nomComplet}",
                 CorpsHtml(
-                    $"Compte valide par le Directeur Metier - <strong>{nomComplet}</strong>",
-                    $"<p>La demande de creation de compte de <strong>{nomComplet}</strong> a ete validee par le Directeur Metier <strong>{nomDM}</strong>.</p>" +
+                    $"Compte validé par le Directeur Métier - <strong>{nomComplet}</strong>",
+                    $"<p>La demande de création de compte de <strong>{nomComplet}</strong> a été validée par le Directeur Métier <strong>{nomDM}</strong>.</p>" +
                     $"<p>Direction : <strong>{direction}</strong><br/>Service : <strong>{service}</strong></p>" +
-                    "<p>Merci de vous connecter a Zéïnab pour creer le compte et finaliser les acces.</p>",
+                    "<p>Merci de vous connecter à Zéïnab pour créer le compte et finaliser les accès.</p>",
                     "Action DSI",
                     "Ouvrir le dossier"));
 
         public Task EnvoyerActivationCompteAsync(string email, string nomComplet, string username, string lienActivation, DateTime dateExpiration)
         {
-            // Defense en profondeur : si SmtpSettings:BaseUrl n'est pas configure, le lien
-            // arrive en relatif (/Account/...) et le client mail n'a aucun moyen de le resoudre.
-            // On le signale au log pour eviter d'envoyer un email sans lien cliquable en silence.
+            // Défense en profondeur : si SmtpSettings:BaseUrl n'est pas configuré, le lien
+            // arrive en relatif (/Account/...) et le client mail n'a aucun moyen de le résoudre.
+            // On le signale au log pour éviter d'envoyer un email sans lien cliquable en silence.
             if (!Uri.TryCreate(lienActivation, UriKind.Absolute, out _))
             {
                 _logger.LogWarning(
-                    "Lien d'activation relatif envoye a {Email} : configure SmtpSettings:BaseUrl pour generer un lien absolu cliquable.",
+                    "Lien d'activation relatif envoyé à {Email} : configurez SmtpSettings:BaseUrl pour générer un lien absolu cliquable.",
                     email);
             }
 
-            // On affiche aussi le lien en clair (texte) sous le bouton stylise : certains
-            // clients (Outlook strict, anti-phishing, dark mode) masquent les <a> stylises ;
+            // On affiche aussi le lien en clair (texte) sous le bouton stylisé : certains
+            // clients (Outlook strict, anti-phishing, dark mode) masquent les <a> stylisés ;
             // l'URL textuelle est toujours visible et copiable.
             return EnvoyerAsync(
                 email,
-                $"Activez votre acces a {DocumentBrandingHelper.ApplicationName}",
+                $"Activez votre accès à {DocumentBrandingHelper.ApplicationName}",
                 CorpsHtml(
                     $"Bienvenue sur {DocumentBrandingHelper.ApplicationName} - <strong>{nomComplet}</strong>",
                     $"<p>Bonjour <strong>{nomComplet}</strong>,</p>" +
-                    "<p>Votre compte a ete cree avec succes. Pour finaliser l'activation, definissez votre mot de passe via le lien securise ci-dessous.</p>" +
+                    "<p>Votre compte a été créé avec succès. Pour finaliser l'activation, définissez votre mot de passe via le lien sécurisé ci-dessous.</p>" +
                     "<div style=\"background:#0f172a;border-radius:20px;padding:20px 22px;margin:20px 0;color:#e2e8f0;\">" +
                     $"<p style=\"margin:0 0 10px 0;\"><strong>Identifiant</strong><br/><span style=\"font-size:18px;color:#ffffff;\">{username}</span></p>" +
                     $"<p style=\"margin:0;\"><strong>Expiration du lien</strong><br/><span style=\"font-size:18px;color:#ffffff;\">{dateExpiration:dd/MM/yyyy HH:mm}</span></p>" +
                     "</div>" +
                     "<p style=\"margin-top:18px;font-size:13px;color:#475569;\">Si le bouton ne s'affiche pas, copiez-collez ce lien dans votre navigateur :<br/>" +
                     $"<a href=\"{lienActivation}\" style=\"color:#0f4c81;word-break:break-all;\">{lienActivation}</a></p>" +
-                    "<p>Si vous n'etes pas a l'origine de cette demande, ignorez ce message et contactez la DSI.</p>",
-                    "Acces utilisateur",
-                    "Definir mon mot de passe",
+                    "<p>Si vous n'êtes pas à l'origine de cette demande, ignorez ce message et contactez la DSI.</p>",
+                    "Accès utilisateur",
+                    "Définir mon mot de passe",
                     lienActivation));
         }
 
@@ -295,52 +295,52 @@ namespace GestionProjects.Infrastructure.Services
             if (!Uri.TryCreate(lienReinitialisation, UriKind.Absolute, out _))
             {
                 _logger.LogWarning(
-                    "Lien de reinitialisation relatif envoye a {Email} : configure SmtpSettings:BaseUrl pour generer un lien absolu cliquable.",
+                    "Lien de réinitialisation relatif envoyé à {Email} : configurez SmtpSettings:BaseUrl pour générer un lien absolu cliquable.",
                     email);
             }
 
             return EnvoyerAsync(
                 email,
-                $"Reinitialisation de votre mot de passe {DocumentBrandingHelper.ApplicationName}",
+                $"Réinitialisation de votre mot de passe {DocumentBrandingHelper.ApplicationName}",
                 CorpsHtml(
-                    $"Reinitialisation du mot de passe - <strong>{nomComplet}</strong>",
+                    $"Réinitialisation du mot de passe - <strong>{nomComplet}</strong>",
                     $"<p>Bonjour <strong>{nomComplet}</strong>,</p>" +
-                    "<p>Une demande de reinitialisation de mot de passe a ete effectuee pour votre compte. Definissez un nouveau mot de passe via le lien securise ci-dessous.</p>" +
+                    "<p>Une demande de réinitialisation de mot de passe a été effectuée pour votre compte. Définissez un nouveau mot de passe via le lien sécurisé ci-dessous.</p>" +
                     "<div style=\"background:#0f172a;border-radius:20px;padding:20px 22px;margin:20px 0;color:#e2e8f0;\">" +
                     $"<p style=\"margin:0 0 10px 0;\"><strong>Identifiant</strong><br/><span style=\"font-size:18px;color:#ffffff;\">{username}</span></p>" +
                     $"<p style=\"margin:0;\"><strong>Expiration du lien</strong><br/><span style=\"font-size:18px;color:#ffffff;\">{dateExpiration:dd/MM/yyyy HH:mm}</span></p>" +
                     "</div>" +
                     "<p style=\"margin-top:18px;font-size:13px;color:#475569;\">Si le bouton ne s'affiche pas, copiez-collez ce lien dans votre navigateur :<br/>" +
                     $"<a href=\"{lienReinitialisation}\" style=\"color:#0f4c81;word-break:break-all;\">{lienReinitialisation}</a></p>" +
-                    "<p>Si vous n'etes pas a l'origine de cette demande, ignorez ce message : votre mot de passe actuel reste valide. Contactez la DSI si cela se reproduit.</p>",
-                    "Mot de passe oublie",
-                    "Definir mon nouveau mot de passe",
+                    "<p>Si vous n'êtes pas à l'origine de cette demande, ignorez ce message : votre mot de passe actuel reste valide. Contactez la DSI si cela se reproduit.</p>",
+                    "Mot de passe oublié",
+                    "Définir mon nouveau mot de passe",
                     lienReinitialisation));
         }
 
         public Task EnvoyerConfirmationCreationCompteAuDMAsync(string emailDM, string nomDM, string nomNouvelUtilisateur)
             => EnvoyerAsync(
                 emailDM,
-                $"[Information] Compte cree - {nomNouvelUtilisateur}",
+                $"[Information] Compte créé - {nomNouvelUtilisateur}",
                 CorpsHtml(
-                    $"Compte cree - <strong>{nomNouvelUtilisateur}</strong>",
+                    $"Compte créé - <strong>{nomNouvelUtilisateur}</strong>",
                     $"<p>Bonjour <strong>{nomDM}</strong>,</p>" +
-                    $"<p>Le compte de <strong>{nomNouvelUtilisateur}</strong> a ete cree avec succes.</p>" +
-                    "<p>Un lien d'activation securise a ete transmis directement a l'utilisateur.</p>",
-                    "Compte active",
+                    $"<p>Le compte de <strong>{nomNouvelUtilisateur}</strong> a été créé avec succès.</p>" +
+                    "<p>Un lien d'activation sécurisé a été transmis directement à l'utilisateur.</p>",
+                    "Compte activé",
                     "Ouvrir Zéïnab"));
 
         public Task EnvoyerRefusCreationCompteAsync(string emailDemandeur, string nomComplet, string acteur, string? commentaire)
             => EnvoyerAsync(
                 emailDemandeur,
-                "[Information] Demande de compte refusee",
+                "[Information] Demande de compte refusée",
                 CorpsHtml(
-                    "Demande de compte refusee",
+                    "Demande de compte refusée",
                     $"<p>Bonjour <strong>{nomComplet}</strong>,</p>" +
-                    $"<p>Votre demande de creation de compte a ete refusee par <strong>{acteur}</strong>.</p>" +
+                    $"<p>Votre demande de création de compte a été refusée par <strong>{acteur}</strong>.</p>" +
                     $"{FormatOptionalParagraph("Motif", commentaire)}" +
-                    "<p>Pour plus d'informations, contactez votre Directeur Metier ou la DSI.</p>",
-                    "Compte refuse",
+                    "<p>Pour plus d'informations, contactez votre Directeur Métier ou la DSI.</p>",
+                    "Compte refusé",
                     "Ouvrir Zéïnab"));
 
         public Task SendEmailAsync(string to, string subject, string htmlBody, string? textBody = null)
@@ -365,19 +365,19 @@ namespace GestionProjects.Infrastructure.Services
             if (useDefaultCredentials)
             {
                 client.UseDefaultCredentials = true;
-                _logger.LogDebug("SMTP configure avec les credentials Windows par defaut vers {Host}:{Port}", host, port);
+                _logger.LogDebug("SMTP configuré avec les identifiants Windows par défaut vers {Host}:{Port}", host, port);
             }
             else if (!string.IsNullOrWhiteSpace(username))
             {
                 client.UseDefaultCredentials = false;
                 client.Credentials = new NetworkCredential(username, password);
-                _logger.LogDebug("SMTP configure en mode authentifie vers {Host}:{Port} pour {Username}", host, port, username);
+                _logger.LogDebug("SMTP configuré en mode authentifié vers {Host}:{Port} pour {Username}", host, port, username);
             }
             else
             {
                 client.UseDefaultCredentials = false;
                 client.Credentials = null;
-                _logger.LogDebug("SMTP configure en mode relay anonyme vers {Host}:{Port}", host, port);
+                _logger.LogDebug("SMTP configuré en mode relais anonyme vers {Host}:{Port}", host, port);
             }
 
             return client;
@@ -443,7 +443,7 @@ namespace GestionProjects.Infrastructure.Services
                               </div>
                             </div>
                             <div style="margin-top:22px;color:#ffffff;font-size:28px;font-weight:800;line-height:1.15;">
-                              Un message clair, trace et pret a l'action.
+                              Un message clair, tracé et prêt à l'action.
                             </div>
                           </div>
                         </td>
@@ -457,16 +457,16 @@ namespace GestionProjects.Infrastructure.Services
                           </div>
                           {actionBlock}
                           <div style="margin-top:30px;padding:18px 20px;border-radius:20px;background:#f8fafc;border:1px solid #dbe7f5;color:#64748b;font-size:13px;line-height:1.65;">
-                            <strong style="color:#0f172a;">Bon a savoir</strong><br />
-                            Ce message est envoye automatiquement par {DocumentBrandingHelper.ApplicationName}. Les actions, validations et livrables restent traces dans l'application.
+                            <strong style="color:#0f172a;">Bon à savoir</strong><br />
+                            Ce message est envoyé automatiquement par {DocumentBrandingHelper.ApplicationName}. Les actions, validations et livrables restent tracés dans l'application.
                           </div>
                         </td>
                       </tr>
                       <tr>
                         <td style="padding:22px 34px;background:#0f172a;color:#cbd5e1;font-size:12px;line-height:1.7;">
                           <div style="font-weight:700;color:#ffffff;margin-bottom:4px;">{DocumentBrandingHelper.ApplicationName} - {DocumentBrandingHelper.CompanyName}</div>
-                          <div>Message automatique. Merci de ne pas repondre directement a cet email.</div>
-                          <div style="margin-top:6px;">Site: {DocumentBrandingHelper.CompanySite}</div>
+                          <div>Message automatique. Merci de ne pas répondre directement à cet email.</div>
+                          <div style="margin-top:6px;">Site : {DocumentBrandingHelper.CompanySite}</div>
                         </td>
                       </tr>
                     </table>
