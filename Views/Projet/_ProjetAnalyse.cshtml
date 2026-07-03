@@ -18,7 +18,7 @@
     <div class=""form-help-popover"" role=""tooltip"">
         <strong>{encodedTitle}</strong>
         <div class=""form-help-popover-section"">
-            <span>A quoi sert ce bloc ?</span>
+            <span>À quoi sert ce bloc ?</span>
             <p>{encodedPurpose}</p>
         </div>
         <div class=""form-help-popover-section"">
@@ -59,7 +59,7 @@
                 </div>
                 <h3 class="phase-title">Phase Analyse & Clarification</h3>
                 <p class="phase-subtitle">
-                    Cadrez le besoin, consolidez la charte, structurez l'equipe projet et documentez les premiers risques avant le passage en planification.
+                    Cadrez le besoin, consolidez la charte, structurez l'équipe projet et documentez les premiers risques avant le passage en planification.
                 </p>
             </div>
             @if (canEditAnalyse)
@@ -67,14 +67,14 @@
                 <div class="phase-action-row">
                     <a asp-action="CharteProjet" asp-route-id="@Model.Id" class="btn-modern btn-modern-primary">
                         <i class="bi bi-file-earmark-text"></i>
-                        Editer Charte Projet
+                        Éditer Charte Projet
                     </a>
                     <form asp-action="GenererChartePdf" method="post" target="_blank">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="id" value="@Model.Id" />
                         <button type="submit" class="btn-modern btn-modern-primary">
                             <i class="bi bi-file-earmark-pdf"></i>
-                            Generer PDF Charte
+                            Générer PDF Charte
                         </button>
                     </form>
                     <form asp-action="ValiderPhaseAnalyse" method="post">
@@ -89,7 +89,7 @@
                         }
                         else
                         {
-                            <button type="button" class="btn-modern btn-modern-secondary" disabled title="La charte doit etre validee par le Directeur Metier et la DSI, et la version signee doit etre deposee avant de pouvoir valider la phase Analyse.">
+                            <button type="button" class="btn-modern btn-modern-secondary" disabled title="La charte doit être validée par le Directeur Métier et la DSI, et la version signée doit être déposée avant de pouvoir valider la phase Analyse.">
                                 <i class="bi bi-check-circle"></i>
                                 Valider la phase Analyse
                             </button>
@@ -110,14 +110,14 @@
             </span>
             <span class="phase-chip @(charteSigneeComplete ? "is-success" : "is-warning")">
                 <i class="bi @(charteSigneeComplete ? "bi-file-earmark-check" : "bi-file-earmark-x")"></i>
-                @(charteSigneeComplete ? "Charte signee deposee" : "Charte signee manquante ou incomplete")
+                @(charteSigneeComplete ? "Charte signée déposée" : "Charte signée manquante ou incomplète")
             </span>
         </div>
 
         @if (!canValiderPhaseAnalyse && canEditAnalyse)
         {
             <div class="phase-note is-warning" style="margin-top: 1rem;">
-                La charte doit etre validee par le DM et la DSI, et la version signee doit etre deposee avant de valider la phase Analyse.
+                La charte doit être validée par le DM et la DSI, et la version signée doit être déposée avant de valider la phase Analyse.
             </div>
         }
     </section>
@@ -166,13 +166,13 @@
                                     <a asp-controller="Document" asp-action="PreviewProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@cahierAnalyse.Id" target="_blank" class="phase-link">
                                         @cahierAnalyse.NomDocument
                                     </a>
-                                    <div class="record-card-subtitle">Depose le @cahierAnalyse.DateDepot.ToString("dd/MM/yyyy")</div>
+                                    <div class="record-card-subtitle">Déposé le @cahierAnalyse.DateDepot.ToString("dd/MM/yyyy")</div>
                                 </div>
                                 <div class="record-card-actions">
                                     <a asp-controller="Document" asp-action="PreviewProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@cahierAnalyse.Id" target="_blank" class="btn-modern btn-modern-primary" title="Visualiser">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <a asp-controller="Document" asp-action="StreamProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@cahierAnalyse.Id" asp-route-download="true" class="btn-modern btn-modern-secondary" title="Telecharger">
+                                    <a asp-controller="Document" asp-action="StreamProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@cahierAnalyse.Id" asp-route-download="true" class="btn-modern btn-modern-secondary" title="Télécharger">
                                         <i class="bi bi-download"></i>
                                     </a>
                                 </div>
@@ -201,13 +201,13 @@
                                     <a asp-controller="Document" asp-action="PreviewProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@noteCadrage.Id" target="_blank" class="phase-link">
                                         @noteCadrage.NomDocument
                                     </a>
-                                    <div class="record-card-subtitle">Depose le @noteCadrage.DateDepot.ToString("dd/MM/yyyy")</div>
+                                    <div class="record-card-subtitle">Déposé le @noteCadrage.DateDepot.ToString("dd/MM/yyyy")</div>
                                 </div>
                                 <div class="record-card-actions">
                                     <a asp-controller="Document" asp-action="PreviewProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@noteCadrage.Id" target="_blank" class="btn-modern btn-modern-primary" title="Visualiser">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <a asp-controller="Document" asp-action="StreamProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@noteCadrage.Id" asp-route-download="true" class="btn-modern btn-modern-secondary" title="Telecharger">
+                                    <a asp-controller="Document" asp-action="StreamProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@noteCadrage.Id" asp-route-download="true" class="btn-modern btn-modern-secondary" title="Télécharger">
                                         <i class="bi bi-download"></i>
                                     </a>
                                 </div>
@@ -233,7 +233,7 @@
                         "Ce bloc accueille les pièces complémentaires de cadrage qui n'entrent pas dans les deux documents obligatoires.",
                         "Déposez ici les comptes rendus, études, schémas ou annexes utiles à la compréhension et à la validation du dossier.")
                 </div>
-                <div class="phase-record-meta">Pieces complementaires de cadrage, d'etude et de clarification.</div>
+                <div class="phase-record-meta">Pièces complémentaires de cadrage, d'étude et de clarification.</div>
             </div>
             @if (canEditAnalyse)
             {
@@ -253,13 +253,13 @@
                         <div class="record-card-header">
                             <div>
                                 <div class="record-card-title">@livrable.NomDocument</div>
-                                <div class="record-card-subtitle">Type: @livrable.TypeLivrable | Depose le @livrable.DateDepot.ToString("dd/MM/yyyy")</div>
+                                <div class="record-card-subtitle">Type : @livrable.TypeLivrable | Déposé le @livrable.DateDepot.ToString("dd/MM/yyyy")</div>
                             </div>
                             <div class="record-card-actions">
                                 <a asp-controller="Document" asp-action="PreviewProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@livrable.Id" target="_blank" class="btn-modern btn-modern-primary" title="Visualiser">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                <a asp-controller="Document" asp-action="StreamProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@livrable.Id" asp-route-download="true" class="btn-modern btn-modern-secondary" title="Telecharger">
+                                <a asp-controller="Document" asp-action="StreamProjetLivrable" asp-route-projetId="@Model.Id" asp-route-livrableId="@livrable.Id" asp-route-download="true" class="btn-modern btn-modern-secondary" title="Télécharger">
                                     <i class="bi bi-download"></i>
                                 </a>
                             </div>
@@ -289,7 +289,7 @@
                             "Ce bloc sert au dialogue RSI / DSI sur les points techniques sensibles du projet pendant l'analyse.",
                             "Renseignez des observations techniques, risques, arbitrages ou recommandations exploitables avant la validation de la charte.")
                     </div>
-                    <div class="phase-record-meta">Observations et recommandations techniques partagees entre RSI et DSI.</div>
+                    <div class="phase-record-meta">Observations et recommandations techniques partagées entre RSI et DSI.</div>
                 </div>
             </div>
 
@@ -325,7 +325,7 @@
                     <input type="hidden" name="id" value="@Model.Id" />
                     <div class="form-group-modern">
                         <label class="form-label-modern">Ajouter / Modifier un commentaire technique</label>
-                        <textarea name="commentaireTechnique" class="form-control-modern" rows="6" placeholder="Ajoutez vos observations techniques, risques identifies, recommandations...">@Model.CommentaireTechnique</textarea>
+                        <textarea name="commentaireTechnique" class="form-control-modern" rows="6" placeholder="Ajoutez vos observations techniques, risques identifiés, recommandations...">@Model.CommentaireTechnique</textarea>
                         <small style="color: var(--gray-500); font-size: 0.875rem;">
                             <i class="bi bi-info-circle"></i> Ces commentaires sont visibles par la DSI et le Responsable Solutions IT.
                         </small>
@@ -346,8 +346,8 @@
         <section class="phase-panel">
             <div class="phase-section-header">
                 <div>
-                    <h4 class="phase-panel-title">Equipe du projet</h4>
-                    <div class="phase-record-meta">Mobilisation des contributeurs cles pour la phase d'analyse.</div>
+                    <h4 class="phase-panel-title">Équipe du projet</h4>
+                    <div class="phase-record-meta">Mobilisation des contributeurs clés pour la phase d'analyse.</div>
                 </div>
                 <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#ajouterMembreModal">
                     <i class="bi bi-plus-circle"></i>
@@ -363,8 +363,8 @@
                             <thead>
                                 <tr>
                                     <th>Nom</th>
-                                    <th>Prenom</th>
-                                    <th>Role dans le projet</th>
+                                    <th>Prénom</th>
+                                    <th>Rôle dans le projet</th>
                                     <th>Direction</th>
                                     <th>Email</th>
                                     <th>Actions</th>
@@ -395,7 +395,7 @@
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="id" value="@Model.Id" />
                                                     <input type="hidden" name="membreId" value="@membre.Id" />
-                                                    <button type="submit" class="btn-modern btn-modern-danger" onclick="return confirm('Retirer @membre.Nom @membre.Prenom de l''equipe projet ?');" title="Retirer">
+                                                    <button type="submit" class="btn-modern btn-modern-danger" onclick="return confirm('Retirer @membre.Nom @membre.Prenom de l''équipe projet ?');" title="Retirer">
                                                         <i class="bi bi-trash"></i>
                                                     </button>
                                                 </form>
@@ -412,7 +412,7 @@
             {
                 <div class="phase-empty">
                     <i class="bi bi-people"></i>
-                    <p>Aucun membre dans l'equipe projet pour le moment.</p>
+                    <p>Aucun membre dans l'équipe projet pour le moment.</p>
                     <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#ajouterMembreModal">
                         <i class="bi bi-plus-circle"></i>
                         Ajouter le premier membre
@@ -434,23 +434,23 @@
                     <label class="form-label-modern">Notes de clarification</label>
                     <textarea name="notesClarification" class="form-control-modern" rows="4" placeholder="Saisir les notes de clarification du besoin...">@(Model.FicheProjet?.NotesClarification ?? "")</textarea>
                     <small style="color: var(--gray-500); font-size: 0.875rem;">
-                        <i class="bi bi-info-circle"></i> Details supplementaires sur le besoin apres echanges avec le demandeur.
+                        <i class="bi bi-info-circle"></i> Détails supplémentaires sur le besoin après échanges avec le demandeur.
                     </small>
                 </div>
 
                 <div class="form-group-modern mb-3">
-                    <label class="form-label-modern">Decisions prises</label>
-                    <textarea name="decisionsPrises" class="form-control-modern" rows="4" placeholder="Saisir les decisions prises lors des reunions de clarification...">@(Model.FicheProjet?.DecisionsPrises ?? "")</textarea>
+                    <label class="form-label-modern">Décisions prises</label>
+                    <textarea name="decisionsPrises" class="form-control-modern" rows="4" placeholder="Saisir les décisions prises lors des réunions de clarification...">@(Model.FicheProjet?.DecisionsPrises ?? "")</textarea>
                     <small style="color: var(--gray-500); font-size: 0.875rem;">
-                        <i class="bi bi-info-circle"></i> Decisions importantes prises pendant la phase d'analyse.
+                        <i class="bi bi-info-circle"></i> Décisions importantes prises pendant la phase d'analyse.
                     </small>
                 </div>
 
                 <div class="form-group-modern mb-3">
-                    <label class="form-label-modern">Hypotheses du projet</label>
-                    <textarea name="hypothesesProjet" class="form-control-modern" rows="4" placeholder="Saisir les hypotheses et contraintes du projet...">@(Model.FicheProjet?.HypothesesProjet ?? "")</textarea>
+                    <label class="form-label-modern">Hypothèses du projet</label>
+                    <textarea name="hypothesesProjet" class="form-control-modern" rows="4" placeholder="Saisir les hypothèses et contraintes du projet...">@(Model.FicheProjet?.HypothesesProjet ?? "")</textarea>
                     <small style="color: var(--gray-500); font-size: 0.875rem;">
-                        <i class="bi bi-info-circle"></i> Hypotheses de travail et contraintes identifiees.
+                        <i class="bi bi-info-circle"></i> Hypothèses de travail et contraintes identifiées.
                     </small>
                 </div>
 
@@ -501,7 +501,7 @@
             <div class="phase-section-header">
                 <div>
                     <h4 class="phase-panel-title">Registre des risques</h4>
-                    <div class="phase-record-meta">Identification et mise a jour des risques initiaux du projet.</div>
+                    <div class="phase-record-meta">Identification et mise à jour des risques initiaux du projet.</div>
                 </div>
                 <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#ajouterRisqueModal">
                     <i class="bi bi-plus-circle"></i>
@@ -517,7 +517,7 @@
                             <thead>
                                 <tr>
                                     <th>Description</th>
-                                    <th>Probabilite</th>
+                                    <th>Probabilité</th>
                                     <th>Impact</th>
                                     <th>Statut</th>
                                     <th>Responsable</th>
@@ -580,7 +580,7 @@
             {
                 <div class="phase-empty">
                     <i class="bi bi-exclamation-triangle"></i>
-                    <p>Aucun risque identifie pour le moment.</p>
+                    <p>Aucun risque identifié pour le moment.</p>
                     <button type="button" class="btn-modern btn-modern-primary" data-bs-toggle="modal" data-bs-target="#ajouterRisqueModal">
                         <i class="bi bi-plus-circle"></i>
                         Identifier le premier risque

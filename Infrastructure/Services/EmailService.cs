@@ -442,9 +442,6 @@ namespace GestionProjects.Infrastructure.Services
                                 <div style="color:rgba(255,255,255,.82);font-size:13px;">{DocumentBrandingHelper.CompanyName} - Pilotage projets et validations</div>
                               </div>
                             </div>
-                            <div style="margin-top:22px;color:#ffffff;font-size:28px;font-weight:800;line-height:1.15;">
-                              Un message clair, tracé et prêt à l'action.
-                            </div>
                           </div>
                         </td>
                       </tr>

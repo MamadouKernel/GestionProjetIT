@@ -21,12 +21,12 @@
                 <div class="modal-body" style="padding: var(--spacing-lg);">
                     <div class="form-group-modern">
                         <label class="form-label-modern">Description *</label>
-                        <textarea name="description" class="form-control-modern" rows="4" required placeholder="Decrivez l'anomalie en detail..."></textarea>
+                        <textarea name="description" class="form-control-modern" rows="4" required placeholder="Décrivez l'anomalie en détail..."></textarea>
                     </div>
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group-modern">
-                                <label class="form-label-modern">Priorite *</label>
+                                <label class="form-label-modern">Priorité *</label>
                                 <select name="priorite" class="form-control-modern" asp-items="Html.GetEnumSelectList<GestionProjects.Domain.Enums.PrioriteAnomalie>()" required></select>
                             </div>
                         </div>
@@ -38,13 +38,13 @@
                         </div>
                     </div>
                     <div class="form-group-modern">
-                        <label class="form-label-modern">Module concerne</label>
+                        <label class="form-label-modern">Module concerné</label>
                         <input type="text" name="moduleConcerne" class="form-control-modern" placeholder="Ex: Module Authentification, Module Facturation..." />
                     </div>
                     @if (casTests.Any())
                     {
                         <div class="form-group-modern">
-                            <label class="form-label-modern">Cas de test lie</label>
+                            <label class="form-label-modern">Cas de test lié</label>
                             <select name="CasTestProjetId" class="form-control-modern">
                                 <option value="">-- Aucun --</option>
                                 @foreach (var casTest in casTests)
@@ -55,7 +55,7 @@
                         </div>
                     }
                     <div class="form-group-modern">
-                        <label class="form-label-modern">Assignee a</label>
+                        <label class="form-label-modern">Assigné à</label>
                         <input type="text" name="assigneeA" class="form-control-modern" placeholder="Nom de la personne responsable de la correction" />
                     </div>
                 </div>

@@ -24,15 +24,15 @@
             <div class="phase-summary-item"><strong>@total</strong></div>
         </article>
         <article class="phase-panel">
-            <h4 class="phase-panel-title">Reussis</h4>
+            <h4 class="phase-panel-title">Réussis</h4>
             <div class="phase-summary-item"><strong>@reussie</strong></div>
         </article>
         <article class="phase-panel">
-            <h4 class="phase-panel-title">En echec</h4>
+            <h4 class="phase-panel-title">En échec</h4>
             <div class="phase-summary-item"><strong>@echec</strong></div>
         </article>
         <article class="phase-panel">
-            <h4 class="phase-panel-title">A executer</h4>
+            <h4 class="phase-panel-title">À exécuter</h4>
             <div class="phase-summary-item"><strong>@aExec</strong></div>
         </article>
     </div>
@@ -41,7 +41,7 @@
         <div class="phase-section-header">
             <div>
                 <h3 class="phase-panel-title">Campagnes de test</h3>
-                <div class="phase-record-meta">Decoupage des executions par environnement, statut et date de lancement.</div>
+                <div class="phase-record-meta">Découpage des exécutions par environnement, statut et date de lancement.</div>
             </div>
             @if (canEdit)
             {
@@ -89,7 +89,7 @@
         <div class="phase-section-header">
             <div>
                 <h3 class="phase-panel-title">Cas de test</h3>
-                <div class="phase-record-meta">Pilotage des scenarios, priorites, executions et resultats attendus.</div>
+                <div class="phase-record-meta">Pilotage des scénarios, priorités, exécutions et résultats attendus.</div>
             </div>
             @if (canEdit)
             {
@@ -104,7 +104,7 @@
         {
             <div class="phase-empty">
                 <i class="bi bi-inbox"></i>
-                <p>Aucun cas de test. Commencez par en creer un.</p>
+                <p>Aucun cas de test. Commencez par en créer un.</p>
             </div>
         }
         else
@@ -115,7 +115,7 @@
                     var derniereExec = ct.Executions.OrderByDescending(e => e.DateExecution).FirstOrDefault();
                     var prioriteClass = ct.Priorite == PrioriteAnomalie.Critique ? "is-danger" : ct.Priorite == PrioriteAnomalie.Haute ? "is-warning" : "is-info";
                     var resultatClass = "is-info";
-                    var resultatLabel = "A executer";
+                    var resultatLabel = "À exécuter";
 
                     if (derniereExec != null)
                     {
@@ -144,8 +144,8 @@
                                             data-castest-id="@ct.Id"
                                             data-castest-titre="@ct.Titre"
                                             data-campagne-id="@ct.CampagneTestProjetId"
-                                            title="Executer"
-                                            aria-label="Executer">
+                                            title="Exécuter"
+                                            aria-label="Exécuter">
                                         <i class="bi bi-play"></i>
                                     </button>
                                     @if (canEdit)
@@ -167,13 +167,13 @@
                             </div>
                         </div>
                         <div class="record-card-meta">
-                            <span class="record-card-meta-label">Priorite</span>
+                            <span class="record-card-meta-label">Priorité</span>
                             <span class="record-card-meta-value"><span class="phase-chip @prioriteClass">@ct.Priorite</span></span>
                             <span class="record-card-meta-label">Obligatoire</span>
                             <span class="record-card-meta-value">@(ct.EstObligatoire ? "Oui" : "Non")</span>
-                            <span class="record-card-meta-label">Derniere execution</span>
+                            <span class="record-card-meta-label">Dernière exécution</span>
                             <span class="record-card-meta-value">@(derniereExec?.DateExecution.ToString("dd/MM/yyyy HH:mm") ?? "-")</span>
-                            <span class="record-card-meta-label">Resultat</span>
+                            <span class="record-card-meta-label">Résultat</span>
                             <span class="record-card-meta-value"><span class="phase-chip @resultatClass">@resultatLabel</span></span>
                         </div>
                     </article>
@@ -220,7 +220,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn-modern btn-modern-primary">Creer</button>
+                        <button type="submit" class="btn-modern btn-modern-primary">Créer</button>
                     </div>
                 </form>
             </div>
@@ -244,7 +244,7 @@
                                 <input name="titre" type="text" class="form-control" required />
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label fw-semibold">Priorite *</label>
+                                <label class="form-label fw-semibold">Priorité *</label>
                                 <select name="priorite" class="form-select" required>
                                     @foreach (var p in Enum.GetValues<PrioriteAnomalie>())
                                     {
@@ -257,7 +257,7 @@
                                 <textarea name="description" class="form-control" rows="2"></textarea>
                             </div>
                             <div class="col-12">
-                                <label class="form-label fw-semibold">Resultat attendu *</label>
+                                <label class="form-label fw-semibold">Résultat attendu *</label>
                                 <textarea name="resultAttendu" class="form-control" rows="2" required></textarea>
                             </div>
                             <div class="col-md-6">
@@ -292,7 +292,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-play-circle"></i> Enregistrer une execution</h5>
+                <h5 class="modal-title"><i class="bi bi-play-circle"></i> Enregistrer une exécution</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form asp-action="ExecuterCasTest" method="post">
@@ -303,7 +303,7 @@
                 <div class="modal-body">
                     <p class="mb-3">Cas de test : <strong id="execCasTestTitre"></strong></p>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Resultat *</label>
+                        <label class="form-label fw-semibold">Résultat *</label>
                         <select name="statut" class="form-select" required>
                             @foreach (var s in Enum.GetValues<StatutExecutionTest>())
                             {

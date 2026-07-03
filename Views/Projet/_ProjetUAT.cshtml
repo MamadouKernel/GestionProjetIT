@@ -90,16 +90,16 @@
             </div>
         </article>
         <article class="phase-panel">
-            <h4 class="phase-panel-title">Qualite & validation</h4>
+            <h4 class="phase-panel-title">Qualité & validation</h4>
             <div class="phase-summary-list">
                 <div class="phase-summary-item"><span>Campagnes</span><strong>@campagnes.Count</strong></div>
                 <div class="phase-summary-item"><span>Cas de test</span><strong>@totalCas</strong></div>
-                <div class="phase-summary-item"><span>Reussis / echec</span><strong>@casReussis / @casEchec</strong></div>
+                <div class="phase-summary-item"><span>Réussis / échec</span><strong>@casReussis / @casEchec</strong></div>
                 <div class="phase-summary-item"><span>PV recette signé</span><strong>@(pvRecettePresent ? "Oui" : "Non")</strong></div>
             </div>
         </article>
         <article class="phase-panel">
-            <h4 class="phase-panel-title">Preparation MEP</h4>
+            <h4 class="phase-panel-title">Préparation MEP</h4>
             <div class="phase-summary-list">
                 <div class="phase-summary-item"><span>Date MEP prévue</span><strong>@(fiche.DateMepPrevue?.ToString("dd/MM/yyyy") ?? "Non définie")</strong></div>
                 <div class="phase-summary-item"><span>Date MEP réelle</span><strong>@(projet.DateMep?.ToString("dd/MM/yyyy") ?? "Non renseignée")</strong></div>
@@ -118,7 +118,7 @@
             <div class="phase-grid">
                 <section class="phase-panel">
                     <div class="form-help-title-row">
-                        <h4 class="phase-panel-title">Preparation UAT</h4>
+                        <h4 class="phase-panel-title">Préparation UAT</h4>
                         @RenderHelpPopover(
                             "Préparation UAT",
                             "Ce bloc définit le périmètre, les dates et les testeurs de la recette métier.",
@@ -144,7 +144,7 @@
 
                 <section class="phase-panel">
                     <div class="form-help-title-row">
-                        <h4 class="phase-panel-title">Preparation MEP</h4>
+                        <h4 class="phase-panel-title">Préparation MEP</h4>
                         @RenderHelpPopover(
                             "Préparation MEP",
                             "Ce bloc cadre la mise en production : date cible, prérequis, plan de déploiement et repli.",
@@ -155,7 +155,7 @@
                         <input name="DateMepPrevue" type="date" class="form-control-modern" value="@(fiche.DateMepPrevue?.ToString("yyyy-MM-dd") ?? string.Empty)" />
                     </div>
                     <div class="form-group-modern">
-                        <label class="form-label-modern">Prerequis</label>
+                        <label class="form-label-modern">Prérequis</label>
                         <textarea name="PrerequisMep" class="form-control-modern" rows="3">@fiche.PrerequisMep</textarea>
                     </div>
                     <div class="form-group-modern">
@@ -181,7 +181,7 @@
                         <label class="form-check-label" for="changeRequis">Change requis</label>
                     </div>
                     <div class="form-group-modern">
-                        <label class="form-label-modern">Reference change</label>
+                        <label class="form-label-modern">Référence change</label>
                         <input name="ReferenceChange" class="form-control-modern" value="@fiche.ReferenceChange" />
                     </div>
                     <div class="form-group-modern">
@@ -197,11 +197,11 @@
                         <input name="dateMepReelle" type="date" class="form-control-modern" value="@(projet.DateMep?.ToString("yyyy-MM-dd") ?? string.Empty)" />
                     </div>
                     <div class="form-group-modern">
-                        <label class="form-label-modern">Resultat MEP</label>
+                        <label class="form-label-modern">Résultat MEP</label>
                         <textarea name="ResultatMep" class="form-control-modern" rows="2">@fiche.ResultatMep</textarea>
                     </div>
                     <div class="form-group-modern">
-                        <label class="form-label-modern">Incidents rencontres</label>
+                        <label class="form-label-modern">Incidents rencontrés</label>
                         <textarea name="IncidentsMep" class="form-control-modern" rows="2">@fiche.IncidentsMep</textarea>
                     </div>
                 </section>
@@ -215,7 +215,7 @@
                             "Précisez la période, les incidents post-MEP, le statut de stabilisation et cochez la fin d'hypercare quand le RUN est stabilisé.")
                     </div>
                     <div class="form-group-modern">
-                        <label class="form-label-modern">Periode hypercare</label>
+                        <label class="form-label-modern">Période hypercare</label>
                         <input name="PeriodeHypercare" class="form-control-modern" value="@fiche.PeriodeHypercare" />
                     </div>
                     <div class="form-group-modern">
@@ -228,7 +228,7 @@
                     </div>
                     <div class="form-check form-switch mb-3">
                         <input class="form-check-input" type="checkbox" id="hypercareTermine" name="HypercareTermine" value="true" @(fiche.HypercareTermine ? "checked" : string.Empty) />
-                        <label class="form-check-label" for="hypercareTermine">Hypercare termine</label>
+                        <label class="form-check-label" for="hypercareTermine">Hypercare terminé</label>
                     </div>
                 </section>
             </div>
@@ -310,8 +310,8 @@
             <div class="phase-summary-list">
                 <div class="phase-summary-item"><span>Campagnes</span><strong>@campagnes.Count</strong></div>
                 <div class="phase-summary-item"><span>Cas de test</span><strong>@totalCas</strong></div>
-                <div class="phase-summary-item"><span>Cas reussis</span><strong>@casReussis</strong></div>
-                <div class="phase-summary-item"><span>Cas en echec</span><strong>@casEchec</strong></div>
+                <div class="phase-summary-item"><span>Cas réussis</span><strong>@casReussis</strong></div>
+                <div class="phase-summary-item"><span>Cas en échec</span><strong>@casEchec</strong></div>
             </div>
         </section>
     </div>

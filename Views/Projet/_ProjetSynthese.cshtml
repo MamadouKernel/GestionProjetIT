@@ -19,7 +19,7 @@
     <div class=""form-help-popover"" role=""tooltip"">
         <strong>{encodedTitle}</strong>
         <div class=""form-help-popover-section"">
-            <span>A quoi sert ce bloc ?</span>
+            <span>À quoi sert ce bloc ?</span>
             <p>{encodedPurpose}</p>
         </div>
         <div class=""form-help-popover-section"">
@@ -43,11 +43,11 @@
             <div>
                 <div class="phase-eyebrow">
                     <i class="bi bi-grid"></i>
-                    Synthese
+                    Synthèse
                 </div>
                 <h3 class="phase-title">Fiche de pilotage projet</h3>
                 <p class="phase-subtitle">
-                    Vue de reference pour suivre la gouvernance, le rythme de progression, les risques et la collaboration autour du projet.
+                    Vue de référence pour suivre la gouvernance, le rythme de progression, les risques et la collaboration autour du projet.
                 </p>
             </div>
             <div class="phase-action-row">
@@ -86,13 +86,13 @@
                 <div class="phase-section-header">
                     <div>
                         <div class="form-help-title-row">
-                            <h4 class="phase-panel-title">Informations generales</h4>
+                            <h4 class="phase-panel-title">Informations générales</h4>
                             @RenderHelpPopover(
                                 "Informations générales",
                                 "Ce bloc donne la lecture de référence du projet : identité, sponsor, responsable IT, phase et dates.",
                                 "Il ne se renseigne pas ici directement. Les informations proviennent de la demande initiale, de l'affectation du chef de projet et des mises à jour faites dans les phases métier.")
                         </div>
-                        <div class="phase-record-meta">Identite, gouvernance et dates de reference.</div>
+                        <div class="phase-record-meta">Identité, gouvernance et dates de référence.</div>
                     </div>
                 </div>
 
@@ -300,7 +300,7 @@
                             </strong>
                         </div>
                         <div class="phase-summary-item">
-                            <span>RAG calcule (reference)</span>
+                            <span>RAG calculé (référence)</span>
                             <strong>@projet.EtatRAGEquivalent</strong>
                         </div>
                     </div>
@@ -338,7 +338,7 @@
                                     <div>
                                         <div class="record-card-title">@risque.Description</div>
                                         <div class="record-card-subtitle">
-                                            Probabilite: @risque.Probabilite | Impact: @risque.Impact | Statut: @risque.Statut
+                                            Probabilité: @risque.Probabilite | Impact: @risque.Impact | Statut: @risque.Statut
                                         </div>
                                     </div>
                                 </div>
@@ -360,7 +360,7 @@
                 {
                     <div class="phase-empty">
                         <i class="bi bi-shield-check"></i>
-                        <p>Aucun risque identifie pour le moment.</p>
+                        <p>Aucun risque identifié pour le moment.</p>
                     </div>
                 }
             </section>
@@ -448,12 +448,12 @@
                         <div class="form-group-modern">
                             <label class="form-label-modern">Nouvelle phase *</label>
                             <select name="nouvellePhase" class="form-control-modern" asp-items="Html.GetEnumSelectList<GestionProjects.Domain.Enums.PhaseProjet>()" required>
-                                <option value="">-- Selectionner --</option>
+                                <option value="">-- Sélectionner --</option>
                             </select>
                         </div>
                         <div class="form-group-modern mt-3">
                             <label class="form-label-modern">Commentaire (optionnel)</label>
-                            <textarea name="commentaire" class="form-control-modern" rows="3" placeholder="Ajoutez un commentaire si necessaire..."></textarea>
+                            <textarea name="commentaire" class="form-control-modern" rows="3" placeholder="Ajoutez un commentaire si nécessaire..."></textarea>
                         </div>
                     </div>
                     <div class="modal-footer app-modal-footer">
@@ -497,9 +497,9 @@
                         <div class="form-group-modern">
                             <label class="form-label-modern">Action *</label>
                             <select name="actionType" class="form-control-modern" required onchange="toggleCommentaire(this.value)">
-                                <option value="">-- Selectionner --</option>
-                                <option value="Cloture">Cloturer le projet (projet termine avec succes)</option>
-                                <option value="Abandon">Abandonner le projet (travaux arretes ou changement d'avis)</option>
+                                <option value="">-- Sélectionner --</option>
+                                <option value="Cloture">Clôturer le projet (projet terminé avec succès)</option>
+                                <option value="Abandon">Abandonner le projet (travaux arrêtés ou changement d'avis)</option>
                             </select>
                         </div>
                         <div class="form-group-modern mt-3" id="commentaireGroup">

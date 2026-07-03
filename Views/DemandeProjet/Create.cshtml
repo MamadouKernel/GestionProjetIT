@@ -19,7 +19,7 @@
                 </div>
                 <h2 class="phase-title">Nouvelle demande de projet</h2>
                 <p class="phase-subtitle">
-                    Formalisez le besoin, cadrez la gouvernance metier et joignez le cahier des charges avant soumission dans le workflow.
+                    Formalisez le besoin, cadrez la gouvernance métier et joignez le cahier des charges avant soumission dans le workflow.
                 </p>
             </div>
             <div class="phase-action-row">
@@ -38,17 +38,17 @@
 
         <div class="phase-grid">
             <section class="phase-panel">
-                <h3 class="phase-panel-title">Informations generales</h3>
+                <h3 class="phase-panel-title">Informations générales</h3>
 
                 <div class="form-group-modern">
                     <label asp-for="Demande.Titre" class="form-label-modern">Titre du projet *</label>
-                    <input asp-for="Demande.Titre" class="form-control-modern" required placeholder="Ex: Mise en place d'un systeme de gestion..." />
+                    <input asp-for="Demande.Titre" class="form-control-modern" required placeholder="Ex: Mise en place d'un système de gestion..." />
                     <span asp-validation-for="Demande.Titre" class="text-danger"></span>
                 </div>
 
                 <div class="form-group-modern">
                     <label asp-for="Demande.Description" class="form-label-modern">Description *</label>
-                    <textarea asp-for="Demande.Description" class="form-control-modern" rows="4" required placeholder="Decrivez le projet en detail..."></textarea>
+                    <textarea asp-for="Demande.Description" class="form-control-modern" rows="4" required placeholder="Décrivez le projet en détail..."></textarea>
                     <span asp-validation-for="Demande.Description" class="text-danger"></span>
                 </div>
 
@@ -66,19 +66,19 @@
 
                 <div class="form-group-modern">
                     <label asp-for="Demande.AvantagesAttendus" class="form-label-modern">Avantages attendus *</label>
-                    <textarea asp-for="Demande.AvantagesAttendus" class="form-control-modern" rows="3" required placeholder="Decrivez les avantages attendus..."></textarea>
+                    <textarea asp-for="Demande.AvantagesAttendus" class="form-control-modern" rows="3" required placeholder="Décrivez les avantages attendus..."></textarea>
                     <span asp-validation-for="Demande.AvantagesAttendus" class="text-danger"></span>
                 </div>
 
                 <div class="form-group-modern">
-                    <label asp-for="Demande.Perimetre" class="form-label-modern">Perimetre</label>
-                    <textarea asp-for="Demande.Perimetre" class="form-control-modern" rows="4" placeholder="Processus impactes, activites couvertes, utilisateurs concernes..."></textarea>
-                    <div class="soft-note">Decrivez le perimetre du projet : processus impactes, activites couvertes et population concernee.</div>
+                    <label asp-for="Demande.Perimetre" class="form-label-modern">Périmètre</label>
+                    <textarea asp-for="Demande.Perimetre" class="form-control-modern" rows="4" placeholder="Processus impactés, activités couvertes, utilisateurs concernés..."></textarea>
+                    <div class="soft-note">Décrivez le périmètre du projet : processus impactés, activités couvertes et population concernée.</div>
                 </div>
             </section>
 
             <section class="phase-panel">
-                <h3 class="phase-panel-title">Parametres & gouvernance</h3>
+                <h3 class="phase-panel-title">Paramètres & gouvernance</h3>
 
                 @if (isReadOnly)
                 {
@@ -87,16 +87,16 @@
                         @{
                             var selectedDirection = Model.Directions.FirstOrDefault(d => d.Value == preSelectedDirectionId?.ToString());
                         }
-                        @(selectedDirection?.Text ?? "Non definie")
+                        @(selectedDirection?.Text ?? "Non définie")
                     </div>
                     <input type="hidden" asp-for="Demande.DirectionId" id="DirectionId" value="@preSelectedDirectionId" />
 
                     <div class="record-card-note mt-3">
-                        <strong>Directeur metier :</strong><br />
+                        <strong>Directeur métier :</strong><br />
                         @{
                             var selectedDirecteurMetier = Model.DirecteursMetier.FirstOrDefault(d => d.Value == preSelectedDirecteurMetierId?.ToString());
                         }
-                        @(selectedDirecteurMetier?.Text ?? "Non defini")
+                        @(selectedDirecteurMetier?.Text ?? "Non défini")
                     </div>
                     <input type="hidden" asp-for="Demande.DirecteurMetierId" id="DirecteurMetierId" value="@preSelectedDirecteurMetierId" />
                 }
@@ -105,13 +105,13 @@
                     <div class="form-group-modern">
                         <label asp-for="Demande.DirectionId" class="form-label-modern">Direction *</label>
                         <select asp-for="Demande.DirectionId" id="DirectionId" class="form-control-modern" asp-items="Model.Directions.ToSelectListItems()" required>
-                            <option value="">-- Selectionner --</option>
+                            <option value="">-- Sélectionner --</option>
                         </select>
                         <span asp-validation-for="Demande.DirectionId" class="text-danger"></span>
                     </div>
 
                     <div class="form-group-modern">
-                        <label asp-for="Demande.DirecteurMetierId" class="form-label-modern">Directeur metier *</label>
+                        <label asp-for="Demande.DirecteurMetierId" class="form-label-modern">Directeur métier *</label>
                         <select asp-for="Demande.DirecteurMetierId" id="DirecteurMetierId" class="form-control-modern"
                                 asp-items="Model.DirecteursMetier.ToSelectListItems()" required>
                             <option value="">-- Sélectionner un directeur métier --</option>
@@ -128,16 +128,16 @@
                     <span asp-validation-for="Demande.AutreSponsorId" class="text-danger"></span>
                     @if (hasMembresCodir)
                     {
-                        <div class="soft-note">Selectionnez, si besoin, un sponsor complementaire parmi les membres du CODIR.</div>
+                        <div class="soft-note">Sélectionnez, si besoin, un sponsor complémentaire parmi les membres du CODIR.</div>
                     }
                     else
                     {
-                        <div class="soft-note text-warning">Aucun membre CODIR n'est encore parametre dans l'administration.</div>
+                        <div class="soft-note text-warning">Aucun membre CODIR n'est encore paramétré dans l'administration.</div>
                     }
                 </div>
 
                 <div class="form-group-modern">
-                    <label class="form-label-modern">Priorite *</label>
+                    <label class="form-label-modern">Priorité *</label>
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label asp-for="Demande.Urgence" class="form-label-modern">Urgence</label>
@@ -145,25 +145,25 @@
                             <span asp-validation-for="Demande.Urgence" class="text-danger"></span>
                         </div>
                         <div class="col-md-6">
-                            <label asp-for="Demande.Criticite" class="form-label-modern">Criticite</label>
+                            <label asp-for="Demande.Criticite" class="form-label-modern">Criticité</label>
                             <select asp-for="Demande.Criticite" class="form-control-modern" asp-items="Html.GetEnumSelectList<GestionProjects.Domain.Enums.CriticiteProjet>()" required></select>
                             <span asp-validation-for="Demande.Criticite" class="text-danger"></span>
                         </div>
                     </div>
-                    <div class="soft-note">La priorite du besoin est definie par le couple urgence / criticite.</div>
+                    <div class="soft-note">La priorité du besoin est définie par le couple urgence / criticité.</div>
                     <div id="prioriteCalculeePreview" class="phase-note is-info mt-3">
                         <div class="phase-strong">
-                            Priorite calculee
+                            Priorité calculée
                             <span id="prioriteCalculeeCode" class="badge-modern badge-modern-secondary ms-2">-</span>
                         </div>
                         <p id="prioriteCalculeeLibelle" style="margin: .6rem 0 0;">
-                            Selectionnez l'urgence et la criticite pour calculer la priorite.
+                            Sélectionnez l'urgence et la criticité pour calculer la priorité.
                         </p>
                     </div>
                 </div>
 
                 <div class="form-group-modern">
-                    <label asp-for="Demande.DateMiseEnOeuvreSouhaitee" class="form-label-modern">Date de mise en oeuvre souhaitee</label>
+                    <label asp-for="Demande.DateMiseEnOeuvreSouhaitee" class="form-label-modern">Date de mise en œuvre souhaitée</label>
                     <input asp-for="Demande.DateMiseEnOeuvreSouhaitee" type="date" class="form-control-modern" />
                 </div>
             </section>
@@ -173,7 +173,7 @@
             <div class="phase-section-header">
                 <div>
                     <h3 class="phase-panel-title">Documents</h3>
-                    <div class="phase-record-meta">Cahier des charges obligatoire, annexes complementaires et acces au modele standard.</div>
+                    <div class="phase-record-meta">Cahier des charges obligatoire, annexes complémentaires et accès au modèle standard.</div>
                 </div>
                 <a href="~/templates/Modele_Cahier_Charges_Projet_IT.docx" class="btn-modern btn-modern-secondary">
                     <i class="bi bi-download"></i>
@@ -201,7 +201,7 @@
                 <section class="phase-panel">
                     <h4 class="phase-panel-title">Annexes</h4>
                     <input type="file" name="annexes" class="form-control-modern" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png" />
-                    <div class="soft-note mt-2">Vous pouvez selectionner plusieurs fichiers complementaires.</div>
+                    <div class="soft-note mt-2">Vous pouvez sélectionner plusieurs fichiers complémentaires.</div>
                 </section>
             </div>
         </section>
@@ -267,7 +267,7 @@
                         });
                         if (currentValue) directeurMetierSelect.value = currentValue;
                     })
-                    .catch(function(error) { console.error('Erreur chargement directeurs metier:', error); });
+                    .catch(function(error) { console.error('Erreur chargement directeurs métier:', error); });
             });
         })();
     </script>
@@ -287,15 +287,15 @@
                     case 7:
                         return { code: 'P1', label: 'Critique', badge: 'danger' };
                     case 6:
-                        return { code: 'P2', label: 'Tres elevee', badge: 'warning' };
+                        return { code: 'P2', label: 'Très élevée', badge: 'warning' };
                     case 5:
-                        return { code: 'P3', label: 'Elevee', badge: 'info' };
+                        return { code: 'P3', label: 'Élevée', badge: 'info' };
                     case 4:
-                        return { code: 'P4', label: 'Moderee', badge: 'secondary' };
+                        return { code: 'P4', label: 'Modérée', badge: 'secondary' };
                     case 3:
                         return { code: 'P5', label: 'Faible', badge: 'secondary' };
                     default:
-                        return { code: 'P6', label: 'Planifiee', badge: 'secondary' };
+                        return { code: 'P6', label: 'Planifiée', badge: 'secondary' };
                 }
             }
 
@@ -306,7 +306,7 @@
                 if (!urgence || !criticite) {
                     prioriteCode.textContent = '-';
                     prioriteCode.className = 'badge-modern badge-modern-secondary';
-                    prioriteLibelle.textContent = "Selectionnez l'urgence et la criticite pour calculer la priorite.";
+                    prioriteLibelle.textContent = "Sélectionnez l'urgence et la criticité pour calculer la priorité.";
                     return;
                 }
 

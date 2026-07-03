@@ -20,7 +20,7 @@
     <div class=""form-help-popover"" role=""tooltip"">
         <strong>{encodedTitle}</strong>
         <div class=""form-help-popover-section"">
-            <span>A quoi sert ce bloc ?</span>
+            <span>À quoi sert ce bloc ?</span>
             <p>{encodedPurpose}</p>
         </div>
         <div class=""form-help-popover-section"">
@@ -53,9 +53,9 @@
             <div>
                 <div class="phase-eyebrow">
                     <i class="bi bi-activity"></i>
-                    Execution
+                    Exécution
                 </div>
-                <h3 class="phase-title">Execution et suivi</h3>
+                <h3 class="phase-title">Exécution et suivi</h3>
                 <p class="phase-subtitle">
                     Suivi du planning, des actions, du budget, des charges et des anomalies avant l'ouverture de la recette.
                 </p>
@@ -71,7 +71,7 @@
                 </span>
                 <span class="phase-chip @(ecartCharge > 0 ? "is-warning" : "is-success")">
                     <i class="bi bi-clock-history"></i>
-                    Ecart charge: @ecartCharge.ToString("N1") h
+                    Écart charge : @ecartCharge.ToString("N1") h
                 </span>
             </div>
         </div>
@@ -79,30 +79,30 @@
 
     <div class="phase-grid phase-grid-3">
         <article class="phase-panel">
-            <h4 class="phase-panel-title">Synthese projet</h4>
+            <h4 class="phase-panel-title">Synthèse projet</h4>
             <div class="phase-summary-list">
                 <div class="phase-summary-item"><span>Phase</span><strong>@projet.PhaseWorkflowLabel</strong></div>
                 <div class="phase-summary-item"><span>Statut global</span><strong>@projet.StatutWorkflowLabel</strong></div>
                 <div class="phase-summary-item"><span>Avancement</span><strong>@projet.PourcentageAvancementAffiche%</strong></div>
-                <div class="phase-summary-item"><span>Etat</span><strong>@projet.EtatProjet</strong></div>
+                <div class="phase-summary-item"><span>État</span><strong>@projet.EtatProjet</strong></div>
             </div>
         </article>
         <article class="phase-panel">
             <h4 class="phase-panel-title">Suivi planning</h4>
             <div class="phase-summary-list">
-                <div class="phase-summary-item"><span>Debut reel</span><strong>@(fiche.DateDebutReelleExecution?.ToString("dd/MM/yyyy") ?? "Non renseigne")</strong></div>
-                <div class="phase-summary-item"><span>Fin prevue</span><strong>@(projet.DateFinPrevue?.ToString("dd/MM/yyyy") ?? "Non definie")</strong></div>
-                <div class="phase-summary-item"><span>Fin estimee</span><strong>@(fiche.DateFinEstimeeExecution?.ToString("dd/MM/yyyy") ?? "Non definie")</strong></div>
-                <div class="phase-summary-item"><span>Prochain jalon</span><strong>@(string.IsNullOrWhiteSpace(fiche.ProchainJalon) ? "A definir" : fiche.ProchainJalon)</strong></div>
+                <div class="phase-summary-item"><span>Début réel</span><strong>@(fiche.DateDebutReelleExecution?.ToString("dd/MM/yyyy") ?? "Non renseigné")</strong></div>
+                <div class="phase-summary-item"><span>Fin prévue</span><strong>@(projet.DateFinPrevue?.ToString("dd/MM/yyyy") ?? "Non définie")</strong></div>
+                <div class="phase-summary-item"><span>Fin estimée</span><strong>@(fiche.DateFinEstimeeExecution?.ToString("dd/MM/yyyy") ?? "Non définie")</strong></div>
+                <div class="phase-summary-item"><span>Prochain jalon</span><strong>@(string.IsNullOrWhiteSpace(fiche.ProchainJalon) ? "À définir" : fiche.ProchainJalon)</strong></div>
             </div>
         </article>
         <article class="phase-panel">
             <h4 class="phase-panel-title">Budget & charges</h4>
             <div class="phase-summary-list">
-                <div class="phase-summary-item"><span>Budget prevu</span><strong>@budgetPrevu.ToString("N0") FCFA</strong></div>
-                <div class="phase-summary-item"><span>Budget consomme</span><strong>@budgetConsomme.ToString("N0") FCFA</strong></div>
-                <div class="phase-summary-item"><span>Charge prevue</span><strong>@chargePrevue.ToString("N1") h</strong></div>
-                <div class="phase-summary-item"><span>Charge reelle</span><strong>@chargeReelle.ToString("N1") h</strong></div>
+                <div class="phase-summary-item"><span>Budget prévu</span><strong>@budgetPrevu.ToString("N0") FCFA</strong></div>
+                <div class="phase-summary-item"><span>Budget consommé</span><strong>@budgetConsomme.ToString("N0") FCFA</strong></div>
+                <div class="phase-summary-item"><span>Charge prévue</span><strong>@chargePrevue.ToString("N1") h</strong></div>
+                <div class="phase-summary-item"><span>Charge réelle</span><strong>@chargeReelle.ToString("N1") h</strong></div>
             </div>
         </article>
     </div>
@@ -126,15 +126,15 @@
                             "Renseignez les dates réelles, expliquez les retards et tenez le commentaire d'avancement à jour. Le pourcentage se calcule automatiquement à partir des tâches du planning.")
                     </div>
                     <div class="form-group-modern">
-                        <label class="form-label-modern">Date debut reelle</label>
+                        <label class="form-label-modern">Date début réelle</label>
                         <input name="DateDebutReelleExecution" type="date" class="form-control-modern" value="@(fiche.DateDebutReelleExecution?.ToString("yyyy-MM-dd") ?? string.Empty)" />
                     </div>
                     <div class="form-group-modern">
-                        <label class="form-label-modern">Date fin previsionnelle mise a jour</label>
+                        <label class="form-label-modern">Date fin prévisionnelle mise à jour</label>
                         <input name="dateFinPrevue" type="date" class="form-control-modern" value="@(projet.DateFinPrevue?.ToString("yyyy-MM-dd") ?? string.Empty)" />
                     </div>
                     <div class="form-group-modern">
-                        <label class="form-label-modern">Date fin estimee</label>
+                        <label class="form-label-modern">Date fin estimée</label>
                         <input name="DateFinEstimeeExecution" type="date" class="form-control-modern" value="@(fiche.DateFinEstimeeExecution?.ToString("yyyy-MM-dd") ?? string.Empty)" />
                     </div>
                     <div class="form-group-modern">
@@ -149,7 +149,7 @@
                         </small>
                     </div>
                     <div class="form-group-modern">
-                        <label class="form-label-modern">Etat projet</label>
+                        <label class="form-label-modern">État projet</label>
                         <select name="etatProjet" class="form-control-modern">
                             @foreach (var etat in Enum.GetValues<EtatProjet>())
                             {
@@ -172,26 +172,26 @@
 
                 <section class="phase-panel">
                     <div class="form-help-title-row">
-                        <h4 class="phase-panel-title">Actions, risques et decisions</h4>
+                        <h4 class="phase-panel-title">Actions, risques et décisions</h4>
                         @RenderHelpPopover(
                             "Actions, risques et décisions",
                             "Ce bloc sert à journaliser ce qui a été fait, ce qui reste à faire et les décisions de pilotage prises en exécution.",
                             "Renseignez des éléments courts et actionnables : réalisé, à venir, blocages, décisions, puis mettez à jour le prochain jalon.")
                     </div>
                     <div class="form-group-modern">
-                        <label class="form-label-modern">Actions realisees</label>
+                        <label class="form-label-modern">Actions réalisées</label>
                         <textarea name="ActionsRealiseesExecution" class="form-control-modern" rows="3">@fiche.ActionsRealiseesExecution</textarea>
                     </div>
                     <div class="form-group-modern">
-                        <label class="form-label-modern">Actions a venir</label>
+                        <label class="form-label-modern">Actions à venir</label>
                         <textarea name="ActionsAVenirExecution" class="form-control-modern" rows="3">@fiche.ActionsAVenirExecution</textarea>
                     </div>
                     <div class="form-group-modern">
-                        <label class="form-label-modern">Problemes / blocages</label>
+                        <label class="form-label-modern">Problèmes / blocages</label>
                         <textarea name="ProblemesBlocagesExecution" class="form-control-modern" rows="3">@fiche.ProblemesBlocagesExecution</textarea>
                     </div>
                     <div class="form-group-modern">
-                        <label class="form-label-modern">Decisions prises</label>
+                        <label class="form-label-modern">Décisions prises</label>
                         <textarea name="DecisionsExecution" class="form-control-modern" rows="3">@fiche.DecisionsExecution</textarea>
                     </div>
                     <div class="form-group-modern">
@@ -209,7 +209,7 @@
                             "Renseignez le budget consommé, expliquez les écarts et décrivez le reste à faire en charge. Gardez des valeurs cohérentes avec le module Charges.")
                     </div>
                     <div class="form-group-modern">
-                        <label class="form-label-modern">Budget consomme (FCFA)</label>
+                        <label class="form-label-modern">Budget consommé (FCFA)</label>
                         <input name="BudgetConsomme" type="number" step="0.01" class="form-control-modern" value="@fiche.BudgetConsomme" />
                     </div>
                     <div class="form-group-modern">
@@ -217,15 +217,15 @@
                         <textarea name="JustificationBudgetExecution" class="form-control-modern" rows="3">@fiche.JustificationBudgetExecution</textarea>
                     </div>
                     <div class="form-group-modern">
-                        <label class="form-label-modern">Synthese charges</label>
-                        <textarea name="SyntheseChargesExecution" class="form-control-modern" rows="4" placeholder="Charge prevue, charge consommee, reste a faire, ecarts...">@fiche.SyntheseChargesExecution</textarea>
+                        <label class="form-label-modern">Synthèse charges</label>
+                        <textarea name="SyntheseChargesExecution" class="form-control-modern" rows="4" placeholder="Charge prévue, charge consommée, reste à faire, écarts...">@fiche.SyntheseChargesExecution</textarea>
                     </div>
-                    <div class="phase-note is-info">Ecart charge actuel : @ecartCharge.ToString("N1") h</div>
+                    <div class="phase-note is-info">Écart charge actuel : @ecartCharge.ToString("N1") h</div>
                 </section>
 
                 <section class="phase-panel">
                     <div class="form-help-title-row">
-                        <h4 class="phase-panel-title">Taches / actions projet</h4>
+                        <h4 class="phase-panel-title">Tâches / actions projet</h4>
                         @RenderHelpPopover(
                             "Tâches / actions projet",
                             "Ce bloc reflète les tâches structurées de l'exécution et alimente le calcul automatique de l'avancement.",
@@ -240,7 +240,7 @@
                                     <div class="record-card-header">
                                         <div>
                                             <div class="record-card-title">@tache.Titre</div>
-                                            <div class="record-card-subtitle">@tache.Statut · @(tache.Assignee != null ? $"{tache.Assignee.Nom} {tache.Assignee.Prenoms}" : "Non assigne")</div>
+                                            <div class="record-card-subtitle">@tache.Statut · @(tache.Assignee != null ? $"{tache.Assignee.Nom} {tache.Assignee.Prenoms}" : "Non assigné")</div>
                                         </div>
                                         <span class="phase-chip">@(tache.DateEcheance?.ToString("dd/MM") ?? "--")</span>
                                     </div>
@@ -252,7 +252,7 @@
                     {
                         <div class="phase-empty">
                             <i class="bi bi-kanban"></i>
-                            <p>Aucune tache structuree n'est encore synchronisee pour la phase Execution.</p>
+                            <p>Aucune tâche structurée n'est encore synchronisée pour la phase Exécution.</p>
                         </div>
                     }
                 </section>
@@ -261,7 +261,7 @@
             <div class="phase-action-row">
                 <button type="submit" class="btn-modern btn-modern-primary">
                     <i class="bi bi-save"></i>
-                    Enregistrer le suivi d'execution
+                    Enregistrer le suivi d'exécution
                 </button>
             </div>
         </form>
@@ -307,22 +307,22 @@
                 <h4 class="phase-panel-title">Avancement</h4>
                 <div class="record-card-note">
                     <strong>Commentaire :</strong><br />
-                    @(string.IsNullOrWhiteSpace(fiche.CommentaireAvancementExecution) ? "Non renseigne" : fiche.CommentaireAvancementExecution)
+                    @(string.IsNullOrWhiteSpace(fiche.CommentaireAvancementExecution) ? "Non renseigné" : fiche.CommentaireAvancementExecution)
                 </div>
                 <div class="record-card-note">
                     <strong>Justification retard :</strong><br />
-                    @(string.IsNullOrWhiteSpace(fiche.JustificationRetardExecution) ? "Non renseignee" : fiche.JustificationRetardExecution)
+                    @(string.IsNullOrWhiteSpace(fiche.JustificationRetardExecution) ? "Non renseignée" : fiche.JustificationRetardExecution)
                 </div>
             </section>
             <section class="phase-panel">
-                <h4 class="phase-panel-title">Blocages & decisions</h4>
+                <h4 class="phase-panel-title">Blocages & décisions</h4>
                 <div class="record-card-note">
                     <strong>Blocages :</strong><br />
-                    @(string.IsNullOrWhiteSpace(fiche.ProblemesBlocagesExecution) ? "Aucun blocage renseigne" : fiche.ProblemesBlocagesExecution)
+                    @(string.IsNullOrWhiteSpace(fiche.ProblemesBlocagesExecution) ? "Aucun blocage renseigné" : fiche.ProblemesBlocagesExecution)
                 </div>
                 <div class="record-card-note">
-                    <strong>Decisions :</strong><br />
-                    @(string.IsNullOrWhiteSpace(fiche.DecisionsExecution) ? "Aucune decision renseignee" : fiche.DecisionsExecution)
+                    <strong>Décisions :</strong><br />
+                    @(string.IsNullOrWhiteSpace(fiche.DecisionsExecution) ? "Aucune décision renseignée" : fiche.DecisionsExecution)
                 </div>
             </section>
         </div>
@@ -333,13 +333,13 @@
                 <div class="phase-section-header">
                     <div>
                         <div class="form-help-title-row">
-                            <h4 class="phase-panel-title">Livrables d'execution</h4>
+                            <h4 class="phase-panel-title">Livrables d'exécution</h4>
                             @RenderHelpPopover(
                                 "Livrables d'exécution",
                                 "Ce bloc centralise les comptes rendus, rapports et pièces de suivi produits pendant l'exécution.",
                                 "Déposez ici les documents produits en phase Exécution : compte-rendu, rapport d'avancement, justificatif ou pièce de suivi.")
                         </div>
-                        <div class="phase-record-meta">Comptes rendus, rapports et pieces de suivi de la phase.</div>
+                        <div class="phase-record-meta">Comptes rendus, rapports et pièces de suivi de la phase.</div>
                     </div>
                 @if (canEditExecution)
                 {
@@ -365,7 +365,7 @@
                                     <a asp-controller="Document" asp-action="PreviewProjetLivrable" asp-route-projetId="@projet.Id" asp-route-livrableId="@livrable.Id" target="_blank" class="btn-modern btn-modern-primary" title="Visualiser">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <a asp-controller="Document" asp-action="StreamProjetLivrable" asp-route-projetId="@projet.Id" asp-route-livrableId="@livrable.Id" asp-route-download="true" class="btn-modern btn-modern-secondary" title="Telecharger">
+                                    <a asp-controller="Document" asp-action="StreamProjetLivrable" asp-route-projetId="@projet.Id" asp-route-livrableId="@livrable.Id" asp-route-download="true" class="btn-modern btn-modern-secondary" title="Télécharger">
                                         <i class="bi bi-download"></i>
                                     </a>
                                 </div>
@@ -378,7 +378,7 @@
             {
                 <div class="phase-empty">
                     <i class="bi bi-inbox"></i>
-                    <p>Aucun livrable d'execution pour le moment.</p>
+                    <p>Aucun livrable d'exécution pour le moment.</p>
                 </div>
             }
         </section>
@@ -420,7 +420,7 @@
             {
                 <div class="phase-empty">
                     <i class="bi bi-check-circle"></i>
-                    <p>Aucune anomalie signalee.</p>
+                    <p>Aucune anomalie signalée.</p>
                 </div>
             }
         </section>
@@ -431,9 +431,9 @@
         <section class="phase-note is-success">
             <div class="phase-section-header">
                 <div>
-                    <div class="phase-strong">Pret pour UAT / recette</div>
+                    <div class="phase-strong">Prêt pour UAT / recette</div>
                     <p style="margin: .6rem 0 0;">
-                        Le passage en UAT verifiera les livrables d'execution obligatoires avant d'ouvrir la phase suivante.
+                        Le passage en UAT vérifiera les livrables d'exécution obligatoires avant d'ouvrir la phase suivante.
                     </p>
                 </div>
                 <form asp-action="PretUAT" method="post">

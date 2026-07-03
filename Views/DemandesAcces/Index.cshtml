@@ -129,7 +129,7 @@
                             </div>
                             <div class="col-md-4">
                                 <strong>Direction détectée</strong>
-                                <div>@(demande.DirectionDetectee?.Libelle ?? "Non determinee")</div>
+                                <div>@(demande.DirectionDetectee?.Libelle ?? "Non déterminée")</div>
                             </div>
                             @if (!isLocalAccessRequest)
                             {
@@ -145,7 +145,7 @@
                             @if (demande.DateTraitement.HasValue)
                             {
                                 <div class="col-md-4">
-                                    <strong>Approuvee par</strong>
+                                    <strong>Approuvée par</strong>
                                     <div>
                                         @if (demande.TraitePar != null)
                                         {
@@ -175,7 +175,7 @@
                                 <strong class="d-block mb-2"><i class="bi bi-shield-check"></i> Trace du compte</strong>
                                 <div class="row g-3">
                                     <div class="col-md-4">
-                                        <strong>Compte cree</strong>
+                                        <strong>Compte créé</strong>
                                         <div>@demande.UtilisateurCree.Matricule</div>
                                         @if (!string.IsNullOrWhiteSpace(demande.UtilisateurCree.CreePar))
                                         {
@@ -193,16 +193,16 @@
                                             else
                                             {
                                                 <span class="badge-modern badge-modern-warning"><i class="bi bi-clock"></i> En attente</span>
-                                                <div class="text-muted small">L'utilisateur n'a pas encore clique son lien.</div>
+                                                <div class="text-muted small">L'utilisateur n'a pas encore cliqué son lien.</div>
                                             }
                                         </div>
                                     </div>
                                     <div class="col-md-4">
-                                        <strong>Etat du compte</strong>
+                                        <strong>État du compte</strong>
                                         <div>
                                             @if (trace.CompteDesactive)
                                             {
-                                                <span class="badge-modern badge-modern-danger"><i class="bi bi-x-circle"></i> Desactive</span>
+                                                <span class="badge-modern badge-modern-danger"><i class="bi bi-x-circle"></i> Désactivé</span>
                                                 <div class="text-muted small">
                                                     @if (!string.IsNullOrWhiteSpace(trace.DesactiveParMatricule))
                                                     {
@@ -234,7 +234,7 @@
                                         <div class="card-body-modern">
                                             <h5 class="mb-3"><i class="bi bi-check-circle"></i> Approuver</h5>
                                             <div class="mb-3">
-                                                <label class="form-label">Direction a retenir</label>
+                                                <label class="form-label">Direction à retenir</label>
                                                 <select class="form-select" name="directionId">
                                                     <option value="">Utiliser la direction détectée</option>
                                                     @foreach (var direction in directions)
@@ -258,7 +258,7 @@
                                                 <textarea class="form-control" name="commentaire" rows="3"></textarea>
                                             </div>
                                             <button type="submit" class="btn-modern btn-modern-primary w-100">
-                                                <i class="bi bi-check2"></i> Approuver et activer l'acces
+                                                <i class="bi bi-check2"></i> Approuver et activer l'accès
                                             </button>
                                         </div>
                                     </form>

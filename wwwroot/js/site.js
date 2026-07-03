@@ -898,7 +898,7 @@
 <div class="form-help-popover" role="tooltip">
     <strong>${escapeHtml(info.title)}</strong>
     <div class="form-help-popover-section">
-        <span>A quoi sert ce bloc ?</span>
+        <span>À quoi sert ce bloc ?</span>
         <p>${escapeHtml(info.purpose)}</p>
     </div>
     <div class="form-help-popover-section">

@@ -17,11 +17,11 @@
             <div>
                 <div class="phase-eyebrow">
                     <i class="bi bi-journal-text"></i>
-                    Historique metier
+                    Historique métier
                 </div>
-                <h2 class="phase-title">Historique des actions Directeur Metier</h2>
+                <h2 class="phase-title">Historique des actions Directeur Métier</h2>
                 <p class="phase-subtitle">
-                    Visualisez les validations, rejets, demandes de correction et les champs modifies avant validation sur l'ensemble des demandes.
+                    Visualisez les validations, rejets, demandes de correction et les champs modifiés avant validation sur l'ensemble des demandes.
                 </p>
             </div>
             <div class="phase-action-row">
@@ -36,7 +36,7 @@
     <section class="phase-note is-info">
         <div class="phase-strong">Lecture de la trace</div>
         <p style="margin: .6rem 0 0;">
-            Chaque entree expose la decision prise, le contexte demandeur / direction, le commentaire saisi et, lorsque disponible, le diff avant / apres des champs touches.
+            Chaque entrée expose la décision prise, le contexte demandeur / direction, le commentaire saisi et, lorsque disponible, le diff avant / après des champs touchés.
         </p>
     </section>
 
@@ -44,7 +44,7 @@
     {
         <div class="phase-empty">
             <i class="bi bi-inbox"></i>
-            <p>Aucune action enregistree.</p>
+            <p>Aucune action enregistrée.</p>
         </div>
     }
     else
@@ -59,7 +59,7 @@
                 {
                     "VALIDATION_DM" => ("success", "bi-check-circle-fill", "Validation DM"),
                     "REJET_DM" => ("danger", "bi-x-circle-fill", "Rejet DM"),
-                    "CORRECTION_DM" => ("warning", "bi-arrow-return-left", "Correction demandee"),
+                    "CORRECTION_DM" => ("warning", "bi-arrow-return-left", "Correction demandée"),
                     _ => ("info", "bi-info-circle", log.TypeAction)
                 };
 
@@ -92,7 +92,7 @@
                                 <div class="timeline-card-author">
                                     @(log.Utilisateur != null ? $"{log.Utilisateur.Nom} {log.Utilisateur.Prenoms}" : "-")
                                 </div>
-                                <div class="timeline-card-author">@log.DateAction.ToString("dd/MM/yyyy a HH:mm")</div>
+                                <div class="timeline-card-author">@log.DateAction.ToString("dd/MM/yyyy à HH:mm")</div>
                             </div>
                         </div>
 
@@ -127,7 +127,7 @@
                                     {
                                         <div class="phase-empty">
                                             <i class="bi bi-dash-circle"></i>
-                                            <p>Aucune valeur precedente exploitable.</p>
+                                            <p>Aucune valeur précédente exploitable.</p>
                                         </div>
                                     }
                                 </section>
@@ -145,7 +145,7 @@
                                                         <div class="record-card-title">@kvp.Key</div>
                                                         @if (changed)
                                                         {
-                                                            <span class="phase-chip is-warning">Modifie</span>
+                                                            <span class="phase-chip is-warning">Modifié</span>
                                                         }
                                                     </div>
                                                     <div class="record-card-note">@TruncateStr(kvp.Value, 200)</div>

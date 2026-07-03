@@ -25,7 +25,7 @@
                 </div>
                 <h2 class="phase-title">@pageTitle</h2>
                 <p class="phase-subtitle">
-                    Ajustez le contenu fonctionnel, les priorites et les pieces jointes tout en conservant le circuit de validation metier.
+                    Ajustez le contenu fonctionnel, les priorités et les pièces jointes tout en conservant le circuit de validation métier.
                 </p>
             </div>
             <div class="phase-action-row">
@@ -47,7 +47,7 @@
     @if (isCorrection)
     {
         <section class="phase-note is-warning">
-            <div class="phase-strong">Correction demandee</div>
+            <div class="phase-strong">Correction demandée</div>
             <p style="margin: .6rem 0 0;">
                 @(!string.IsNullOrWhiteSpace(Model.Demande.CommentaireDirecteurMetier) ? Model.Demande.CommentaireDirecteurMetier : Model.Demande.CommentaireDSI)
             </p>
@@ -71,7 +71,7 @@
 
         <div class="phase-grid">
             <section class="phase-panel">
-                <h3 class="phase-panel-title">Informations generales</h3>
+                <h3 class="phase-panel-title">Informations générales</h3>
 
                 <div class="form-group-modern">
                     <label asp-for="Demande.Titre" class="form-label-modern">Titre du projet *</label>
@@ -104,33 +104,33 @@
                 </div>
 
                 <div class="form-group-modern">
-                    <label asp-for="Demande.Perimetre" class="form-label-modern">Perimetre</label>
-                    <textarea asp-for="Demande.Perimetre" class="form-control-modern" rows="4" placeholder="Processus impactes, activites couvertes, utilisateurs concernes..."></textarea>
-                    <div class="soft-note">Decrivez le perimetre du projet : processus impactes, activites couvertes et population concernee.</div>
+                    <label asp-for="Demande.Perimetre" class="form-label-modern">Périmètre</label>
+                    <textarea asp-for="Demande.Perimetre" class="form-control-modern" rows="4" placeholder="Processus impactés, activités couvertes, utilisateurs concernés..."></textarea>
+                    <div class="soft-note">Décrivez le périmètre du projet : processus impactés, activités couvertes et population concernée.</div>
                 </div>
             </section>
 
             <section class="phase-panel">
-                <h3 class="phase-panel-title">Parametres & gouvernance</h3>
+                <h3 class="phase-panel-title">Paramètres & gouvernance</h3>
 
                 <div class="form-group-modern">
                     <label asp-for="Demande.DirectionId" class="form-label-modern">Direction *</label>
                     <select asp-for="Demande.DirectionId" id="DirectionId" class="form-control-modern" asp-items="Model.Directions.ToSelectListItems()" required>
-                        <option value="">-- Selectionner --</option>
+                        <option value="">-- Sélectionner --</option>
                     </select>
                     <span asp-validation-for="Demande.DirectionId" class="text-danger"></span>
                 </div>
 
                 <div class="form-group-modern">
-                    <label asp-for="Demande.DirecteurMetierId" class="form-label-modern">Directeur metier *</label>
+                    <label asp-for="Demande.DirecteurMetierId" class="form-label-modern">Directeur métier *</label>
                     <select asp-for="Demande.DirecteurMetierId" id="DirecteurMetierId" class="form-control-modern"
                             asp-items="Model.DirecteursMetier.ToSelectListItems()" required>
-                        <option value="">-- Selectionner d'abord une direction --</option>
+                        <option value="">-- Sélectionner d'abord une direction --</option>
                     </select>
                     <span asp-validation-for="Demande.DirecteurMetierId" class="text-danger"></span>
                     <div class="soft-note d-none" id="directeurMetierHelp">
                         <i class="bi bi-info-circle"></i>
-                        Selectionnez une direction pour voir les directeurs metier disponibles.
+                        Sélectionnez une direction pour voir les directeurs métier disponibles.
                     </div>
                 </div>
 
@@ -142,16 +142,16 @@
                     <span asp-validation-for="Demande.AutreSponsorId" class="text-danger"></span>
                     @if (hasMembresCodir)
                     {
-                        <div class="soft-note">Selectionnez, si besoin, un sponsor complementaire parmi les membres du CODIR.</div>
+                        <div class="soft-note">Sélectionnez, si besoin, un sponsor complémentaire parmi les membres du CODIR.</div>
                     }
                     else
                     {
-                        <div class="soft-note text-warning">Aucun membre CODIR n'est encore parametre dans l'administration.</div>
+                        <div class="soft-note text-warning">Aucun membre CODIR n'est encore paramétré dans l'administration.</div>
                     }
                 </div>
 
                 <div class="form-group-modern">
-                    <label class="form-label-modern">Priorite *</label>
+                    <label class="form-label-modern">Priorité *</label>
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label asp-for="Demande.Urgence" class="form-label-modern">Urgence</label>
@@ -159,15 +159,15 @@
                             <span asp-validation-for="Demande.Urgence" class="text-danger"></span>
                         </div>
                         <div class="col-md-6">
-                            <label asp-for="Demande.Criticite" class="form-label-modern">Criticite</label>
+                            <label asp-for="Demande.Criticite" class="form-label-modern">Criticité</label>
                             <select asp-for="Demande.Criticite" class="form-control-modern" asp-items="Html.GetEnumSelectList<GestionProjects.Domain.Enums.CriticiteProjet>()" required></select>
                             <span asp-validation-for="Demande.Criticite" class="text-danger"></span>
                         </div>
                     </div>
-                    <div class="soft-note">La priorite du besoin est calculee a partir du couple urgence / criticite.</div>
+                    <div class="soft-note">La priorité du besoin est calculée à partir du couple urgence / criticité.</div>
                     <div id="prioriteCalculeePreview" class="phase-note is-info mt-3">
                         <div class="phase-strong">
-                            Priorite calculee
+                            Priorité calculée
                             <span id="prioriteCalculeeCode" class="badge-modern badge-modern-@Model.Demande.PrioriteBadgeClass ms-2">@Model.Demande.PrioriteCode</span>
                         </div>
                         <p id="prioriteCalculeeLibelle" style="margin: .6rem 0 0;">
@@ -177,7 +177,7 @@
                 </div>
 
                 <div class="form-group-modern">
-                    <label asp-for="Demande.DateMiseEnOeuvreSouhaitee" class="form-label-modern">Date de mise en oeuvre souhaitee</label>
+                    <label asp-for="Demande.DateMiseEnOeuvreSouhaitee" class="form-label-modern">Date de mise en œuvre souhaitée</label>
                     <input asp-for="Demande.DateMiseEnOeuvreSouhaitee" type="date" class="form-control-modern" />
                 </div>
             </section>
@@ -187,7 +187,7 @@
             <div class="phase-section-header">
                 <div>
                     <h3 class="phase-panel-title">Documents</h3>
-                    <div class="phase-record-meta">Cahier des charges obligatoire, annexes complementaires et lien vers le modele standard.</div>
+                    <div class="phase-record-meta">Cahier des charges obligatoire, annexes complémentaires et lien vers le modèle standard.</div>
                 </div>
             </div>
 
@@ -197,7 +197,7 @@
                     <div class="record-card-header">
                         <div>
                             <div class="record-card-title">Cahier des charges actuel</div>
-                            <div class="record-card-subtitle">Le fichier actuellement rattache a la demande reste consultable tant qu'il n'est pas remplace.</div>
+                            <div class="record-card-subtitle">Le fichier actuellement rattaché à la demande reste consultable tant qu'il n'est pas remplacé.</div>
                         </div>
                         <div class="record-card-actions">
                             <a asp-controller="Document"
@@ -218,7 +218,7 @@
                     <div class="phase-section-header">
                         <div>
                             <h4 class="phase-panel-title">@(!cahierPresent ? "Cahier des charges" : "Nouveau cahier des charges")</h4>
-                            <div class="phase-record-meta">Formats acceptes : PDF, DOC, DOCX.</div>
+                            <div class="phase-record-meta">Formats acceptés : PDF, DOC, DOCX.</div>
                         </div>
                         <a href="~/templates/Modele_Cahier_Charges_Projet_IT.docx" class="btn-modern btn-modern-secondary">
                             <i class="bi bi-download"></i>
@@ -236,7 +236,7 @@
                     }
 
                     @Html.ValidationMessage("cahierCharges", "", new { @class = "text-danger d-block mt-2" })
-                    <div class="soft-note mt-2">Le cahier des charges reste obligatoire. Deposez un nouveau fichier uniquement pour le remplacer.</div>
+                    <div class="soft-note mt-2">Le cahier des charges reste obligatoire. Déposez un nouveau fichier uniquement pour le remplacer.</div>
                 </section>
 
                 <section class="phase-panel">
@@ -245,7 +245,7 @@
                     {
                         <div class="record-card-note">
                             <strong>Annexes existantes :</strong><br />
-                            @annexesExistantes.Count fichier(s) deja rattache(s) a la demande.
+                            @annexesExistantes.Count fichier(s) déjà rattaché(s) à la demande.
                         </div>
                     }
                     <div class="form-group-modern">
@@ -289,7 +289,7 @@
 
             function loadDirecteursMetier(directionId, selectedId) {
                 if (!directionId) {
-                    directeurMetierSelect.innerHTML = '<option value="">-- Selectionner d\\'abord une direction --</option>';
+                    directeurMetierSelect.innerHTML = '<option value="">-- Sélectionner d\\'abord une direction --</option>';
                     directeurMetierSelect.disabled = true;
                     showHelp(true);
                     return;
@@ -302,12 +302,12 @@
                 fetch(`/DemandeProjet/GetDirecteursMetierByDirection?directionId=${directionId}`)
                     .then(response => {
                         if (!response.ok) {
-                            throw new Error('Erreur lors du chargement des directeurs metier');
+                            throw new Error('Erreur lors du chargement des directeurs métier');
                         }
                         return response.json();
                     })
                     .then(data => {
-                        directeurMetierSelect.innerHTML = '<option value="">-- Selectionner --</option>';
+                        directeurMetierSelect.innerHTML = '<option value="">-- Sélectionner --</option>';
 
                         if (data && data.length > 0) {
                             let defaultDirecteurId = null;
@@ -334,7 +334,7 @@
 
                             directeurMetierSelect.disabled = false;
                         } else {
-                            directeurMetierSelect.innerHTML = '<option value="">-- Aucun directeur metier trouve pour cette direction --</option>';
+                            directeurMetierSelect.innerHTML = '<option value="">-- Aucun directeur métier trouvé pour cette direction --</option>';
                             directeurMetierSelect.disabled = true;
                         }
                     })
@@ -372,15 +372,15 @@
                     case 7:
                         return { code: 'P1', label: 'Critique', badge: 'danger' };
                     case 6:
-                        return { code: 'P2', label: 'Tres elevee', badge: 'warning' };
+                        return { code: 'P2', label: 'Très élevée', badge: 'warning' };
                     case 5:
-                        return { code: 'P3', label: 'Elevee', badge: 'info' };
+                        return { code: 'P3', label: 'Élevée', badge: 'info' };
                     case 4:
-                        return { code: 'P4', label: 'Moderee', badge: 'secondary' };
+                        return { code: 'P4', label: 'Modérée', badge: 'secondary' };
                     case 3:
                         return { code: 'P5', label: 'Faible', badge: 'secondary' };
                     default:
-                        return { code: 'P6', label: 'Planifiee', badge: 'secondary' };
+                        return { code: 'P6', label: 'Planifiée', badge: 'secondary' };
                 }
             }
 
@@ -391,7 +391,7 @@
                 if (!urgence || !criticite) {
                     prioriteCode.textContent = '-';
                     prioriteCode.className = 'badge-modern badge-modern-secondary';
-                    prioriteLibelle.textContent = "Selectionnez l'urgence et la criticite pour calculer la priorite.";
+                    prioriteLibelle.textContent = "Sélectionnez l'urgence et la criticité pour calculer la priorité.";
                     return;
                 }
 
