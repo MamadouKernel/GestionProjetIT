@@ -27,6 +27,20 @@ public class PasswordSetupTokenServiceTests
     }
 
     [Fact]
+    public async Task CreerAsync_DoitExpirerBeaucoupPlusViteQuePourUneActivation_QuandReinitialisation()
+    {
+        await using var db = CreateDbContext();
+        var user = await CreateUserAsync(db);
+        var service = CreateService(db);
+
+        var activation = await service.CreerAsync(user.Id, "TEST");
+        var reinitialisation = await service.CreerAsync(user.Id, "TEST", estReinitialisation: true);
+
+        (reinitialisation.DateExpiration - DateTime.UtcNow).Should().BeCloseTo(TimeSpan.FromHours(1), TimeSpan.FromMinutes(1));
+        (activation.DateExpiration - DateTime.UtcNow).Should().BeCloseTo(TimeSpan.FromHours(24), TimeSpan.FromMinutes(1));
+    }
+
+    [Fact]
     public async Task InitialiserMotDePasseAsync_DoitHasherMotDePasseEtConsommerLeJeton()
     {
         await using var db = CreateDbContext();

@@ -4,7 +4,7 @@ namespace GestionProjects.Application.Common.Interfaces;
 
 public interface IPasswordSetupTokenService
 {
-    Task<PasswordSetupTokenCreation> CreerAsync(Guid utilisateurId, string creePar);
+    Task<PasswordSetupTokenCreation> CreerAsync(Guid utilisateurId, string creePar, bool estReinitialisation = false);
     Task<OperationResult> InitialiserMotDePasseAsync(
         Guid utilisateurId,
         string token,

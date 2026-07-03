@@ -227,7 +227,7 @@ public sealed class AccountService : IAccountService
             j.ModifiePar = "SYSTEM";
         }
 
-        var jeton = await _passwordSetupTokenService.CreerAsync(user.Id, "SYSTEM");
+        var jeton = await _passwordSetupTokenService.CreerAsync(user.Id, "SYSTEM", estReinitialisation: true);
         await _db.SaveChangesAsync();
 
         var lien = BuildReinitialisationLink(user.Id, jeton.Token);

@@ -14,6 +14,7 @@ public class PasswordSetupTokenService : IPasswordSetupTokenService
 {
     private const int TokenByteLength = 32;
     private const int DefaultExpirationHours = 24;
+    private const int DefaultResetExpirationMinutes = 60;
 
     private readonly ApplicationDbContext _db;
     private readonly IConfiguration _configuration;
@@ -24,7 +25,7 @@ public class PasswordSetupTokenService : IPasswordSetupTokenService
         _configuration = configuration;
     }
 
-    public async Task<PasswordSetupTokenCreation> CreerAsync(Guid utilisateurId, string creePar)
+    public async Task<PasswordSetupTokenCreation> CreerAsync(Guid utilisateurId, string creePar, bool estReinitialisation = false)
     {
         var now = DateTime.UtcNow;
         var existingTokens = await _db.JetonsInitialisationMotDePasse
@@ -39,7 +40,7 @@ public class PasswordSetupTokenService : IPasswordSetupTokenService
         }
 
         var rawToken = GenerateToken();
-        var expiration = now.AddHours(GetExpirationHours());
+        var expiration = now.Add(GetExpirationDuree(estReinitialisation));
 
         _db.JetonsInitialisationMotDePasse.Add(new JetonInitialisationMotDePasse
         {
@@ -108,10 +109,22 @@ public class PasswordSetupTokenService : IPasswordSetupTokenService
         return OperationResult.Success("Mot de passe initialise avec succes.");
     }
 
-    private int GetExpirationHours()
+    private TimeSpan GetExpirationDuree(bool estReinitialisation)
     {
-        var configured = _configuration.GetValue<int?>("Security:PasswordSetupTokenHours");
-        return configured is > 0 and <= 168 ? configured.Value : DefaultExpirationHours;
+        // Un lien d'activation de compte n'expose pas de compte deja actif : il peut rester
+        // valide plusieurs jours sans risque, le temps qu'un nouvel employe le consulte.
+        // Un lien de reinitialisation de mot de passe donne en revanche un acces immediat a
+        // un compte existant : sa duree de vie doit rester courte (recommandation OWASP/NIST).
+        if (estReinitialisation)
+        {
+            var configuredMinutes = _configuration.GetValue<int?>("Security:PasswordResetTokenMinutes");
+            var minutes = configuredMinutes is > 0 and <= 1440 ? configuredMinutes.Value : DefaultResetExpirationMinutes;
+            return TimeSpan.FromMinutes(minutes);
+        }
+
+        var configuredHours = _configuration.GetValue<int?>("Security:PasswordSetupTokenHours");
+        var hours = configuredHours is > 0 and <= 168 ? configuredHours.Value : DefaultExpirationHours;
+        return TimeSpan.FromHours(hours);
     }
 
     private static string GenerateToken()

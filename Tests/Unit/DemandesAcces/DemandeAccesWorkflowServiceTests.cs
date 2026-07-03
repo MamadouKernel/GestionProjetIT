@@ -179,7 +179,7 @@ public sealed class DemandeAccesWorkflowServiceTests
         demandeTraitee.UtilisateurCreeId.Should().Be(utilisateur.Id);
         demandeTraitee.TraiteParId.Should().Be(traiteParId);
 
-        fixture.PasswordSetupToken.Verify(p => p.CreerAsync(utilisateur.Id, "ADMIN001"), Times.Once);
+        fixture.PasswordSetupToken.Verify(p => p.CreerAsync(utilisateur.Id, "ADMIN001", false), Times.Once);
         fixture.Email.Verify(e => e.EnvoyerActivationCompteAsync(
             "raissa.kouadio@cit.test",
             It.IsAny<string>(),
@@ -232,7 +232,7 @@ public sealed class DemandeAccesWorkflowServiceTests
         demandeTraitee.Statut.Should().Be(StatutDemandeAcces.Approuvee);
         demandeTraitee.UtilisateurCreeId.Should().Be(utilisateurExistant.Id);
 
-        fixture.PasswordSetupToken.Verify(p => p.CreerAsync(It.IsAny<Guid>(), It.IsAny<string>()), Times.Never);
+        fixture.PasswordSetupToken.Verify(p => p.CreerAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
         fixture.Email.Verify(e => e.EnvoyerActivationCompteAsync(
             It.IsAny<string>(),
             It.IsAny<string>(),
@@ -441,7 +441,7 @@ public sealed class DemandeAccesWorkflowServiceTests
 
         var passwordSetupToken = new Mock<IPasswordSetupTokenService>();
         passwordSetupToken
-            .Setup(p => p.CreerAsync(It.IsAny<Guid>(), It.IsAny<string>()))
+            .Setup(p => p.CreerAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<bool>()))
             .ReturnsAsync(token ?? new PasswordSetupTokenCreation("token", DateTime.Now.AddHours(1)));
         passwordSetupToken
             .Setup(p => p.InitialiserMotDePasseAsync(
