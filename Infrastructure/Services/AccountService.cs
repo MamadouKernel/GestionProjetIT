@@ -5,16 +5,30 @@ using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 using GestionProjects.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace GestionProjects.Infrastructure.Services;
 
 public sealed class AccountService : IAccountService
 {
     private readonly ApplicationDbContext _db;
+    private readonly IPasswordSetupTokenService _passwordSetupTokenService;
+    private readonly IEmailService _emailService;
+    private readonly IAuditService _audit;
+    private readonly IConfiguration _configuration;
 
-    public AccountService(ApplicationDbContext db)
+    public AccountService(
+        ApplicationDbContext db,
+        IPasswordSetupTokenService passwordSetupTokenService,
+        IEmailService emailService,
+        IAuditService audit,
+        IConfiguration configuration)
     {
         _db = db;
+        _passwordSetupTokenService = passwordSetupTokenService;
+        _emailService = emailService;
+        _audit = audit;
+        _configuration = configuration;
     }
 
     public async Task<AccountLoginResult> ValidateLocalLoginAsync(LoginViewModel model)
@@ -186,6 +200,50 @@ public sealed class AccountService : IAccountService
             .ThenBy(u => u.Prenoms)
             .Select(u => new AccountLookupItem(u.Id, (u.Nom + " " + u.Prenoms).Trim()))
             .ToListAsync();
+    }
+
+    public async Task DemarrerReinitialisationMotDePasseAsync(string matricule, string email, string? ip)
+    {
+        // Par securite (anti-enumeration), cette methode ne renvoie jamais d'information sur
+        // l'existence du compte : l'appelant (controller) affiche toujours le meme message,
+        // que le matricule/email corresponde ou non a un utilisateur reel.
+        var user = await _db.Utilisateurs.FirstOrDefaultAsync(u =>
+            !u.EstSupprime &&
+            u.Matricule == matricule &&
+            u.Email != null && u.Email.ToLower() == email.Trim().ToLower());
+
+        if (user == null || string.IsNullOrWhiteSpace(user.Email))
+        {
+            return;
+        }
+
+        var anciensJetons = await _db.JetonsInitialisationMotDePasse
+            .Where(j => j.UtilisateurId == user.Id && !j.EstSupprime && j.DateUtilisation == null)
+            .ToListAsync();
+        foreach (var j in anciensJetons)
+        {
+            j.EstSupprime = true;
+            j.DateModification = DateTime.UtcNow;
+            j.ModifiePar = "SYSTEM";
+        }
+
+        var jeton = await _passwordSetupTokenService.CreerAsync(user.Id, "SYSTEM");
+        await _db.SaveChangesAsync();
+
+        var lien = BuildReinitialisationLink(user.Id, jeton.Token);
+        var nomComplet = $"{user.Prenoms} {user.Nom}".Trim();
+        await _emailService.EnvoyerReinitialisationMotDePasseAsync(
+            user.Email, nomComplet, user.Matricule, lien, jeton.DateExpiration);
+
+        await _audit.LogActionAsync("DEMANDE_REINITIALISATION_MOT_DE_PASSE", "Utilisateur", user.Id,
+            new { user.Matricule, ip });
+    }
+
+    private string BuildReinitialisationLink(Guid utilisateurId, string token)
+    {
+        var baseUrl = (_configuration["SmtpSettings:BaseUrl"] ?? string.Empty).Trim().TrimEnd('/');
+        var path = $"/Account/InitialiserMotDePasse?utilisateurId={utilisateurId}&token={Uri.EscapeDataString(token)}";
+        return string.IsNullOrWhiteSpace(baseUrl) ? path : $"{baseUrl}{path}";
     }
 
     private Task<Utilisateur?> LoadProfileUserAsync(Guid userId)

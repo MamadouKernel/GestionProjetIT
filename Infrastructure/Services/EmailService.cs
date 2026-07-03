@@ -290,6 +290,34 @@ namespace GestionProjects.Infrastructure.Services
                     lienActivation));
         }
 
+        public Task EnvoyerReinitialisationMotDePasseAsync(string email, string nomComplet, string username, string lienReinitialisation, DateTime dateExpiration)
+        {
+            if (!Uri.TryCreate(lienReinitialisation, UriKind.Absolute, out _))
+            {
+                _logger.LogWarning(
+                    "Lien de reinitialisation relatif envoye a {Email} : configure SmtpSettings:BaseUrl pour generer un lien absolu cliquable.",
+                    email);
+            }
+
+            return EnvoyerAsync(
+                email,
+                $"Reinitialisation de votre mot de passe {DocumentBrandingHelper.ApplicationName}",
+                CorpsHtml(
+                    $"Reinitialisation du mot de passe - <strong>{nomComplet}</strong>",
+                    $"<p>Bonjour <strong>{nomComplet}</strong>,</p>" +
+                    "<p>Une demande de reinitialisation de mot de passe a ete effectuee pour votre compte. Definissez un nouveau mot de passe via le lien securise ci-dessous.</p>" +
+                    "<div style=\"background:#0f172a;border-radius:20px;padding:20px 22px;margin:20px 0;color:#e2e8f0;\">" +
+                    $"<p style=\"margin:0 0 10px 0;\"><strong>Identifiant</strong><br/><span style=\"font-size:18px;color:#ffffff;\">{username}</span></p>" +
+                    $"<p style=\"margin:0;\"><strong>Expiration du lien</strong><br/><span style=\"font-size:18px;color:#ffffff;\">{dateExpiration:dd/MM/yyyy HH:mm}</span></p>" +
+                    "</div>" +
+                    "<p style=\"margin-top:18px;font-size:13px;color:#475569;\">Si le bouton ne s'affiche pas, copiez-collez ce lien dans votre navigateur :<br/>" +
+                    $"<a href=\"{lienReinitialisation}\" style=\"color:#0f4c81;word-break:break-all;\">{lienReinitialisation}</a></p>" +
+                    "<p>Si vous n'etes pas a l'origine de cette demande, ignorez ce message : votre mot de passe actuel reste valide. Contactez la DSI si cela se reproduit.</p>",
+                    "Mot de passe oublie",
+                    "Definir mon nouveau mot de passe",
+                    lienReinitialisation));
+        }
+
         public Task EnvoyerConfirmationCreationCompteAuDMAsync(string emailDM, string nomDM, string nomNouvelUtilisateur)
             => EnvoyerAsync(
                 emailDM,

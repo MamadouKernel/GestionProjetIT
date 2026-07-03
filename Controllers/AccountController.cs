@@ -285,7 +285,7 @@ namespace GestionProjects.Controllers
                 model.Token,
                 model.NouveauMotDePasse,
                 HttpContext.Connection.RemoteIpAddress?.ToString(),
-                "ACTIVATION_COMPTE");
+                "INITIALISATION_MOT_DE_PASSE");
 
             if (!result.Succeeded)
             {
@@ -298,6 +298,40 @@ namespace GestionProjects.Controllers
             }
 
             TempData["Success"] = "Votre mot de passe a ete initialise. Vous pouvez maintenant vous connecter.";
+            return RedirectToAction(nameof(Login));
+        }
+
+        // GET: /Account/MotDePasseOublie
+        [AllowAnonymous]
+        [HttpGet]
+        public IActionResult MotDePasseOublie()
+        {
+            if (User?.Identity?.IsAuthenticated == true)
+                return RedirectToAction("Index", "Home");
+
+            return View(new MotDePasseOublieViewModel());
+        }
+
+        // POST: /Account/MotDePasseOublie
+        [AllowAnonymous]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("LoginPolicy")]
+        public async Task<IActionResult> MotDePasseOublie(MotDePasseOublieViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            await _accountService.DemarrerReinitialisationMotDePasseAsync(
+                model.Matricule.Trim(),
+                model.Email.Trim(),
+                HttpContext.Connection.RemoteIpAddress?.ToString());
+
+            // Message volontairement generique, que le compte existe ou non, pour eviter
+            // de reveler si un matricule/email est enregistre dans l'application.
+            TempData["Success"] = "Si ces informations correspondent à un compte, un email contenant un lien de réinitialisation vient d'être envoyé.";
             return RedirectToAction(nameof(Login));
         }
 

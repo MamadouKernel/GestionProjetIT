@@ -6568,6 +6568,19 @@ label.form-label {
   padding: .25rem;
 }
 
+.auth-premium-forgot-link {
+  align-self: flex-end;
+  margin-top: .4rem;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--cit-navy);
+  text-decoration: none;
+}
+
+.auth-premium-forgot-link:hover {
+  text-decoration: underline;
+}
+
 .auth-premium-submit {
   width: 100%;
   display: inline-flex;

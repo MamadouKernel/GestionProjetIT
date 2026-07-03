@@ -13,6 +13,7 @@ public interface IAccountService
     Task<InscriptionViewModel> BuildInscriptionViewModelAsync();
     Task<IReadOnlyList<AccountLookupItem>> GetServicesByDirectionAsync(Guid directionId);
     Task<IReadOnlyList<AccountLookupItem>> GetDirecteursMetierByDirectionAsync(Guid directionId);
+    Task DemarrerReinitialisationMotDePasseAsync(string matricule, string email, string? ip);
 }
 
 public sealed record AccountLoginResult(Utilisateur? User, string? ErrorMessage)
