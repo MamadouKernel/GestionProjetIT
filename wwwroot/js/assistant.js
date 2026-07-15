@@ -176,7 +176,7 @@
             s.push('Comment changer le chef de projet ?', 'Comment déléguer un chef de projet absent ?');
         }
         if (hasRole('ChefDeProjet')) {
-            s.push('Comment déposer un livrable ?');
+            s.push('Comment déposer un livrable ?', 'Comment ajouter un membre à l\'équipe ?');
         }
         if (hasRole('AdminIT')) {
             s.push('Comment restaurer une demande supprimée ?');
@@ -263,6 +263,24 @@
                     html: base,
                     actions: projetId
                         ? [{ label: 'Ouvrir la synthèse de ce projet', href: `/Projet/Details/${projetId}?tab=synthese` }]
+                        : [{ label: 'Voir mes projets', href: '/Projet/Index' }]
+                };
+            }
+        },
+        {
+            test: (q) => /(membre|equipe)/.test(q) && /(ajout|creer|nouveau|externe|modifi|retir|supprim|enlev|gerer|gestion)/.test(q),
+            answer: () => {
+                const projetId = getCurrentProjetId();
+                const base = '<strong>Gérer l\'équipe projet</strong><p>Sur la fiche du projet (onglet Analyse), bloc « Équipe du projet » : bouton « Ajouter un membre ». Deux options — sélectionner un utilisateur déjà inscrit dans l\'application, ou basculer sur l\'onglet « Nouveau membre externe » pour saisir un prestataire sans compte (nom, prénom, email, direction en texte libre). Le rôle dans le projet est obligatoire dans les deux cas. Modifiez ou retirez ensuite un membre depuis les actions de sa ligne.</p>';
+                if (!hasRole('ChefDeProjet') && !hasGouvernanceDsi()) {
+                    return {
+                        html: base + '<p>Cette action est réservée au Chef de Projet affecté et à la gouvernance DSI (DSI, Responsable Solutions IT, AdminIT).</p>'
+                    };
+                }
+                return {
+                    html: base,
+                    actions: projetId
+                        ? [{ label: 'Ouvrir l\'équipe de ce projet', href: `/Projet/Details/${projetId}?tab=analyse` }]
                         : [{ label: 'Voir mes projets', href: '/Projet/Index' }]
                 };
             }

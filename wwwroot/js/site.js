@@ -246,6 +246,10 @@
             purpose: "Ce bloc sert au Directeur Métier pour confirmer que le dossier est conforme aux attentes du métier.",
             guidance: "Ne validez qu'après contrôle des livrables, du planning ou de la charte selon la phase. Utilisez le refus si un point structurant manque."
         },
+        "equipe du projet": {
+            purpose: "Ce bloc sert à mobiliser les contributeurs clés du projet : un utilisateur déjà inscrit dans l'application, ou un membre externe qui n'a pas de compte.",
+            guidance: "Cliquez sur « Ajouter un membre » : onglet « Utilisateur existant » pour choisir quelqu'un dans la liste des utilisateurs de l'application (nom, prénom, email et direction repris automatiquement), ou onglet « Nouveau membre externe » pour saisir manuellement un prestataire sans compte. Le rôle dans le projet est obligatoire dans les deux cas. Utilisez ensuite « Modifier » ou « Retirer » sur la ligne d'un membre pour ajuster l'équipe. Réservé au Chef de Projet affecté et à la gouvernance DSI."
+        },
         "evaluation de l equipe": {
             purpose: "Ce bloc sert à évaluer chaque membre actif de l'équipe projet (qualité du travail, respect des délais, collaboration) typiquement à la clôture.",
             guidance: "Notez chaque critère de 1 à 5 et ajoutez un commentaire si utile, dans l'onglet Clôture. Une seule évaluation par membre : la noter à nouveau met à jour l'évaluation existante."
@@ -1350,6 +1354,11 @@
             title: "Enregistrer un brouillon de demande",
             purpose: "Une demande peut être enregistrée en brouillon pour être complétée plus tard : aucun champ bloquant à ce stade hormis le titre, la direction et le directeur métier.",
             guidance: "Sur le formulaire Nouvelle demande, utilisez « Enregistrer en brouillon ». Retrouvez-le dans Mes Demandes pour le modifier (y compris le Directeur métier) puis le soumettre."
+        },
+        {
+            title: "Gérer l'équipe projet (ajouter, modifier, retirer un membre)",
+            purpose: "L'équipe d'un projet est distincte des comptes applicatifs : elle sert à tracer qui contribue au projet (rôle, direction, email), qu'il s'agisse d'un utilisateur de l'application ou d'un prestataire externe.",
+            guidance: "Sur la fiche projet, onglet Analyse, bloc « Équipe du projet » : « Ajouter un membre » propose un utilisateur existant (liste déroulante) ou un membre externe (saisie libre nom/prénom/email/direction). Le rôle dans le projet est obligatoire. Modifiez ou retirez un membre depuis les actions de sa ligne. Réservé au Chef de Projet du projet et à la gouvernance DSI (DSI, Responsable Solutions IT, AdminIT)."
         }
     ];
 

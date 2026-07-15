@@ -253,13 +253,20 @@
             '</div>';
     }
 
+    function parseJsonResponse(response) {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        return response.json();
+    }
+
     function loadNotifications() {
-        if (!cfg.isAuthenticated) {
+        if (!cfg.isAuthenticated || document.hidden) {
             return;
         }
 
         fetch(cfg.notificationCountUrl)
-            .then((response) => response.json())
+            .then(parseJsonResponse)
             .then((data) => {
                 const badge = byId('notificationBadge');
                 if (!badge) {
@@ -274,13 +281,13 @@
                     badge.hidden = true;
                 }
             })
-            .catch((err) => console.error('Erreur chargement notifications:', err));
+            .catch((err) => console.warn('Notifications (badge) temporairement indisponibles :', err.message));
 
         fetch(cfg.notificationsUrl)
-            .then((response) => response.json())
+            .then(parseJsonResponse)
             .then((data) => renderNotifications(Array.isArray(data) ? data : []))
             .catch((err) => {
-                console.error('Erreur chargement liste notifications:', err);
+                console.warn('Notifications (liste) temporairement indisponibles :', err.message);
                 renderNotificationsError();
             });
     }
@@ -292,6 +299,11 @@
 
         loadNotifications();
         setInterval(loadNotifications, 30000);
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                loadNotifications();
+            }
+        });
     }
 
     function init() {
