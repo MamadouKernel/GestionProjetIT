@@ -38,4 +38,7 @@ public class ProjetDetailsViewModel
 
     // Données pour sélection du chef de projet (synthèse)
     public List<Utilisateur> ChefsProjet { get; set; } = new();
+
+    // Utilisateurs non supprimés, sélectionnables comme membre du projet (onglet Analyse)
+    public List<Utilisateur> UtilisateursDisponibles { get; set; } = new();
 }

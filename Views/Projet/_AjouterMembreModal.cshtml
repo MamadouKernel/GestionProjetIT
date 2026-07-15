@@ -1,71 +1,142 @@
-@model GestionProjects.Domain.Models.Projet
+@model GestionProjects.Application.ViewModels.Projet.ProjetDetailsViewModel
+@{
+    var projet = Model.Projet;
+}
 
 <div class="modal fade" id="ajouterMembreModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
-            <form asp-action="AjouterMembreProjet" method="post">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="projetId" value="@Model.Id" />
-                <div class="modal-header" style="border-bottom: 1px solid var(--gray-200); padding: var(--spacing-lg);">
-                    <h5 class="modal-title" style="font-weight: 600; color: var(--gray-800); display: flex; align-items: center; gap: var(--spacing-sm);">
-                        <i class="bi bi-person-plus" style="color: var(--primary-blue);"></i>
-                        Ajouter un Membre à l'Équipe Projet
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header" style="border-bottom: 1px solid var(--gray-200); padding: var(--spacing-lg);">
+                <h5 class="modal-title" style="font-weight: 600; color: var(--gray-800); display: flex; align-items: center; gap: var(--spacing-sm);">
+                    <i class="bi bi-person-plus" style="color: var(--primary-blue);"></i>
+                    Ajouter un Membre à l'Équipe Projet
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: var(--spacing-lg);">
+                <div class="btn-group-modern mb-3" style="display: flex; gap: var(--spacing-sm);">
+                    <button type="button" id="ongletExistantBtn" class="btn-modern btn-modern-primary" style="flex: 1;" onclick="afficherOngletMembre('existant')">
+                        <i class="bi bi-people"></i>
+                        Utilisateur existant
+                    </button>
+                    <button type="button" id="ongletNouveauBtn" class="btn-modern btn-modern-secondary" style="flex: 1;" onclick="afficherOngletMembre('nouveau')">
+                        <i class="bi bi-person-plus-fill"></i>
+                        Nouveau membre externe
+                    </button>
                 </div>
-                <div class="modal-body" style="padding: var(--spacing-lg);">
-                    <div class="alert-modern alert-modern-info mb-3" style="border-left: 4px solid var(--info);">
-                        <i class="bi bi-info-circle-fill"></i>
-                        <div>
-                            <strong>Note:</strong> Vous pouvez ajouter des membres internes (CIT) ou externes au projet.
+
+                <div id="ongletExistant">
+                    <form asp-action="AjouterMembre" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="projetId" value="@projet.Id" />
+
+                        <div class="alert-modern alert-modern-info mb-3" style="border-left: 4px solid var(--info);">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <div>
+                                <strong>Note:</strong> Choisissez un utilisateur déjà présent dans l'application.
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="form-group-modern">
-                        <label class="form-label-modern">Nom *</label>
-                        <input type="text" name="nom" class="form-control-modern" required placeholder="Nom du membre" />
-                    </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Utilisateur *</label>
+                            <select name="utilisateurId" class="form-control-modern" required>
+                                <option value="">-- Sélectionner un utilisateur --</option>
+                                @foreach (var utilisateur in Model.UtilisateursDisponibles)
+                                {
+                                    <option value="@utilisateur.Id">@utilisateur.Nom @utilisateur.Prenoms (@utilisateur.Email)</option>
+                                }
+                            </select>
+                        </div>
 
-                    <div class="form-group-modern">
-                        <label class="form-label-modern">Prénom *</label>
-                        <input type="text" name="prenom" class="form-control-modern" required placeholder="Prénom du membre" />
-                    </div>
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Rôle dans le projet *</label>
+                            <input type="text" name="roleDansProjet" class="form-control-modern" required placeholder="Ex: Développeur, Analyste, Testeur, Chef de projet technique..." />
+                            <small style="color: var(--gray-500); font-size: 0.875rem;">
+                                <i class="bi bi-info-circle"></i> Rôle spécifique dans ce projet
+                            </small>
+                        </div>
 
-                    <div class="form-group-modern">
-                        <label class="form-label-modern">Fonction</label>
-                        <input type="text" name="fonction" class="form-control-modern" placeholder="Ex: Développeur Senior, Analyste Fonctionnel..." />
-                    </div>
-
-                    <div class="form-group-modern">
-                        <label class="form-label-modern">Rôle dans le projet *</label>
-                        <input type="text" name="roleDansProjet" class="form-control-modern" required placeholder="Ex: Développeur, Analyste, Testeur, Chef de projet technique..." />
-                        <small style="color: var(--gray-500); font-size: 0.875rem;">
-                            <i class="bi bi-info-circle"></i> Rôle spécifique dans ce projet
-                        </small>
-                    </div>
-
-                    <div class="form-group-modern">
-                        <label class="form-label-modern">Direction</label>
-                        <input type="text" name="directionLibelle" class="form-control-modern" placeholder="Ex: DSI, Direction Financière, Externe..." />
-                    </div>
-
-                    <div class="form-group-modern">
-                        <label class="form-label-modern">Email *</label>
-                        <input type="email" name="email" class="form-control-modern" required placeholder="email@example.com" />
-                    </div>
+                        <div class="modal-footer" style="border-top: 1px solid var(--gray-200); padding: var(--spacing-lg) 0 0 0;">
+                            <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                                <i class="bi bi-x-circle"></i>
+                                Annuler
+                            </button>
+                            <button type="submit" class="btn-modern btn-modern-primary">
+                                <i class="bi bi-plus-circle"></i>
+                                Ajouter le membre
+                            </button>
+                        </div>
+                    </form>
                 </div>
-                <div class="modal-footer" style="border-top: 1px solid var(--gray-200); padding: var(--spacing-lg);">
-                    <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x-circle"></i>
-                        Annuler
-                    </button>
-                    <button type="submit" class="btn-modern btn-modern-primary">
-                        <i class="bi bi-plus-circle"></i>
-                        Ajouter le membre
-                    </button>
+
+                <div id="ongletNouveau" style="display: none;">
+                    <form asp-action="CreerMembre" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="projetId" value="@projet.Id" />
+
+                        <div class="alert-modern alert-modern-info mb-3" style="border-left: 4px solid var(--info);">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <div>
+                                <strong>Note:</strong> À utiliser si la personne n'a pas de compte dans l'application (ex: prestataire externe).
+                            </div>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Nom *</label>
+                            <input type="text" name="nom" class="form-control-modern" required placeholder="Nom du membre" />
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Prénom *</label>
+                            <input type="text" name="prenom" class="form-control-modern" required placeholder="Prénom du membre" />
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Fonction</label>
+                            <input type="text" name="fonction" class="form-control-modern" placeholder="Ex: Développeur Senior, Analyste Fonctionnel..." />
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Rôle dans le projet *</label>
+                            <input type="text" name="roleDansProjet" class="form-control-modern" required placeholder="Ex: Développeur, Analyste, Testeur, Chef de projet technique..." />
+                            <small style="color: var(--gray-500); font-size: 0.875rem;">
+                                <i class="bi bi-info-circle"></i> Rôle spécifique dans ce projet
+                            </small>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Direction</label>
+                            <input type="text" name="directionLibelle" class="form-control-modern" placeholder="Ex: DSI, Direction Financière, Externe..." />
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">Email *</label>
+                            <input type="email" name="email" class="form-control-modern" required placeholder="email@example.com" />
+                        </div>
+
+                        <div class="modal-footer" style="border-top: 1px solid var(--gray-200); padding: var(--spacing-lg) 0 0 0;">
+                            <button type="button" class="btn-modern btn-modern-secondary" data-bs-dismiss="modal">
+                                <i class="bi bi-x-circle"></i>
+                                Annuler
+                            </button>
+                            <button type="submit" class="btn-modern btn-modern-primary">
+                                <i class="bi bi-plus-circle"></i>
+                                Ajouter le membre
+                            </button>
+                        </div>
+                    </form>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>
 
+<script>
+    function afficherOngletMembre(onglet) {
+        var estExistant = onglet === 'existant';
+        document.getElementById('ongletExistant').style.display = estExistant ? '' : 'none';
+        document.getElementById('ongletNouveau').style.display = estExistant ? 'none' : '';
+        document.getElementById('ongletExistantBtn').className = estExistant ? 'btn-modern btn-modern-primary' : 'btn-modern btn-modern-secondary';
+        document.getElementById('ongletNouveauBtn').className = estExistant ? 'btn-modern btn-modern-secondary' : 'btn-modern btn-modern-primary';
+    }
+</script>

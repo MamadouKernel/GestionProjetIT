@@ -269,6 +269,25 @@ namespace GestionProjects.Controllers
             return RedirectToAction(nameof(Details), new { id = projetId, tab = "analyse" });
         }
 
+        // POST: Créer un nouveau membre externe (pas d'utilisateur applicatif correspondant)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
+        public async Task<IActionResult> CreerMembre(Guid projetId, string nom, string prenom, string email, string roleDansProjet, string? fonction, string? directionLibelle, [FromServices] IMembreProjetService membreService)
+        {
+            var projet = await _db.Projets.FindAsync(projetId);
+            if (projet == null)
+                return NotFound();
+
+            if (!await CanManageProjectMembersAsync(projet))
+                return Forbid();
+
+            await membreService.CreerMembreAsync(projetId, nom, prenom, email, roleDansProjet, fonction, directionLibelle);
+
+            TempData["Success"] = "Membre ajouté au projet.";
+            return RedirectToAction(nameof(Details), new { id = projetId, tab = "analyse" });
+        }
+
         // POST: Retirer/Désactiver un membre du projet
         [HttpPost]
         [ValidateAntiForgeryToken]

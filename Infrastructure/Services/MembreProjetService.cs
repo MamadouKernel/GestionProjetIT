@@ -47,6 +47,30 @@ namespace GestionProjects.Infrastructure.Services
             return true;
         }
 
+        public async Task<Guid> CreerMembreAsync(Guid projetId, string nom, string prenom, string email, string roleDansProjet, string? fonction, string? directionLibelle)
+        {
+            var membre = new MembreProjet
+            {
+                Id = Guid.NewGuid(),
+                ProjetId = projetId,
+                Nom = nom.Trim(),
+                Prenom = prenom.Trim(),
+                Fonction = fonction?.Trim() ?? string.Empty,
+                RoleDansProjet = roleDansProjet.Trim(),
+                Email = email.Trim(),
+                DirectionLibelle = directionLibelle?.Trim() ?? string.Empty,
+                EstActif = true,
+                DateCreation = DateTime.UtcNow,
+                CreePar = _currentUserService.Matricule
+            };
+
+            _db.MembresProjets.Add(membre);
+            await _db.SaveChangesAsync();
+
+            await _auditService.LogActionAsync("AJOUT_MEMBRE", "MembreProjet", membre.Id);
+            return membre.Id;
+        }
+
         public async Task<bool> RetirerMembreAsync(Guid projetId, Guid membreId)
         {
             var membre = await _db.MembresProjets.FindAsync(membreId);

@@ -293,6 +293,12 @@ namespace GestionProjects.Infrastructure.Services
         {
             var id = projet.Id;
 
+            var utilisateursDisponibles = await _db.Utilisateurs
+                .Where(u => !u.EstSupprime)
+                .OrderBy(u => u.Nom)
+                .ThenBy(u => u.Prenoms)
+                .ToListAsync();
+
             List<CasTestProjet> casTests = new();
             List<CampagneTestProjet> campagnes = new();
             CollaborationProjet? collaboration = null;
@@ -431,6 +437,7 @@ namespace GestionProjects.Infrastructure.Services
                 DossiersSignature  = dossiersSignature,
                 AuditLogs          = auditLogs,
                 ChefsProjet        = chefsProjet,
+                UtilisateursDisponibles = utilisateursDisponibles,
                 Avenants           = avenants,
                 Benefices          = benefices,
                 EvaluationsMembres = evaluationsMembres,
