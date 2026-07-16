@@ -244,6 +244,49 @@ namespace GestionProjects.Infrastructure.Services
             return WorkflowResult.Success("Projet repris. Il repasse en cours.");
         }
 
+        public async Task<WorkflowResult> ChangerPhaseAsync(Guid projetId, Guid userId, PhaseProjet nouvellePhase, string? commentaire)
+        {
+            var projet = await _db.Projets.FirstOrDefaultAsync(p => p.Id == projetId);
+            if (projet == null)
+                return WorkflowResult.NotFound();
+
+            if (projet.StatutProjet == StatutProjet.Cloture)
+                return WorkflowResult.Error("Impossible de changer la phase d'un projet clôturé.");
+
+            var anciennePhase = projet.PhaseActuelle;
+            if (anciennePhase == nouvellePhase)
+                return WorkflowResult.Error("Le projet est déjà dans cette phase.");
+
+            projet.PhaseActuelle = nouvellePhase;
+            projet.DateModification = DateTime.UtcNow;
+            projet.ModifiePar = _currentUserService.Matricule ?? "SYSTEM";
+
+            var commentaireHistorique = string.IsNullOrWhiteSpace(commentaire)
+                ? $"Changement manuel de phase : {anciennePhase} → {nouvellePhase}"
+                : commentaire.Trim();
+
+            _db.HistoriquePhasesProjets.Add(new HistoriquePhaseProjet
+            {
+                Id = Guid.NewGuid(),
+                ProjetId = projet.Id,
+                Phase = nouvellePhase,
+                StatutProjet = projet.StatutProjet,
+                DateDebut = DateTime.UtcNow,
+                ModifieParId = userId,
+                Commentaire = commentaireHistorique,
+                DateCreation = DateTime.UtcNow,
+                CreePar = _currentUserService.Matricule ?? "SYSTEM"
+            });
+
+            await _db.SaveChangesAsync();
+
+            await _auditService.LogActionAsync("CHANGEMENT_PHASE", "Projet", projet.Id,
+                new { AnciennePhase = anciennePhase },
+                new { NouvellePhase = nouvellePhase, Commentaire = commentaireHistorique });
+
+            return WorkflowResult.Success($"Phase changée : {anciennePhase} → {nouvellePhase}.");
+        }
+
         // ── Corbeille (réservé AdminIT — gating fait par le contrôleur) ────────
         // IgnoreQueryFilters() : le filtre global "EstSupprime == false" (voir
         // ApplicationDbContext.AppliquerFiltreSoftDelete) masquerait sinon l'entité

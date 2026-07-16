@@ -174,6 +174,62 @@ namespace GestionProjects.Controllers
             return RedirectToAction(nameof(Details), new { id, tab = "synthese" });
         }
 
+        // POST: Changer manuellement la phase du projet (override de gouvernance)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
+        public async Task<IActionResult> ChangerPhase(Guid id, PhaseProjet nouvellePhase, string? commentaire, [FromServices] IProjetDetailsWorkflowService detailsWorkflow)
+        {
+            var projet = await _db.Projets.FindAsync(id);
+            if (projet == null)
+                return NotFound();
+
+            var ui = await BuildProjectUiAsync(projet);
+            if (!ui.CanChangePhase)
+                return Forbid();
+
+            var result = await detailsWorkflow.ChangerPhaseAsync(id, User.GetUserIdOrThrow(), nouvellePhase, commentaire);
+            if (result.IsNotFound)
+                return NotFound();
+
+            if (result.ErrorMessage is not null)
+                TempData["Error"] = result.ErrorMessage;
+            else
+                TempData["Success"] = result.SuccessMessage;
+
+            return RedirectToAction(nameof(Details), new { id, tab = "synthese" });
+        }
+
+        // POST: Sauvegarder les notes de clarification (phase Analyse)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
+        public async Task<IActionResult> SauvegarderClarification(Guid id, string? notesClarification, string? decisionsPrises, string? hypothesesProjet)
+        {
+            var projet = await _db.Projets.FirstOrDefaultAsync(p => p.Id == id);
+            if (projet == null)
+                return NotFound();
+
+            if (!await CanManageAnalyseAsync(projet))
+                return Forbid();
+
+            var userId = User.GetUserIdOrThrow();
+            var ficheProjet = await _planificationNative.GetOrCreateFicheProjetAsync(id, userId);
+            ficheProjet.NotesClarification = notesClarification?.Trim();
+            ficheProjet.DecisionsPrises = decisionsPrises?.Trim();
+            ficheProjet.HypothesesProjet = hypothesesProjet?.Trim();
+            ficheProjet.DateDerniereMiseAJour = DateTime.UtcNow;
+            ficheProjet.DerniereMiseAJourParId = userId;
+            ficheProjet.DateModification = DateTime.UtcNow;
+            ficheProjet.ModifiePar = _currentUserService.Matricule;
+
+            await _db.SaveChangesAsync();
+            await _auditService.LogActionAsync("UPDATE_NOTES_CLARIFICATION", "Projet", projet.Id);
+
+            TempData["Success"] = "Notes de clarification enregistrées.";
+            return RedirectToAction(nameof(Details), new { id, tab = "analyse" });
+        }
+
         // POST: Valider Phase Analyse (Go/No-Go vers Planification)
         [HttpPost]
         [ValidateAntiForgeryToken]

@@ -1,5 +1,6 @@
 using GestionProjects.Application.Common.Results;
 using GestionProjects.Application.ViewModels.Projet;
+using GestionProjects.Domain.Enums;
 using GestionProjects.Domain.Models;
 
 namespace GestionProjects.Application.Common.Interfaces
@@ -30,6 +31,12 @@ namespace GestionProjects.Application.Common.Interfaces
         /// </summary>
         Task<WorkflowResult> SuspendreProjetAsync(Guid projetId, Guid userId, string motif);
         Task<WorkflowResult> ReprendreProjetAsync(Guid projetId, Guid userId);
+
+        /// <summary>
+        /// Change manuellement la phase du projet (override de gouvernance), en dehors
+        /// du parcours Go/No-Go habituel. Tient l'historique de phase.
+        /// </summary>
+        Task<WorkflowResult> ChangerPhaseAsync(Guid projetId, Guid userId, PhaseProjet nouvellePhase, string? commentaire);
 
         // ── Corbeille (réservé AdminIT — gating fait par le contrôleur) ────────
         Task<WorkflowResult> SupprimerAsync(Guid projetId, string nomActeur);
