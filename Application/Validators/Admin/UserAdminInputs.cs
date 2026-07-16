@@ -11,7 +11,9 @@ public record CreateUserInput(
     string? MotDePasse,
     string? ConfirmMotDePasse,
     string? Roles,
-    bool PeutCreerDemandeProjet);
+    bool PeutCreerDemandeProjet,
+    ProfilRessource? ProfilRessource = null,
+    decimal? CapaciteHebdomadaire = null);
 
 public record UpdateUserInput(
     Guid Id,

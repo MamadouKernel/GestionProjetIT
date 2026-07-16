@@ -24,9 +24,9 @@ namespace GestionProjects.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateUser(string Matricule, string Nom, string Prenoms, string Email, string? DirectionId, string motDePasse, string confirmMotDePasse, string? Roles = null, bool PeutCreerDemandeProjet = true)
+        public async Task<IActionResult> CreateUser(string Matricule, string Nom, string Prenoms, string Email, string? DirectionId, string motDePasse, string confirmMotDePasse, string? Roles = null, bool PeutCreerDemandeProjet = true, ProfilRessource? ProfilRessource = null, decimal? CapaciteHebdomadaire = null)
         {
-            var input = new CreateUserInput(Matricule, Nom, Prenoms, Email, DirectionId, motDePasse, confirmMotDePasse, Roles, PeutCreerDemandeProjet);
+            var input = new CreateUserInput(Matricule, Nom, Prenoms, Email, DirectionId, motDePasse, confirmMotDePasse, Roles, PeutCreerDemandeProjet, ProfilRessource, CapaciteHebdomadaire);
             var result = await _userService.CreateAsync(input);
             return await HandleUserResultAsync(result);
         }

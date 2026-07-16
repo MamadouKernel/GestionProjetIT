@@ -18,7 +18,7 @@ namespace GestionProjects.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateService(string Code, string Libelle, string DirectionId)
         {
-            var input  = new CreateServiceInput(Code, Libelle, DirectionId, true);
+            var input  = new CreateServiceInput(Code, Libelle, DirectionId, ReadEstActive());
             var result = await _serviceService.CreateAsync(input);
             return await HandleServiceResultAsync(result);
         }
@@ -27,7 +27,7 @@ namespace GestionProjects.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateService(Guid id, string Code, string Libelle, string DirectionId)
         {
-            var input  = new UpdateServiceInput(id, Code, Libelle, DirectionId, true);
+            var input  = new UpdateServiceInput(id, Code, Libelle, DirectionId, ReadEstActive());
             var result = await _serviceService.UpdateAsync(input);
             return await HandleServiceResultAsync(result);
         }

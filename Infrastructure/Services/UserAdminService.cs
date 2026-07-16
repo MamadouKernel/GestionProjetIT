@@ -154,7 +154,8 @@ public class UserAdminService : IUserAdminService
 
         var user = await _utilisateurService.CreateUserAsync(
             input.Matricule!, input.Nom!, input.Prenoms!, input.Email!, input.MotDePasse!,
-            directionGuid, roles, input.PeutCreerDemandeProjet);
+            directionGuid, roles, input.PeutCreerDemandeProjet,
+            input.ProfilRessource, input.CapaciteHebdomadaire ?? 40);
 
         await _db.SaveChangesAsync();
 
