@@ -344,6 +344,29 @@ namespace GestionProjects.Controllers
             return RedirectToAction(nameof(Details), new { id = projetId, tab = "analyse" });
         }
 
+        // POST: Modifier un membre du projet
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
+        public async Task<IActionResult> ModifierMembre(Guid projetId, Guid membreId, string nom, string prenom, string email, string roleDansProjet, string? directionLibelle, [FromServices] IMembreProjetService membreService)
+        {
+            var projet = await _db.Projets.FindAsync(projetId);
+            if (projet == null)
+                return NotFound();
+
+            if (!await CanManageProjectMembersAsync(projet))
+                return Forbid();
+
+            if (!await membreService.ModifierMembreAsync(projetId, membreId, nom, prenom, email, roleDansProjet, directionLibelle))
+            {
+                TempData["Error"] = "Membre non trouvé.";
+                return RedirectToAction(nameof(Details), new { id = projetId, tab = "analyse" });
+            }
+
+            TempData["Success"] = "Membre mis à jour.";
+            return RedirectToAction(nameof(Details), new { id = projetId, tab = "analyse" });
+        }
+
         // POST: Retirer/Désactiver un membre du projet
         [HttpPost]
         [ValidateAntiForgeryToken]

@@ -3,7 +3,7 @@
 <div class="modal fade" id="modifierMembreModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content" style="border-radius: var(--radius-xl); border: none; box-shadow: var(--shadow-xl);">
-            <form asp-action="ModifierMembreProjet" method="post">
+            <form asp-action="ModifierMembre" method="post">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="projetId" value="@Model.Id" />
                 <input type="hidden" name="membreId" id="modifierMembreId" />

@@ -71,6 +71,28 @@ namespace GestionProjects.Infrastructure.Services
             return membre.Id;
         }
 
+        public async Task<bool> ModifierMembreAsync(Guid projetId, Guid membreId, string nom, string prenom, string email, string roleDansProjet, string? directionLibelle)
+        {
+            var membre = await _db.MembresProjets.FindAsync(membreId);
+            if (membre == null || membre.ProjetId != projetId)
+                return false;
+
+            membre.Nom = nom;
+            membre.Prenom = prenom;
+            membre.Email = email;
+            membre.RoleDansProjet = roleDansProjet;
+            membre.DirectionLibelle = directionLibelle ?? string.Empty;
+            membre.DateModification = DateTime.UtcNow;
+            membre.ModifiePar = _currentUserService.Matricule;
+
+            await _db.SaveChangesAsync();
+
+            await _auditService.LogActionAsync("MODIFICATION_MEMBRE_PROJET", "MembreProjet", membre.Id,
+                new { ProjetId = projetId },
+                new { Nom = nom, Prenom = prenom, Email = email, RoleDansProjet = roleDansProjet, DirectionLibelle = directionLibelle });
+            return true;
+        }
+
         public async Task<bool> RetirerMembreAsync(Guid projetId, Guid membreId)
         {
             var membre = await _db.MembresProjets.FindAsync(membreId);
