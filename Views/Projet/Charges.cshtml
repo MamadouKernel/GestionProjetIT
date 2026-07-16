@@ -16,13 +16,20 @@
             </span>
             <h1 class="page-hero-title">@Model.CodeProjet · @Model.Titre</h1>
             <p class="page-hero-subtitle">
-                Saisie hebdomadaire des charges, suivi prévu vs réel, détail des activités et validation par le chef de projet.
+                Saisie hebdomadaire des charges, suivi prévu vs réel et validation par le chef de projet.
             </p>
-            <div class="project-charge-meta">
-                <span class="role-chip"><i class="bi bi-diagram-3"></i> @Model.Phase</span>
-                <span class="role-chip"><i class="bi bi-kanban"></i> @Model.Statut</span>
-                <span class="role-chip"><i class="bi bi-building"></i> @Model.Direction</span>
-                <span class="role-chip"><i class="bi bi-person-badge"></i> CP: @Model.ChefProjet</span>
+            <div class="charge-context-line">
+                <span><i class="bi bi-diagram-3"></i>@Model.Phase</span>
+                <span class="charge-context-dot">·</span>
+                <span><i class="bi bi-kanban"></i>@Model.Statut</span>
+                <span class="charge-context-dot">·</span>
+                <span><i class="bi bi-building"></i>@Model.Direction</span>
+                <span class="charge-context-dot">·</span>
+                <span><i class="bi bi-person-badge"></i>@Model.ChefProjet</span>
+                <span class="charge-context-dot">·</span>
+                <span><i class="bi bi-flag"></i>@Model.ProchainJalon</span>
+                <span class="charge-context-dot">·</span>
+                <span><i class="bi bi-graph-up"></i>Avancement @Model.Avancement%</span>
             </div>
         </div>
         <div class="project-charge-actions">
@@ -40,57 +47,60 @@
         </div>
     </section>
 
-    <div class="admin-dashboard-grid admin-dashboard-grid-middle">
-        <article class="admin-metric-panel">
-            <div class="admin-metric-panel-title">Informations projet</div>
-            <div class="charge-summary-list">
-                <div><span>Sponsor</span><strong>@Model.Sponsor</strong></div>
-                <div><span>Avancement</span><strong>@Model.Avancement%</strong></div>
-                <div><span>État projet</span><strong>@Model.Etat</strong></div>
-                <div><span>Prochain jalon</span><strong>@Model.ProchainJalon</strong></div>
+    <div class="stats-grid charge-stats-grid">
+        <article class="stat-card info">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-value">@Model.ChargePrevisionnelleTotale.ToString("N1", fr) h</div>
+                    <div class="stat-label">Charge prévisionnelle totale</div>
+                </div>
+                <span class="stat-icon"><i class="bi bi-calendar-week"></i></span>
             </div>
+            <span class="soft-note">Planifiée sur la période affichée</span>
         </article>
 
-        <article class="admin-metric-panel">
-            <div class="admin-metric-panel-title">KPI charges</div>
-            <div class="admin-mini-kpi-grid">
-                <div class="admin-mini-kpi">
-                    <span class="admin-mini-kpi-label">Charge prévisionnelle totale</span>
-                    <strong class="admin-mini-kpi-value">@Model.ChargePrevisionnelleTotale.ToString("N1", fr) h</strong>
-                    <span class="admin-mini-kpi-trend">planifiée</span>
+        <article class="stat-card">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-value">@Model.ChargeReelleTotale.ToString("N1", fr) h</div>
+                    <div class="stat-label">Charge réelle totale</div>
                 </div>
-                <div class="admin-mini-kpi">
-                    <span class="admin-mini-kpi-label">Charge réelle totale</span>
-                    <strong class="admin-mini-kpi-value">@Model.ChargeReelleTotale.ToString("N1", fr) h</strong>
-                    <span class="admin-mini-kpi-trend">consommée</span>
-                </div>
-                <div class="admin-mini-kpi">
-                    <span class="admin-mini-kpi-label">Écart charge</span>
-                    <strong class="admin-mini-kpi-value @(Model.ChargeEcartTotale > 0 ? "text-danger" : "text-success")">@Model.ChargeEcartTotale.ToString("N1", fr) h</strong>
-                    <span class="admin-mini-kpi-trend">@Model.TauxConsommation.ToString("N1", fr)% consommé</span>
-                </div>
+                <span class="stat-icon"><i class="bi bi-clock-history"></i></span>
             </div>
+            <span class="soft-note">@Model.TauxConsommation.ToString("N1", fr)% du prévisionnel</span>
         </article>
 
-        <article class="admin-metric-panel">
-            <div class="admin-metric-panel-title">Capacité & validation</div>
-            <div class="admin-mini-kpi-grid">
-                <div class="admin-mini-kpi">
-                    <span class="admin-mini-kpi-label">Capacité totale</span>
-                    <strong class="admin-mini-kpi-value">@Model.CapaciteTotale.ToString("N1", fr) h</strong>
-                    <span class="admin-mini-kpi-trend">@Model.NombreRessources ressource(s)</span>
+        <article class="stat-card @(Model.ChargeEcartTotale > 0 ? "danger" : "success")">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-value">@Model.ChargeEcartTotale.ToString("N1", fr) h</div>
+                    <div class="stat-label">Écart réel / prévu</div>
                 </div>
-                <div class="admin-mini-kpi">
-                    <span class="admin-mini-kpi-label">Taux capacité utilisé</span>
-                    <strong class="admin-mini-kpi-value">@Model.TauxCapaciteUtilise.ToString("N1", fr)%</strong>
-                    <span class="admin-mini-kpi-trend">@Model.RessourcesSurchargees surcharge(s)</span>
-                </div>
-                <div class="admin-mini-kpi">
-                    <span class="admin-mini-kpi-label">Charges à valider</span>
-                    <strong class="admin-mini-kpi-value">@Model.ChargesEnAttenteValidation</strong>
-                    <span class="admin-mini-kpi-trend">workflow hebdomadaire</span>
-                </div>
+                <span class="stat-icon"><i class="bi bi-arrow-left-right"></i></span>
             </div>
+            <span class="soft-note">@(Model.ChargeEcartTotale > 0 ? "Consommation au-delà du prévu" : "Consommation maîtrisée")</span>
+        </article>
+
+        <article class="stat-card @(Model.TauxCapaciteUtilise > 100 ? "danger" : Model.TauxCapaciteUtilise > 80 ? "warning" : "success")">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-value">@Model.TauxCapaciteUtilise.ToString("N1", fr)%</div>
+                    <div class="stat-label">Capacité utilisée</div>
+                </div>
+                <span class="stat-icon"><i class="bi bi-speedometer2"></i></span>
+            </div>
+            <span class="soft-note">@Model.NombreRessources ressource(s) · @Model.RessourcesSurchargees surcharge(s)</span>
+        </article>
+
+        <article class="stat-card @(Model.ChargesEnAttenteValidation > 0 ? "warning" : "")">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-value">@Model.ChargesEnAttenteValidation</div>
+                    <div class="stat-label">Charges à valider</div>
+                </div>
+                <span class="stat-icon"><i class="bi bi-hourglass-split"></i></span>
+            </div>
+            <span class="soft-note">Workflow hebdomadaire</span>
         </article>
     </div>
 
@@ -112,7 +122,7 @@
     <article class="card-modern">
         <div class="card-header-modern">
             <h3 class="card-title-modern chart-card-title"><i class="bi bi-table"></i> Saisie hebdomadaire des charges</h3>
-            <span class="soft-note">Prévu, réel, allocation, type d'activité, commentaire et validation hebdomadaire.</span>
+            <span class="soft-note">Prévu et réel toujours visibles · détails, type d'activité et commentaire dans « Détails ».</span>
         </div>
         <div class="card-body-modern p-0">
             <form id="chargeAntiForgeryForm" method="post">
@@ -162,77 +172,90 @@
                                     {
                                         var week = Model.Weeks.First(w => w.StartDate == cell.WeekStart);
                                         <td class="charge-cell-column">
-                                            <div class="charge-cell-card @(week.IsCurrent ? "current" : string.Empty)">
-                                                <label class="charge-input-label">Prévu</label>
-                                                <input type="number"
-                                                       class="form-control-modern charge-input"
-                                                       step="0.5"
-                                                       min="0"
-                                                       value="@cell.PlannedHours.ToString("F1", CultureInfo.InvariantCulture)"
-                                                       data-projet-id="@Model.ProjetId"
-                                                       data-ressource-id="@row.ResourceId"
-                                                       data-semaine="@cell.WeekStart.ToString("yyyy-MM-dd")"
-                                                       data-field="planned"
-                                                       @(cell.CanEditForecast ? null : "disabled") />
+                                            <div class="charge-cell-card @(week.IsCurrent ? "current" : string.Empty) @(cell.IsMissingActual ? "is-missing-actual" : string.Empty)">
+                                                <div class="charge-cell-hours">
+                                                    <label class="charge-hour-field">
+                                                        <span class="charge-input-label">Prévu</span>
+                                                        <input type="number"
+                                                               class="charge-hour-input charge-input"
+                                                               step="0.5"
+                                                               min="0"
+                                                               value="@cell.PlannedHours.ToString("F1", CultureInfo.InvariantCulture)"
+                                                               data-projet-id="@Model.ProjetId"
+                                                               data-ressource-id="@row.ResourceId"
+                                                               data-semaine="@cell.WeekStart.ToString("yyyy-MM-dd")"
+                                                               data-field="planned"
+                                                               @(cell.CanEditForecast ? null : "disabled") />
+                                                    </label>
+                                                    <label class="charge-hour-field">
+                                                        <span class="charge-input-label">Réel</span>
+                                                        <input type="number"
+                                                               class="charge-hour-input charge-input"
+                                                               step="0.5"
+                                                               min="0"
+                                                               value="@(cell.ActualHours?.ToString("F1", CultureInfo.InvariantCulture) ?? string.Empty)"
+                                                               data-projet-id="@Model.ProjetId"
+                                                               data-ressource-id="@row.ResourceId"
+                                                               data-semaine="@cell.WeekStart.ToString("yyyy-MM-dd")"
+                                                               data-field="actual"
+                                                               @(cell.CanEditActual ? null : "disabled") />
+                                                    </label>
+                                                </div>
 
-                                                <label class="charge-input-label">Réel</label>
-                                                <input type="number"
-                                                       class="form-control-modern charge-input"
-                                                       step="0.5"
-                                                       min="0"
-                                                       value="@(cell.ActualHours?.ToString("F1", CultureInfo.InvariantCulture) ?? string.Empty)"
-                                                       data-projet-id="@Model.ProjetId"
-                                                       data-ressource-id="@row.ResourceId"
-                                                       data-semaine="@cell.WeekStart.ToString("yyyy-MM-dd")"
-                                                       data-field="actual"
-                                                       @(cell.CanEditActual ? null : "disabled") />
-
-                                                <label class="charge-input-label">Type activité</label>
-                                                <input type="text"
-                                                       class="form-control-modern charge-meta-input"
-                                                       value="@cell.TypeActivite"
-                                                       data-projet-id="@Model.ProjetId"
-                                                       data-ressource-id="@row.ResourceId"
-                                                       data-semaine="@cell.WeekStart.ToString("yyyy-MM-dd")"
-                                                       data-field="typeActivite"
-                                                       @(cell.CanEditActual ? null : "disabled") />
-
-                                                <label class="charge-input-label">Activité</label>
-                                                <textarea class="form-control-modern charge-meta-input"
-                                                          rows="2"
-                                                          data-projet-id="@Model.ProjetId"
-                                                          data-ressource-id="@row.ResourceId"
-                                                          data-semaine="@cell.WeekStart.ToString("yyyy-MM-dd")"
-                                                          data-field="activite"
-                                                          @(cell.CanEditActual ? null : "disabled")>@cell.Activite</textarea>
-
-                                                <label class="charge-input-label">Commentaire</label>
-                                                <textarea class="form-control-modern charge-comment-input"
-                                                          rows="2"
-                                                          data-projet-id="@Model.ProjetId"
-                                                          data-ressource-id="@row.ResourceId"
-                                                          data-semaine="@cell.WeekStart.ToString("yyyy-MM-dd")"
-                                                          data-field="comment"
-                                                          @(cell.CanEditActual ? null : "disabled")>@cell.Comment</textarea>
-
-                                                <div class="charge-cell-meta">
+                                                <div class="charge-cell-badges">
                                                     <span class="badge-modern @cell.CapacityStatusClass">@cell.CapacityStatus</span>
-                                                    <span class="soft-note">Allocation @cell.AllocationPercentage.ToString("N1", fr)%</span>
-                                                    <span class="soft-note">Écart @cell.VarianceHours.ToString("N1", fr) h</span>
-                                                </div>
-                                                <div class="charge-cell-meta">
                                                     <span class="badge-modern @cell.ValidationStatusClass">@cell.ValidationStatusLabel</span>
-                                                    @if (!string.IsNullOrWhiteSpace(cell.ValidationComment))
-                                                    {
-                                                        <span class="soft-note">@cell.ValidationComment</span>
-                                                    }
                                                 </div>
 
-                                                <div class="charge-action-row">
+                                                <details class="charge-cell-details">
+                                                    <summary>
+                                                        <span>Détails</span>
+                                                        <i class="bi bi-chevron-down"></i>
+                                                    </summary>
+                                                    <div class="charge-cell-details-body">
+                                                        <label class="charge-input-label">Type d'activité</label>
+                                                        <input type="text"
+                                                               class="form-control-modern charge-meta-input"
+                                                               value="@cell.TypeActivite"
+                                                               data-projet-id="@Model.ProjetId"
+                                                               data-ressource-id="@row.ResourceId"
+                                                               data-semaine="@cell.WeekStart.ToString("yyyy-MM-dd")"
+                                                               data-field="typeActivite"
+                                                               @(cell.CanEditActual ? null : "disabled") />
+
+                                                        <label class="charge-input-label">Activité</label>
+                                                        <textarea class="form-control-modern charge-meta-input"
+                                                                  rows="2"
+                                                                  data-projet-id="@Model.ProjetId"
+                                                                  data-ressource-id="@row.ResourceId"
+                                                                  data-semaine="@cell.WeekStart.ToString("yyyy-MM-dd")"
+                                                                  data-field="activite"
+                                                                  @(cell.CanEditActual ? null : "disabled")>@cell.Activite</textarea>
+
+                                                        <label class="charge-input-label">Commentaire</label>
+                                                        <textarea class="form-control-modern charge-comment-input"
+                                                                  rows="2"
+                                                                  data-projet-id="@Model.ProjetId"
+                                                                  data-ressource-id="@row.ResourceId"
+                                                                  data-semaine="@cell.WeekStart.ToString("yyyy-MM-dd")"
+                                                                  data-field="comment"
+                                                                  @(cell.CanEditActual ? null : "disabled")>@cell.Comment</textarea>
+
+                                                        <p class="charge-cell-note">Allocation @cell.AllocationPercentage.ToString("N1", fr)% · Écart @cell.VarianceHours.ToString("N1", fr) h</p>
+
+                                                        @if (!string.IsNullOrWhiteSpace(cell.ValidationComment))
+                                                        {
+                                                            <p class="charge-validation-note"><i class="bi bi-chat-left-quote"></i> @cell.ValidationComment</p>
+                                                        }
+                                                    </div>
+                                                </details>
+
+                                                <div class="charge-cell-actions">
                                                     @if (cell.CanSubmit)
                                                     {
                                                         <button type="button"
-                                                                class="btn-modern btn-modern-secondary charge-submit-btn"
+                                                                class="btn-modern btn-modern-secondary btn-icon-sm charge-submit-btn"
+                                                                title="Soumettre à validation"
                                                                 data-projet-id="@Model.ProjetId"
                                                                 data-ressource-id="@row.ResourceId"
                                                                 data-semaine="@cell.WeekStart.ToString("yyyy-MM-dd")">
@@ -242,15 +265,17 @@
                                                     @if (cell.CanReview)
                                                     {
                                                         <button type="button"
-                                                                class="btn-modern btn-modern-success charge-review-btn"
+                                                                class="btn-modern btn-modern-success btn-icon-sm charge-review-btn"
+                                                                title="Valider"
                                                                 data-projet-id="@Model.ProjetId"
                                                                 data-ressource-id="@row.ResourceId"
                                                                 data-semaine="@cell.WeekStart.ToString("yyyy-MM-dd")"
                                                                 data-status="Validee">
-                                                            <i class="bi bi-check-circle"></i>
+                                                            <i class="bi bi-check-lg"></i>
                                                         </button>
                                                         <button type="button"
-                                                                class="btn-modern btn-modern-info charge-review-btn"
+                                                                class="btn-modern btn-modern-info btn-icon-sm charge-review-btn"
+                                                                title="Commenter"
                                                                 data-projet-id="@Model.ProjetId"
                                                                 data-ressource-id="@row.ResourceId"
                                                                 data-semaine="@cell.WeekStart.ToString("yyyy-MM-dd")"
@@ -258,12 +283,13 @@
                                                             <i class="bi bi-chat-left-text"></i>
                                                         </button>
                                                         <button type="button"
-                                                                class="btn-modern btn-modern-danger charge-review-btn"
+                                                                class="btn-modern btn-modern-danger btn-icon-sm charge-review-btn"
+                                                                title="Rejeter"
                                                                 data-projet-id="@Model.ProjetId"
                                                                 data-ressource-id="@row.ResourceId"
                                                                 data-semaine="@cell.WeekStart.ToString("yyyy-MM-dd")"
                                                                 data-status="Rejetee">
-                                                            <i class="bi bi-x-circle"></i>
+                                                            <i class="bi bi-x-lg"></i>
                                                         </button>
                                                     }
                                                 </div>

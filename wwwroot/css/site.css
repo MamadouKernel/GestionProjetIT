@@ -1219,32 +1219,32 @@ body.sidebar-collapsed .main-content {
   gap: 1.15rem;
 }
 
-.project-charge-meta,
 .project-charge-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.55rem;
 }
 
-.charge-summary-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.8rem 1rem;
+.charge-context-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--gray-600);
+  font-size: 0.85rem;
 }
 
-.charge-summary-list span {
-  display: block;
-  margin-bottom: 0.2rem;
-  color: var(--gray-500);
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+.charge-context-line i {
+  color: var(--cit-blue);
+  margin-right: 0.35rem;
 }
 
-.charge-summary-list strong {
-  color: var(--gray-900);
-  font-size: 0.92rem;
+.charge-context-line .charge-context-dot {
+  color: var(--gray-300);
+}
+
+.charge-stats-grid {
+  margin-bottom: 0;
 }
 
 .charge-alerts-grid {
@@ -1263,14 +1263,14 @@ body.sidebar-collapsed .main-content {
 }
 
 .charge-cell-column {
-  min-width: 210px;
+  min-width: 172px;
 }
 
 .charge-cell-card {
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
-  padding: 0.8rem;
+  gap: 0.55rem;
+  padding: 0.75rem;
   border-radius: 16px;
   border: 1px solid rgba(95,143,190,.08);
   background: linear-gradient(180deg, rgba(255,255,255,.98) 0%, rgba(248,250,252,.94) 100%);
@@ -1280,6 +1280,10 @@ body.sidebar-collapsed .main-content {
 .charge-cell-card.current {
   border-color: rgba(95,143,190,.22);
   box-shadow: 0 14px 28px rgba(95,143,190,.08);
+}
+
+.charge-cell-card.is-missing-actual {
+  border-left: 3px solid var(--warning);
 }
 
 .charge-cell-card.is-saving {
@@ -1314,21 +1318,116 @@ body.sidebar-collapsed .main-content {
   resize: vertical;
 }
 
-.charge-cell-meta {
+.charge-cell-hours {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.charge-hour-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.charge-hour-input {
+  width: 100%;
+  padding: 0.45rem 0.4rem;
+  border: 1.5px solid rgba(95,143,190,.14);
+  border-radius: 12px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  background: rgba(255,255,255,.96);
+  text-align: center;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+
+.charge-hour-input:focus {
+  outline: none;
+  border-color: var(--cit-blue);
+  box-shadow: 0 0 0 3px rgba(26,114,184,.12);
+}
+
+.charge-hour-input:disabled {
+  background: var(--gray-50);
+  color: var(--gray-400);
+}
+
+.charge-cell-badges {
   display: flex;
   flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.charge-cell-details {
+  border-top: 1px dashed rgba(95,143,190,.16);
+  padding-top: 0.5rem;
+}
+
+.charge-cell-details summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
   align-items: center;
-  gap: 0.45rem;
-  margin-top: 0.2rem;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--cit-blue);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.charge-cell-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.charge-cell-details summary i {
+  font-size: 0.85rem;
+  transition: transform var(--t-fast);
+}
+
+.charge-cell-details[open] summary i {
+  transform: rotate(180deg);
+}
+
+.charge-cell-details-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.55rem;
+}
+
+.charge-cell-details-body .form-control-modern {
+  padding: 0.5rem 0.65rem;
+  border-radius: 12px;
+  font-size: 0.82rem;
+}
+
+.charge-cell-note {
+  margin: 0;
+  color: var(--gray-500);
+  font-size: 0.76rem;
+}
+
+.charge-validation-note {
+  background: rgba(14,165,233,.07);
+  border-radius: 10px;
+  padding: 0.5rem 0.65rem;
+  margin: 0;
+  color: var(--gray-700);
+  font-size: 0.78rem;
+}
+
+.charge-cell-actions {
+  display: flex;
+  gap: 0.35rem;
+  padding-top: 0.1rem;
 }
 
 @media (max-width: 1200px) {
-  .charge-summary-list {
-    grid-template-columns: 1fr;
-  }
-
   .charge-cell-column {
-    min-width: 180px;
+    min-width: 150px;
   }
 }
 
